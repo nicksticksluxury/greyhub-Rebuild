@@ -6,6 +6,7 @@ import { createPageUrl } from "@/utils";
 import { ArrowLeft, Save, Sparkles, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
 import ImageGallery from "../components/watchdetail/ImageGallery";
 import WatchForm from "../components/watchdetail/WatchForm";
 import AIPanel from "../components/watchdetail/AIPanel";
@@ -20,6 +21,7 @@ export default function WatchDetail() {
   const [editedData, setEditedData] = useState(null);
   const [showDescGen, setShowDescGen] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
@@ -82,71 +84,31 @@ export default function WatchDetail() {
     }
 
     setAnalyzing(true);
-    toast.info("Starting comprehensive market research... This may take 30-60 seconds.");
+    setDebugInfo("Starting analysis...");
+    toast.info("Starting AI market research - this will take 30-60 seconds...");
     
     try {
+      setDebugInfo("Calling AI with internet research enabled...");
+      
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert watch appraiser and market analyst. Analyze these watch photos and conduct comprehensive internet research to provide accurate market data.
+        prompt: `Analyze this watch and search the internet for real market pricing data.
 
-PART 1 - WATCH IDENTIFICATION:
-Carefully examine the watch photos and identify:
-- Brand and specific model name
-- Reference/catalog number (if visible)
-- Serial number (if visible)
-- Year or era of manufacture
-- Movement type (automatic, manual, quartz, etc.)
-- Case material (stainless steel, gold, titanium, etc.)
-- Case size/diameter
-- Condition assessment (be thorough and note any wear, scratches, patina, etc.)
-- Notable features, complications, or special characteristics
+STEP 1: Identify the watch from the photos:
+- Brand, model, reference number
+- Year, condition, materials
+- Movement type, case size
 
-PART 2 - COMPREHENSIVE INTERNET MARKET RESEARCH:
-YOU MUST search the internet for real market data. Find and analyze:
+STEP 2: Search the internet for pricing data:
+- Search eBay for sold listings of this watch
+- Search Chrono24 for current prices
+- Search watch dealer sites
+- Find the original MSRP if available
 
-A) RETAIL/MSRP PRICING:
-- Search for the original MSRP (manufacturer's suggested retail price)
-- Check authorized dealer websites for current retail pricing
-- Note if the watch is discontinued or still in production
+STEP 3: Calculate pricing recommendations for each platform based on real market data you found.
 
-B) SECONDARY MARKET RESEARCH - SEARCH THESE SITES:
-- eBay: Search for both active listings AND completed/sold listings for this exact model
-- Chrono24.com: Global watch marketplace - search for this model
-- WatchBox.com, Crown & Caliber, Bob's Watches: Search their inventory
-- Reddit r/Watchexchange: Search for recent sales
-- Watchuseek forums: Check marketplace
+STEP 4: Explain your pricing logic for each platform.
 
-For EACH source you find, note:
-- Average asking price
-- Actual sold prices (most important!)
-- Price range (low to high)
-- Number of comparable listings found
-- Condition of comparable watches
-
-C) CALCULATE MARKET VALUE:
-- Take the average of all sold prices you found
-- Calculate the overall price range
-- Identify if prices are trending up, down, or stable
-- Note demand level (how quickly similar watches sell)
-
-PART 3 - PLATFORM-SPECIFIC PRICING:
-Based on real market data, recommend strategic pricing for each platform:
-
-**eBay**: Consider actual sold prices on eBay. Price competitively.
-**Poshmark**: Casual fashion buyers, can be 10-15% higher than eBay.
-**Etsy**: Vintage/collector market - may command premium for rare pieces.
-**Mercari**: Quick sale platform - typically 10-20% lower than eBay.
-**Whatnot**: Live auction format - suggest starting bid.
-**Shopify**: Your own store - can be highest price with good margin.
-
-PART 4 - PRICING RATIONALE:
-For EACH platform price, explain:
-- Which specific comparable listings you found and their prices
-- How many sold listings you analyzed
-- Why you chose this price for this specific platform
-- Market conditions affecting the price
-- Your confidence level (high/medium/low) based on amount of data found
-
-IMPORTANT: You MUST provide actual numbers based on real internet research. Do not make up prices. If you cannot find data, say so explicitly in the rationale.`,
+Return ALL fields in the JSON schema, even if you have to estimate or say "data not found". Do not leave any fields null.`,
         file_urls: editedData.photos,
         add_context_from_internet: true,
         response_json_schema: {
@@ -197,7 +159,10 @@ IMPORTANT: You MUST provide actual numbers based on real internet research. Do n
         }
       });
 
-      console.log("AI Analysis Result:", result);
+      setDebugInfo(`Analysis complete! Got ${Object.keys(result).length} fields back`);
+      console.log("=== AI ANALYSIS RESULT ===");
+      console.log(JSON.stringify(result, null, 2));
+      console.log("==========================");
 
       const updatedWatch = {
         ...editedData,
@@ -207,10 +172,12 @@ IMPORTANT: You MUST provide actual numbers based on real internet research. Do n
       setEditedData(updatedWatch);
       await base44.entities.Watch.update(watchId, { ai_analysis: result });
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
-      toast.success("AI analysis complete! Check the AI panel on the right for market research data.");
+      
+      toast.success("AI analysis complete! Check the panel on the right.");
     } catch (error) {
       console.error("Error analyzing watch:", error);
-      toast.error("Failed to analyze watch. Please try again.");
+      setDebugInfo(`Error: ${error.message}`);
+      toast.error(`Analysis failed: ${error.message}`);
     }
     setAnalyzing(false);
   };
@@ -260,7 +227,7 @@ IMPORTANT: You MUST provide actual numbers based on real internet research. Do n
                 {analyzing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Researching Market...
+                    Researching...
                   </>
                 ) : (
                   <>
@@ -287,6 +254,11 @@ IMPORTANT: You MUST provide actual numbers based on real internet research. Do n
               </Button>
             </div>
           </div>
+          {debugInfo && (
+            <div className="mt-2">
+              <p className="text-xs text-slate-600">{debugInfo}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -336,6 +308,15 @@ IMPORTANT: You MUST provide actual numbers based on real internet research. Do n
                   }}
                 />
               </div>
+            )}
+            
+            {editedData.ai_analysis && (
+              <Card className="p-4 mt-6">
+                <h3 className="font-semibold mb-2">Debug: AI Analysis Data</h3>
+                <pre className="text-xs bg-slate-100 p-3 rounded overflow-auto max-h-96">
+                  {JSON.stringify(editedData.ai_analysis, null, 2)}
+                </pre>
+              </Card>
             )}
           </div>
 
