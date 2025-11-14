@@ -39,12 +39,14 @@ export default function AddWatch() {
 
     setUploading(true);
     try {
+      console.log("Starting photo upload...");
       const uploadedUrls = await Promise.all(
         photos.map(async (photo) => {
           const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
           return file_url;
         })
       );
+      console.log("Photos uploaded:", uploadedUrls);
 
       const watchData = {
         photos: uploadedUrls,
@@ -52,14 +54,18 @@ export default function AddWatch() {
         brand: "Unknown"
       };
 
+      console.log("Creating watch with data:", watchData);
       const watch = await base44.entities.Watch.create(watchData);
+      console.log("Watch created:", watch);
+      
       toast.success("Watch added to inventory!");
       navigate(createPageUrl(`WatchDetail?id=${watch.id}`));
     } catch (error) {
       console.error("Error creating watch:", error);
-      toast.error("Failed to create watch");
+      toast.error(`Failed to create watch: ${error.message || 'Unknown error'}`);
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   return (
