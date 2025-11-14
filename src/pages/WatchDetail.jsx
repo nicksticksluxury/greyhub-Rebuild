@@ -85,7 +85,10 @@ export default function WatchDetail() {
 
     setAnalyzing(true);
     setDebugInfo("Starting analysis...");
-    toast.info("AI analyzing watch and researching market prices (30-60 seconds)...");
+    
+    // Only send first 2 photos to avoid rate limits
+    const photosToAnalyze = editedData.photos.slice(0, 2);
+    toast.info(`Analyzing ${photosToAnalyze.length} photos and researching market prices (30-60 seconds)...`);
     
     try {
       setDebugInfo("Calling AI with internet research...");
@@ -100,7 +103,7 @@ RESEARCH: Search eBay sold listings, Chrono24, watch dealers for actual sold pri
 PRICING: Recommend prices for eBay, Poshmark, Etsy, Mercari, Whatnot, Shopify based on market data. Explain each price with specific comps found.
 
 Provide ALL fields. No nulls.`,
-        file_urls: editedData.photos,
+        file_urls: photosToAnalyze,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -162,7 +165,7 @@ Provide ALL fields. No nulls.`,
       await base44.entities.Watch.update(watchId, { ai_analysis: result });
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      toast.success("Analysis complete!");
+      toast.success("Analysis complete! Check the AI panel on the right.");
     } catch (error) {
       console.error("Error:", error);
       setDebugInfo(`Error: ${error.message}`);
