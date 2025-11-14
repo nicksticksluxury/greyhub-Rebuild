@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { Upload, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -16,6 +17,7 @@ export default function AddWatch() {
   const [photos, setPhotos] = useState([]);
   const [sourceId, setSourceId] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
   const { data: sources = [] } = useQuery({
     queryKey: ['sources'],
@@ -38,14 +40,18 @@ export default function AddWatch() {
     }
 
     setUploading(true);
+    setUploadProgress({ current: 0, total: photos.length });
+    
     try {
       console.log("Starting photo upload...");
-      const uploadedUrls = await Promise.all(
-        photos.map(async (photo) => {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
-          return file_url;
-        })
-      );
+      const uploadedUrls = [];
+      
+      for (let i = 0; i < photos.length; i++) {
+        setUploadProgress({ current: i + 1, total: photos.length });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: photos[i] });
+        uploadedUrls.push(file_url);
+      }
+      
       console.log("Photos uploaded:", uploadedUrls);
 
       const watchData = {
@@ -65,6 +71,7 @@ export default function AddWatch() {
       toast.error(`Failed to create watch: ${error.message || 'Unknown error'}`);
     } finally {
       setUploading(false);
+      setUploadProgress({ current: 0, total: 0 });
     }
   };
 
@@ -102,6 +109,18 @@ export default function AddWatch() {
           </div>
         </Card>
 
+        {uploading && (
+          <Card className="p-4 mb-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>Uploading photos...</span>
+                <span>{uploadProgress.current} of {uploadProgress.total}</span>
+              </div>
+              <Progress value={(uploadProgress.current / uploadProgress.total) * 100} />
+            </div>
+          </Card>
+        )}
+
         <Button
           onClick={createWatch}
           disabled={photos.length === 0 || uploading}
@@ -110,7 +129,7 @@ export default function AddWatch() {
           {uploading ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Creating...
+              Uploading {uploadProgress.current} of {uploadProgress.total}...
             </>
           ) : (
             <>
