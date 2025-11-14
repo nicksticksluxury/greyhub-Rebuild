@@ -85,56 +85,110 @@ export default function WatchDetail() {
 
     setAnalyzing(true);
     setDebugInfo("Starting analysis...");
-    toast.info("Starting AI market research - this will take 30-60 seconds...");
+    toast.info("AI is analyzing photos and searching the internet for market data (30-60 seconds)...");
     
     try {
       setDebugInfo("Calling AI with internet research enabled...");
       
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this watch and search the internet for real market pricing data.
+        prompt: `You are an expert watch appraiser and market researcher. Analyze the provided watch photos and conduct comprehensive internet research.
 
-STEP 1: Identify the watch from the photos:
-- Brand, model, reference number
-- Year, condition, materials
-- Movement type, case size
+CRITICAL: You MUST provide values for ALL fields in your response. Do NOT leave fields empty or null.
 
-STEP 2: Search the internet for pricing data:
-- Search eBay for sold listings of this watch
-- Search Chrono24 for current prices
-- Search watch dealer sites
-- Find the original MSRP if available
+TASK 1 - IDENTIFY THE WATCH FROM PHOTOS:
+Look carefully at the watch photos and identify:
+1. Brand name (on dial, caseback, or clasp)
+2. Model name/number
+3. Reference number (often on caseback or between lugs)
+4. Serial number (if visible)
+5. Year/era of manufacture (based on style, markings, or date codes)
+6. Movement type (automatic/manual/quartz - look for rotor through caseback or second hand sweep)
+7. Case material (gold, steel, titanium, etc.)
+8. Case diameter (estimate from proportions)
+9. Condition (note any scratches, wear, patina, crystal condition)
+10. Notable features (chronograph, date, complications, etc.)
 
-STEP 3: Calculate pricing recommendations for each platform based on real market data you found.
+TASK 2 - INTERNET MARKET RESEARCH (MANDATORY):
+You MUST search the internet for actual market data. Specifically:
 
-STEP 4: Explain your pricing logic for each platform.
+1. Search eBay:
+   - Look for "COMPLETED" and "SOLD" listings for this exact watch model
+   - Note the actual selling prices, not just asking prices
+   - Find at least 3-5 comparable sold listings if available
 
-Return ALL fields in the JSON schema, even if you have to estimate or say "data not found". Do not leave any fields null.`,
+2. Search Chrono24.com:
+   - This is the largest watch marketplace
+   - Find current asking prices for this model
+   - Note the price range
+
+3. Search watch dealer sites:
+   - WatchBox.com, Crown & Caliber, Bob's Watches
+   - Look for this model in their inventory
+   - Note their asking prices
+
+4. Check Reddit and forums:
+   - Search r/Watchexchange for recent sales
+   - Check WatchUSeek marketplace
+
+5. Find MSRP:
+   - Search for the original manufacturer's suggested retail price
+   - If discontinued, note what it sold for when new
+
+TASK 3 - CALCULATE MARKET VALUE:
+Based on the REAL data you found from internet searches:
+- Calculate the average of all sold prices (not asking prices)
+- Determine the market value range (low to high)
+- Note the current average market value
+
+TASK 4 - PLATFORM PRICING STRATEGY:
+Recommend specific prices for each selling platform based on the market data:
+
+**eBay** (15% fee): Use average sold prices you found. Price to sell competitively.
+**Poshmark** (20% fee): Fashion-focused buyers, can be 10-15% higher than eBay.
+**Etsy** (6.5% + payment fees): Vintage collectors, may command premium for older/rare pieces.
+**Mercari** (12.9% fee): Casual resellers, typically 10-20% below eBay.
+**Whatnot** (10% fee): Live auction - suggest a starting bid price that's 60-70% of market value.
+**Shopify** (2.9% + $0.30): Your own store - highest margin, price 15-20% above eBay.
+
+TASK 5 - EXPLAIN YOUR PRICING:
+For EACH platform, you MUST explain:
+- What specific comparable listings you found (with actual prices)
+- How many sold listings you analyzed
+- Why this price makes sense for this platform
+- Your confidence level based on data found
+
+REMEMBER: Provide complete, detailed information for EVERY field. Base your pricing on ACTUAL INTERNET RESEARCH DATA.`,
         file_urls: editedData.photos,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
           properties: {
-            identified_brand: { type: "string" },
-            identified_model: { type: "string" },
-            reference_number: { type: "string" },
-            serial_number: { type: "string" },
-            estimated_year: { type: "string" },
-            movement_type: { type: "string" },
-            case_material: { type: "string" },
-            case_size: { type: "string" },
-            condition_assessment: { type: "string" },
-            original_msrp: { type: "number" },
-            current_retail_price: { type: "number" },
-            estimated_value_low: { type: "number" },
-            estimated_value_high: { type: "number" },
-            average_market_value: { type: "number" },
-            confidence_level: { type: "string" },
-            notable_features: { type: "array", items: { type: "string" } },
-            market_insights: { type: "string" },
-            comparable_listings: { type: "string" },
-            market_research_summary: { type: "string" },
+            identified_brand: { type: "string", description: "Brand name from dial or caseback" },
+            identified_model: { type: "string", description: "Model name or description" },
+            reference_number: { type: "string", description: "Reference/catalog number if visible" },
+            serial_number: { type: "string", description: "Serial number if visible, or 'Not visible'" },
+            estimated_year: { type: "string", description: "Year or era of manufacture" },
+            movement_type: { type: "string", description: "Automatic, manual, or quartz" },
+            case_material: { type: "string", description: "Case material" },
+            case_size: { type: "string", description: "Case diameter estimate" },
+            condition_assessment: { type: "string", description: "Detailed condition notes" },
+            original_msrp: { type: "number", description: "Original retail price when new" },
+            current_retail_price: { type: "number", description: "Current authorized dealer price if still sold" },
+            estimated_value_low: { type: "number", description: "Low end of market value range" },
+            estimated_value_high: { type: "number", description: "High end of market value range" },
+            average_market_value: { type: "number", description: "Average market value based on sold listings" },
+            confidence_level: { type: "string", description: "High/Medium/Low based on data availability" },
+            notable_features: { 
+              type: "array", 
+              items: { type: "string" },
+              description: "List of special features or characteristics"
+            },
+            market_insights: { type: "string", description: "Overall market trends and demand" },
+            comparable_listings: { type: "string", description: "Detailed list of comparable sold listings with prices" },
+            market_research_summary: { type: "string", description: "Summary of all internet research conducted" },
             pricing_recommendations: {
               type: "object",
+              description: "Recommended prices for each platform",
               properties: {
                 ebay: { type: "number" },
                 poshmark: { type: "number" },
@@ -142,10 +196,12 @@ Return ALL fields in the JSON schema, even if you have to estimate or say "data 
                 mercari: { type: "number" },
                 whatnot: { type: "number" },
                 shopify: { type: "number" }
-              }
+              },
+              required: ["ebay", "poshmark", "etsy", "mercari", "whatnot", "shopify"]
             },
             pricing_rationale: {
               type: "object",
+              description: "Detailed explanation for each platform's pricing",
               properties: {
                 ebay: { type: "string" },
                 poshmark: { type: "string" },
@@ -153,9 +209,17 @@ Return ALL fields in the JSON schema, even if you have to estimate or say "data 
                 mercari: { type: "string" },
                 whatnot: { type: "string" },
                 shopify: { type: "string" }
-              }
+              },
+              required: ["ebay", "poshmark", "etsy", "mercari", "whatnot", "shopify"]
             }
-          }
+          },
+          required: [
+            "identified_brand", "identified_model", "estimated_year", "movement_type",
+            "case_material", "case_size", "condition_assessment", "average_market_value",
+            "confidence_level", "notable_features", "market_insights", 
+            "comparable_listings", "market_research_summary",
+            "pricing_recommendations", "pricing_rationale"
+          ]
         }
       });
 
@@ -173,7 +237,7 @@ Return ALL fields in the JSON schema, even if you have to estimate or say "data 
       await base44.entities.Watch.update(watchId, { ai_analysis: result });
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      toast.success("AI analysis complete! Check the panel on the right.");
+      toast.success("AI analysis complete with market research data!");
     } catch (error) {
       console.error("Error analyzing watch:", error);
       setDebugInfo(`Error: ${error.message}`);
