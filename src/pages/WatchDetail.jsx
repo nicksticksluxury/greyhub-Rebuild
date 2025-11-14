@@ -241,10 +241,21 @@ Include market insights about demand, collectibility, and recent trends.`,
         ...editedData,
         platform_prices: value
       });
+      toast.success("All platform prices imported!");
+    } else if (field.startsWith("platform_price_")) {
+      const platform = field.replace("platform_price_", "");
+      setEditedData({
+        ...editedData,
+        platform_prices: {
+          ...editedData.platform_prices,
+          [platform]: value
+        }
+      });
+      toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} price imported!`);
     } else {
       setEditedData({ ...editedData, [field]: value });
+      toast.success("Data imported from AI analysis");
     }
-    toast.success("Data imported from AI analysis");
   };
 
   if (isLoading || !editedData) {

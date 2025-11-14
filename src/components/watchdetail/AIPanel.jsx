@@ -123,6 +123,24 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
             </div>
           )}
 
+          {aiAnalysis.movement_type && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Movement</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("movement_type", aiAnalysis.movement_type.toLowerCase())}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.movement_type}</p>
+            </div>
+          )}
+
           {aiAnalysis.case_material && (
             <div className="p-3 bg-slate-50 rounded-lg">
               <div className="flex items-start justify-between mb-1">
@@ -159,6 +177,24 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
             </div>
           )}
 
+          {aiAnalysis.condition_assessment && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Condition Assessment</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("description", aiAnalysis.condition_assessment)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import to Description
+                </Button>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">{aiAnalysis.condition_assessment}</p>
+            </div>
+          )}
+
           {(aiAnalysis.original_msrp || aiAnalysis.current_retail_price) && (
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2 mb-3">
@@ -167,13 +203,35 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
               </div>
               {aiAnalysis.original_msrp && (
                 <div className="mb-2">
-                  <span className="text-xs text-blue-600">Original MSRP:</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-blue-600">Original MSRP:</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={() => onImportData("retail_price", aiAnalysis.original_msrp)}
+                    >
+                      <ArrowLeft className="w-3 h-3 mr-1" />
+                      Import
+                    </Button>
+                  </div>
                   <p className="text-lg font-bold text-blue-900">${aiAnalysis.original_msrp.toLocaleString()}</p>
                 </div>
               )}
               {aiAnalysis.current_retail_price && (
                 <div>
-                  <span className="text-xs text-blue-600">Current Retail:</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-blue-600">Current Retail:</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={() => onImportData("retail_price", aiAnalysis.current_retail_price)}
+                    >
+                      <ArrowLeft className="w-3 h-3 mr-1" />
+                      Import
+                    </Button>
+                  </div>
                   <p className="text-lg font-bold text-blue-900">${aiAnalysis.current_retail_price.toLocaleString()}</p>
                 </div>
               )}
@@ -182,9 +240,20 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {aiAnalysis.average_market_value && (
             <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-              <span className="text-xs font-semibold text-emerald-700 uppercase block mb-2">
-                Average Market Value
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-emerald-700 uppercase">
+                  Average Market Value
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("retail_price", aiAnalysis.average_market_value)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
               <p className="text-2xl font-bold text-emerald-900">${aiAnalysis.average_market_value?.toLocaleString()}</p>
               {(aiAnalysis.estimated_value_low || aiAnalysis.estimated_value_high) && (
                 <p className="text-sm text-emerald-700 mt-1">
@@ -237,7 +306,17 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   <div key={platform}>
                     <div className="flex items-center justify-between bg-white/70 rounded p-2 mb-1">
                       <span className="capitalize font-semibold text-amber-900">{platform}:</span>
-                      <span className="font-bold text-amber-800">${price?.toLocaleString()}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-amber-800">${price?.toLocaleString()}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 text-xs px-2"
+                          onClick={() => onImportData(`platform_price_${platform}`, price)}
+                        >
+                          <ArrowLeft className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                     {aiAnalysis.pricing_rationale?.[platform] && (
                       <p className="text-xs text-amber-700 px-2 leading-relaxed">
@@ -247,15 +326,6 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {aiAnalysis.condition_assessment && (
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
-                Condition Assessment
-              </span>
-              <p className="text-sm text-slate-600 leading-relaxed">{aiAnalysis.condition_assessment}</p>
             </div>
           )}
 
