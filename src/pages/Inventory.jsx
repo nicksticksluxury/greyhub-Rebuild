@@ -3,9 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Filter, Download, Eye } from "lucide-react";
+import { Plus, Search, Filter, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import WatchTable from "../components/inventory/WatchTable";
 import ExportDialog from "../components/inventory/ExportDialog";
 import FilterPanel from "../components/inventory/FilterPanel";
@@ -16,6 +18,7 @@ export default function Inventory() {
   const [showFilters, setShowFilters] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [selectedWatch, setSelectedWatch] = useState(null);
+  const [selectedPlatform, setSelectedPlatform] = useState("ebay");
   const [filters, setFilters] = useState({
     auction: "all",
     source: "all",
@@ -98,14 +101,31 @@ export default function Inventory() {
                 className="pl-10 border-slate-300 focus:border-slate-400 h-11"
               />
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="border-slate-300 hover:bg-slate-50 h-11"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
+            <div className="flex gap-3">
+              <div className="min-w-[180px]">
+                <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                  <SelectTrigger className="h-11 border-slate-300">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ebay">eBay Pricing</SelectItem>
+                    <SelectItem value="poshmark">Poshmark Pricing</SelectItem>
+                    <SelectItem value="etsy">Etsy Pricing</SelectItem>
+                    <SelectItem value="mercari">Mercari Pricing</SelectItem>
+                    <SelectItem value="whatnot">Whatnot Pricing</SelectItem>
+                    <SelectItem value="shopify">Shopify Pricing</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-slate-300 hover:bg-slate-50 h-11"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+            </div>
           </div>
 
           {showFilters && (
@@ -126,6 +146,7 @@ export default function Inventory() {
           onQuickView={setSelectedWatch}
           sources={sources}
           auctions={auctions}
+          selectedPlatform={selectedPlatform}
         />
       </div>
 

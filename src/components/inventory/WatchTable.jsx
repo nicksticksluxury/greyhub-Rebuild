@@ -1,191 +1,209 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Eye, ExternalLink } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Eye } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions }) {
-  const [imageDialog, setImageDialog] = React.useState(null);
+const PLATFORM_FEES = {
+  ebay: { description: "15% under $5K, 9% over $5K" },
+  poshmark: { rate: 0.20, flat: 2.95, threshold: 15 },
+  etsy: { rate: 0.065, payment: 0.03, fixed: 0.25 },
+  mercari: { rate: 0.129 },
+  whatnot: { rate: 0.10, payment: 0.029, fixed: 0.30 },
+  shopify: { rate: 0.029, fixed: 0.30 }
+};
 
-  const getSourceName = (sourceId) => {
-    const source = sources.find(s => s.id === sourceId);
-    return source?.name || "Unknown";
+function calculateMinimumPrice(cost, platform) {
+  if (!cost) return 0;
+  
+  const config = PLATFORM_FEES[platform];
+  let minPrice = 0;
+  
+  switch(platform) {
+    case 'ebay':
+      minPrice = cost / (1 - 0.15);
+      break;
+    case 'poshmark':
+      minPrice = cost / (1 - config.rate);
+      break;
+    case 'etsy':
+      minPrice = (cost + config.fixed) / (1 - config.rate - config.payment);
+      break;
+    case 'whatnot':
+      minPrice = (cost + config.fixed) / (1 - config.rate - config.payment);
+      break;
+    case 'shopify':
+      minPrice = (cost + config.fixed) / (1 - config.rate);
+      break;
+    default:
+      minPrice = cost / (1 - config.rate);
+  }
+  
+  return Math.ceil(minPrice);
+}
+
+const conditionLabels = {
+  new_with_box: "New w/ Box",
+  new_no_box: "New No Box",
+  mint: "Mint",
+  excellent: "Excellent",
+  very_good: "Very Good",
+  good: "Good",
+  fair: "Fair",
+  parts_repair: "Parts/Repair"
+};
+
+export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform }) {
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [currentImage, setCurrentImage] = useState("");
+
+  const handleImageClick = (e, photo) => {
+    e.stopPropagation();
+    setCurrentImage(photo);
+    setImageDialogOpen(true);
   };
 
-  const getAuctionName = (auctionId) => {
-    const auction = auctions.find(a => a.id === auctionId);
-    return auction?.name || null;
-  };
-
-  const conditionColors = {
-    mint: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    excellent: "bg-green-100 text-green-800 border-green-200",
-    very_good: "bg-blue-100 text-blue-800 border-blue-200",
-    good: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    fair: "bg-orange-100 text-orange-800 border-orange-200",
-    parts_repair: "bg-red-100 text-red-800 border-red-200",
+  const handleRowClick = (watchId) => {
+    window.location.href = createPageUrl(`WatchDetail?id=${watchId}`);
   };
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-slate-50">
-              <TableHead className="font-semibold">Image</TableHead>
-              <TableHead className="font-semibold">Brand/Model</TableHead>
-              <TableHead className="font-semibold">Serial #</TableHead>
-              <TableHead className="font-semibold">Condition</TableHead>
-              <TableHead className="font-semibold">Cost</TableHead>
-              <TableHead className="font-semibold">Retail</TableHead>
-              <TableHead className="font-semibold">Min Price</TableHead>
-              <TableHead className="font-semibold">Source</TableHead>
-              <TableHead className="font-semibold">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array(5).fill(0).map((_, i) => (
-              <TableRow key={i}>
-                <TableCell><Skeleton className="h-16 w-16 rounded-lg" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+        <div className="animate-pulse space-y-4">
+          {Array(5).fill(0).map((_, i) => (
+            <div key={i} className="h-16 bg-slate-100 rounded" />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (watches.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-        <div className="text-slate-400 mb-4">
-          <Eye className="w-16 h-16 mx-auto" />
-        </div>
-        <h3 className="text-xl font-semibold text-slate-900 mb-2">No watches found</h3>
-        <p className="text-slate-500">Try adjusting your search or filters</p>
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-12 text-center">
+        <p className="text-slate-500">No watches found</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50 hover:bg-slate-50">
-                <TableHead className="font-semibold text-slate-700">Image</TableHead>
-                <TableHead className="font-semibold text-slate-700">Brand/Model</TableHead>
-                <TableHead className="font-semibold text-slate-700">Serial #</TableHead>
-                <TableHead className="font-semibold text-slate-700">Condition</TableHead>
-                <TableHead className="font-semibold text-slate-700">Cost</TableHead>
-                <TableHead className="font-semibold text-slate-700">Retail</TableHead>
-                <TableHead className="font-semibold text-slate-700">Min Price</TableHead>
-                <TableHead className="font-semibold text-slate-700">Source</TableHead>
-                <TableHead className="font-semibold text-slate-700">Auction</TableHead>
-                <TableHead className="font-semibold text-slate-700">Actions</TableHead>
+              <TableRow className="bg-slate-50">
+                <TableHead className="w-20">Photo</TableHead>
+                <TableHead>Brand / Model</TableHead>
+                <TableHead>Ref / Serial</TableHead>
+                <TableHead>Condition</TableHead>
+                <TableHead className="text-right">Cost</TableHead>
+                <TableHead className="text-right">Retail</TableHead>
+                <TableHead className="text-right">Min Price</TableHead>
+                <TableHead className="text-right">{selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)}</TableHead>
+                <TableHead className="text-right">30% Markup</TableHead>
+                <TableHead className="text-right">50% Markup</TableHead>
+                <TableHead>Source</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {watches.map((watch) => (
-                <TableRow key={watch.id} className="hover:bg-slate-50 transition-colors">
-                  <TableCell>
-                    {watch.photos?.[0] ? (
-                      <img
-                        src={watch.photos[0]}
-                        alt={watch.brand}
-                        className="w-16 h-16 object-cover rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => setImageDialog(watch.photos[0])}
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
-                        <Eye className="w-6 h-6 text-slate-400" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-semibold text-slate-900">{watch.brand}</p>
-                      <p className="text-sm text-slate-500">{watch.model}</p>
-                      {watch.sold && (
-                        <Badge className="mt-1 bg-red-100 text-red-800 border-red-200">SOLD</Badge>
+              {watches.map((watch) => {
+                const source = sources.find(s => s.id === watch.source_id);
+                const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
+                const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
+                const markup30 = watch.cost ? Math.ceil(watch.cost * 1.3) : 0;
+                const markup50 = watch.cost ? Math.ceil(watch.cost * 1.5) : 0;
+
+                return (
+                  <TableRow 
+                    key={watch.id} 
+                    className="hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => handleRowClick(watch.id)}
+                  >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      {watch.photos?.[0] ? (
+                        <img
+                          src={watch.photos[0]}
+                          alt={watch.brand}
+                          className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-75 transition-opacity"
+                          onClick={(e) => handleImageClick(e, watch.photos[0])}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
+                          <span className="text-slate-400 text-xs">No photo</span>
+                        </div>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-sm text-slate-600">{watch.serial_number || "—"}</span>
-                  </TableCell>
-                  <TableCell>
-                    {watch.condition ? (
-                      <Badge variant="outline" className={conditionColors[watch.condition]}>
-                        {watch.condition.replace(/_/g, " ")}
-                      </Badge>
-                    ) : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-semibold text-slate-900">
-                      ${watch.cost?.toLocaleString() || "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-semibold text-emerald-600">
-                      ${watch.retail_price?.toLocaleString() || "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-slate-600">
-                      ${watch.minimum_price?.toLocaleString() || "—"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-slate-600">{getSourceName(watch.source_id)}</span>
-                  </TableCell>
-                  <TableCell>
-                    {watch.auction_id && (
-                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                        {getAuctionName(watch.auction_id)}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onQuickView(watch)}
-                        className="hover:bg-slate-100"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Link to={createPageUrl(`WatchDetail?id=${watch.id}`)}>
-                        <Button size="sm" variant="outline" className="hover:bg-slate-100">
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-semibold text-slate-900">{watch.brand}</p>
+                        {watch.model && (
+                          <p className="text-sm text-slate-500">{watch.model}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {watch.reference_number && (
+                          <p className="text-slate-700">Ref: {watch.reference_number}</p>
+                        )}
+                        {watch.serial_number && (
+                          <p className="text-slate-500">S/N: {watch.serial_number}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {watch.condition && (
+                        <Badge variant="outline" className="capitalize">
+                          {conditionLabels[watch.condition] || watch.condition.replace(/_/g, ' ')}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {watch.cost ? `$${watch.cost.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {watch.retail_price ? `$${watch.retail_price.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-amber-700 font-semibold">
+                        {minPrice > 0 ? `$${minPrice.toLocaleString()}` : '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-slate-900 font-bold">
+                        {platformPrice > 0 ? `$${platformPrice.toLocaleString()}` : '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-blue-700 font-semibold">
+                        {markup30 > 0 ? `$${markup30.toLocaleString()}` : '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-green-700 font-semibold">
+                        {markup50 > 0 ? `$${markup50.toLocaleString()}` : '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {source && (
+                        <span className="text-sm text-slate-600">{source.name}</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
       </div>
 
-      <Dialog open={!!imageDialog} onOpenChange={() => setImageDialog(null)}>
-        <DialogContent className="max-w-3xl">
-          <img src={imageDialog} alt="Watch" className="w-full h-auto rounded-lg" />
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <img src={currentImage} alt="Watch" className="w-full h-auto rounded-lg" />
         </DialogContent>
       </Dialog>
     </>
