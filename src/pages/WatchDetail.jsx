@@ -21,7 +21,7 @@ export default function WatchDetail() {
   const [editedData, setEditedData] = useState(null);
   const [showDescGen, setShowDescGen] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null);
+  const [analysisStep, setAnalysisStep] = useState("");
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
@@ -84,27 +84,30 @@ export default function WatchDetail() {
     }
 
     setAnalyzing(true);
-    setDebugInfo("Starting analysis...");
-    
-    // Only send first 2 photos to avoid rate limits
-    const photosToAnalyze = editedData.photos.slice(0, 2);
-    toast.info(`Analyzing ${photosToAnalyze.length} photos and researching market prices (30-60 seconds)...`);
     
     try {
-      setDebugInfo("Calling AI with internet research...");
+      // STEP 1: Identify the watch from photos (NO internet search)
+      setAnalysisStep("Step 1/2: Identifying watch from photos...");
+      toast.info("Step 1/2: Analyzing photos to identify the watch...");
       
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this watch from photos and search the internet for market data.
+      const identificationResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a professional watch expert. Analyze these watch photos and identify all visible details.
 
-IDENTIFY: Brand, model, reference, year, movement, materials, case size, condition, features.
+Carefully examine:
+- Brand name and logo
+- Model name/series
+- Reference number (on case, papers, or dial)
+- Serial number (if visible)
+- Year/era (based on design, patina, style)
+- Movement type (automatic, manual, quartz - look for rotor through caseback or visible indicators)
+- Case material (stainless steel, gold, platinum, titanium, etc.)
+- Case size/diameter (estimate based on proportions)
+- Overall condition (examine wear, scratches, patina)
+- Notable features (complications, special dials, limited edition markers, etc.)
 
-RESEARCH: Search eBay sold listings, Chrono24, watch dealers for actual sold prices. Find MSRP. Calculate average market value and range.
-
-PRICING: Recommend prices for eBay, Poshmark, Etsy, Mercari, Whatnot, Shopify based on market data. Explain each price with specific comps found.
-
-Provide ALL fields. No nulls.`,
-        file_urls: photosToAnalyze,
-        add_context_from_internet: true,
+Be specific and detailed. If you cannot determine something from the photos, indicate "Unknown" or "Not visible".`,
+        file_urls: editedData.photos,
+        add_context_from_internet: false, // Critical: no internet search, allows images
         response_json_schema: {
           type: "object",
           properties: {
@@ -117,13 +120,63 @@ Provide ALL fields. No nulls.`,
             case_material: { type: "string" },
             case_size: { type: "string" },
             condition_assessment: { type: "string" },
+            notable_features: { type: "array", items: { type: "string" } },
+            confidence_level: { type: "string" }
+          }
+        }
+      });
+
+      console.log("=== STEP 1: IDENTIFICATION ===", identificationResult);
+
+      // STEP 2: Market research based on identified details (WITH internet search)
+      setAnalysisStep("Step 2/2: Researching market prices and comparables...");
+      toast.info("Step 2/2: Researching market prices online (this may take 30-60 seconds)...");
+
+      const watchDescription = `${identificationResult.identified_brand || 'Unknown brand'} ${identificationResult.identified_model || 'Unknown model'}${identificationResult.reference_number ? `, reference ${identificationResult.reference_number}` : ''}${identificationResult.estimated_year ? ` from ${identificationResult.estimated_year}` : ''}`;
+
+      const marketResearchResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a watch market analyst. Research current market prices for this watch: ${watchDescription}
+
+CRITICAL: You MUST search the internet for real market data. Do not make up prices.
+
+Search and analyze:
+1. eBay SOLD listings (actual sold prices, not asking prices)
+2. Chrono24 current listings and sold data
+3. WatchBox, Bob's Watches, and other dealer prices
+4. Auction results (Christie's, Sotheby's, Phillips)
+5. Original MSRP when released
+6. Current authorized dealer retail price (if still in production)
+
+Calculate:
+- Average market value based on actual sold listings
+- Price range (low to high based on condition)
+- Original MSRP
+- Current retail price
+
+Provide platform-specific pricing recommendations for:
+- eBay (competitive with sold listings)
+- Poshmark (consider their audience and 20% fee)
+- Etsy (vintage/artisan market positioning)
+- Mercari (competitive pricing for quick sale)
+- Whatnot (live auction starting price)
+- Shopify (retail storefront pricing)
+
+For each platform price, provide a brief rationale explaining:
+- Comparable listings you found
+- Why this price makes sense for that platform
+- Market positioning strategy
+
+Include market insights about demand, collectibility, and recent trends.`,
+        file_urls: [], // Critical: NO images allowed when using internet search
+        add_context_from_internet: true, // Enable internet search
+        response_json_schema: {
+          type: "object",
+          properties: {
             original_msrp: { type: "number" },
             current_retail_price: { type: "number" },
             estimated_value_low: { type: "number" },
             estimated_value_high: { type: "number" },
             average_market_value: { type: "number" },
-            confidence_level: { type: "string" },
-            notable_features: { type: "array", items: { type: "string" } },
             market_insights: { type: "string" },
             comparable_listings: { type: "string" },
             market_research_summary: { type: "string" },
@@ -153,23 +206,31 @@ Provide ALL fields. No nulls.`,
         }
       });
 
-      setDebugInfo(`Analysis complete! Got ${Object.keys(result).length} fields`);
-      console.log("=== AI RESULT ===", result);
+      console.log("=== STEP 2: MARKET RESEARCH ===", marketResearchResult);
+
+      // Combine both results
+      const combinedAnalysis = {
+        ...identificationResult,
+        ...marketResearchResult
+      };
+
+      console.log("=== COMBINED ANALYSIS ===", combinedAnalysis);
 
       const updatedWatch = {
         ...editedData,
-        ai_analysis: result
+        ai_analysis: combinedAnalysis
       };
       
       setEditedData(updatedWatch);
-      await base44.entities.Watch.update(watchId, { ai_analysis: result });
+      await base44.entities.Watch.update(watchId, { ai_analysis: combinedAnalysis });
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      toast.success("Analysis complete! Check the AI panel on the right.");
+      setAnalysisStep("");
+      toast.success("Complete! Watch identified and market prices researched.");
     } catch (error) {
-      console.error("Error:", error);
-      setDebugInfo(`Error: ${error.message}`);
-      toast.error(`Failed: ${error.message}`);
+      console.error("AI Analysis Error:", error);
+      setAnalysisStep("");
+      toast.error(`Analysis failed: ${error.message}`);
     }
     setAnalyzing(false);
   };
@@ -219,7 +280,7 @@ Provide ALL fields. No nulls.`,
                 {analyzing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Researching...
+                    Analyzing...
                   </>
                 ) : (
                   <>
@@ -246,9 +307,9 @@ Provide ALL fields. No nulls.`,
               </Button>
             </div>
           </div>
-          {debugInfo && (
-            <div className="mt-2">
-              <p className="text-xs text-slate-600">{debugInfo}</p>
+          {analysisStep && (
+            <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-sm text-amber-800 font-medium">{analysisStep}</p>
             </div>
           )}
         </div>
@@ -300,15 +361,6 @@ Provide ALL fields. No nulls.`,
                   }}
                 />
               </div>
-            )}
-            
-            {editedData.ai_analysis && (
-              <Card className="p-4 mt-6">
-                <h3 className="font-semibold mb-2">Debug: AI Analysis Data</h3>
-                <pre className="text-xs bg-slate-100 p-3 rounded overflow-auto max-h-96">
-                  {JSON.stringify(editedData.ai_analysis, null, 2)}
-                </pre>
-              </Card>
             )}
           </div>
 
