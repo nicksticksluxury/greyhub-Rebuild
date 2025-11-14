@@ -22,6 +22,25 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
     );
   }
 
+  const handleImportAllBasicInfo = () => {
+    const fieldsToImport = {
+      brand: aiAnalysis.identified_brand,
+      model: aiAnalysis.identified_model,
+      reference_number: aiAnalysis.reference_number,
+      serial_number: aiAnalysis.serial_number,
+      year: aiAnalysis.estimated_year,
+      movement_type: aiAnalysis.movement_type?.toLowerCase(),
+      case_material: aiAnalysis.case_material,
+      case_size: aiAnalysis.case_size
+    };
+    
+    onImportData("basic_info_all", fieldsToImport);
+  };
+
+  const hasBasicInfo = aiAnalysis.identified_brand || aiAnalysis.identified_model || 
+    aiAnalysis.reference_number || aiAnalysis.serial_number || aiAnalysis.estimated_year ||
+    aiAnalysis.movement_type || aiAnalysis.case_material || aiAnalysis.case_size;
+
   return (
     <Card className="p-6">
       <div className="flex items-center gap-2 mb-4">
@@ -33,6 +52,23 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
       <ScrollArea className="h-[calc(100vh-250px)]">
         <div className="space-y-4 pr-4">
+          {hasBasicInfo && (
+            <div className="p-3 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg border border-slate-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-slate-700 uppercase">Watch Identification</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-200"
+                  onClick={handleImportAllBasicInfo}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import All
+                </Button>
+              </div>
+            </div>
+          )}
+
           {aiAnalysis.identified_brand && (
             <div className="p-3 bg-slate-50 rounded-lg">
               <div className="flex items-start justify-between mb-1">
@@ -302,29 +338,34 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                 </Button>
               </div>
               <div className="space-y-3">
-                {Object.entries(aiAnalysis.pricing_recommendations).map(([platform, price]) => (
-                  <div key={platform}>
-                    <div className="flex items-center justify-between bg-white/70 rounded p-2 mb-1">
-                      <span className="capitalize font-semibold text-amber-900">{platform}:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-amber-800">${price?.toLocaleString()}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-5 text-xs px-2"
-                          onClick={() => onImportData(`platform_price_${platform}`, price)}
-                        >
-                          <ArrowLeft className="w-3 h-3" />
-                        </Button>
+                {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map((platform) => {
+                  const price = aiAnalysis.pricing_recommendations[platform];
+                  if (!price) return null;
+                  
+                  return (
+                    <div key={platform}>
+                      <div className="flex items-center justify-between bg-white/70 rounded p-2 mb-1">
+                        <span className="capitalize font-semibold text-amber-900">{platform}:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-amber-800">${price?.toLocaleString()}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 text-xs px-2"
+                            onClick={() => onImportData(`platform_price_${platform}`, price)}
+                          >
+                            <ArrowLeft className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
+                      {aiAnalysis.pricing_rationale?.[platform] && (
+                        <p className="text-xs text-amber-700 px-2 leading-relaxed">
+                          {aiAnalysis.pricing_rationale[platform]}
+                        </p>
+                      )}
                     </div>
-                    {aiAnalysis.pricing_rationale?.[platform] && (
-                      <p className="text-xs text-amber-700 px-2 leading-relaxed">
-                        {aiAnalysis.pricing_rationale[platform]}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

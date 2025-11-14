@@ -19,9 +19,11 @@ export default function WatchDetail() {
   const watchId = urlParams.get('id');
 
   const [editedData, setEditedData] = useState(null);
+  const [originalData, setOriginalData] = useState(null);
   const [showDescGen, setShowDescGen] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
@@ -47,14 +49,39 @@ export default function WatchDetail() {
   useEffect(() => {
     if (watch && !editedData) {
       setEditedData(watch);
+      setOriginalData(watch);
     }
   }, [watch]);
 
+  // Check for unsaved changes
+  useEffect(() => {
+    if (editedData && originalData) {
+      const hasChanges = JSON.stringify(editedData) !== JSON.stringify(originalData);
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [editedData, originalData]);
+
+  // Warn before leaving if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Watch.update(watchId, data),
-    onSuccess: () => {
+    onSuccess: (updatedWatch) => {
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       queryClient.invalidateQueries({ queryKey: ['watches'] });
+      setOriginalData(updatedWatch);
+      setHasUnsavedChanges(false);
       toast.success("Watch updated successfully!");
     },
   });
@@ -74,6 +101,16 @@ export default function WatchDetail() {
   const handleDelete = () => {
     if (confirm("Are you sure you want to delete this watch?")) {
       deleteMutation.mutate();
+    }
+  };
+
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      if (confirm("You have unsaved changes. Are you sure you want to leave?")) {
+        navigate(createPageUrl("Inventory"));
+      }
+    } else {
+      navigate(createPageUrl("Inventory"));
     }
   };
 
@@ -154,12 +191,12 @@ Calculate:
 - Current retail price
 
 Provide platform-specific pricing recommendations for:
-- eBay (competitive with sold listings)
-- Poshmark (consider their audience and 20% fee)
-- Etsy (vintage/artisan market positioning)
-- Mercari (competitive pricing for quick sale)
 - Whatnot (live auction starting price)
+- eBay (competitive with sold listings)
 - Shopify (retail storefront pricing)
+- Etsy (vintage/artisan market positioning)
+- Poshmark (consider their audience and 20% fee)
+- Mercari (competitive pricing for quick sale)
 
 For each platform price, provide a brief rationale explaining:
 - Comparable listings you found
@@ -183,23 +220,23 @@ Include market insights about demand, collectibility, and recent trends.`,
             pricing_recommendations: {
               type: "object",
               properties: {
-                ebay: { type: "number" },
-                poshmark: { type: "number" },
-                etsy: { type: "number" },
-                mercari: { type: "number" },
                 whatnot: { type: "number" },
-                shopify: { type: "number" }
+                ebay: { type: "number" },
+                shopify: { type: "number" },
+                etsy: { type: "number" },
+                poshmark: { type: "number" },
+                mercari: { type: "number" }
               }
             },
             pricing_rationale: {
               type: "object",
               properties: {
-                ebay: { type: "string" },
-                poshmark: { type: "string" },
-                etsy: { type: "string" },
-                mercari: { type: "string" },
                 whatnot: { type: "string" },
-                shopify: { type: "string" }
+                ebay: { type: "string" },
+                shopify: { type: "string" },
+                etsy: { type: "string" },
+                poshmark: { type: "string" },
+                mercari: { type: "string" }
               }
             }
           }
@@ -236,7 +273,23 @@ Include market insights about demand, collectibility, and recent trends.`,
   };
 
   const importAIData = (field, value) => {
-    if (field === "pricing") {
+    if (field === "basic_info_all") {
+      const updates = {};
+      if (value.brand) updates.brand = value.brand;
+      if (value.model) updates.model = value.model;
+      if (value.reference_number) updates.reference_number = value.reference_number;
+      if (value.serial_number) updates.serial_number = value.serial_number;
+      if (value.year) updates.year = value.year;
+      if (value.movement_type) updates.movement_type = value.movement_type;
+      if (value.case_material) updates.case_material = value.case_material;
+      if (value.case_size) updates.case_size = value.case_size;
+      
+      setEditedData({
+        ...editedData,
+        ...updates
+      });
+      toast.success("All basic info imported!");
+    } else if (field === "pricing") {
       setEditedData({
         ...editedData,
         platform_prices: value
@@ -274,14 +327,21 @@ Include market insights about demand, collectibility, and recent trends.`,
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(createPageUrl("Inventory"))}
-              className="hover:bg-slate-100"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Inventory
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                onClick={handleBack}
+                className="hover:bg-slate-100"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Inventory
+              </Button>
+              {hasUnsavedChanges && (
+                <span className="text-sm text-amber-600 font-medium">
+                  • Unsaved changes
+                </span>
+              )}
+            </div>
             <div className="flex gap-3">
               <Button
                 onClick={analyzeWithAI}
@@ -310,7 +370,7 @@ Include market insights about demand, collectibility, and recent trends.`,
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={updateMutation.isPending}
+                disabled={updateMutation.isPending || !hasUnsavedChanges}
                 className="bg-slate-800 hover:bg-slate-900"
               >
                 <Save className="w-4 h-4 mr-2" />
