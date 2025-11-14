@@ -288,7 +288,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
         <div className="pt-4 border-t">
           <h3 className="font-semibold text-slate-900 mb-4">Platform Pricing</h3>
           <div className="space-y-4">
-            {['ebay', 'poshmark', 'etsy', 'mercari', 'whatnot', 'shopify'].map(platform => {
+            {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map(platform => {
               const price = data.platform_prices?.[platform] || 0;
               const minPrice = calculateMinimumPrice(data.cost, platform);
               const { fees, net } = calculateFees(price, platform);
