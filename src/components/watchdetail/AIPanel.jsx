@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowLeft, CheckCircle2, DollarSign } from "lucide-react";
+import { Sparkles, ArrowLeft, CheckCircle2, DollarSign, TrendingUp, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function AIPanel({ aiAnalysis, onImportData }) {
@@ -159,14 +159,57 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
             </div>
           )}
 
-          {(aiAnalysis.estimated_value_low || aiAnalysis.estimated_value_high) && (
-            <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+          {(aiAnalysis.original_msrp || aiAnalysis.current_retail_price) && (
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-4 h-4 text-blue-700" />
+                <span className="text-xs font-semibold text-blue-900 uppercase">MSRP / Retail</span>
+              </div>
+              {aiAnalysis.original_msrp && (
+                <div className="mb-2">
+                  <span className="text-xs text-blue-600">Original MSRP:</span>
+                  <p className="text-lg font-bold text-blue-900">${aiAnalysis.original_msrp.toLocaleString()}</p>
+                </div>
+              )}
+              {aiAnalysis.current_retail_price && (
+                <div>
+                  <span className="text-xs text-blue-600">Current Retail:</span>
+                  <p className="text-lg font-bold text-blue-900">${aiAnalysis.current_retail_price.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {aiAnalysis.average_market_value && (
+            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
               <span className="text-xs font-semibold text-emerald-700 uppercase block mb-2">
-                Estimated Market Value
+                Average Market Value
               </span>
-              <p className="text-lg font-bold text-emerald-900">
-                ${aiAnalysis.estimated_value_low?.toLocaleString()} - ${aiAnalysis.estimated_value_high?.toLocaleString()}
-              </p>
+              <p className="text-2xl font-bold text-emerald-900">${aiAnalysis.average_market_value?.toLocaleString()}</p>
+              {(aiAnalysis.estimated_value_low || aiAnalysis.estimated_value_high) && (
+                <p className="text-sm text-emerald-700 mt-1">
+                  Range: ${aiAnalysis.estimated_value_low?.toLocaleString()} - ${aiAnalysis.estimated_value_high?.toLocaleString()}
+                </p>
+              )}
+            </div>
+          )}
+
+          {aiAnalysis.market_research_summary && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="w-4 h-4 text-blue-700" />
+                <span className="text-xs font-semibold text-blue-700 uppercase">Market Research</span>
+              </div>
+              <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{aiAnalysis.market_research_summary}</p>
+            </div>
+          )}
+
+          {aiAnalysis.comparable_listings && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <span className="text-xs font-semibold text-blue-700 uppercase block mb-2">
+                Comparable Listings
+              </span>
+              <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{aiAnalysis.comparable_listings}</p>
             </div>
           )}
 
@@ -189,23 +232,21 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   Import All
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {Object.entries(aiAnalysis.pricing_recommendations).map(([platform, price]) => (
-                  <div key={platform} className="flex items-center justify-between text-sm bg-white/50 rounded p-2">
-                    <span className="capitalize font-medium text-amber-900">{platform}:</span>
-                    <span className="font-bold text-amber-800">${price?.toLocaleString()}</span>
+                  <div key={platform}>
+                    <div className="flex items-center justify-between bg-white/70 rounded p-2 mb-1">
+                      <span className="capitalize font-semibold text-amber-900">{platform}:</span>
+                      <span className="font-bold text-amber-800">${price?.toLocaleString()}</span>
+                    </div>
+                    {aiAnalysis.pricing_rationale?.[platform] && (
+                      <p className="text-xs text-amber-700 px-2 leading-relaxed">
+                        {aiAnalysis.pricing_rationale[platform]}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {aiAnalysis.comparable_listings && (
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <span className="text-xs font-semibold text-blue-700 uppercase block mb-2">
-                Market Research
-              </span>
-              <p className="text-sm text-blue-800 leading-relaxed">{aiAnalysis.comparable_listings}</p>
             </div>
           )}
 

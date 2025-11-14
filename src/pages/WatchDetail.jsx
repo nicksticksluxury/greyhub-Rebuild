@@ -84,35 +84,77 @@ export default function WatchDetail() {
     setAnalyzing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze these vintage/luxury watch photos and provide comprehensive market research.
-        
-        PART 1 - IDENTIFICATION:
-        Identify the watch details including:
-        - Brand and specific model name
-        - Reference number (if visible on watch)
-        - Serial number (if visible on watch)
-        - Approximate year or era of manufacture
-        - Movement type (automatic, manual, quartz, etc.)
-        - Case material and size
-        - Condition assessment (be thorough and honest)
-        - Notable features, complications, or special characteristics
-        
-        PART 2 - MARKET RESEARCH:
-        Research current market prices by searching for:
-        1. Active listings of this exact model on major platforms (eBay, Chrono24, Bob's Watches, etc.)
-        2. Recently sold/completed listings of this model
-        3. Price variations based on condition
-        
-        Provide specific pricing recommendations for each platform:
-        - eBay: Competitive price based on current listings and sold data
-        - Poshmark: Price for fashion/casual watch market
-        - Etsy: Price for vintage/collector market  
-        - Mercari: Price for casual resale platform
-        - Whatnot: Price for live auction format
-        - Shopify: Price for dedicated watch e-commerce
-        
-        Consider condition, market demand, and platform audience when suggesting prices.
-        Be realistic and data-driven in your pricing recommendations.`,
+        prompt: `You are an expert watch appraiser and market analyst. Analyze these watch photos and conduct comprehensive market research.
+
+PART 1 - WATCH IDENTIFICATION:
+Carefully examine the watch photos and identify:
+- Brand and specific model name
+- Reference/catalog number (if visible on case, papers, or dial)
+- Serial number (if visible)
+- Year or era of manufacture
+- Movement type (automatic, manual, quartz, etc.)
+- Case material (stainless steel, gold, titanium, etc.)
+- Case size/diameter
+- Condition assessment (be thorough and note any wear, scratches, patina, etc.)
+- Notable features, complications, or special characteristics
+- Authenticity assessment
+
+PART 2 - COMPREHENSIVE MARKET RESEARCH:
+Research current market prices from multiple sources:
+
+A) RETAIL/MSRP:
+- Find the original MSRP (manufacturer's suggested retail price) if still in production
+- Check authorized dealer websites for current retail pricing
+- Note if the watch is discontinued
+
+B) SECONDARY MARKET RESEARCH:
+Search and analyze listings from:
+- eBay (active AND recently sold/completed listings)
+- Chrono24 (global watch marketplace)
+- WatchBox, Crown & Caliber, Bob's Watches (pre-owned dealers)
+- Reddit r/Watchexchange
+- Watchuseek forums
+- Other resale platforms
+
+For EACH source, note:
+- Average asking price
+- Actual sold prices (when available)
+- Price range (low to high)
+- Number of comparable listings found
+- Condition of comparable watches
+
+C) MARKET ANALYSIS:
+- Calculate the average market value from all sources
+- Identify pricing trends (increasing, stable, or declining value)
+- Note any price variations based on condition
+- Consider demand level and how quickly similar watches sell
+- Factor in any market premiums or discounts for this specific model
+
+PART 3 - PLATFORM-SPECIFIC PRICING RECOMMENDATIONS:
+Based on your market research, provide strategic pricing for each platform:
+
+**eBay**: Price competitively based on current listings and sold data. Factor in that buyers expect deals here.
+**Poshmark**: Price for casual fashion buyers who may pay premium for convenience.
+**Etsy**: Price for vintage/collector market - may command premium for rare/vintage pieces.
+**Mercari**: Price for quick sale on casual resale platform - typically lower than specialized watch sites.
+**Whatnot**: Price for live auction format - consider starting point that will generate bidding.
+**Shopify**: Price for your own e-commerce store - can be higher as you control the experience.
+
+For each platform, consider:
+- The typical buyer on that platform
+- Competition on that specific platform
+- Your acquisition cost and desired profit margin
+- Platform fees (already calculated separately)
+
+PART 4 - PRICING RATIONALE:
+Provide detailed explanation of how you arrived at each price recommendation, including:
+- What comparable listings influenced the pricing
+- Why prices vary between platforms
+- Market conditions and demand level
+- Confidence level in the pricing
+- Any risks or considerations (e.g., "prices trending down" or "rare variant may command premium")
+
+Be data-driven, specific, and transparent about your research methodology and findings.`,
         file_urls: editedData.photos,
         add_context_from_internet: true,
         response_json_schema: {
@@ -127,12 +169,16 @@ export default function WatchDetail() {
             case_material: { type: "string" },
             case_size: { type: "string" },
             condition_assessment: { type: "string" },
+            original_msrp: { type: "number" },
+            current_retail_price: { type: "number" },
             estimated_value_low: { type: "number" },
             estimated_value_high: { type: "number" },
+            average_market_value: { type: "number" },
             confidence_level: { type: "string" },
             notable_features: { type: "array", items: { type: "string" } },
             market_insights: { type: "string" },
             comparable_listings: { type: "string" },
+            market_research_summary: { type: "string" },
             pricing_recommendations: {
               type: "object",
               properties: {
@@ -142,6 +188,17 @@ export default function WatchDetail() {
                 mercari: { type: "number" },
                 whatnot: { type: "number" },
                 shopify: { type: "number" }
+              }
+            },
+            pricing_rationale: {
+              type: "object",
+              properties: {
+                ebay: { type: "string" },
+                poshmark: { type: "string" },
+                etsy: { type: "string" },
+                mercari: { type: "string" },
+                whatnot: { type: "string" },
+                shopify: { type: "string" }
               }
             }
           }
