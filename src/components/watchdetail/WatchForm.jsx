@@ -8,11 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { DollarSign, TrendingDown } from "lucide-react";
 
 const PLATFORM_FEES = {
-  ebay: { rate: 0.1365, description: "13.65% final value fee" },
+  ebay: { description: "15% under $5K, 9% over $5K" },
   poshmark: { rate: 0.20, flat: 2.95, threshold: 15, description: "20% on sales over $15, $2.95 under" },
   etsy: { rate: 0.065, payment: 0.03, fixed: 0.25, description: "6.5% transaction + 3% + $0.25 payment" },
   mercari: { rate: 0.129, description: "12.9% selling + payment fee" },
-  whatnot: { rate: 0.10, description: "10% commission" },
+  whatnot: { rate: 0.10, payment: 0.029, fixed: 0.30, description: "10% + 2.9% + $0.30 payment" },
   shopify: { rate: 0.029, fixed: 0.30, description: "2.9% + $0.30 payment processing" }
 };
 
@@ -23,10 +23,16 @@ function calculateFees(price, platform) {
   let fees = 0;
   
   switch(platform) {
+    case 'ebay':
+      fees = price < 5000 ? price * 0.15 : price * 0.09;
+      break;
     case 'poshmark':
       fees = price >= config.threshold ? price * config.rate : config.flat;
       break;
     case 'etsy':
+      fees = (price * config.rate) + (price * config.payment) + config.fixed;
+      break;
+    case 'whatnot':
       fees = (price * config.rate) + (price * config.payment) + config.fixed;
       break;
     case 'shopify':
@@ -49,10 +55,17 @@ function calculateMinimumPrice(cost, platform) {
   let minPrice = 0;
   
   switch(platform) {
+    case 'ebay':
+      // Use 15% rate for minimum calculation (conservative)
+      minPrice = cost / (1 - 0.15);
+      break;
     case 'poshmark':
       minPrice = cost / (1 - config.rate);
       break;
     case 'etsy':
+      minPrice = (cost + config.fixed) / (1 - config.rate - config.payment);
+      break;
+    case 'whatnot':
       minPrice = (cost + config.fixed) / (1 - config.rate - config.payment);
       break;
     case 'shopify':
