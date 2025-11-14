@@ -2,7 +2,8 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Sparkles, ArrowLeft, CheckCircle2, DollarSign } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function AIPanel({ aiAnalysis, onImportData }) {
   if (!aiAnalysis) {
@@ -15,7 +16,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           <h3 className="font-semibold text-slate-900">AI Analysis</h3>
         </div>
         <p className="text-sm text-slate-500 text-center py-8">
-          No AI analysis available for this watch
+          Click "Analyze with AI" to identify this watch and get market pricing recommendations
         </p>
       </Card>
     );
@@ -30,114 +31,227 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
         <h3 className="font-semibold text-slate-900">AI Suggestions</h3>
       </div>
 
-      <div className="space-y-4">
-        {aiAnalysis.identified_brand && (
-          <div className="p-3 bg-slate-50 rounded-lg">
-            <div className="flex items-start justify-between mb-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase">Brand</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 text-xs"
-                onClick={() => onImportData("brand")}
-              >
-                <ArrowLeft className="w-3 h-3 mr-1" />
-                Import
-              </Button>
+      <ScrollArea className="h-[calc(100vh-250px)]">
+        <div className="space-y-4 pr-4">
+          {aiAnalysis.identified_brand && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Brand</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("brand", aiAnalysis.identified_brand)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.identified_brand}</p>
             </div>
-            <p className="text-sm font-semibold text-slate-900">{aiAnalysis.identified_brand}</p>
-          </div>
-        )}
+          )}
 
-        {aiAnalysis.identified_model && (
-          <div className="p-3 bg-slate-50 rounded-lg">
-            <div className="flex items-start justify-between mb-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase">Model</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 text-xs"
-                onClick={() => onImportData("model")}
-              >
-                <ArrowLeft className="w-3 h-3 mr-1" />
-                Import
-              </Button>
+          {aiAnalysis.identified_model && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Model</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("model", aiAnalysis.identified_model)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.identified_model}</p>
             </div>
-            <p className="text-sm font-semibold text-slate-900">{aiAnalysis.identified_model}</p>
-          </div>
-        )}
+          )}
 
-        {aiAnalysis.estimated_year && (
-          <div className="p-3 bg-slate-50 rounded-lg">
-            <div className="flex items-start justify-between mb-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase">Year</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 text-xs"
-                onClick={() => onImportData("year")}
-              >
-                <ArrowLeft className="w-3 h-3 mr-1" />
-                Import
-              </Button>
+          {aiAnalysis.reference_number && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Reference</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("reference_number", aiAnalysis.reference_number)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.reference_number}</p>
             </div>
-            <p className="text-sm font-semibold text-slate-900">{aiAnalysis.estimated_year}</p>
-          </div>
-        )}
+          )}
 
-        {(aiAnalysis.estimated_value_low || aiAnalysis.estimated_value_high) && (
-          <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-            <span className="text-xs font-semibold text-emerald-700 uppercase block mb-2">
-              Estimated Value
-            </span>
-            <p className="text-lg font-bold text-emerald-900">
-              ${aiAnalysis.estimated_value_low?.toLocaleString()} - ${aiAnalysis.estimated_value_high?.toLocaleString()}
-            </p>
-          </div>
-        )}
+          {aiAnalysis.serial_number && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Serial</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("serial_number", aiAnalysis.serial_number)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.serial_number}</p>
+            </div>
+          )}
 
-        {aiAnalysis.condition_assessment && (
-          <div className="p-3 bg-slate-50 rounded-lg">
-            <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
-              Condition Assessment
-            </span>
-            <p className="text-sm text-slate-600 leading-relaxed">{aiAnalysis.condition_assessment}</p>
-          </div>
-        )}
+          {aiAnalysis.estimated_year && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Year</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("year", aiAnalysis.estimated_year)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.estimated_year}</p>
+            </div>
+          )}
 
-        {aiAnalysis.notable_features && aiAnalysis.notable_features.length > 0 && (
-          <div className="p-3 bg-slate-50 rounded-lg">
-            <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
-              Notable Features
-            </span>
-            <ul className="space-y-1">
-              {aiAnalysis.notable_features.map((feature, index) => (
-                <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+          {aiAnalysis.case_material && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Case Material</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("case_material", aiAnalysis.case_material)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.case_material}</p>
+            </div>
+          )}
 
-        {aiAnalysis.market_insights && (
-          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-            <span className="text-xs font-semibold text-amber-700 uppercase block mb-2">
-              Market Insights
-            </span>
-            <p className="text-sm text-amber-800 leading-relaxed">{aiAnalysis.market_insights}</p>
-          </div>
-        )}
+          {aiAnalysis.case_size && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Case Size</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() => onImportData("case_size", aiAnalysis.case_size)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import
+                </Button>
+              </div>
+              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.case_size}</p>
+            </div>
+          )}
 
-        {aiAnalysis.confidence_level && (
-          <div className="text-center pt-2">
-            <Badge variant="outline" className="bg-white">
-              {aiAnalysis.confidence_level} Confidence
-            </Badge>
-          </div>
-        )}
-      </div>
+          {(aiAnalysis.estimated_value_low || aiAnalysis.estimated_value_high) && (
+            <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+              <span className="text-xs font-semibold text-emerald-700 uppercase block mb-2">
+                Estimated Market Value
+              </span>
+              <p className="text-lg font-bold text-emerald-900">
+                ${aiAnalysis.estimated_value_low?.toLocaleString()} - ${aiAnalysis.estimated_value_high?.toLocaleString()}
+              </p>
+            </div>
+          )}
+
+          {aiAnalysis.pricing_recommendations && Object.keys(aiAnalysis.pricing_recommendations).length > 0 && (
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-amber-700" />
+                  <span className="text-xs font-semibold text-amber-900 uppercase">
+                    Pricing Recommendations
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs text-amber-700 hover:text-amber-900"
+                  onClick={() => onImportData("pricing", aiAnalysis.pricing_recommendations)}
+                >
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Import All
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {Object.entries(aiAnalysis.pricing_recommendations).map(([platform, price]) => (
+                  <div key={platform} className="flex items-center justify-between text-sm bg-white/50 rounded p-2">
+                    <span className="capitalize font-medium text-amber-900">{platform}:</span>
+                    <span className="font-bold text-amber-800">${price?.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {aiAnalysis.comparable_listings && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <span className="text-xs font-semibold text-blue-700 uppercase block mb-2">
+                Market Research
+              </span>
+              <p className="text-sm text-blue-800 leading-relaxed">{aiAnalysis.comparable_listings}</p>
+            </div>
+          )}
+
+          {aiAnalysis.condition_assessment && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
+                Condition Assessment
+              </span>
+              <p className="text-sm text-slate-600 leading-relaxed">{aiAnalysis.condition_assessment}</p>
+            </div>
+          )}
+
+          {aiAnalysis.notable_features && aiAnalysis.notable_features.length > 0 && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <span className="text-xs font-semibold text-slate-500 uppercase block mb-2">
+                Notable Features
+              </span>
+              <ul className="space-y-1">
+                {aiAnalysis.notable_features.map((feature, index) => (
+                  <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {aiAnalysis.market_insights && (
+            <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <span className="text-xs font-semibold text-amber-700 uppercase block mb-2">
+                Market Insights
+              </span>
+              <p className="text-sm text-amber-800 leading-relaxed">{aiAnalysis.market_insights}</p>
+            </div>
+          )}
+
+          {aiAnalysis.confidence_level && (
+            <div className="text-center pt-2">
+              <Badge variant="outline" className="bg-white">
+                {aiAnalysis.confidence_level} Confidence
+              </Badge>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </Card>
   );
 }

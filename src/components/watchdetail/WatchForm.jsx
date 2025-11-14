@@ -4,6 +4,66 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { DollarSign, TrendingDown } from "lucide-react";
+
+const PLATFORM_FEES = {
+  ebay: { rate: 0.1365, description: "13.65% final value fee" },
+  poshmark: { rate: 0.20, flat: 2.95, threshold: 15, description: "20% on sales over $15, $2.95 under" },
+  etsy: { rate: 0.065, payment: 0.03, fixed: 0.25, description: "6.5% transaction + 3% + $0.25 payment" },
+  mercari: { rate: 0.129, description: "12.9% selling + payment fee" },
+  whatnot: { rate: 0.10, description: "10% commission" },
+  shopify: { rate: 0.029, fixed: 0.30, description: "2.9% + $0.30 payment processing" }
+};
+
+function calculateFees(price, platform) {
+  if (!price) return { fees: 0, net: 0 };
+  
+  const config = PLATFORM_FEES[platform];
+  let fees = 0;
+  
+  switch(platform) {
+    case 'poshmark':
+      fees = price >= config.threshold ? price * config.rate : config.flat;
+      break;
+    case 'etsy':
+      fees = (price * config.rate) + (price * config.payment) + config.fixed;
+      break;
+    case 'shopify':
+      fees = (price * config.rate) + config.fixed;
+      break;
+    default:
+      fees = price * config.rate;
+  }
+  
+  return {
+    fees: fees,
+    net: price - fees
+  };
+}
+
+function calculateMinimumPrice(cost, platform) {
+  if (!cost) return 0;
+  
+  const config = PLATFORM_FEES[platform];
+  let minPrice = 0;
+  
+  switch(platform) {
+    case 'poshmark':
+      minPrice = cost / (1 - config.rate);
+      break;
+    case 'etsy':
+      minPrice = (cost + config.fixed) / (1 - config.rate - config.payment);
+      break;
+    case 'shopify':
+      minPrice = (cost + config.fixed) / (1 - config.rate);
+      break;
+    default:
+      minPrice = cost / (1 - config.rate);
+  }
+  
+  return Math.ceil(minPrice);
+}
 
 export default function WatchForm({ data, onChange, sources, auctions }) {
   const updateField = (field, value) => {
@@ -214,24 +274,67 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
 
         <div className="pt-4 border-t">
           <h3 className="font-semibold text-slate-900 mb-4">Platform Pricing</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {['ebay', 'poshmark', 'etsy', 'mercari', 'whatnot', 'shopify'].map(platform => (
-              <div key={platform}>
-                <Label className="capitalize">{platform}</Label>
-                <Input
-                  type="number"
-                  value={data.platform_prices?.[platform] || ""}
-                  onChange={(e) => updatePlatformPrice(platform, e.target.value)}
-                  placeholder={`${platform} price`}
-                />
-              </div>
-            ))}
+          <div className="space-y-4">
+            {['ebay', 'poshmark', 'etsy', 'mercari', 'whatnot', 'shopify'].map(platform => {
+              const price = data.platform_prices?.[platform] || 0;
+              const minPrice = calculateMinimumPrice(data.cost, platform);
+              const { fees, net } = calculateFees(price, platform);
+              
+              return (
+                <div key={platform} className="p-4 bg-slate-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <Label className="capitalize text-base font-semibold">{platform}</Label>
+                      <p className="text-xs text-slate-500">{PLATFORM_FEES[platform].description}</p>
+                    </div>
+                    {data.cost > 0 && (
+                      <Badge variant="outline" className="bg-white text-amber-700 border-amber-300">
+                        <TrendingDown className="w-3 h-3 mr-1" />
+                        Min: ${minPrice}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <Input
+                    type="number"
+                    value={price || ""}
+                    onChange={(e) => updatePlatformPrice(platform, e.target.value)}
+                    placeholder={`${platform} price`}
+                    className="mb-2"
+                  />
+                  
+                  {price > 0 && (
+                    <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                      <div className="flex items-center justify-between p-2 bg-red-50 rounded border border-red-200">
+                        <span className="text-red-700">Fees:</span>
+                        <span className="font-semibold text-red-800">-${fees.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                        <span className="text-green-700 flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />
+                          Net:
+                        </span>
+                        <span className="font-semibold text-green-800">${net.toFixed(2)}</span>
+                      </div>
+                      {data.cost > 0 && (
+                        <div className="col-span-2 text-center p-2 bg-slate-100 rounded">
+                          <span className="text-slate-600">Profit: </span>
+                          <span className={`font-bold ${net - data.cost >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                            ${(net - data.cost).toFixed(2)} ({((net - data.cost) / data.cost * 100).toFixed(1)}%)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {data.cost && data.retail_price && (
           <div className="p-4 bg-slate-800 text-white rounded-lg mt-6">
-            <h3 className="font-semibold mb-2">Profit Analysis</h3>
+            <h3 className="font-semibold mb-2">Overall Profit Analysis</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-slate-300">Profit:</span>

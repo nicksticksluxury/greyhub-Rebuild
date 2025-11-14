@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Save, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ImageGallery from "../components/watchdetail/ImageGallery";
@@ -19,6 +19,7 @@ export default function WatchDetail() {
 
   const [editedData, setEditedData] = useState(null);
   const [showDescGen, setShowDescGen] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
@@ -74,12 +75,105 @@ export default function WatchDetail() {
     }
   };
 
-  const importAIData = (field) => {
-    const aiValue = watch.ai_analysis?.[field];
-    if (aiValue) {
-      setEditedData({ ...editedData, [field]: aiValue });
-      toast.success("Data imported from AI analysis");
+  const analyzeWithAI = async () => {
+    if (!editedData.photos || editedData.photos.length === 0) {
+      toast.error("Please add photos first");
+      return;
     }
+
+    setAnalyzing(true);
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Analyze these vintage/luxury watch photos and provide comprehensive market research.
+        
+        PART 1 - IDENTIFICATION:
+        Identify the watch details including:
+        - Brand and specific model name
+        - Reference number (if visible on watch)
+        - Serial number (if visible on watch)
+        - Approximate year or era of manufacture
+        - Movement type (automatic, manual, quartz, etc.)
+        - Case material and size
+        - Condition assessment (be thorough and honest)
+        - Notable features, complications, or special characteristics
+        
+        PART 2 - MARKET RESEARCH:
+        Research current market prices by searching for:
+        1. Active listings of this exact model on major platforms (eBay, Chrono24, Bob's Watches, etc.)
+        2. Recently sold/completed listings of this model
+        3. Price variations based on condition
+        
+        Provide specific pricing recommendations for each platform:
+        - eBay: Competitive price based on current listings and sold data
+        - Poshmark: Price for fashion/casual watch market
+        - Etsy: Price for vintage/collector market  
+        - Mercari: Price for casual resale platform
+        - Whatnot: Price for live auction format
+        - Shopify: Price for dedicated watch e-commerce
+        
+        Consider condition, market demand, and platform audience when suggesting prices.
+        Be realistic and data-driven in your pricing recommendations.`,
+        file_urls: editedData.photos,
+        add_context_from_internet: true,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            identified_brand: { type: "string" },
+            identified_model: { type: "string" },
+            reference_number: { type: "string" },
+            serial_number: { type: "string" },
+            estimated_year: { type: "string" },
+            movement_type: { type: "string" },
+            case_material: { type: "string" },
+            case_size: { type: "string" },
+            condition_assessment: { type: "string" },
+            estimated_value_low: { type: "number" },
+            estimated_value_high: { type: "number" },
+            confidence_level: { type: "string" },
+            notable_features: { type: "array", items: { type: "string" } },
+            market_insights: { type: "string" },
+            comparable_listings: { type: "string" },
+            pricing_recommendations: {
+              type: "object",
+              properties: {
+                ebay: { type: "number" },
+                poshmark: { type: "number" },
+                etsy: { type: "number" },
+                mercari: { type: "number" },
+                whatnot: { type: "number" },
+                shopify: { type: "number" }
+              }
+            }
+          }
+        }
+      });
+
+      const updatedWatch = {
+        ...editedData,
+        ai_analysis: result
+      };
+      
+      setEditedData(updatedWatch);
+      await base44.entities.Watch.update(watchId, { ai_analysis: result });
+      queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
+      toast.success("AI analysis complete!");
+    } catch (error) {
+      console.error("Error analyzing watch:", error);
+      toast.error("Failed to analyze watch. Please try again.");
+    }
+    setAnalyzing(false);
+  };
+
+  const importAIData = (field, value) => {
+    if (field === "pricing") {
+      setEditedData({
+        ...editedData,
+        platform_prices: value
+      });
+    } else {
+      setEditedData({ ...editedData, [field]: value });
+    }
+    toast.success("Data imported from AI analysis");
   };
 
   if (isLoading || !editedData) {
@@ -107,6 +201,23 @@ export default function WatchDetail() {
               Back to Inventory
             </Button>
             <div className="flex gap-3">
+              <Button
+                onClick={analyzeWithAI}
+                disabled={analyzing || !editedData.photos?.length}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+              >
+                {analyzing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Analyze with AI
+                  </>
+                )}
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleDelete}
@@ -179,7 +290,7 @@ export default function WatchDetail() {
 
           <div className="lg:col-span-3">
             <AIPanel 
-              aiAnalysis={watch.ai_analysis}
+              aiAnalysis={editedData.ai_analysis}
               onImportData={importAIData}
             />
           </div>
