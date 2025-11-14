@@ -82,14 +82,16 @@ export default function WatchDetail() {
     }
 
     setAnalyzing(true);
+    toast.info("Starting comprehensive market research... This may take 30-60 seconds.");
+    
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert watch appraiser and market analyst. Analyze these watch photos and conduct comprehensive market research.
+        prompt: `You are an expert watch appraiser and market analyst. Analyze these watch photos and conduct comprehensive internet research to provide accurate market data.
 
 PART 1 - WATCH IDENTIFICATION:
 Carefully examine the watch photos and identify:
 - Brand and specific model name
-- Reference/catalog number (if visible on case, papers, or dial)
+- Reference/catalog number (if visible)
 - Serial number (if visible)
 - Year or era of manufacture
 - Movement type (automatic, manual, quartz, etc.)
@@ -97,64 +99,54 @@ Carefully examine the watch photos and identify:
 - Case size/diameter
 - Condition assessment (be thorough and note any wear, scratches, patina, etc.)
 - Notable features, complications, or special characteristics
-- Authenticity assessment
 
-PART 2 - COMPREHENSIVE MARKET RESEARCH:
-Research current market prices from multiple sources:
+PART 2 - COMPREHENSIVE INTERNET MARKET RESEARCH:
+YOU MUST search the internet for real market data. Find and analyze:
 
-A) RETAIL/MSRP:
-- Find the original MSRP (manufacturer's suggested retail price) if still in production
+A) RETAIL/MSRP PRICING:
+- Search for the original MSRP (manufacturer's suggested retail price)
 - Check authorized dealer websites for current retail pricing
-- Note if the watch is discontinued
+- Note if the watch is discontinued or still in production
 
-B) SECONDARY MARKET RESEARCH:
-Search and analyze listings from:
-- eBay (active AND recently sold/completed listings)
-- Chrono24 (global watch marketplace)
-- WatchBox, Crown & Caliber, Bob's Watches (pre-owned dealers)
-- Reddit r/Watchexchange
-- Watchuseek forums
-- Other resale platforms
+B) SECONDARY MARKET RESEARCH - SEARCH THESE SITES:
+- eBay: Search for both active listings AND completed/sold listings for this exact model
+- Chrono24.com: Global watch marketplace - search for this model
+- WatchBox.com, Crown & Caliber, Bob's Watches: Search their inventory
+- Reddit r/Watchexchange: Search for recent sales
+- Watchuseek forums: Check marketplace
 
-For EACH source, note:
+For EACH source you find, note:
 - Average asking price
-- Actual sold prices (when available)
+- Actual sold prices (most important!)
 - Price range (low to high)
 - Number of comparable listings found
 - Condition of comparable watches
 
-C) MARKET ANALYSIS:
-- Calculate the average market value from all sources
-- Identify pricing trends (increasing, stable, or declining value)
-- Note any price variations based on condition
-- Consider demand level and how quickly similar watches sell
-- Factor in any market premiums or discounts for this specific model
+C) CALCULATE MARKET VALUE:
+- Take the average of all sold prices you found
+- Calculate the overall price range
+- Identify if prices are trending up, down, or stable
+- Note demand level (how quickly similar watches sell)
 
-PART 3 - PLATFORM-SPECIFIC PRICING RECOMMENDATIONS:
-Based on your market research, provide strategic pricing for each platform:
+PART 3 - PLATFORM-SPECIFIC PRICING:
+Based on real market data, recommend strategic pricing for each platform:
 
-**eBay**: Price competitively based on current listings and sold data. Factor in that buyers expect deals here.
-**Poshmark**: Price for casual fashion buyers who may pay premium for convenience.
-**Etsy**: Price for vintage/collector market - may command premium for rare/vintage pieces.
-**Mercari**: Price for quick sale on casual resale platform - typically lower than specialized watch sites.
-**Whatnot**: Price for live auction format - consider starting point that will generate bidding.
-**Shopify**: Price for your own e-commerce store - can be higher as you control the experience.
-
-For each platform, consider:
-- The typical buyer on that platform
-- Competition on that specific platform
-- Your acquisition cost and desired profit margin
-- Platform fees (already calculated separately)
+**eBay**: Consider actual sold prices on eBay. Price competitively.
+**Poshmark**: Casual fashion buyers, can be 10-15% higher than eBay.
+**Etsy**: Vintage/collector market - may command premium for rare pieces.
+**Mercari**: Quick sale platform - typically 10-20% lower than eBay.
+**Whatnot**: Live auction format - suggest starting bid.
+**Shopify**: Your own store - can be highest price with good margin.
 
 PART 4 - PRICING RATIONALE:
-Provide detailed explanation of how you arrived at each price recommendation, including:
-- What comparable listings influenced the pricing
-- Why prices vary between platforms
-- Market conditions and demand level
-- Confidence level in the pricing
-- Any risks or considerations (e.g., "prices trending down" or "rare variant may command premium")
+For EACH platform price, explain:
+- Which specific comparable listings you found and their prices
+- How many sold listings you analyzed
+- Why you chose this price for this specific platform
+- Market conditions affecting the price
+- Your confidence level (high/medium/low) based on amount of data found
 
-Be data-driven, specific, and transparent about your research methodology and findings.`,
+IMPORTANT: You MUST provide actual numbers based on real internet research. Do not make up prices. If you cannot find data, say so explicitly in the rationale.`,
         file_urls: editedData.photos,
         add_context_from_internet: true,
         response_json_schema: {
@@ -205,6 +197,8 @@ Be data-driven, specific, and transparent about your research methodology and fi
         }
       });
 
+      console.log("AI Analysis Result:", result);
+
       const updatedWatch = {
         ...editedData,
         ai_analysis: result
@@ -213,7 +207,7 @@ Be data-driven, specific, and transparent about your research methodology and fi
       setEditedData(updatedWatch);
       await base44.entities.Watch.update(watchId, { ai_analysis: result });
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
-      toast.success("AI analysis complete!");
+      toast.success("AI analysis complete! Check the AI panel on the right for market research data.");
     } catch (error) {
       console.error("Error analyzing watch:", error);
       toast.error("Failed to analyze watch. Please try again.");
@@ -266,7 +260,7 @@ Be data-driven, specific, and transparent about your research methodology and fi
                 {analyzing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing...
+                    Researching Market...
                   </>
                 ) : (
                   <>
