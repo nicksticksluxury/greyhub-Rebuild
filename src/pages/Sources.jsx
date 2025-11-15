@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import SourceCard from "../components/sources/SourceCard";
 import SourceForm from "../components/sources/SourceForm";
 
@@ -87,16 +89,27 @@ export default function Sources() {
               <h1 className="text-3xl font-bold text-slate-900">Sources & Suppliers</h1>
               <p className="text-slate-500 mt-1">{sources.length} sources</p>
             </div>
-            <Button
-              onClick={() => {
-                setEditingSource(null);
-                setShowForm(!showForm);
-              }}
-              className="bg-slate-800 hover:bg-slate-900 shadow-md"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Source
-            </Button>
+            <div className="flex gap-3">
+              <Link to={createPageUrl("ImportSources")}>
+                <Button
+                  variant="outline"
+                  className="border-slate-300 hover:bg-slate-50"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import Sources
+                </Button>
+              </Link>
+              <Button
+                onClick={() => {
+                  setEditingSource(null);
+                  setShowForm(!showForm);
+                }}
+                className="bg-slate-800 hover:bg-slate-900 shadow-md"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Source
+              </Button>
+            </div>
           </div>
         </div>
       </div>
