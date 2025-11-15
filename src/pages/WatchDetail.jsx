@@ -124,6 +124,23 @@ export default function WatchDetail() {
     setAnalyzing(true);
     
     try {
+      // Build context from manually entered data
+      const manualContext = [];
+      if (editedData.brand && editedData.brand !== "Unknown") manualContext.push(`Brand: ${editedData.brand}`);
+      if (editedData.model) manualContext.push(`Model: ${editedData.model}`);
+      if (editedData.reference_number) manualContext.push(`Reference: ${editedData.reference_number}`);
+      if (editedData.serial_number) manualContext.push(`Serial: ${editedData.serial_number}`);
+      if (editedData.year) manualContext.push(`Year: ${editedData.year}`);
+      if (editedData.condition) manualContext.push(`Condition: ${editedData.condition}`);
+      if (editedData.case_material) manualContext.push(`Case Material: ${editedData.case_material}`);
+      if (editedData.case_size) manualContext.push(`Case Size: ${editedData.case_size}`);
+      if (editedData.movement_type) manualContext.push(`Movement: ${editedData.movement_type}`);
+      if (editedData.description) manualContext.push(`Description: ${editedData.description}`);
+
+      const contextString = manualContext.length > 0 
+        ? `\n\nIMPORTANT: The user has already provided the following information about this watch:\n${manualContext.join('\n')}\n\nUse this information to guide your analysis, but still examine the photos for additional details or to verify the provided information.`
+        : '';
+
       // STEP 1: Identify the watch from photos (NO internet search)
       setAnalysisStep("Step 1/2: Identifying watch from photos...");
       toast.info("Step 1/2: Analyzing photos to identify the watch...");
@@ -143,7 +160,7 @@ Carefully examine:
 - Overall condition (examine wear, scratches, patina)
 - Notable features (complications, special dials, limited edition markers, etc.)
 
-Be specific and detailed. If you cannot determine something from the photos, indicate "Unknown" or "Not visible".`,
+Be specific and detailed. If you cannot determine something from the photos, indicate "Unknown" or "Not visible".${contextString}`,
         file_urls: editedData.photos,
         add_context_from_internet: false,
         response_json_schema: {
@@ -170,7 +187,13 @@ Be specific and detailed. If you cannot determine something from the photos, ind
       setAnalysisStep("Step 2/2: Researching market prices and comparables...");
       toast.info("Step 2/2: Researching market prices online (this may take 30-60 seconds)...");
 
-      const watchDescription = `${identificationResult.identified_brand || 'Unknown brand'} ${identificationResult.identified_model || 'Unknown model'}${identificationResult.reference_number ? `, reference ${identificationResult.reference_number}` : ''}${identificationResult.estimated_year ? ` from ${identificationResult.estimated_year}` : ''}`;
+      // Use manually entered data if available, otherwise use AI identification
+      const finalBrand = editedData.brand && editedData.brand !== "Unknown" ? editedData.brand : identificationResult.identified_brand;
+      const finalModel = editedData.model || identificationResult.identified_model;
+      const finalRef = editedData.reference_number || identificationResult.reference_number;
+      const finalYear = editedData.year || identificationResult.estimated_year;
+
+      const watchDescription = `${finalBrand || 'Unknown brand'} ${finalModel || 'Unknown model'}${finalRef ? `, reference ${finalRef}` : ''}${finalYear ? ` from ${finalYear}` : ''}`;
 
       const marketResearchResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a watch market analyst. Research current market prices for this watch: ${watchDescription}
@@ -204,7 +227,7 @@ For each platform price, provide a brief rationale explaining:
 - Why this price makes sense for that platform
 - Market positioning strategy
 
-Include market insights about demand, collectibility, and recent trends.`,
+Include market insights about demand, collectibility, and recent trends.${contextString}`,
         file_urls: [],
         add_context_from_internet: true,
         response_json_schema: {
