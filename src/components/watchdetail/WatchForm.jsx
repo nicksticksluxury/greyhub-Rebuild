@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -120,6 +121,12 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
   };
 
   const saleStats = calculateSaleStats();
+
+  // Get the selected source to find order numbers
+  const selectedSource = sources.find(s => s.id === data.source_id);
+  const orderNumbers = selectedSource 
+    ? sources.filter(s => s.name === selectedSource.name).map(s => s.order_number)
+    : [];
 
   return (
     <Tabs defaultValue="basic" className="w-full">
@@ -247,17 +254,19 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label>Source</Label>
+            <Label className="text-red-600">Source *</Label>
             <Select
               value={data.source_id || ""}
               onValueChange={(value) => updateField("source_id", value)}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select source" />
+              <SelectTrigger className={!data.source_id ? "border-red-300" : ""}>
+                <SelectValue placeholder="Select source (required)" />
               </SelectTrigger>
               <SelectContent>
                 {sources.map(source => (
-                  <SelectItem key={source.id} value={source.id}>{source.name}</SelectItem>
+                  <SelectItem key={source.id} value={source.id}>
+                    {source.name} - {source.order_number}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

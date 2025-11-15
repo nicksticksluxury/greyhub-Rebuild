@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Upload, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -15,15 +13,8 @@ import PhotoUpload from "../components/addwatch/PhotoUpload";
 export default function AddWatch() {
   const navigate = useNavigate();
   const [photos, setPhotos] = useState([]);
-  const [sourceId, setSourceId] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
-
-  const { data: sources = [] } = useQuery({
-    queryKey: ['sources'],
-    queryFn: () => base44.entities.Source.list(),
-    initialData: [],
-  });
 
   const handlePhotosSelected = async (files) => {
     setPhotos([...photos, ...files]);
@@ -56,7 +47,6 @@ export default function AddWatch() {
 
       const watchData = {
         photos: uploadedUrls,
-        source_id: sourceId || undefined,
         brand: "Unknown"
       };
 
@@ -80,33 +70,16 @@ export default function AddWatch() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">Add New Watch</h1>
-          <p className="text-slate-500 mt-1">Upload photos and select source, then analyze with AI on the details page</p>
+          <p className="text-slate-500 mt-1">Upload photos, then add details and analyze with AI on the next page</p>
         </div>
 
         <Card className="p-6 mb-6">
-          <div className="mb-6">
-            <Label>Source / Supplier</Label>
-            <Select value={sourceId} onValueChange={setSourceId}>
-              <SelectTrigger className="mt-2">
-                <SelectValue placeholder="Select source (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={null}>None</SelectItem>
-                {sources.map(source => (
-                  <SelectItem key={source.id} value={source.id}>{source.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label className="mb-3 block">Watch Photos</Label>
-            <PhotoUpload 
-              photos={photos}
-              onPhotosSelected={handlePhotosSelected}
-              onRemovePhoto={removePhoto}
-            />
-          </div>
+          <Label className="mb-3 block">Watch Photos</Label>
+          <PhotoUpload 
+            photos={photos}
+            onPhotosSelected={handlePhotosSelected}
+            onRemovePhoto={removePhoto}
+          />
         </Card>
 
         {uploading && (
