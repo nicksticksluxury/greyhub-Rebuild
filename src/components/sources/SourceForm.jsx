@@ -7,26 +7,18 @@ import { Button } from "@/components/ui/button";
 export default function SourceForm({ source, onSubmit, onCancel }) {
   const [formData, setFormData] = React.useState(source || {
     name: "",
-    order_number: "",
     website: "",
     website_handle: "",
     primary_contact: "",
     email: "",
     phone: "",
     address: "",
-    notes: "",
-    cost: "",
-    initial_quantity: ""
+    notes: ""
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const dataToSubmit = {
-      ...formData,
-      cost: formData.cost ? parseFloat(formData.cost) : undefined,
-      initial_quantity: formData.initial_quantity ? parseInt(formData.initial_quantity) : undefined
-    };
-    onSubmit(dataToSubmit);
+    onSubmit(formData);
   };
 
   return (
@@ -41,42 +33,10 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
           <Input
             value={formData.name}
             onChange={(e) => setFormData({...formData, name: e.target.value})}
-            placeholder="e.g., eBay JohnDoe"
+            placeholder="e.g., Watch Supplier Inc."
             required
           />
         </div>
-        <div>
-          <Label>Order Number</Label>
-          <Input
-            value={formData.order_number}
-            onChange={(e) => setFormData({...formData, order_number: e.target.value})}
-            placeholder="e.g., 001"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <Label>Total Cost</Label>
-          <Input
-            type="number"
-            value={formData.cost}
-            onChange={(e) => setFormData({...formData, cost: e.target.value})}
-            placeholder="Total cost for this shipment"
-          />
-        </div>
-        <div>
-          <Label>Initial Quantity</Label>
-          <Input
-            type="number"
-            value={formData.initial_quantity}
-            onChange={(e) => setFormData({...formData, initial_quantity: e.target.value})}
-            placeholder="Number of watches received"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <Label>Website</Label>
           <Input
@@ -85,6 +45,9 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
             placeholder="https://..."
           />
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <Label>Website Handle</Label>
           <Input
@@ -93,9 +56,6 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
             placeholder="Username on platform"
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <Label>Primary Contact</Label>
           <Input
@@ -104,6 +64,9 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
             placeholder="Contact name"
           />
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <Label>Email</Label>
           <Input
@@ -113,9 +76,6 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
             placeholder="email@example.com"
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <Label>Phone</Label>
           <Input
@@ -124,14 +84,15 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
             placeholder="Phone number"
           />
         </div>
-        <div>
-          <Label>Address</Label>
-          <Input
-            value={formData.address}
-            onChange={(e) => setFormData({...formData, address: e.target.value})}
-            placeholder="Physical address"
-          />
-        </div>
+      </div>
+
+      <div className="mb-4">
+        <Label>Address</Label>
+        <Input
+          value={formData.address}
+          onChange={(e) => setFormData({...formData, address: e.target.value})}
+          placeholder="Physical address"
+        />
       </div>
 
       <div className="mb-4">
