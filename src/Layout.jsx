@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,11 @@ const navigationItems = [
     title: "Inventory",
     url: createPageUrl("Inventory"),
     icon: LayoutList,
+  },
+  {
+    title: "Sold",
+    url: createPageUrl("SoldInventory"),
+    icon: DollarSign,
   },
   {
     title: "Add Watch",

@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, TrendingDown } from "lucide-react";
+import { DollarSign, TrendingDown, TrendingUp, Percent } from "lucide-react";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -92,6 +92,34 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
       }
     });
   };
+
+  // Calculate sale statistics
+  const calculateSaleStats = () => {
+    if (!data.sold_price || !data.sold_platform) return null;
+
+    const soldPrice = data.sold_price;
+    const cost = data.cost || 0;
+    const platform = data.sold_platform.toLowerCase();
+    
+    const { fees, net } = calculateFees(soldPrice, platform);
+    const profit = net - cost;
+    const margin = cost > 0 ? (profit / cost) * 100 : 0;
+    const markup = cost > 0 ? ((soldPrice - cost) / cost) * 100 : 0;
+    const roi = cost > 0 ? (profit / cost) * 100 : 0;
+
+    return {
+      soldPrice,
+      cost,
+      fees,
+      net,
+      profit,
+      margin,
+      markup,
+      roi
+    };
+  };
+
+  const saleStats = calculateSaleStats();
 
   return (
     <Tabs defaultValue="basic" className="w-full">
@@ -402,15 +430,101 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
               </div>
               <div>
                 <Label>Sold Platform</Label>
-                <Input
+                <Select
                   value={data.sold_platform || ""}
-                  onChange={(e) => updateField("sold_platform", e.target.value)}
-                  placeholder="Platform"
-                />
+                  onValueChange={(value) => updateField("sold_platform", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select platform" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ebay">eBay</SelectItem>
+                    <SelectItem value="poshmark">Poshmark</SelectItem>
+                    <SelectItem value="etsy">Etsy</SelectItem>
+                    <SelectItem value="mercari">Mercari</SelectItem>
+                    <SelectItem value="whatnot">Whatnot</SelectItem>
+                    <SelectItem value="shopify">Shopify</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </>
           )}
         </div>
+
+        {saleStats && (
+          <div className="mt-6 p-6 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-slate-700 shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-lg font-bold text-white">Sale Financial Analysis</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                <p className="text-xs text-slate-300 uppercase font-semibold mb-1">Sold Price</p>
+                <p className="text-2xl font-bold text-white">${saleStats.soldPrice.toLocaleString()}</p>
+              </div>
+              <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                <p className="text-xs text-slate-300 uppercase font-semibold mb-1">Your Cost</p>
+                <p className="text-2xl font-bold text-white">${saleStats.cost.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-red-500/20 rounded-lg p-3 border border-red-400/30">
+                <p className="text-xs text-red-200 uppercase font-semibold mb-1 flex items-center gap-1">
+                  <TrendingDown className="w-3 h-3" />
+                  Platform Fees
+                </p>
+                <p className="text-xl font-bold text-red-100">-${saleStats.fees.toFixed(2)}</p>
+                <p className="text-xs text-red-200 mt-1">{PLATFORM_FEES[data.sold_platform.toLowerCase()].description}</p>
+              </div>
+              <div className="bg-emerald-500/20 rounded-lg p-3 border border-emerald-400/30">
+                <p className="text-xs text-emerald-200 uppercase font-semibold mb-1 flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />
+                  Net Proceeds
+                </p>
+                <p className="text-xl font-bold text-emerald-100">${saleStats.net.toFixed(2)}</p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-amber-500/30 to-amber-600/30 rounded-lg p-4 border border-amber-400/50 mb-4">
+              <p className="text-xs text-amber-200 uppercase font-semibold mb-2">Net Profit</p>
+              <p className={`text-3xl font-bold ${saleStats.profit >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                ${saleStats.profit.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white/5 rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Percent className="w-3 h-3 text-slate-300" />
+                  <p className="text-xs text-slate-300 uppercase font-semibold">Margin</p>
+                </div>
+                <p className={`text-lg font-bold ${saleStats.margin >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                  {saleStats.margin.toFixed(1)}%
+                </p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <TrendingUp className="w-3 h-3 text-slate-300" />
+                  <p className="text-xs text-slate-300 uppercase font-semibold">Markup</p>
+                </div>
+                <p className={`text-lg font-bold ${saleStats.markup >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                  {saleStats.markup.toFixed(1)}%
+                </p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <DollarSign className="w-3 h-3 text-slate-300" />
+                  <p className="text-xs text-slate-300 uppercase font-semibold">ROI</p>
+                </div>
+                <p className={`text-lg font-bold ${saleStats.roi >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                  {saleStats.roi.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </TabsContent>
     </Tabs>
   );
