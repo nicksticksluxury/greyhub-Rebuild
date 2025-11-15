@@ -283,7 +283,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
       </TabsContent>
 
       <TabsContent value="pricing" className="space-y-4 mt-6">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <div>
             <Label>Cost</Label>
             <Input
@@ -294,12 +294,21 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
             />
           </div>
           <div>
-            <Label>Retail Price</Label>
+            <Label>MSRP</Label>
+            <Input
+              type="number"
+              value={data.msrp || ""}
+              onChange={(e) => updateField("msrp", parseFloat(e.target.value))}
+              placeholder="Original MSRP"
+            />
+          </div>
+          <div>
+            <Label>Average Retail Price</Label>
             <Input
               type="number"
               value={data.retail_price || ""}
               onChange={(e) => updateField("retail_price", parseFloat(e.target.value))}
-              placeholder="Retail price"
+              placeholder="Avg retail"
             />
           </div>
           <div>

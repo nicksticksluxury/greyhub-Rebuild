@@ -245,7 +245,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                       size="sm"
                       variant="ghost"
                       className="h-6 text-xs"
-                      onClick={() => onImportData("retail_price", aiAnalysis.original_msrp)}
+                      onClick={() => onImportData("msrp", aiAnalysis.original_msrp)}
                     >
                       <ArrowLeft className="w-3 h-3 mr-1" />
                       Import
