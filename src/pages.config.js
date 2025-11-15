@@ -4,6 +4,7 @@ import WatchDetail from './pages/WatchDetail';
 import Sources from './pages/Sources';
 import Auctions from './pages/Auctions';
 import SoldInventory from './pages/SoldInventory';
+import ImportSources from './pages/ImportSources';
 import Layout from './Layout.jsx';
 
 
@@ -14,6 +15,7 @@ export const PAGES = {
     "Sources": Sources,
     "Auctions": Auctions,
     "SoldInventory": SoldInventory,
+    "ImportSources": ImportSources,
 }
 
 export const pagesConfig = {
