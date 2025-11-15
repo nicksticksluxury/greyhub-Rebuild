@@ -47,8 +47,16 @@ export default function Sources() {
     },
   });
 
-  const getUsableQuantity = (sourceId) => {
-    return watches.filter(watch => watch.source_id === sourceId).length;
+  const getSourceStats = (sourceId) => {
+    const sourceWatches = watches.filter(watch => watch.source_id === sourceId);
+    const soldWatches = sourceWatches.filter(watch => watch.sold);
+    
+    return {
+      usable_quantity: sourceWatches.length,
+      total_purchases: sourceWatches.length,
+      total_cost: sourceWatches.reduce((sum, watch) => sum + (watch.cost || 0), 0),
+      total_revenue: soldWatches.reduce((sum, watch) => sum + (watch.sold_price || 0), 0)
+    };
   };
 
   const handleSubmit = (data) => {
@@ -120,7 +128,7 @@ export default function Sources() {
               <SourceCard
                 key={source.id}
                 source={source}
-                usableQuantity={getUsableQuantity(source.id)}
+                stats={getSourceStats(source.id)}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
