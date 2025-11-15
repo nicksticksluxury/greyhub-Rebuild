@@ -134,9 +134,14 @@ export default function WatchDetail() {
       if (editedData.movement_type) manualContext.push(`Movement: ${editedData.movement_type}`);
       if (editedData.description) manualContext.push(`Description: ${editedData.description}`);
       if (editedData.msrp_link) manualContext.push(`MSRP Source Link: ${editedData.msrp_link}`);
+      if (editedData.identical_listing_link) manualContext.push(`Identical Watch Listing: ${editedData.identical_listing_link}`);
 
       const contextString = manualContext.length > 0 
         ? `\n\nIMPORTANT: The user has already provided the following information about this watch:\n${manualContext.join('\n')}\n\nUse this information to guide your analysis, but still examine the photos for additional details or to verify the provided information.`
+        : '';
+
+      const identicalListingContext = editedData.identical_listing_link
+        ? `\n\n🔴 CRITICAL: The user has provided a link to an IDENTICAL watch listing: ${editedData.identical_listing_link}\n\nYou MUST visit this link to see the exact watch being sold. Use it to confirm brand, model, reference, condition, and all specifications.`
         : '';
 
       setAnalysisStep("Step 1/2: Identifying watch from photos...");
@@ -157,9 +162,9 @@ Carefully examine:
 - Overall condition (examine wear, scratches, patina)
 - Notable features (complications, special dials, limited edition markers, etc.)
 
-Be specific and detailed. If you cannot determine something from the photos, indicate "Unknown" or "Not visible".${contextString}`,
+Be specific and detailed. If you cannot determine something from the photos, indicate "Unknown" or "Not visible".${contextString}${identicalListingContext}`,
         file_urls: editedData.photos,
-        add_context_from_internet: false,
+        add_context_from_internet: editedData.identical_listing_link ? true : false,
         response_json_schema: {
           type: "object",
           properties: {
@@ -202,6 +207,15 @@ MANDATORY STEPS:
 5. This is the PRIMARY source of truth - use these exact prices`
         : '';
 
+      const identicalListingPriceContext = editedData.identical_listing_link
+        ? `\n\n🔴 ALSO VISIT: ${editedData.identical_listing_link}
+
+This is an identical watch listing. Use it to:
+1. Verify the watch specifications
+2. See current asking prices for this exact watch
+3. Include this listing in your comparable analysis`
+        : '';
+
       const conditionContext = isNewWatch 
         ? `\n\n🔴 CRITICAL: This is a NEW/UNWORN watch (condition: ${finalCondition}).
 
@@ -209,39 +223,45 @@ For NEW watches:
 - Research NEW watch retail prices (authorized dealers, manufacturer sites, new watch retailers)
 - DO NOT use used/pre-owned market data
 - Average Market Value = current NEW retail price (what buyers pay today for new ones)
-- Include both MSRP and current retail in your analysis`
-        : `\n\nThis is a PRE-OWNED watch (condition: ${finalCondition}). Research secondary market sold listings.`;
+- Include both MSRP and current retail in your analysis
+- Also blend in other marketplace listings to see if value has appreciated`
+        : `\n\nThis is a PRE-OWNED watch (condition: ${finalCondition}). Research secondary market sold listings but also consider retail prices to see if it has appreciated.`;
 
       const marketResearchResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a watch market pricing analyst. Research comprehensive pricing for: ${watchDescription}${msrpLinkContext}${conditionContext}
+        prompt: `You are a watch market pricing analyst. Research comprehensive pricing for: ${watchDescription}${msrpLinkContext}${identicalListingPriceContext}${conditionContext}
 
-YOU MUST PROVIDE ALL OF THE FOLLOWING FIELDS WITH NUMERIC VALUES (use 0 if truly unknown):
+YOU MUST PROVIDE ALL OF THE FOLLOWING FIELDS WITH NUMERIC VALUES:
 
-1. original_msrp (number): The original manufacturer's suggested retail price when new
+1. original_msrp (number): The original manufacturer's suggested retail price when new (set to 0 if truly unknown, and mention in summary)
 2. msrp_source_link (string): URL where MSRP was found
-3. current_retail_price (number): Current price for NEW watches from authorized dealers
-4. average_market_value (number): ${isNewWatch ? 'Current retail/street price for NEW watches' : 'Average price from recent USED sold listings'}
+3. current_retail_price (number): Current price for NEW watches from authorized dealers (0 if unknown)
+4. average_market_value (number): ${isNewWatch ? 'Current retail/street price for NEW watches' : 'Average price from recent USED sold listings'} - MUST have a value
 5. estimated_value_low (number): Low end of current pricing range
 6. estimated_value_high (number): High end of current pricing range
 
-RESEARCH SOURCES:
+RESEARCH SOURCES - blend retail prices with market listings:
 ${isNewWatch ? `
-- Visit the provided link FIRST if available
+- Visit the provided link(s) FIRST if available
 - Manufacturer website and authorized dealer prices
 - Jomashop, Chrono24 (NEW listings)
 - Amazon NEW watch prices
+- eBay, Mercari, Poshmark current listings for new watches
 - Current authorized dealer retail pricing` : `
 - eBay SOLD listings (actual prices paid)
 - Chrono24 pre-owned sold data
 - Bob's Watches, WatchBox pre-owned prices
-- Auction house results`}
+- Current eBay/marketplace listings
+- Auction house results
+- Compare to retail to see if watch has appreciated`}
+
+In your comparable_listings section, include full URLs to specific listings you found.
 
 Provide platform pricing recommendations for:
 - whatnot, ebay, shopify, etsy, poshmark, mercari
 
 For each platform, explain your rationale with specific comparable listings found.
 
-IMPORTANT: Return numeric values for ALL price fields. If you cannot find a price, use your best estimate based on similar watches, but DO NOT leave fields null or undefined.${contextString}`,
+IMPORTANT: Return numeric values for ALL price fields. If you cannot find MSRP, set it to 0 and mention this in your summary. DO NOT leave fields null or undefined.${contextString}`,
         file_urls: [],
         add_context_from_internet: true,
         response_json_schema: {

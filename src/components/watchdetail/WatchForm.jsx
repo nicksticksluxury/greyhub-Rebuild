@@ -356,6 +356,30 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
           <p className="text-xs text-slate-500 mt-1">Link to manufacturer or retailer page with MSRP information</p>
         </div>
 
+        <div>
+          <Label className="flex items-center gap-2">
+            Identical Watch Listing
+            {data.identical_listing_link && (
+              <a 
+                href={data.identical_listing_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+          </Label>
+          <Input
+            type="url"
+            value={data.identical_listing_link || ""}
+            onChange={(e) => updateField("identical_listing_link", e.target.value)}
+            placeholder="https://ebay.com/item/... or similar listing"
+            className="mt-1"
+          />
+          <p className="text-xs text-slate-500 mt-1">Link to an identical watch listing to help AI identify and price accurately</p>
+        </div>
+
         <div className="pt-4 border-t">
           <h3 className="font-semibold text-slate-900 mb-4">Platform Pricing</h3>
           <div className="space-y-4">

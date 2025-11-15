@@ -2,8 +2,38 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ArrowLeft, CheckCircle2, DollarSign, TrendingUp, Info } from "lucide-react";
+import { Sparkles, ArrowLeft, CheckCircle2, DollarSign, TrendingUp, Info, ExternalLink } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
+// Function to convert URLs in text to clickable links
+const LinkifiedText = ({ text }) => {
+  if (!text) return null;
+  
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return (
+    <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">
+      {parts.map((part, index) => {
+        if (part.match(urlRegex)) {
+          return (
+            <a
+              key={index}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1"
+            >
+              {part}
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          );
+        }
+        return part;
+      })}
+    </p>
+  );
+};
 
 export default function AIPanel({ aiAnalysis, onImportData }) {
   if (!aiAnalysis) {
@@ -231,55 +261,65 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
             </div>
           )}
 
-          {(aiAnalysis.original_msrp || aiAnalysis.current_retail_price) && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-blue-700" />
-                <span className="text-xs font-semibold text-blue-900 uppercase">MSRP / Retail</span>
-              </div>
-              {aiAnalysis.original_msrp && (
-                <div className="mb-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-blue-600">Original MSRP:</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 text-xs"
-                      onClick={() => onImportData("msrp", aiAnalysis.original_msrp)}
-                    >
-                      <ArrowLeft className="w-3 h-3 mr-1" />
-                      Import
-                    </Button>
-                  </div>
-                  <p className="text-lg font-bold text-blue-900">${aiAnalysis.original_msrp.toLocaleString()}</p>
-                </div>
-              )}
-              {aiAnalysis.current_retail_price && (
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-blue-600">Current Retail:</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 text-xs"
-                      onClick={() => onImportData("retail_price", aiAnalysis.current_retail_price)}
-                    >
-                      <ArrowLeft className="w-3 h-3 mr-1" />
-                      Import
-                    </Button>
-                  </div>
-                  <p className="text-lg font-bold text-blue-900">${aiAnalysis.current_retail_price.toLocaleString()}</p>
-                </div>
-              )}
+          {/* ALWAYS show MSRP section */}
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4 text-blue-700" />
+              <span className="text-xs font-semibold text-blue-900 uppercase">MSRP / Retail</span>
             </div>
-          )}
+            {aiAnalysis.original_msrp && aiAnalysis.original_msrp > 0 ? (
+              <div className="mb-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-blue-600">Original MSRP:</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 text-xs"
+                    onClick={() => onImportData("msrp", aiAnalysis.original_msrp)}
+                  >
+                    <ArrowLeft className="w-3 h-3 mr-1" />
+                    Import
+                  </Button>
+                </div>
+                <p className="text-lg font-bold text-blue-900">${aiAnalysis.original_msrp.toLocaleString()}</p>
+              </div>
+            ) : (
+              <div className="mb-2">
+                <span className="text-xs text-blue-600">Original MSRP:</span>
+                <p className="text-sm text-blue-700 italic">No data found</p>
+              </div>
+            )}
+            {aiAnalysis.current_retail_price && aiAnalysis.current_retail_price > 0 ? (
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-blue-600">Current Retail:</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 text-xs"
+                    onClick={() => onImportData("retail_price", aiAnalysis.current_retail_price)}
+                  >
+                    <ArrowLeft className="w-3 h-3 mr-1" />
+                    Import
+                  </Button>
+                </div>
+                <p className="text-lg font-bold text-blue-900">${aiAnalysis.current_retail_price.toLocaleString()}</p>
+              </div>
+            ) : (
+              <div>
+                <span className="text-xs text-blue-600">Current Retail:</span>
+                <p className="text-sm text-blue-700 italic">No data found</p>
+              </div>
+            )}
+          </div>
 
-          {aiAnalysis.average_market_value && (
-            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-emerald-700 uppercase">
-                  Average Market Value
-                </span>
+          {/* ALWAYS show Average Market Value section */}
+          <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-emerald-700 uppercase">
+                Average Market Value
+              </span>
+              {aiAnalysis.average_market_value && aiAnalysis.average_market_value > 0 && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -289,15 +329,21 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   <ArrowLeft className="w-3 h-3 mr-1" />
                   Import
                 </Button>
-              </div>
-              <p className="text-2xl font-bold text-emerald-900">${aiAnalysis.average_market_value?.toLocaleString()}</p>
-              {(aiAnalysis.estimated_value_low || aiAnalysis.estimated_value_high) && (
-                <p className="text-sm text-emerald-700 mt-1">
-                  Range: ${aiAnalysis.estimated_value_low?.toLocaleString()} - ${aiAnalysis.estimated_value_high?.toLocaleString()}
-                </p>
               )}
             </div>
-          )}
+            {aiAnalysis.average_market_value && aiAnalysis.average_market_value > 0 ? (
+              <>
+                <p className="text-2xl font-bold text-emerald-900">${aiAnalysis.average_market_value?.toLocaleString()}</p>
+                {(aiAnalysis.estimated_value_low || aiAnalysis.estimated_value_high) && (
+                  <p className="text-sm text-emerald-700 mt-1">
+                    Range: ${aiAnalysis.estimated_value_low?.toLocaleString()} - ${aiAnalysis.estimated_value_high?.toLocaleString()}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-emerald-700 italic">No data found</p>
+            )}
+          </div>
 
           {aiAnalysis.market_research_summary && (
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -314,7 +360,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
               <span className="text-xs font-semibold text-blue-700 uppercase block mb-2">
                 Comparable Listings
               </span>
-              <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{aiAnalysis.comparable_listings}</p>
+              <LinkifiedText text={aiAnalysis.comparable_listings} />
             </div>
           )}
 
