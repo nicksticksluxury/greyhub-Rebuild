@@ -185,48 +185,69 @@ Be specific and detailed. If you cannot determine something from the photos, ind
       const finalModel = editedData.model || identificationResult.identified_model;
       const finalRef = editedData.reference_number || identificationResult.reference_number;
       const finalYear = editedData.year || identificationResult.estimated_year;
+      const finalCondition = editedData.condition || identificationResult.condition_assessment || "unknown";
 
       const watchDescription = `${finalBrand || 'Unknown brand'} ${finalModel || 'Unknown model'}${finalRef ? `, reference ${finalRef}` : ''}${finalYear ? ` from ${finalYear}` : ''}`;
 
+      // Determine if this is a new watch
+      const isNewWatch = finalCondition && ['new', 'new_with_box', 'new_no_box'].includes(finalCondition.toLowerCase());
+
       const msrpLinkContext = editedData.msrp_link 
-        ? `\n\nIMPORTANT: The user has provided a link to the MSRP source: ${editedData.msrp_link}\nPlease visit this link and extract accurate MSRP and pricing information from it. This is the primary source for MSRP data.`
+        ? `\n\n🔴 CRITICAL PRIORITY: The user has provided the official product link: ${editedData.msrp_link}
+
+YOU MUST:
+1. Visit this exact link FIRST before any other research
+2. Extract the EXACT MSRP/retail price shown on this page
+3. Extract any sale/current prices shown
+4. Use these prices as your PRIMARY pricing data
+5. This link is the SOURCE OF TRUTH for MSRP and retail pricing - trust it over any other source`
         : '';
 
+      const conditionContext = isNewWatch 
+        ? `\n\n🔴 CRITICAL: This is a NEW/UNWORN watch (condition: ${finalCondition}).
+
+For NEW watches, you MUST:
+- Base pricing on RETAIL channels (authorized dealers, manufacturer websites, new watch retailers)
+- DO NOT use secondary market "sold listings" or used watch prices
+- DO NOT discount prices based on used/pre-owned comparables
+- NEW watches should be priced near MSRP or current authorized dealer retail prices
+- Average market value should reflect NEW retail pricing, not used market pricing
+- Platform pricing should be competitive with NEW watch retailers, not used watch sellers`
+        : `\n\nThis is a PRE-OWNED watch (condition: ${finalCondition}). Base pricing on secondary market sold listings and pre-owned dealer prices.`;
+
       const marketResearchResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a watch market analyst. Research current market prices for this watch: ${watchDescription}
+        prompt: `You are a watch market analyst. Research current market prices for this watch: ${watchDescription}${msrpLinkContext}${conditionContext}
 
-CRITICAL: You MUST search the internet for real market data. Do not make up prices.${msrpLinkContext}
+${isNewWatch ? 'FOR NEW WATCHES - Research these NEW watch retail sources:' : 'FOR PRE-OWNED WATCHES - Research these sources:'}
+${isNewWatch ? `
+1. Manufacturer's official website and authorized dealers
+2. Jomashop, Chrono24 (NEW listings only)
+3. Amazon, eBay (NEW/unworn listings with warranty)
+4. Other authorized retailers
+` : `
+1. eBay SOLD listings (actual sold prices for USED watches)
+2. Chrono24 sold data (pre-owned section)
+3. WatchBox, Bob's Watches (pre-owned dealer prices)
+4. Auction results for similar condition
+`}
 
-Search and analyze:
-1. eBay SOLD listings (actual sold prices, not asking prices)
-2. Chrono24 current listings and sold data
-3. WatchBox, Bob's Watches, and other dealer prices
-4. Auction results (Christie's, Sotheby's, Phillips)
-5. Original MSRP when released - try to find the official manufacturer or authorized dealer page
-6. Current authorized dealer retail price (if still in production)
+Calculate and provide:
+- Original MSRP: The manufacturer's original retail price when new
+- Current Retail Price: Current price for NEW watches from authorized dealers
+- Average Market Value: ${isNewWatch ? 'Current NEW retail/street price' : 'Average of recent USED sold prices'}
+- Price Range: ${isNewWatch ? 'NEW watch pricing range across retailers' : 'Used market pricing based on condition'}
 
-When you find a good source for the MSRP (manufacturer website, authorized dealer, etc.), include that URL in your response.
+When you find the MSRP source (especially from the provided link), include that full URL.
 
-Calculate:
-- Average market value based on actual sold listings
-- Price range (low to high based on condition)
-- Original MSRP
-- Current retail price
+Provide platform-specific pricing recommendations:
+- Whatnot: ${isNewWatch ? 'Competitive new watch pricing for live auction' : 'Used market auction starting price'}
+- eBay: ${isNewWatch ? 'Match other NEW listings with warranty' : 'Competitive with sold used listings'}
+- Shopify: ${isNewWatch ? 'Full retail storefront pricing for new' : 'Pre-owned dealer pricing'}
+- Etsy: ${isNewWatch ? 'Boutique new watch pricing' : 'Vintage/pre-owned positioning'}
+- Poshmark: ${isNewWatch ? 'New watch pricing (account for 20% fee)' : 'Pre-owned pricing (account for 20% fee)'}
+- Mercari: ${isNewWatch ? 'Competitive new watch pricing' : 'Quick-sale pre-owned pricing'}
 
-Provide platform-specific pricing recommendations for:
-- Whatnot (live auction starting price)
-- eBay (competitive with sold listings)
-- Shopify (retail storefront pricing)
-- Etsy (vintage/artisan market positioning)
-- Poshmark (consider their audience and 20% fee)
-- Mercari (competitive pricing for quick sale)
-
-For each platform price, provide a brief rationale explaining:
-- Comparable listings you found
-- Why this price makes sense for that platform
-- Market positioning strategy
-
-Include market insights about demand, collectibility, and recent trends.${contextString}`,
+For each platform, explain your pricing rationale including comparable listings found.${contextString}`,
         file_urls: [],
         add_context_from_internet: true,
         response_json_schema: {
