@@ -53,7 +53,6 @@ export default function WatchDetail() {
     }
   }, [watch]);
 
-  // Check for unsaved changes
   useEffect(() => {
     if (editedData && originalData) {
       const hasChanges = JSON.stringify(editedData) !== JSON.stringify(originalData);
@@ -61,7 +60,6 @@ export default function WatchDetail() {
     }
   }, [editedData, originalData]);
 
-  // Warn before leaving if there are unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (hasUnsavedChanges) {
@@ -124,7 +122,6 @@ export default function WatchDetail() {
     setAnalyzing(true);
     
     try {
-      // Build context from manually entered data
       const manualContext = [];
       if (editedData.brand && editedData.brand !== "Unknown") manualContext.push(`Brand: ${editedData.brand}`);
       if (editedData.model) manualContext.push(`Model: ${editedData.model}`);
@@ -136,12 +133,12 @@ export default function WatchDetail() {
       if (editedData.case_size) manualContext.push(`Case Size: ${editedData.case_size}`);
       if (editedData.movement_type) manualContext.push(`Movement: ${editedData.movement_type}`);
       if (editedData.description) manualContext.push(`Description: ${editedData.description}`);
+      if (editedData.msrp_link) manualContext.push(`MSRP Source Link: ${editedData.msrp_link}`);
 
       const contextString = manualContext.length > 0 
         ? `\n\nIMPORTANT: The user has already provided the following information about this watch:\n${manualContext.join('\n')}\n\nUse this information to guide your analysis, but still examine the photos for additional details or to verify the provided information.`
         : '';
 
-      // STEP 1: Identify the watch from photos (NO internet search)
       setAnalysisStep("Step 1/2: Identifying watch from photos...");
       toast.info("Step 1/2: Analyzing photos to identify the watch...");
       
@@ -181,13 +178,9 @@ Be specific and detailed. If you cannot determine something from the photos, ind
         }
       });
 
-      console.log("=== STEP 1: IDENTIFICATION ===", identificationResult);
-
-      // STEP 2: Market research based on identified details (WITH internet search)
       setAnalysisStep("Step 2/2: Researching market prices and comparables...");
       toast.info("Step 2/2: Researching market prices online (this may take 30-60 seconds)...");
 
-      // Use manually entered data if available, otherwise use AI identification
       const finalBrand = editedData.brand && editedData.brand !== "Unknown" ? editedData.brand : identificationResult.identified_brand;
       const finalModel = editedData.model || identificationResult.identified_model;
       const finalRef = editedData.reference_number || identificationResult.reference_number;
@@ -195,18 +188,24 @@ Be specific and detailed. If you cannot determine something from the photos, ind
 
       const watchDescription = `${finalBrand || 'Unknown brand'} ${finalModel || 'Unknown model'}${finalRef ? `, reference ${finalRef}` : ''}${finalYear ? ` from ${finalYear}` : ''}`;
 
+      const msrpLinkContext = editedData.msrp_link 
+        ? `\n\nIMPORTANT: The user has provided a link to the MSRP source: ${editedData.msrp_link}\nPlease visit this link and extract accurate MSRP and pricing information from it. This is the primary source for MSRP data.`
+        : '';
+
       const marketResearchResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a watch market analyst. Research current market prices for this watch: ${watchDescription}
 
-CRITICAL: You MUST search the internet for real market data. Do not make up prices.
+CRITICAL: You MUST search the internet for real market data. Do not make up prices.${msrpLinkContext}
 
 Search and analyze:
 1. eBay SOLD listings (actual sold prices, not asking prices)
 2. Chrono24 current listings and sold data
 3. WatchBox, Bob's Watches, and other dealer prices
 4. Auction results (Christie's, Sotheby's, Phillips)
-5. Original MSRP when released
+5. Original MSRP when released - try to find the official manufacturer or authorized dealer page
 6. Current authorized dealer retail price (if still in production)
+
+When you find a good source for the MSRP (manufacturer website, authorized dealer, etc.), include that URL in your response.
 
 Calculate:
 - Average market value based on actual sold listings
@@ -234,6 +233,7 @@ Include market insights about demand, collectibility, and recent trends.${contex
           type: "object",
           properties: {
             original_msrp: { type: "number" },
+            msrp_source_link: { type: "string" },
             current_retail_price: { type: "number" },
             estimated_value_low: { type: "number" },
             estimated_value_high: { type: "number" },
@@ -267,23 +267,26 @@ Include market insights about demand, collectibility, and recent trends.${contex
         }
       });
 
-      console.log("=== STEP 2: MARKET RESEARCH ===", marketResearchResult);
-
-      // Combine both results
       const combinedAnalysis = {
         ...identificationResult,
         ...marketResearchResult
       };
 
-      console.log("=== COMBINED ANALYSIS ===", combinedAnalysis);
-
-      const updatedWatch = {
+      const updatedData = {
         ...editedData,
         ai_analysis: combinedAnalysis
       };
+
+      // If AI found an MSRP link and user doesn't have one, update it
+      if (marketResearchResult.msrp_source_link && !editedData.msrp_link) {
+        updatedData.msrp_link = marketResearchResult.msrp_source_link;
+      }
       
-      setEditedData(updatedWatch);
-      const savedWatch = await base44.entities.Watch.update(watchId, { ai_analysis: combinedAnalysis });
+      setEditedData(updatedData);
+      const savedWatch = await base44.entities.Watch.update(watchId, { 
+        ai_analysis: combinedAnalysis,
+        ...(marketResearchResult.msrp_source_link && !editedData.msrp_link && { msrp_link: marketResearchResult.msrp_source_link })
+      });
       setOriginalData(savedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       

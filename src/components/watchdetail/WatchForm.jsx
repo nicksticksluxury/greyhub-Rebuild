@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, TrendingDown, TrendingUp, Percent } from "lucide-react";
+import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink } from "lucide-react";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -330,6 +330,30 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
               placeholder="Minimum price"
             />
           </div>
+        </div>
+
+        <div>
+          <Label className="flex items-center gap-2">
+            MSRP Source Link
+            {data.msrp_link && (
+              <a 
+                href={data.msrp_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+          </Label>
+          <Input
+            type="url"
+            value={data.msrp_link || ""}
+            onChange={(e) => updateField("msrp_link", e.target.value)}
+            placeholder="https://manufacturer.com/product-page"
+            className="mt-1"
+          />
+          <p className="text-xs text-slate-500 mt-1">Link to manufacturer or retailer page with MSRP information</p>
         </div>
 
         <div className="pt-4 border-t">
