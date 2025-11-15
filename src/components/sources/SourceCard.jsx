@@ -1,17 +1,25 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Package, DollarSign, TrendingUp } from "lucide-react";
 
-export default function SourceCard({ source, stats, onEdit, onDelete }) {
-  const profit = (stats?.total_revenue || 0) - (stats?.total_cost || 0);
-  const margin = stats?.total_cost > 0 ? (profit / stats.total_cost) * 100 : 0;
+export default function SourceCard({ source, usableQuantity, onEdit, onDelete }) {
+  const costPerWatch = source.initial_quantity > 0 ? (source.cost / source.initial_quantity) : 0;
+  const effectiveCostPerWatch = usableQuantity > 0 ? (source.cost / usableQuantity) : 0;
 
   return (
     <Card className="p-6 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-xl font-bold text-slate-900">{source.name}</h3>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-xl font-bold text-slate-900">{source.name}</h3>
+            {source.order_number && (
+              <Badge variant="outline" className="bg-slate-100">
+                Order #{source.order_number}
+              </Badge>
+            )}
+          </div>
           {source.primary_contact && (
             <p className="text-sm text-slate-600">Contact: {source.primary_contact}</p>
           )}
@@ -77,34 +85,52 @@ export default function SourceCard({ source, stats, onEdit, onDelete }) {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-200">
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Package className="w-4 h-4 text-slate-500" />
-            <p className="text-xs text-slate-500 uppercase">Purchases</p>
+      {(source.cost || source.initial_quantity) && (
+        <>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-1">
+                <Package className="w-4 h-4 text-blue-700" />
+                <span className="text-xs font-semibold text-blue-700 uppercase">Quantities</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-blue-600">Initial:</span>
+                  <span className="font-bold text-blue-900">{source.initial_quantity || 0}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-blue-600">Usable:</span>
+                  <span className="font-bold text-blue-900">{usableQuantity}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign className="w-4 h-4 text-amber-700" />
+                <span className="text-xs font-semibold text-amber-700 uppercase">Cost Per Watch</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-amber-600">Initial:</span>
+                  <span className="font-bold text-amber-900">${costPerWatch.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-amber-600">Effective:</span>
+                  <span className="font-bold text-amber-900">${effectiveCostPerWatch.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{stats?.total_purchases || 0}</p>
-        </div>
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <DollarSign className="w-4 h-4 text-slate-500" />
-            <p className="text-xs text-slate-500 uppercase">Total Cost</p>
+
+          <div className="pt-3 border-t border-slate-200">
+            <div className="text-center">
+              <p className="text-xs text-slate-500 uppercase mb-1">Total Cost</p>
+              <p className="text-2xl font-bold text-slate-900">${(source.cost || 0).toLocaleString()}</p>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-slate-900">${(stats?.total_cost || 0).toLocaleString()}</p>
-        </div>
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
-            <p className="text-xs text-slate-500 uppercase">Total Profit</p>
-          </div>
-          <p className={`text-2xl font-bold ${profit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-            ${profit.toLocaleString()}
-          </p>
-          {stats?.total_cost > 0 && (
-            <p className="text-xs text-slate-500 mt-1">{margin.toFixed(1)}% margin</p>
-          )}
-        </div>
-      </div>
+        </>
+      )}
     </Card>
   );
 }
