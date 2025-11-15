@@ -194,6 +194,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
                 <SelectValue placeholder="Select condition" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="new">New</SelectItem>
                 <SelectItem value="mint">Mint</SelectItem>
                 <SelectItem value="excellent">Excellent</SelectItem>
                 <SelectItem value="very_good">Very Good</SelectItem>
