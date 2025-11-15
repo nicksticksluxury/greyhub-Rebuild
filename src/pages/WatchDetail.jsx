@@ -80,6 +80,7 @@ export default function WatchDetail() {
     onSuccess: (updatedWatch) => {
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       queryClient.invalidateQueries({ queryKey: ['watches'] });
+      setEditedData(updatedWatch);
       setOriginalData(updatedWatch);
       setHasUnsavedChanges(false);
       toast.success("Watch updated successfully!");
@@ -144,7 +145,7 @@ Carefully examine:
 
 Be specific and detailed. If you cannot determine something from the photos, indicate "Unknown" or "Not visible".`,
         file_urls: editedData.photos,
-        add_context_from_internet: false, // Critical: no internet search, allows images
+        add_context_from_internet: false,
         response_json_schema: {
           type: "object",
           properties: {
@@ -204,8 +205,8 @@ For each platform price, provide a brief rationale explaining:
 - Market positioning strategy
 
 Include market insights about demand, collectibility, and recent trends.`,
-        file_urls: [], // Critical: NO images allowed when using internet search
-        add_context_from_internet: true, // Enable internet search
+        file_urls: [],
+        add_context_from_internet: true,
         response_json_schema: {
           type: "object",
           properties: {
@@ -259,7 +260,8 @@ Include market insights about demand, collectibility, and recent trends.`,
       };
       
       setEditedData(updatedWatch);
-      await base44.entities.Watch.update(watchId, { ai_analysis: combinedAnalysis });
+      const savedWatch = await base44.entities.Watch.update(watchId, { ai_analysis: combinedAnalysis });
+      setOriginalData(savedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
       setAnalysisStep("");
