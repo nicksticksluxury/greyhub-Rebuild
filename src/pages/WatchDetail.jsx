@@ -3,10 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Save, Sparkles, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import ImageGallery from "../components/watchdetail/ImageGallery";
 import WatchForm from "../components/watchdetail/WatchForm";
 import AIPanel from "../components/watchdetail/AIPanel";
@@ -23,6 +24,7 @@ export default function WatchDetail() {
   const [showDescGen, setShowDescGen] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState("");
+  const [analysisError, setAnalysisError] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const { data: watch, isLoading } = useQuery({
@@ -120,14 +122,13 @@ export default function WatchDetail() {
     }
 
     setAnalyzing(true);
+    setAnalysisError(null);
     
     try {
-      // Step 1: Build context
-      setAnalysisStep("⚙️ Building analysis request...");
+      setAnalysisStep("⚙️ Preparing request...");
       console.log("=== AI ANALYSIS START ===");
       console.log("Watch ID:", watchId);
-      console.log("Number of photos:", editedData.photos.length);
-      console.log("Photo URLs:", editedData.photos);
+      console.log("Photos:", editedData.photos);
       
       const userContext = [];
       if (editedData.brand && editedData.brand !== "Unknown") userContext.push(`Brand: ${editedData.brand}`);
@@ -135,113 +136,88 @@ export default function WatchDetail() {
       if (editedData.reference_number) userContext.push(`Reference: ${editedData.reference_number}`);
       if (editedData.year) userContext.push(`Year: ${editedData.year}`);
       if (editedData.condition) userContext.push(`Condition: ${editedData.condition}`);
-      if (editedData.msrp_link) userContext.push(`MSRP Link: ${editedData.msrp_link}`);
-      if (editedData.identical_listing_link) userContext.push(`Identical Listing: ${editedData.identical_listing_link}`);
 
-      console.log("User provided context:", userContext);
+      const contextStr = userContext.length > 0 ? `\n\nUser info:\n${userContext.join('\n')}` : '';
 
-      const contextStr = userContext.length > 0 ? `\n\nUser provided info:\n${userContext.join('\n')}` : '';
-
-      // Step 2: Send request
-      setAnalysisStep("📤 Sending request to AI (analyzing photos + researching market)...");
-      toast.info("Sending photos to AI for analysis...");
-      console.log("=== SENDING AI REQUEST ===");
-      console.log("Prompt length:", 500 + contextStr.length);
-      console.log("Context enabled:", true);
-      
+      setAnalysisStep("📤 Calling AI API...");
+      console.log("=== CALLING AI API ===");
       const startTime = Date.now();
       
-      const analysisResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a watch expert and market analyst. Complete TWO tasks:
+      let analysisResult;
+      try {
+        analysisResult = await base44.integrations.Core.InvokeLLM({
+          prompt: `Analyze this watch from photos and research market pricing.
 
-TASK 1: IDENTIFY THE WATCH from photos
-Examine the photos and identify:
-- Brand and model
-- Reference number (look on case, between lugs, papers)
-- Serial number (if visible)
-- Year/era
-- Movement type (automatic/manual/quartz)
-- Case material and size
-- Condition assessment (detailed)
-- Notable features
+Identify: brand, model, reference, year, movement, case material/size, condition.
 
-TASK 2: RESEARCH MARKET PRICING
-Research comprehensive pricing for this watch:
-- original_msrp: Original MSRP (0 if unknown)
-- msrp_source_link: URL for MSRP
-- current_retail_price: Current new retail price (0 if N/A)
-- average_market_value: Average market value (REQUIRED)
-- estimated_value_low and estimated_value_high: Price range
-- comparable_listings: Include 3-5 actual listing URLs
-- market_insights: Market trends
-- pricing_recommendations: Prices for whatnot, ebay, shopify, etsy, poshmark, mercari
-- pricing_rationale: Reasoning for each platform${contextStr}
+Research pricing: MSRP, current retail, average market value, price range.
 
-Search online for pricing data. Check eBay sold, Chrono24, authorized dealers, etc.`,
-        file_urls: editedData.photos,
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            identified_brand: { type: "string" },
-            identified_model: { type: "string" },
-            reference_number: { type: "string" },
-            serial_number: { type: "string" },
-            estimated_year: { type: "string" },
-            movement_type: { type: "string" },
-            case_material: { type: "string" },
-            case_size: { type: "string" },
-            condition_assessment: { type: "string" },
-            notable_features: { type: "array", items: { type: "string" } },
-            confidence_level: { type: "string" },
-            original_msrp: { type: "number" },
-            msrp_source_link: { type: "string" },
-            current_retail_price: { type: "number" },
-            estimated_value_low: { type: "number" },
-            estimated_value_high: { type: "number" },
-            average_market_value: { type: "number" },
-            market_insights: { type: "string" },
-            comparable_listings: { type: "string" },
-            market_research_summary: { type: "string" },
-            pricing_recommendations: {
-              type: "object",
-              properties: {
-                whatnot: { type: "number" },
-                ebay: { type: "number" },
-                shopify: { type: "number" },
-                etsy: { type: "number" },
-                poshmark: { type: "number" },
-                mercari: { type: "number" }
-              }
-            },
-            pricing_rationale: {
-              type: "object",
-              properties: {
-                whatnot: { type: "string" },
-                ebay: { type: "string" },
-                shopify: { type: "string" },
-                etsy: { type: "string" },
-                poshmark: { type: "string" },
-                mercari: { type: "string" }
+Provide platform recommendations for: whatnot, ebay, shopify, etsy, poshmark, mercari${contextStr}`,
+          file_urls: editedData.photos,
+          add_context_from_internet: true,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              identified_brand: { type: "string" },
+              identified_model: { type: "string" },
+              reference_number: { type: "string" },
+              serial_number: { type: "string" },
+              estimated_year: { type: "string" },
+              movement_type: { type: "string" },
+              case_material: { type: "string" },
+              case_size: { type: "string" },
+              condition_assessment: { type: "string" },
+              notable_features: { type: "array", items: { type: "string" } },
+              confidence_level: { type: "string" },
+              original_msrp: { type: "number" },
+              msrp_source_link: { type: "string" },
+              current_retail_price: { type: "number" },
+              estimated_value_low: { type: "number" },
+              estimated_value_high: { type: "number" },
+              average_market_value: { type: "number" },
+              market_insights: { type: "string" },
+              comparable_listings: { type: "string" },
+              market_research_summary: { type: "string" },
+              pricing_recommendations: {
+                type: "object",
+                properties: {
+                  whatnot: { type: "number" },
+                  ebay: { type: "number" },
+                  shopify: { type: "number" },
+                  etsy: { type: "number" },
+                  poshmark: { type: "number" },
+                  mercari: { type: "number" }
+                }
+              },
+              pricing_rationale: {
+                type: "object",
+                properties: {
+                  whatnot: { type: "string" },
+                  ebay: { type: "string" },
+                  shopify: { type: "string" },
+                  etsy: { type: "string" },
+                  poshmark: { type: "string" },
+                  mercari: { type: "string" }
+                }
               }
             }
-          },
-          required: ["identified_brand", "identified_model", "average_market_value"]
-        }
-      });
+          }
+        });
+      } catch (aiError) {
+        console.error("=== AI API ERROR ===");
+        console.error("Error object:", aiError);
+        console.error("Error message:", aiError.message);
+        console.error("Error stack:", aiError.stack);
+        console.error("Error response:", aiError.response?.data);
+        throw new Error(`AI API failed: ${aiError.message || 'Unknown error'}`);
+      }
 
-      const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
       
-      // Step 3: Process response
-      setAnalysisStep("📥 Received AI response, processing data...");
-      console.log("=== AI RESPONSE RECEIVED ===");
-      console.log("Response time:", elapsedTime, "seconds");
-      console.log("Full response:", analysisResult);
-      console.log("Has brand?", !!analysisResult.identified_brand);
-      console.log("Has model?", !!analysisResult.identified_model);
-      console.log("Has pricing?", !!analysisResult.average_market_value);
-      console.log("Has MSRP?", !!analysisResult.original_msrp);
-      toast.success(`AI responded in ${elapsedTime}s! Processing data...`);
+      setAnalysisStep("✅ Processing response...");
+      console.log("=== AI RESPONSE ===");
+      console.log("Time:", elapsed, "seconds");
+      console.log("Response:", analysisResult);
 
       const updatedData = {
         ...editedData,
@@ -252,9 +228,7 @@ Search online for pricing data. Check eBay sold, Chrono24, authorized dealers, e
         updatedData.msrp_link = analysisResult.msrp_source_link;
       }
       
-      // Step 4: Save to database
-      setAnalysisStep("💾 Saving analysis to database...");
-      console.log("=== SAVING TO DATABASE ===");
+      setAnalysisStep("💾 Saving...");
       setEditedData(updatedData);
       
       await base44.entities.Watch.update(watchId, { 
@@ -262,33 +236,25 @@ Search online for pricing data. Check eBay sold, Chrono24, authorized dealers, e
         ...(analysisResult.msrp_source_link && !editedData.msrp_link && { msrp_link: analysisResult.msrp_source_link })
       });
       
-      console.log("Database update complete");
-      
-      // Step 5: Refresh data
-      setAnalysisStep("🔄 Refreshing watch data...");
       const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
       setOriginalData(refreshedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      console.log("=== AI ANALYSIS COMPLETE ===");
-      toast.success("✅ Analysis complete! Check AI panel for details.");
+      console.log("=== COMPLETE ===");
+      toast.success(`✅ Done in ${elapsed}s`);
+      setAnalysisStep("");
     } catch (error) {
-      console.error("=== AI ANALYSIS ERROR ===");
-      console.error("Error type:", error.name);
-      console.error("Error message:", error.message);
+      console.error("=== ANALYSIS FAILED ===");
       console.error("Full error:", error);
-      toast.error(`❌ Analysis failed: ${error.message}`);
-      setAnalysisStep(`❌ Error: ${error.message}`);
       
-      // Keep error visible for 5 seconds
-      setTimeout(() => {
-        setAnalysisStep("");
-      }, 5000);
+      const errorMsg = `${error.message}\n\nCheck browser console for full details.`;
+      setAnalysisError(errorMsg);
+      toast.error("Analysis failed - see error below");
     } finally {
       setAnalyzing(false);
-      setTimeout(() => {
-        setAnalysisStep("");
-      }, 3000);
+      if (!analysisError) {
+        setTimeout(() => setAnalysisStep(""), 2000);
+      }
     }
   };
 
@@ -398,10 +364,30 @@ Search online for pricing data. Check eBay sold, Chrono24, authorized dealers, e
               </Button>
             </div>
           </div>
+          
           {analysisStep && (
             <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
               <p className="text-sm text-amber-800 font-medium">{analysisStep}</p>
             </div>
+          )}
+
+          {analysisError && (
+            <Alert variant="destructive" className="mt-3">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="ml-2">
+                <div className="flex items-start justify-between">
+                  <pre className="text-xs whitespace-pre-wrap font-mono">{analysisError}</pre>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setAnalysisError(null)}
+                    className="ml-2"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </div>
