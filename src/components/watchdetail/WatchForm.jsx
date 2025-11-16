@@ -1,12 +1,12 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench } from "lucide-react";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -57,7 +57,6 @@ function calculateMinimumPrice(cost, platform) {
   
   switch(platform) {
     case 'ebay':
-      // Use 15% rate for minimum calculation (conservative)
       minPrice = cost / (1 - 0.15);
       break;
     case 'poshmark':
@@ -80,6 +79,8 @@ function calculateMinimumPrice(cost, platform) {
 }
 
 export default function WatchForm({ data, onChange, sources, auctions }) {
+  const [showRepairs, setShowRepairs] = useState(false);
+
   const updateField = (field, value) => {
     onChange({ ...data, [field]: value });
   };
@@ -94,23 +95,51 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
     });
   };
 
-  // Calculate sale statistics
+  const addRepairCost = () => {
+    const repairs = data.repair_costs || [];
+    onChange({
+      ...data,
+      repair_costs: [...repairs, { description: "", cost: 0 }]
+    });
+  };
+
+  const updateRepairCost = (index, field, value) => {
+    const repairs = [...(data.repair_costs || [])];
+    repairs[index] = { ...repairs[index], [field]: field === 'cost' ? parseFloat(value) || 0 : value };
+    onChange({ ...data, repair_costs: repairs });
+  };
+
+  const removeRepairCost = (index) => {
+    const repairs = [...(data.repair_costs || [])];
+    repairs.splice(index, 1);
+    onChange({ ...data, repair_costs: repairs });
+  };
+
+  const getTotalRepairCost = () => {
+    if (!data.repair_costs || data.repair_costs.length === 0) return 0;
+    return data.repair_costs.reduce((sum, repair) => sum + (repair.cost || 0), 0);
+  };
+
+  const getTotalCost = () => {
+    return (data.cost || 0) + getTotalRepairCost();
+  };
+
   const calculateSaleStats = () => {
     if (!data.sold_price || !data.sold_platform) return null;
 
     const soldPrice = data.sold_price;
-    const cost = data.cost || 0;
+    const totalCost = getTotalCost();
     const platform = data.sold_platform.toLowerCase();
     
     const { fees, net } = calculateFees(soldPrice, platform);
-    const profit = net - cost;
-    const margin = cost > 0 ? (profit / cost) * 100 : 0;
-    const markup = cost > 0 ? ((soldPrice - cost) / cost) * 100 : 0;
-    const roi = cost > 0 ? (profit / cost) * 100 : 0;
+    const profit = net - totalCost;
+    const margin = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+    const markup = totalCost > 0 ? ((soldPrice - totalCost) / totalCost) * 100 : 0;
+    const roi = totalCost > 0 ? (profit / totalCost) * 100 : 0;
 
     return {
       soldPrice,
-      cost,
+      cost: totalCost,
       fees,
       net,
       profit,
@@ -122,7 +151,6 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
 
   const saleStats = calculateSaleStats();
 
-  // Get the selected source to find order numbers
   const selectedSource = sources.find(s => s.id === data.source_id);
   const orderNumbers = selectedSource 
     ? sources.filter(s => s.name === selectedSource.name).map(s => s.order_number)
@@ -295,12 +323,12 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
       <TabsContent value="pricing" className="space-y-4 mt-6">
         <div className="grid grid-cols-4 gap-4">
           <div>
-            <Label>Cost</Label>
+            <Label>Initial Cost</Label>
             <Input
               type="number"
               value={data.cost || ""}
               onChange={(e) => updateField("cost", parseFloat(e.target.value))}
-              placeholder="Your cost"
+              placeholder="Purchase price"
             />
           </div>
           <div>
@@ -330,6 +358,84 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
               placeholder="Minimum price"
             />
           </div>
+        </div>
+
+        <div className="p-4 bg-slate-100 rounded-lg border border-slate-300">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-slate-600" />
+              <h3 className="font-semibold text-slate-900">Repairs & Additional Costs</h3>
+              {getTotalRepairCost() > 0 && (
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                  Total: ${getTotalRepairCost().toFixed(2)}
+                </Badge>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowRepairs(!showRepairs)}
+              className="text-xs"
+            >
+              {showRepairs ? "Hide" : "Show"} Details
+            </Button>
+          </div>
+
+          {showRepairs && (
+            <div className="space-y-3">
+              {(data.repair_costs || []).map((repair, index) => (
+                <div key={index} className="flex gap-2 items-start">
+                  <Input
+                    placeholder="Description (e.g., New band)"
+                    value={repair.description || ""}
+                    onChange={(e) => updateRepairCost(index, 'description', e.target.value)}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Cost"
+                    value={repair.cost || ""}
+                    onChange={(e) => updateRepairCost(index, 'cost', e.target.value)}
+                    className="w-32"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => removeRepairCost(index)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={addRepairCost}
+                className="w-full border-dashed"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Repair/Cost
+              </Button>
+            </div>
+          )}
+
+          {getTotalRepairCost() > 0 && (
+            <div className="mt-3 pt-3 border-t border-slate-300">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Initial Cost:</span>
+                <span className="font-semibold">${(data.cost || 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Repairs/Parts:</span>
+                <span className="font-semibold text-amber-700">+${getTotalRepairCost().toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-base mt-2 pt-2 border-t border-slate-300">
+                <span className="text-slate-900 font-semibold">Total Cost:</span>
+                <span className="font-bold text-slate-900">${getTotalCost().toFixed(2)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
@@ -385,7 +491,8 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
           <div className="space-y-4">
             {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map(platform => {
               const price = data.platform_prices?.[platform] || 0;
-              const minPrice = calculateMinimumPrice(data.cost, platform);
+              const totalCost = getTotalCost();
+              const minPrice = calculateMinimumPrice(totalCost, platform);
               const { fees, net } = calculateFees(price, platform);
               
               return (
@@ -395,7 +502,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
                       <Label className="capitalize text-base font-semibold">{platform}</Label>
                       <p className="text-xs text-slate-500">{PLATFORM_FEES[platform].description}</p>
                     </div>
-                    {data.cost > 0 && (
+                    {totalCost > 0 && (
                       <Badge variant="outline" className="bg-white text-amber-700 border-amber-300">
                         <TrendingDown className="w-3 h-3 mr-1" />
                         Min: ${minPrice}
@@ -424,11 +531,11 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
                         </span>
                         <span className="font-semibold text-green-800">${net.toFixed(2)}</span>
                       </div>
-                      {data.cost > 0 && (
+                      {totalCost > 0 && (
                         <div className="col-span-2 text-center p-2 bg-slate-100 rounded">
                           <span className="text-slate-600">Profit: </span>
-                          <span className={`font-bold ${net - data.cost >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                            ${(net - data.cost).toFixed(2)} ({((net - data.cost) / data.cost * 100).toFixed(1)}%)
+                          <span className={`font-bold ${net - totalCost >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                            ${(net - totalCost).toFixed(2)} ({((net - totalCost) / totalCost * 100).toFixed(1)}%)
                           </span>
                         </div>
                       )}
@@ -440,18 +547,18 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
           </div>
         </div>
 
-        {data.cost && data.retail_price && (
+        {getTotalCost() > 0 && data.retail_price && (
           <div className="p-4 bg-slate-800 text-white rounded-lg mt-6">
             <h3 className="font-semibold mb-2">Overall Profit Analysis</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-slate-300">Profit:</span>
-                <p className="text-xl font-bold">${(data.retail_price - data.cost).toLocaleString()}</p>
+                <p className="text-xl font-bold">${(data.retail_price - getTotalCost()).toLocaleString()}</p>
               </div>
               <div>
                 <span className="text-slate-300">Margin:</span>
                 <p className="text-xl font-bold">
-                  {((data.retail_price - data.cost) / data.cost * 100).toFixed(1)}%
+                  {((data.retail_price - getTotalCost()) / getTotalCost() * 100).toFixed(1)}%
                 </p>
               </div>
             </div>
@@ -531,7 +638,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
                 <p className="text-2xl font-bold text-white">${saleStats.soldPrice.toLocaleString()}</p>
               </div>
               <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-                <p className="text-xs text-slate-300 uppercase font-semibold mb-1">Your Cost</p>
+                <p className="text-xs text-slate-300 uppercase font-semibold mb-1">Your Total Cost</p>
                 <p className="text-2xl font-bold text-white">${saleStats.cost.toLocaleString()}</p>
               </div>
             </div>
