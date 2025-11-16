@@ -125,10 +125,12 @@ export default function WatchDetail() {
     setAnalysisError(null);
     
     try {
-      setAnalysisStep("⚙️ Preparing request...");
-      console.log("=== AI ANALYSIS START ===");
-      console.log("Watch ID:", watchId);
-      console.log("Photos:", editedData.photos);
+      // STEP 1: Identify the watch using 1-2 photos only (avoid rate limit)
+      setAnalysisStep("🔍 Step 1/2: Identifying watch from photos...");
+      console.log("=== STEP 1: IDENTIFICATION ===");
+      
+      const photosToAnalyze = editedData.photos.slice(0, 2); // Only send first 2 photos
+      console.log("Photos being sent:", photosToAnalyze);
       
       const userContext = [];
       if (editedData.brand && editedData.brand !== "Unknown") userContext.push(`Brand: ${editedData.brand}`);
@@ -137,103 +139,166 @@ export default function WatchDetail() {
       if (editedData.year) userContext.push(`Year: ${editedData.year}`);
       if (editedData.condition) userContext.push(`Condition: ${editedData.condition}`);
 
-      const contextStr = userContext.length > 0 ? `\n\nUser info:\n${userContext.join('\n')}` : '';
+      const contextStr = userContext.length > 0 ? `\n\nKnown info:\n${userContext.join('\n')}` : '';
 
-      setAnalysisStep("📤 Calling AI API...");
-      console.log("=== CALLING AI API ===");
-      const startTime = Date.now();
-      
-      let analysisResult;
-      try {
-        analysisResult = await base44.integrations.Core.InvokeLLM({
-          prompt: `Analyze this watch from photos and research market pricing.
+      const identificationResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a watch expert identifying this watch from photos. Look carefully at all visible details.
 
-Identify: brand, model, reference, year, movement, case material/size, condition.
+Examine and identify:
+- Brand name (look on dial, case back, clasp)
+- Model name 
+- Reference/model number (check between lugs, case back, papers if visible)
+- Serial number (if visible on case)
+- Estimated year/era
+- Movement type (automatic/manual/quartz - look for rotor, winding crown)
+- Case material (stainless steel, gold, titanium, etc)
+- Case size in mm
+- Overall condition assessment
+- Any notable features or complications
 
-Research pricing: MSRP, current retail, average market value, price range.
+Be thorough and confident. If you see text or numbers, include them.${contextStr}`,
+        file_urls: photosToAnalyze,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            identified_brand: { type: "string" },
+            identified_model: { type: "string" },
+            reference_number: { type: "string" },
+            serial_number: { type: "string" },
+            estimated_year: { type: "string" },
+            movement_type: { type: "string" },
+            case_material: { type: "string" },
+            case_size: { type: "string" },
+            condition_assessment: { type: "string" },
+            notable_features: { type: "array", items: { type: "string" } },
+            confidence_level: { type: "string" }
+          }
+        }
+      });
 
-Provide platform recommendations for: whatnot, ebay, shopify, etsy, poshmark, mercari${contextStr}`,
-          file_urls: editedData.photos,
-          add_context_from_internet: true,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              identified_brand: { type: "string" },
-              identified_model: { type: "string" },
-              reference_number: { type: "string" },
-              serial_number: { type: "string" },
-              estimated_year: { type: "string" },
-              movement_type: { type: "string" },
-              case_material: { type: "string" },
-              case_size: { type: "string" },
-              condition_assessment: { type: "string" },
-              notable_features: { type: "array", items: { type: "string" } },
-              confidence_level: { type: "string" },
-              original_msrp: { type: "number" },
-              msrp_source_link: { type: "string" },
-              current_retail_price: { type: "number" },
-              estimated_value_low: { type: "number" },
-              estimated_value_high: { type: "number" },
-              average_market_value: { type: "number" },
-              market_insights: { type: "string" },
-              comparable_listings: { type: "string" },
-              market_research_summary: { type: "string" },
-              pricing_recommendations: {
-                type: "object",
-                properties: {
-                  whatnot: { type: "number" },
-                  ebay: { type: "number" },
-                  shopify: { type: "number" },
-                  etsy: { type: "number" },
-                  poshmark: { type: "number" },
-                  mercari: { type: "number" }
-                }
-              },
-              pricing_rationale: {
-                type: "object",
-                properties: {
-                  whatnot: { type: "string" },
-                  ebay: { type: "string" },
-                  shopify: { type: "string" },
-                  etsy: { type: "string" },
-                  poshmark: { type: "string" },
-                  mercari: { type: "string" }
-                }
+      console.log("Identification result:", identificationResult);
+      toast.success("✅ Watch identified!");
+
+      // STEP 2: Research pricing using web search
+      setAnalysisStep("💰 Step 2/2: Researching market pricing online...");
+      console.log("=== STEP 2: PRICING RESEARCH ===");
+
+      const searchQuery = `${identificationResult.identified_brand || editedData.brand} ${identificationResult.identified_model || editedData.model || ''} ${identificationResult.reference_number || editedData.reference_number || ''} watch price sold listings`.trim();
+      console.log("Search query:", searchQuery);
+
+      const pricingResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a watch dealer researching pricing for this watch:
+
+Brand: ${identificationResult.identified_brand}
+Model: ${identificationResult.identified_model}
+Reference: ${identificationResult.reference_number || 'Unknown'}
+Year: ${identificationResult.estimated_year || 'Unknown'}
+Condition: ${identificationResult.condition_assessment}
+
+YOUR JOB: Search online and find actual listings for THIS EXACT watch. Look on:
+- eBay (especially sold listings)
+- Chrono24
+- WatchBox
+- Bob's Watches  
+- Authorized dealer sites
+
+Find:
+1. HIGHEST price you can find (this becomes our "MSRP" reference)
+   - Save the URL as msrp_source_link
+   - Record as original_msrp
+
+2. MULTIPLE comparable listings (at least 5-10 if possible)
+   - List all the URLs you find as comparable_listings
+   - Note prices for each
+
+3. Calculate average_market_value:
+   - Take all prices you found
+   - Calculate average, but lean toward the HIGHER side of middle
+   - This is your recommended listing/auction price
+
+4. Calculate discount prices:
+   - 30% off market value
+   - 50% off market value
+
+5. Platform recommendations:
+   - whatnot: 70% of market value (fast turnover)
+   - ebay: 85% of market value (competitive)
+   - shopify: 100% of market value (direct sales)
+   - etsy: 90% of market value
+   - poshmark: 80% of market value
+   - mercari: 75% of market value
+
+6. Provide rationale for each platform price
+
+Include ALL clickable links you find. Be thorough!`,
+        add_context_from_internet: true,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            original_msrp: { type: "number" },
+            msrp_source_link: { type: "string" },
+            current_retail_price: { type: "number" },
+            estimated_value_low: { type: "number" },
+            estimated_value_high: { type: "number" },
+            average_market_value: { type: "number" },
+            discount_30_percent: { type: "number" },
+            discount_50_percent: { type: "number" },
+            market_insights: { type: "string" },
+            comparable_listings: { type: "string" },
+            market_research_summary: { type: "string" },
+            pricing_recommendations: {
+              type: "object",
+              properties: {
+                whatnot: { type: "number" },
+                ebay: { type: "number" },
+                shopify: { type: "number" },
+                etsy: { type: "number" },
+                poshmark: { type: "number" },
+                mercari: { type: "number" }
+              }
+            },
+            pricing_rationale: {
+              type: "object",
+              properties: {
+                whatnot: { type: "string" },
+                ebay: { type: "string" },
+                shopify: { type: "string" },
+                etsy: { type: "string" },
+                poshmark: { type: "string" },
+                mercari: { type: "string" }
               }
             }
           }
-        });
-      } catch (aiError) {
-        console.error("=== AI API ERROR ===");
-        console.error("Error object:", aiError);
-        console.error("Error message:", aiError.message);
-        console.error("Error stack:", aiError.stack);
-        console.error("Error response:", aiError.response?.data);
-        throw new Error(`AI API failed: ${aiError.message || 'Unknown error'}`);
-      }
+        }
+      });
 
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      
-      setAnalysisStep("✅ Processing response...");
-      console.log("=== AI RESPONSE ===");
-      console.log("Time:", elapsed, "seconds");
-      console.log("Response:", analysisResult);
+      console.log("Pricing result:", pricingResult);
+      toast.success("✅ Pricing research complete!");
+
+      // Combine both results
+      setAnalysisStep("💾 Saving analysis...");
+      const combinedAnalysis = {
+        ...identificationResult,
+        ...pricingResult
+      };
+
+      console.log("=== COMBINED ANALYSIS ===");
+      console.log(combinedAnalysis);
 
       const updatedData = {
         ...editedData,
-        ai_analysis: analysisResult
+        ai_analysis: combinedAnalysis
       };
 
-      if (analysisResult.msrp_source_link && !editedData.msrp_link) {
-        updatedData.msrp_link = analysisResult.msrp_source_link;
+      if (pricingResult.msrp_source_link && !editedData.msrp_link) {
+        updatedData.msrp_link = pricingResult.msrp_source_link;
       }
       
-      setAnalysisStep("💾 Saving...");
       setEditedData(updatedData);
       
       await base44.entities.Watch.update(watchId, { 
-        ai_analysis: analysisResult,
-        ...(analysisResult.msrp_source_link && !editedData.msrp_link && { msrp_link: analysisResult.msrp_source_link })
+        ai_analysis: combinedAnalysis,
+        ...(pricingResult.msrp_source_link && !editedData.msrp_link && { msrp_link: pricingResult.msrp_source_link })
       });
       
       const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
@@ -241,13 +306,15 @@ Provide platform recommendations for: whatnot, ebay, shopify, etsy, poshmark, me
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
       console.log("=== COMPLETE ===");
-      toast.success(`✅ Done in ${elapsed}s`);
+      toast.success("✅ AI analysis complete!");
       setAnalysisStep("");
     } catch (error) {
       console.error("=== ANALYSIS FAILED ===");
-      console.error("Full error:", error);
+      console.error("Error:", error);
+      console.error("Error message:", error.message);
+      console.error("Error response:", error.response?.data);
       
-      const errorMsg = `${error.message}\n\nCheck browser console for full details.`;
+      const errorMsg = `${error.message}\n\n${error.response?.data?.message || 'Check browser console for details'}`;
       setAnalysisError(errorMsg);
       toast.error("Analysis failed - see error below");
     } finally {
