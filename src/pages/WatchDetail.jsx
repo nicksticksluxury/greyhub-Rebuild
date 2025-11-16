@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -122,6 +121,7 @@ export default function WatchDetail() {
 
     setAnalyzing(true);
     setAnalysisStep("Step 1/2: Identifying watch from photos...");
+    toast.info("Step 1/2: Analyzing photos (this may take up to 30 seconds)...");
     
     try {
       const manualContext = [];
@@ -139,34 +139,22 @@ export default function WatchDetail() {
       if (editedData.identical_listing_link) manualContext.push(`Identical Watch Listing: ${editedData.identical_listing_link}`);
 
       const contextString = manualContext.length > 0 
-        ? `\n\nIMPORTANT: The user has already provided the following information about this watch:\n${manualContext.join('\n')}\n\nUse this information to guide your analysis, but still examine the photos for additional details or to verify the provided information.`
+        ? `\n\nUser-provided info:\n${manualContext.join('\n')}\n\nUse this to guide your analysis.`
         : '';
 
-      const identicalListingContext = editedData.identical_listing_link
-        ? `\n\n🔴 CRITICAL: The user has provided a link to an IDENTICAL watch listing: ${editedData.identical_listing_link}\n\nYou MUST visit this link to see the exact watch being sold. Use it to confirm brand, model, reference, condition, and all specifications.`
-        : '';
-
-      toast.info("Step 1/2: Analyzing photos to identify the watch...");
-      
-      console.log("Starting photo identification...");
       const identificationResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a professional watch expert. Analyze these watch photos and identify all visible details.
+        prompt: `Analyze these watch photos and identify details:
+- Brand and model
+- Reference and serial numbers (if visible)
+- Year/era
+- Movement type
+- Case material and size
+- Condition
+- Notable features
 
-Carefully examine:
-- Brand name and logo
-- Model name/series
-- Reference number (on case, papers, or dial)
-- Serial number (if visible)
-- Year/era (based on design, patina, style)
-- Movement type (automatic, manual, quartz - look for rotor through caseback or visible indicators)
-- Case material (stainless steel, gold, platinum, titanium, etc.)
-- Case size/diameter (estimate based on proportions)
-- Overall condition (examine wear, scratches, patina)
-- Notable features (complications, special dials, limited edition markers, etc.)
-
-Be specific and detailed. If you cannot determine something from the photos, indicate "Unknown" or "Not visible".${contextString}${identicalListingContext}`,
+Be specific. If unsure, say "Unknown".${contextString}`,
         file_urls: editedData.photos,
-        add_context_from_internet: editedData.identical_listing_link ? true : false,
+        add_context_from_internet: false,
         response_json_schema: {
           type: "object",
           properties: {
@@ -185,9 +173,9 @@ Be specific and detailed. If you cannot determine something from the photos, ind
         }
       });
 
-      console.log("Photo identification complete:", identificationResult);
-      setAnalysisStep("Step 2/2: Researching market prices and comparables...");
-      toast.info("Step 2/2: Researching market prices online (this may take 30-60 seconds)...");
+      console.log("Step 1 complete:", identificationResult);
+      setAnalysisStep("Step 2/2: Researching market prices...");
+      toast.info("Step 2/2: Researching market prices (30-60 seconds)...");
 
       const finalBrand = editedData.brand && editedData.brand !== "Unknown" ? editedData.brand : identificationResult.identified_brand;
       const finalModel = editedData.model || identificationResult.identified_model;
@@ -195,77 +183,35 @@ Be specific and detailed. If you cannot determine something from the photos, ind
       const finalYear = editedData.year || identificationResult.estimated_year;
       const finalCondition = editedData.condition || identificationResult.condition_assessment || "unknown";
 
-      const watchDescription = `${finalBrand || 'Unknown brand'} ${finalModel || 'Unknown model'}${finalRef ? `, reference ${finalRef}` : ''}${finalYear ? ` from ${finalYear}` : ''}`;
-
+      const watchDescription = `${finalBrand || 'Unknown brand'} ${finalModel || 'Unknown model'}${finalRef ? `, ref ${finalRef}` : ''}${finalYear ? ` (${finalYear})` : ''}`;
       const isNewWatch = finalCondition && ['new', 'new_with_box', 'new_no_box'].includes(finalCondition.toLowerCase());
 
-      const msrpLinkContext = editedData.msrp_link 
-        ? `\n\n🔴 CRITICAL PRIORITY - VISIT THIS LINK FIRST: ${editedData.msrp_link}
+      const linkContext = [];
+      if (editedData.msrp_link) {
+        linkContext.push(`PRIORITY: Visit ${editedData.msrp_link} for MSRP and pricing.`);
+      }
+      if (editedData.identical_listing_link) {
+        linkContext.push(`Also check ${editedData.identical_listing_link} for comparison.`);
+      }
 
-MANDATORY STEPS:
-1. Go to this exact URL and read all pricing information
-2. Extract the ORIGINAL MSRP (manufacturer's suggested retail price)
-3. Extract any current sale price or discounted price
-4. Note the full product URL for the msrp_source_link field
-5. This is the PRIMARY source of truth - use these exact prices`
-        : '';
-
-      const identicalListingPriceContext = editedData.identical_listing_link
-        ? `\n\n🔴 ALSO VISIT: ${editedData.identical_listing_link}
-
-This is an identical watch listing. Use it to:
-1. Verify the watch specifications
-2. See current asking prices for this exact watch
-3. Include this listing in your comparable analysis`
-        : '';
-
-      const conditionContext = isNewWatch 
-        ? `\n\n🔴 CRITICAL: This is a NEW/UNWORN watch (condition: ${finalCondition}).
-
-For NEW watches:
-- Research NEW watch retail prices (authorized dealers, manufacturer sites, new watch retailers)
-- DO NOT use used/pre-owned market data
-- Average Market Value = current NEW retail price (what buyers pay today for new ones)
-- Include both MSRP and current retail in your analysis
-- Also blend in other marketplace listings to see if value has appreciated`
-        : `\n\nThis is a PRE-OWNED watch (condition: ${finalCondition}). Research secondary market sold listings but also consider retail prices to see if it has appreciated.`;
-
-      console.log("Starting market research...");
       const marketResearchResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a watch market pricing analyst. Research comprehensive pricing for: ${watchDescription}${msrpLinkContext}${identicalListingPriceContext}${conditionContext}
+        prompt: `Research pricing for: ${watchDescription}
+Condition: ${finalCondition}
 
-YOU MUST PROVIDE ALL OF THE FOLLOWING FIELDS WITH NUMERIC VALUES:
+${linkContext.join('\n')}
 
-1. original_msrp (number): The original manufacturer's suggested retail price when new (set to 0 if truly unknown, and mention in summary)
-2. msrp_source_link (string): URL where MSRP was found
-3. current_retail_price (number): Current price for NEW watches from authorized dealers (0 if unknown)
-4. average_market_value (number): ${isNewWatch ? 'Current retail/street price for NEW watches' : 'Average price from recent USED sold listings'} - MUST have a value
-5. estimated_value_low (number): Low end of current pricing range
-6. estimated_value_high (number): High end of current pricing range
+Find:
+1. original_msrp (0 if unknown)
+2. msrp_source_link
+3. current_retail_price (0 if unknown)
+4. average_market_value (required)
+5. estimated_value_low and estimated_value_high
 
-RESEARCH SOURCES - blend retail prices with market listings:
-${isNewWatch ? `
-- Visit the provided link(s) FIRST if available
-- Manufacturer website and authorized dealer prices
-- Jomashop, Chrono24 (NEW listings)
-- Amazon NEW watch prices
-- eBay, Mercari, Poshmark current listings for new watches
-- Current authorized dealer retail pricing` : `
-- eBay SOLD listings (actual prices paid)
-- Chrono24 pre-owned sold data
-- Bob's Watches, WatchBox pre-owned prices
-- Current eBay/marketplace listings
-- Auction house results
-- Compare to retail to see if watch has appreciated`}
+${isNewWatch ? 'Search NEW retail prices from authorized dealers.' : 'Search pre-owned/used sold listings.'}
 
-In your comparable_listings section, include full URLs to specific listings you found.
+Also provide platform pricing recommendations (whatnot, ebay, shopify, etsy, poshmark, mercari) with rationale.
 
-Provide platform pricing recommendations for:
-- whatnot, ebay, shopify, etsy, poshmark, mercari
-
-For each platform, explain your rationale with specific comparable listings found.
-
-IMPORTANT: Return numeric values for ALL price fields. If you cannot find MSRP, set it to 0 and mention this in your summary. DO NOT leave fields null or undefined.${contextString}`,
+Include URLs in comparable_listings.${contextString}`,
         file_urls: [],
         add_context_from_internet: true,
         response_json_schema: {
@@ -307,7 +253,7 @@ IMPORTANT: Return numeric values for ALL price fields. If you cannot find MSRP, 
         }
       });
 
-      console.log("Market Research Result:", marketResearchResult);
+      console.log("Step 2 complete:", marketResearchResult);
 
       const combinedAnalysis = {
         ...identificationResult,
@@ -324,21 +270,22 @@ IMPORTANT: Return numeric values for ALL price fields. If you cannot find MSRP, 
       }
       
       setEditedData(updatedData);
-      const savedWatch = await base44.entities.Watch.update(watchId, { 
+      await base44.entities.Watch.update(watchId, { 
         ai_analysis: combinedAnalysis,
         ...(marketResearchResult.msrp_source_link && !editedData.msrp_link && { msrp_link: marketResearchResult.msrp_source_link })
       });
-      setOriginalData(savedWatch);
+      
+      const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
+      setOriginalData(refreshedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      setAnalysisStep("");
-      toast.success("Complete! Watch identified and market prices researched.");
+      toast.success("Analysis complete!");
     } catch (error) {
       console.error("AI Analysis Error:", error);
-      setAnalysisStep("");
-      toast.error(`Analysis failed: ${error.message || 'Unknown error'}. Please try again.`);
+      toast.error(`Failed: ${error.message || 'Please try again'}`);
     } finally {
       setAnalyzing(false);
+      setAnalysisStep("");
     }
   };
 
