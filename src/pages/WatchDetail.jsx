@@ -120,10 +120,15 @@ export default function WatchDetail() {
     }
 
     setAnalyzing(true);
-    setAnalysisStep("Analyzing watch and researching market data...");
-    toast.info("AI analysis in progress (may take 30-60 seconds)...");
     
     try {
+      // Step 1: Build context
+      setAnalysisStep("⚙️ Building analysis request...");
+      console.log("=== AI ANALYSIS START ===");
+      console.log("Watch ID:", watchId);
+      console.log("Number of photos:", editedData.photos.length);
+      console.log("Photo URLs:", editedData.photos);
+      
       const userContext = [];
       if (editedData.brand && editedData.brand !== "Unknown") userContext.push(`Brand: ${editedData.brand}`);
       if (editedData.model) userContext.push(`Model: ${editedData.model}`);
@@ -133,9 +138,18 @@ export default function WatchDetail() {
       if (editedData.msrp_link) userContext.push(`MSRP Link: ${editedData.msrp_link}`);
       if (editedData.identical_listing_link) userContext.push(`Identical Listing: ${editedData.identical_listing_link}`);
 
+      console.log("User provided context:", userContext);
+
       const contextStr = userContext.length > 0 ? `\n\nUser provided info:\n${userContext.join('\n')}` : '';
 
-      console.log("Starting combined AI analysis...");
+      // Step 2: Send request
+      setAnalysisStep("📤 Sending request to AI (analyzing photos + researching market)...");
+      toast.info("Sending photos to AI for analysis...");
+      console.log("=== SENDING AI REQUEST ===");
+      console.log("Prompt length:", 500 + contextStr.length);
+      console.log("Context enabled:", true);
+      
+      const startTime = Date.now();
       
       const analysisResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a watch expert and market analyst. Complete TWO tasks:
@@ -216,7 +230,18 @@ Search online for pricing data. Check eBay sold, Chrono24, authorized dealers, e
         }
       });
 
-      console.log("AI Analysis Complete:", analysisResult);
+      const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      
+      // Step 3: Process response
+      setAnalysisStep("📥 Received AI response, processing data...");
+      console.log("=== AI RESPONSE RECEIVED ===");
+      console.log("Response time:", elapsedTime, "seconds");
+      console.log("Full response:", analysisResult);
+      console.log("Has brand?", !!analysisResult.identified_brand);
+      console.log("Has model?", !!analysisResult.identified_model);
+      console.log("Has pricing?", !!analysisResult.average_market_value);
+      console.log("Has MSRP?", !!analysisResult.original_msrp);
+      toast.success(`AI responded in ${elapsedTime}s! Processing data...`);
 
       const updatedData = {
         ...editedData,
@@ -227,6 +252,9 @@ Search online for pricing data. Check eBay sold, Chrono24, authorized dealers, e
         updatedData.msrp_link = analysisResult.msrp_source_link;
       }
       
+      // Step 4: Save to database
+      setAnalysisStep("💾 Saving analysis to database...");
+      console.log("=== SAVING TO DATABASE ===");
       setEditedData(updatedData);
       
       await base44.entities.Watch.update(watchId, { 
@@ -234,17 +262,33 @@ Search online for pricing data. Check eBay sold, Chrono24, authorized dealers, e
         ...(analysisResult.msrp_source_link && !editedData.msrp_link && { msrp_link: analysisResult.msrp_source_link })
       });
       
+      console.log("Database update complete");
+      
+      // Step 5: Refresh data
+      setAnalysisStep("🔄 Refreshing watch data...");
       const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
       setOriginalData(refreshedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      toast.success("Complete! Check AI panel for all details.");
+      console.log("=== AI ANALYSIS COMPLETE ===");
+      toast.success("✅ Analysis complete! Check AI panel for details.");
     } catch (error) {
-      console.error("Analysis Error:", error);
-      toast.error(`Failed: ${error.message || 'Unknown error'}`);
+      console.error("=== AI ANALYSIS ERROR ===");
+      console.error("Error type:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Full error:", error);
+      toast.error(`❌ Analysis failed: ${error.message}`);
+      setAnalysisStep(`❌ Error: ${error.message}`);
+      
+      // Keep error visible for 5 seconds
+      setTimeout(() => {
+        setAnalysisStep("");
+      }, 5000);
     } finally {
       setAnalyzing(false);
-      setAnalysisStep("");
+      setTimeout(() => {
+        setAnalysisStep("");
+      }, 3000);
     }
   };
 
