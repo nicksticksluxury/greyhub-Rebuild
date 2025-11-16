@@ -5,7 +5,7 @@ import Sources from './pages/Sources';
 import Auctions from './pages/Auctions';
 import SoldInventory from './pages/SoldInventory';
 import ImportSources from './pages/ImportSources';
-import Layout from './Layout.jsx';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -21,5 +21,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Inventory",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };

@@ -391,6 +391,18 @@ Include ALL clickable listing URLs!`,
         }
       });
       toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} price imported!`);
+    } else if (field === "comparable_listings_links") {
+      // Extract only URLs from the text, fixing trailing parentheses issue
+      const urlRegex = /(https?:\/\/[^\s\)]+)/g;
+      const urls = value.match(urlRegex) || [];
+      // Remove trailing parentheses from URLs
+      const cleanedUrls = urls.map(url => url.replace(/\)+$/, ''));
+      const urlsText = cleanedUrls.join('\n');
+      setEditedData({ 
+        ...editedData, 
+        comparable_listings_links: urlsText 
+      });
+      toast.success("Comparable listing links imported!");
     } else {
       setEditedData({ ...editedData, [field]: value });
       toast.success("Data imported from AI analysis");
@@ -492,7 +504,7 @@ Include ALL clickable listing URLs!`,
       </div>
 
       <div className="max-w-[1800px] mx-auto px-6 py-6">
-        <div className="grid lg:grid-cols-12 gap-6">
+        <div className="grid lg:grid-cols-12 gap-4">
           <div className="lg:col-span-3">
             <ImageGallery 
               photos={editedData.photos || []}
