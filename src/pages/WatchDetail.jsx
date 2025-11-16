@@ -135,45 +135,56 @@ export default function WatchDetail() {
       if (editedData.case_size) manualContext.push(`Case Size: ${editedData.case_size}`);
       if (editedData.movement_type) manualContext.push(`Movement: ${editedData.movement_type}`);
       if (editedData.description) manualContext.push(`Description: ${editedData.description}`);
-      if (editedData.msrp_link) manualContext.push(`MSRP Source Link: ${editedData.msrp_link}`);
-      if (editedData.identical_listing_link) manualContext.push(`Identical Watch Listing: ${editedData.identical_listing_link}`);
+      if (editedData.identical_listing_link) manualContext.push(`Identical Listing: ${editedData.identical_listing_link}`);
 
       const contextString = manualContext.length > 0 
-        ? `\n\nUser-provided info:\n${manualContext.join('\n')}\n\nUse this to guide your analysis.`
+        ? `\n\nUser provided:\n${manualContext.join('\n')}\nUse this to guide your analysis but still examine photos carefully.`
         : '';
 
+      console.log("Starting Step 1: Photo identification...");
       const identificationResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze these watch photos and identify details:
-- Brand and model
-- Reference and serial numbers (if visible)
-- Year/era
-- Movement type
-- Case material and size
-- Condition
-- Notable features
+        prompt: `You are a professional watch expert. Analyze these watch photos in detail.
 
-Be specific. If unsure, say "Unknown".${contextString}`,
+Identify ALL of the following (use "Unknown" or "Not visible" only if truly cannot determine):
+1. Brand name (look for logos on dial, clasp, crown)
+2. Model name/series (Submariner, Speedmaster, etc.)
+3. Reference number (usually on case, papers, or between lugs)
+4. Serial number (if visible on case or papers)
+5. Year/era of manufacture (based on design, patina, serial if visible)
+6. Movement type (automatic/manual/quartz - look for rotor through caseback or text on dial)
+7. Case material (stainless steel, gold, titanium, etc.)
+8. Case size in mm (estimate from proportions and crown size)
+9. Overall condition (new/mint/excellent/very good/good/fair)
+10. Notable features (date, chronograph, specific dial color/design, limited edition markers)
+
+Provide a detailed condition_assessment describing wear, scratches, patina visible in photos.${contextString}`,
         file_urls: editedData.photos,
-        add_context_from_internet: false,
+        add_context_from_internet: editedData.identical_listing_link ? true : false,
         response_json_schema: {
           type: "object",
           properties: {
-            identified_brand: { type: "string" },
-            identified_model: { type: "string" },
-            reference_number: { type: "string" },
-            serial_number: { type: "string" },
-            estimated_year: { type: "string" },
-            movement_type: { type: "string" },
-            case_material: { type: "string" },
-            case_size: { type: "string" },
-            condition_assessment: { type: "string" },
-            notable_features: { type: "array", items: { type: "string" } },
-            confidence_level: { type: "string" }
-          }
+            identified_brand: { type: "string", description: "Watch brand name" },
+            identified_model: { type: "string", description: "Model name or series" },
+            reference_number: { type: "string", description: "Reference/catalog number" },
+            serial_number: { type: "string", description: "Serial number if visible" },
+            estimated_year: { type: "string", description: "Year or era of manufacture" },
+            movement_type: { type: "string", description: "automatic, manual, quartz, or digital" },
+            case_material: { type: "string", description: "Material of the case" },
+            case_size: { type: "string", description: "Case diameter in mm" },
+            condition_assessment: { type: "string", description: "Detailed condition description" },
+            notable_features: { type: "array", items: { type: "string" }, description: "Special features and details" },
+            confidence_level: { type: "string", description: "High, Medium, or Low confidence" }
+          },
+          required: ["identified_brand", "identified_model", "condition_assessment", "confidence_level"]
         }
       });
 
-      console.log("Step 1 complete:", identificationResult);
+      console.log("Step 1 COMPLETE - Identification Result:", identificationResult);
+      
+      if (!identificationResult || !identificationResult.identified_brand) {
+        throw new Error("Failed to identify watch from photos");
+      }
+
       setAnalysisStep("Step 2/2: Researching market prices...");
       toast.info("Step 2/2: Researching market prices (30-60 seconds)...");
 
@@ -181,37 +192,45 @@ Be specific. If unsure, say "Unknown".${contextString}`,
       const finalModel = editedData.model || identificationResult.identified_model;
       const finalRef = editedData.reference_number || identificationResult.reference_number;
       const finalYear = editedData.year || identificationResult.estimated_year;
-      const finalCondition = editedData.condition || identificationResult.condition_assessment || "unknown";
+      const finalCondition = editedData.condition || "used";
 
-      const watchDescription = `${finalBrand || 'Unknown brand'} ${finalModel || 'Unknown model'}${finalRef ? `, ref ${finalRef}` : ''}${finalYear ? ` (${finalYear})` : ''}`;
+      const watchDescription = `${finalBrand} ${finalModel}${finalRef ? ` ref ${finalRef}` : ''}${finalYear ? ` (${finalYear})` : ''}`;
       const isNewWatch = finalCondition && ['new', 'new_with_box', 'new_no_box'].includes(finalCondition.toLowerCase());
 
-      const linkContext = [];
+      const linkInstructions = [];
       if (editedData.msrp_link) {
-        linkContext.push(`PRIORITY: Visit ${editedData.msrp_link} for MSRP and pricing.`);
+        linkInstructions.push(`🔴 PRIORITY: Visit ${editedData.msrp_link} first to find MSRP and current pricing.`);
       }
       if (editedData.identical_listing_link) {
-        linkContext.push(`Also check ${editedData.identical_listing_link} for comparison.`);
+        linkInstructions.push(`🔴 ALSO CHECK: ${editedData.identical_listing_link} for exact watch comparison.`);
       }
 
+      console.log("Starting Step 2: Market research for", watchDescription);
       const marketResearchResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Research pricing for: ${watchDescription}
+        prompt: `Research comprehensive pricing data for: ${watchDescription}
 Condition: ${finalCondition}
 
-${linkContext.join('\n')}
+${linkInstructions.join('\n')}
 
-Find:
-1. original_msrp (0 if unknown)
-2. msrp_source_link
-3. current_retail_price (0 if unknown)
-4. average_market_value (required)
-5. estimated_value_low and estimated_value_high
+YOU MUST PROVIDE ALL NUMERIC FIELDS (use 0 if data not found):
 
-${isNewWatch ? 'Search NEW retail prices from authorized dealers.' : 'Search pre-owned/used sold listings.'}
+REQUIRED FIELDS:
+- original_msrp (number): Original MSRP when new
+- msrp_source_link (string): URL where MSRP found
+- current_retail_price (number): Current new retail price from authorized dealers
+- average_market_value (number): ${isNewWatch ? 'Current NEW retail/street price' : 'Average from recent SOLD pre-owned listings'}
+- estimated_value_low (number): Low end of price range
+- estimated_value_high (number): High end of price range
 
-Also provide platform pricing recommendations (whatnot, ebay, shopify, etsy, poshmark, mercari) with rationale.
+RESEARCH SOURCES:
+${isNewWatch ? '- Authorized dealer websites, Jomashop, Chrono24 NEW, Amazon NEW' : '- eBay SOLD, Chrono24 pre-owned sold, Bob\'s Watches, current marketplace listings'}
 
-Include URLs in comparable_listings.${contextString}`,
+Provide detailed:
+- market_insights (string): Market trends and demand
+- comparable_listings (string): Include actual URLs to 3-5 comparable listings
+- market_research_summary (string): Overall pricing summary
+
+Platform recommendations with rationale for: whatnot, ebay, shopify, etsy, poshmark, mercari`,
         file_urls: [],
         add_context_from_internet: true,
         response_json_schema: {
@@ -253,12 +272,14 @@ Include URLs in comparable_listings.${contextString}`,
         }
       });
 
-      console.log("Step 2 complete:", marketResearchResult);
+      console.log("Step 2 COMPLETE - Market Research Result:", marketResearchResult);
 
       const combinedAnalysis = {
         ...identificationResult,
         ...marketResearchResult
       };
+
+      console.log("FINAL Combined Analysis:", combinedAnalysis);
 
       const updatedData = {
         ...editedData,
@@ -270,6 +291,7 @@ Include URLs in comparable_listings.${contextString}`,
       }
       
       setEditedData(updatedData);
+      
       await base44.entities.Watch.update(watchId, { 
         ai_analysis: combinedAnalysis,
         ...(marketResearchResult.msrp_source_link && !editedData.msrp_link && { msrp_link: marketResearchResult.msrp_source_link })
@@ -279,10 +301,10 @@ Include URLs in comparable_listings.${contextString}`,
       setOriginalData(refreshedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      toast.success("Analysis complete!");
+      toast.success("Analysis complete! Check the AI panel for all details.");
     } catch (error) {
       console.error("AI Analysis Error:", error);
-      toast.error(`Failed: ${error.message || 'Please try again'}`);
+      toast.error(`Analysis failed: ${error.message || 'Please check console and try again'}`);
     } finally {
       setAnalyzing(false);
       setAnalysisStep("");
