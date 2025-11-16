@@ -125,38 +125,43 @@ export default function WatchDetail() {
     setAnalysisError(null);
     
     try {
-      // STEP 1: Identify the watch using 1-2 photos only (avoid rate limit)
-      setAnalysisStep("🔍 Step 1/2: Identifying watch from photos...");
-      console.log("=== STEP 1: IDENTIFICATION ===");
+      // STEP 1: Identify watch from user's photos (2 photos max to avoid rate limit)
+      setAnalysisStep("🔍 Step 1/4: Identifying watch from your photos...");
+      console.log("=== STEP 1: INITIAL IDENTIFICATION ===");
       
-      const photosToAnalyze = editedData.photos.slice(0, 2); // Only send first 2 photos
-      console.log("Photos being sent:", photosToAnalyze);
+      const photosToAnalyze = editedData.photos.slice(0, 2);
+      console.log("Analyzing photos:", photosToAnalyze);
       
       const userContext = [];
       if (editedData.brand && editedData.brand !== "Unknown") userContext.push(`Brand: ${editedData.brand}`);
       if (editedData.model) userContext.push(`Model: ${editedData.model}`);
-      if (editedData.reference_number) userContext.push(`Reference: ${editedData.reference_number}`);
+      if (editedData.reference_number) userContext.push(`Ref: ${editedData.reference_number}`);
       if (editedData.year) userContext.push(`Year: ${editedData.year}`);
-      if (editedData.condition) userContext.push(`Condition: ${editedData.condition}`);
 
-      const contextStr = userContext.length > 0 ? `\n\nKnown info:\n${userContext.join('\n')}` : '';
+      const contextStr = userContext.length > 0 ? `\n\nKnown info: ${userContext.join(', ')}` : '';
 
-      const identificationResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a watch expert identifying this watch from photos. Look carefully at all visible details.
+      const identification = await base44.integrations.Core.InvokeLLM({
+        prompt: `You're a watch dealer examining this watch. Look at ALL visible text and numbers carefully.
 
-Examine and identify:
-- Brand name (look on dial, case back, clasp)
-- Model name 
-- Reference/model number (check between lugs, case back, papers if visible)
-- Serial number (if visible on case)
-- Estimated year/era
-- Movement type (automatic/manual/quartz - look for rotor, winding crown)
-- Case material (stainless steel, gold, titanium, etc)
+Check everywhere:
+- Dial: brand name, model name, any text
+- Case back: model numbers, serial numbers, engravings
+- Between lugs: reference numbers
+- Clasp/buckle: brand markings
+- Papers/box: any visible info
+
+Identify:
+- Brand name
+- Model name
+- Reference/model number (often on case back or between lugs - could be numbers like "6694" or alphanumeric)
+- Serial number (if visible)
+- Year/era estimate
+- Movement type (look for automatic rotor, manual, quartz battery)
+- Case material (steel, gold, etc)
 - Case size in mm
-- Overall condition assessment
-- Any notable features or complications
+- Condition notes${contextStr}
 
-Be thorough and confident. If you see text or numbers, include them.${contextStr}`,
+Include ALL text and numbers you see, even if unsure what they are.`,
         file_urls: photosToAnalyze,
         response_json_schema: {
           type: "object",
@@ -171,66 +176,136 @@ Be thorough and confident. If you see text or numbers, include them.${contextStr
             case_size: { type: "string" },
             condition_assessment: { type: "string" },
             notable_features: { type: "array", items: { type: "string" } },
+            all_visible_text: { type: "string" },
             confidence_level: { type: "string" }
           }
         }
       });
 
-      console.log("Identification result:", identificationResult);
+      console.log("Initial identification:", identification);
       toast.success("✅ Watch identified!");
 
-      // STEP 2: Research pricing using web search
-      setAnalysisStep("💰 Step 2/2: Researching market pricing online...");
-      console.log("=== STEP 2: PRICING RESEARCH ===");
+      // STEP 2: Search internet for potential matches
+      setAnalysisStep("🌐 Step 2/4: Searching online for similar watches...");
+      console.log("=== STEP 2: FINDING MATCHES ===");
 
-      const searchQuery = `${identificationResult.identified_brand || editedData.brand} ${identificationResult.identified_model || editedData.model || ''} ${identificationResult.reference_number || editedData.reference_number || ''} watch price sold listings`.trim();
-      console.log("Search query:", searchQuery);
+      const searchQuery = `${identification.identified_brand} ${identification.identified_model || ''} ${identification.reference_number || ''} watch`.trim();
+      console.log("Search:", searchQuery);
 
-      const pricingResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a watch dealer researching pricing for this watch:
+      const searchResults = await base44.integrations.Core.InvokeLLM({
+        prompt: `Find watches matching: ${searchQuery}
 
-Brand: ${identificationResult.identified_brand}
-Model: ${identificationResult.identified_model}
-Reference: ${identificationResult.reference_number || 'Unknown'}
-Year: ${identificationResult.estimated_year || 'Unknown'}
-Condition: ${identificationResult.condition_assessment}
+Search eBay, Chrono24, watch forums, dealer sites.
 
-YOUR JOB: Search online and find actual listings for THIS EXACT watch. Look on:
-- eBay (especially sold listings)
-- Chrono24
-- WatchBox
-- Bob's Watches  
-- Authorized dealer sites
+Look for:
+- Exact model matches with photos
+- Listings with clear images
+- Reference numbers matching: ${identification.reference_number || 'none found yet'}
 
-Find:
-1. HIGHEST price you can find (this becomes our "MSRP" reference)
-   - Save the URL as msrp_source_link
-   - Record as original_msrp
+Return:
+- 3-5 image URLs from different listings (actual watch photos, not site logos)
+- The listing URLs those images came from
+- Brief description of each listing
 
-2. MULTIPLE comparable listings (at least 5-10 if possible)
-   - List all the URLs you find as comparable_listings
-   - Note prices for each
+Format as JSON with arrays: image_urls, listing_urls, descriptions`,
+        add_context_from_internet: true,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            image_urls: { type: "array", items: { type: "string" } },
+            listing_urls: { type: "array", items: { type: "string" } },
+            descriptions: { type: "array", items: { type: "string" } }
+          }
+        }
+      });
 
-3. Calculate average_market_value:
-   - Take all prices you found
-   - Calculate average, but lean toward the HIGHER side of middle
-   - This is your recommended listing/auction price
+      console.log("Found potential matches:", searchResults);
+      toast.success(`✅ Found ${searchResults.image_urls?.length || 0} potential matches`);
 
-4. Calculate discount prices:
-   - 30% off market value
-   - 50% off market value
+      // STEP 3: Visual comparison - compare user's watch to found listings
+      setAnalysisStep("👁️ Step 3/4: Comparing your watch to found listings...");
+      console.log("=== STEP 3: VISUAL VERIFICATION ===");
 
-5. Platform recommendations:
-   - whatnot: 70% of market value (fast turnover)
-   - ebay: 85% of market value (competitive)
-   - shopify: 100% of market value (direct sales)
-   - etsy: 90% of market value
-   - poshmark: 80% of market value
-   - mercari: 75% of market value
+      if (!searchResults.image_urls || searchResults.image_urls.length === 0) {
+        throw new Error("No comparison images found online. Try adding more details manually.");
+      }
 
-6. Provide rationale for each platform price
+      // Take user's first photo + up to 3 found listing photos
+      const comparisonPhotos = [photosToAnalyze[0], ...searchResults.image_urls.slice(0, 2)];
+      console.log("Comparing photos:", comparisonPhotos);
 
-Include ALL clickable links you find. Be thorough!`,
+      const verification = await base44.integrations.Core.InvokeLLM({
+        prompt: `Compare these watches:
+
+Photo 1: The user's watch (first image)
+Photos 2+: Potential matches from listings
+
+Are they the SAME watch model? Look at:
+- Dial layout and text
+- Case shape and lugs
+- Crown position
+- Hands style
+- Markers/indices
+- Overall proportions
+
+Which listing (if any) is the best match? 
+What's the exact model/reference confirmed?
+Confidence level?
+
+Include URLs of matching listings.`,
+        file_urls: comparisonPhotos,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            is_match: { type: "boolean" },
+            best_match_index: { type: "number" },
+            confirmed_model: { type: "string" },
+            confirmed_reference: { type: "string" },
+            matching_listing_urls: { type: "array", items: { type: "string" } },
+            confidence: { type: "string" },
+            match_explanation: { type: "string" }
+          }
+        }
+      });
+
+      console.log("Verification result:", verification);
+
+      if (!verification.is_match) {
+        throw new Error(`No confident match found. AI says: ${verification.match_explanation}`);
+      }
+
+      toast.success("✅ Match verified!");
+
+      // STEP 4: Final pricing research with confirmed info
+      setAnalysisStep("💰 Step 4/4: Researching pricing with confirmed model...");
+      console.log("=== STEP 4: FINAL PRICING ===");
+
+      const confirmedSearch = `${identification.identified_brand} ${verification.confirmed_model} ${verification.confirmed_reference} watch price sold listings`;
+      console.log("Final search:", confirmedSearch);
+
+      const pricing = await base44.integrations.Core.InvokeLLM({
+        prompt: `Price research for CONFIRMED watch:
+Brand: ${identification.identified_brand}
+Model: ${verification.confirmed_model}
+Reference: ${verification.confirmed_reference}
+
+You already found these matching listings: ${verification.matching_listing_urls.join(', ')}
+
+Now do thorough pricing research:
+1. Find MORE listings (eBay sold, Chrono24, dealers)
+2. Find HIGHEST price (becomes "MSRP" reference) - save URL
+3. Collect 8-10+ prices from various sources
+4. Calculate average_market_value (lean toward higher middle)
+5. Calculate 30% and 50% discount prices
+6. Platform pricing:
+   - whatnot: 70% of market (fast sales)
+   - ebay: 85% (competitive)
+   - shopify: 100% (direct)
+   - etsy: 90%
+   - poshmark: 80%
+   - mercari: 75%
+
+Include ALL clickable links you find. Be thorough with URLs!`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -272,33 +347,39 @@ Include ALL clickable links you find. Be thorough!`,
         }
       });
 
-      console.log("Pricing result:", pricingResult);
-      toast.success("✅ Pricing research complete!");
+      console.log("Final pricing:", pricing);
+      toast.success("✅ Pricing complete!");
 
-      // Combine both results
-      setAnalysisStep("💾 Saving analysis...");
+      // Combine all results
+      setAnalysisStep("💾 Saving complete analysis...");
       const combinedAnalysis = {
-        ...identificationResult,
-        ...pricingResult
+        ...identification,
+        identified_model: verification.confirmed_model || identification.identified_model,
+        reference_number: verification.confirmed_reference || identification.reference_number,
+        ...pricing,
+        verification_details: {
+          match_confidence: verification.confidence,
+          match_explanation: verification.match_explanation,
+          verified_listing_urls: verification.matching_listing_urls
+        }
       };
 
-      console.log("=== COMBINED ANALYSIS ===");
-      console.log(combinedAnalysis);
+      console.log("=== FINAL COMBINED ANALYSIS ===", combinedAnalysis);
 
       const updatedData = {
         ...editedData,
         ai_analysis: combinedAnalysis
       };
 
-      if (pricingResult.msrp_source_link && !editedData.msrp_link) {
-        updatedData.msrp_link = pricingResult.msrp_source_link;
+      if (pricing.msrp_source_link && !editedData.msrp_link) {
+        updatedData.msrp_link = pricing.msrp_source_link;
       }
       
       setEditedData(updatedData);
       
       await base44.entities.Watch.update(watchId, { 
         ai_analysis: combinedAnalysis,
-        ...(pricingResult.msrp_source_link && !editedData.msrp_link && { msrp_link: pricingResult.msrp_source_link })
+        ...(pricing.msrp_source_link && !editedData.msrp_link && { msrp_link: pricing.msrp_source_link })
       });
       
       const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
@@ -306,22 +387,16 @@ Include ALL clickable links you find. Be thorough!`,
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
       console.log("=== COMPLETE ===");
-      toast.success("✅ AI analysis complete!");
+      toast.success("✅ Full analysis complete!");
       setAnalysisStep("");
     } catch (error) {
-      console.error("=== ANALYSIS FAILED ===");
-      console.error("Error:", error);
-      console.error("Error message:", error.message);
-      console.error("Error response:", error.response?.data);
+      console.error("=== ANALYSIS FAILED ===", error);
       
-      const errorMsg = `${error.message}\n\n${error.response?.data?.message || 'Check browser console for details'}`;
+      const errorMsg = `${error.message}\n\n${error.response?.data?.message || 'Check console (F12) for details'}`;
       setAnalysisError(errorMsg);
-      toast.error("Analysis failed - see error below");
+      toast.error("Analysis failed");
     } finally {
       setAnalyzing(false);
-      if (!analysisError) {
-        setTimeout(() => setAnalysisStep(""), 2000);
-      }
     }
   };
 
@@ -442,13 +517,12 @@ Include ALL clickable links you find. Be thorough!`,
             <Alert variant="destructive" className="mt-3">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="ml-2">
-                <div className="flex items-start justify-between">
-                  <pre className="text-xs whitespace-pre-wrap font-mono">{analysisError}</pre>
+                <div className="flex items-start justify-between gap-4">
+                  <pre className="text-xs whitespace-pre-wrap font-mono flex-1">{analysisError}</pre>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setAnalysisError(null)}
-                    className="ml-2"
                   >
                     Dismiss
                   </Button>
