@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -147,6 +148,7 @@ export default function WatchDetail() {
 
       toast.info("Step 1/2: Analyzing photos to identify the watch...");
       
+      console.log("Starting photo identification...");
       const identificationResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a professional watch expert. Analyze these watch photos and identify all visible details.
 
@@ -183,8 +185,7 @@ Be specific and detailed. If you cannot determine something from the photos, ind
         }
       });
 
-      console.log("Identification complete:", identificationResult);
-
+      console.log("Photo identification complete:", identificationResult);
       setAnalysisStep("Step 2/2: Researching market prices and comparables...");
       toast.info("Step 2/2: Researching market prices online (this may take 30-60 seconds)...");
 
@@ -229,6 +230,7 @@ For NEW watches:
 - Also blend in other marketplace listings to see if value has appreciated`
         : `\n\nThis is a PRE-OWNED watch (condition: ${finalCondition}). Research secondary market sold listings but also consider retail prices to see if it has appreciated.`;
 
+      console.log("Starting market research...");
       const marketResearchResult = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a watch market pricing analyst. Research comprehensive pricing for: ${watchDescription}${msrpLinkContext}${identicalListingPriceContext}${conditionContext}
 
@@ -305,7 +307,7 @@ IMPORTANT: Return numeric values for ALL price fields. If you cannot find MSRP, 
         }
       });
 
-      console.log("Market Research complete:", marketResearchResult);
+      console.log("Market Research Result:", marketResearchResult);
 
       const combinedAnalysis = {
         ...identificationResult,
@@ -333,10 +335,10 @@ IMPORTANT: Return numeric values for ALL price fields. If you cannot find MSRP, 
       toast.success("Complete! Watch identified and market prices researched.");
     } catch (error) {
       console.error("AI Analysis Error:", error);
-      toast.error(`Analysis failed: ${error.message || 'Unknown error'}`);
+      setAnalysisStep("");
+      toast.error(`Analysis failed: ${error.message || 'Unknown error'}. Please try again.`);
     } finally {
       setAnalyzing(false);
-      setAnalysisStep("");
     }
   };
 
