@@ -101,163 +101,154 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {aiAnalysis.identified_brand && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Brand</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("brand", aiAnalysis.identified_brand)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Brand</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.identified_brand}</p>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.identified_brand}</p>
             </div>
           )}
 
           {aiAnalysis.identified_model && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Model</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("model", aiAnalysis.identified_model)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Model</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.identified_model}</p>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.identified_model}</p>
             </div>
           )}
 
           {aiAnalysis.reference_number && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Reference</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("reference_number", aiAnalysis.reference_number)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Reference</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.reference_number}</p>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.reference_number}</p>
             </div>
           )}
 
           {aiAnalysis.serial_number && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Serial</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("serial_number", aiAnalysis.serial_number)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Serial</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.serial_number}</p>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.serial_number}</p>
             </div>
           )}
 
           {aiAnalysis.estimated_year && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Year</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("year", aiAnalysis.estimated_year)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Year</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.estimated_year}</p>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.estimated_year}</p>
             </div>
           )}
 
           {aiAnalysis.movement_type && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Movement</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("movement_type", aiAnalysis.movement_type.toLowerCase())}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Movement</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.movement_type}</p>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.movement_type}</p>
             </div>
           )}
 
           {aiAnalysis.case_material && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Case Material</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("case_material", aiAnalysis.case_material)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Case Material</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.case_material}</p>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.case_material}</p>
             </div>
           )}
 
           {aiAnalysis.case_size && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Case Size</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("case_size", aiAnalysis.case_size)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Case Size</span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{aiAnalysis.case_size}</p>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.case_size}</p>
             </div>
           )}
 
           {aiAnalysis.condition_assessment && (
             <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Condition Assessment</span>
+              <div className="flex items-center gap-2 mb-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("description", aiAnalysis.condition_assessment)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import to Description
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Condition Assessment</span>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">{aiAnalysis.condition_assessment}</p>
+              <p className="text-sm text-slate-600 leading-relaxed ml-9">{aiAnalysis.condition_assessment}</p>
             </div>
           )}
 
@@ -269,19 +260,18 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
             </div>
             {aiAnalysis.original_msrp && aiAnalysis.original_msrp > 0 ? (
               <div className="mb-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-blue-600">Original MSRP:</span>
+                <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-6 text-xs"
+                    className="h-6 text-xs px-2"
                     onClick={() => onImportData("msrp", aiAnalysis.original_msrp)}
                   >
-                    <ArrowLeft className="w-3 h-3 mr-1" />
-                    Import
+                    <ArrowLeft className="w-3 h-3" />
                   </Button>
+                  <span className="text-xs text-blue-600">Original MSRP:</span>
                 </div>
-                <p className="text-lg font-bold text-blue-900">${aiAnalysis.original_msrp.toLocaleString()}</p>
+                <p className="text-lg font-bold text-blue-900 ml-9">${aiAnalysis.original_msrp.toLocaleString()}</p>
               </div>
             ) : (
               <div className="mb-2">
@@ -291,19 +281,18 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
             )}
             {aiAnalysis.current_retail_price && aiAnalysis.current_retail_price > 0 ? (
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-blue-600">Current Retail:</span>
+                <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-6 text-xs"
+                    className="h-6 text-xs px-2"
                     onClick={() => onImportData("retail_price", aiAnalysis.current_retail_price)}
                   >
-                    <ArrowLeft className="w-3 h-3 mr-1" />
-                    Import
+                    <ArrowLeft className="w-3 h-3" />
                   </Button>
+                  <span className="text-xs text-blue-600">Current Retail:</span>
                 </div>
-                <p className="text-lg font-bold text-blue-900">${aiAnalysis.current_retail_price.toLocaleString()}</p>
+                <p className="text-lg font-bold text-blue-900 ml-9">${aiAnalysis.current_retail_price.toLocaleString()}</p>
               </div>
             ) : (
               <div>
@@ -315,27 +304,26 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {/* ALWAYS show Average Market Value section */}
           <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-emerald-700 uppercase">
-                Average Market Value
-              </span>
+            <div className="flex items-center gap-2 mb-2">
               {aiAnalysis.average_market_value && aiAnalysis.average_market_value > 0 && (
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-xs"
+                  className="h-6 text-xs px-2"
                   onClick={() => onImportData("retail_price", aiAnalysis.average_market_value)}
                 >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import
+                  <ArrowLeft className="w-3 h-3" />
                 </Button>
               )}
+              <span className="text-xs font-semibold text-emerald-700 uppercase">
+                Average Market Value
+              </span>
             </div>
             {aiAnalysis.average_market_value && aiAnalysis.average_market_value > 0 ? (
               <>
-                <p className="text-2xl font-bold text-emerald-900">${aiAnalysis.average_market_value?.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-emerald-900 ml-9">${aiAnalysis.average_market_value?.toLocaleString()}</p>
                 {(aiAnalysis.estimated_value_low || aiAnalysis.estimated_value_high) && (
-                  <p className="text-sm text-emerald-700 mt-1">
+                  <p className="text-sm text-emerald-700 mt-1 ml-9">
                     Range: ${aiAnalysis.estimated_value_low?.toLocaleString()} - ${aiAnalysis.estimated_value_high?.toLocaleString()}
                   </p>
                 )}
@@ -348,19 +336,39 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {aiAnalysis.market_research_summary && (
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2 mb-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs px-2"
+                  onClick={() => onImportData("market_research", aiAnalysis.market_research_summary)}
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </Button>
                 <Info className="w-4 h-4 text-blue-700" />
                 <span className="text-xs font-semibold text-blue-700 uppercase">Market Research</span>
               </div>
-              <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{aiAnalysis.market_research_summary}</p>
+              <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line ml-9">{aiAnalysis.market_research_summary}</p>
             </div>
           )}
 
           {aiAnalysis.comparable_listings && (
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <span className="text-xs font-semibold text-blue-700 uppercase block mb-2">
-                Comparable Listings
-              </span>
-              <LinkifiedText text={aiAnalysis.comparable_listings} />
+              <div className="flex items-center gap-2 mb-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs px-2"
+                  onClick={() => onImportData("comparable_listings_links", aiAnalysis.comparable_listings)}
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </Button>
+                <span className="text-xs font-semibold text-blue-700 uppercase">
+                  Comparable Listings
+                </span>
+              </div>
+              <div className="ml-9">
+                <LinkifiedText text={aiAnalysis.comparable_listings} />
+              </div>
             </div>
           )}
 
