@@ -120,122 +120,66 @@ export default function WatchDetail() {
     }
 
     setAnalyzing(true);
-    setAnalysisStep("Step 1/2: Identifying watch from photos...");
-    toast.info("Step 1/2: Analyzing photos (this may take up to 30 seconds)...");
+    setAnalysisStep("Analyzing watch and researching market data...");
+    toast.info("AI analysis in progress (may take 30-60 seconds)...");
     
     try {
-      const manualContext = [];
-      if (editedData.brand && editedData.brand !== "Unknown") manualContext.push(`Brand: ${editedData.brand}`);
-      if (editedData.model) manualContext.push(`Model: ${editedData.model}`);
-      if (editedData.reference_number) manualContext.push(`Reference: ${editedData.reference_number}`);
-      if (editedData.serial_number) manualContext.push(`Serial: ${editedData.serial_number}`);
-      if (editedData.year) manualContext.push(`Year: ${editedData.year}`);
-      if (editedData.condition) manualContext.push(`Condition: ${editedData.condition}`);
-      if (editedData.case_material) manualContext.push(`Case Material: ${editedData.case_material}`);
-      if (editedData.case_size) manualContext.push(`Case Size: ${editedData.case_size}`);
-      if (editedData.movement_type) manualContext.push(`Movement: ${editedData.movement_type}`);
-      if (editedData.description) manualContext.push(`Description: ${editedData.description}`);
-      if (editedData.identical_listing_link) manualContext.push(`Identical Listing: ${editedData.identical_listing_link}`);
+      const userContext = [];
+      if (editedData.brand && editedData.brand !== "Unknown") userContext.push(`Brand: ${editedData.brand}`);
+      if (editedData.model) userContext.push(`Model: ${editedData.model}`);
+      if (editedData.reference_number) userContext.push(`Reference: ${editedData.reference_number}`);
+      if (editedData.year) userContext.push(`Year: ${editedData.year}`);
+      if (editedData.condition) userContext.push(`Condition: ${editedData.condition}`);
+      if (editedData.msrp_link) userContext.push(`MSRP Link: ${editedData.msrp_link}`);
+      if (editedData.identical_listing_link) userContext.push(`Identical Listing: ${editedData.identical_listing_link}`);
 
-      const contextString = manualContext.length > 0 
-        ? `\n\nUser provided:\n${manualContext.join('\n')}\nUse this to guide your analysis but still examine photos carefully.`
-        : '';
+      const contextStr = userContext.length > 0 ? `\n\nUser provided info:\n${userContext.join('\n')}` : '';
 
-      console.log("Starting Step 1: Photo identification...");
-      const identificationResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a professional watch expert. Analyze these watch photos in detail.
-
-Identify ALL of the following (use "Unknown" or "Not visible" only if truly cannot determine):
-1. Brand name (look for logos on dial, clasp, crown)
-2. Model name/series (Submariner, Speedmaster, etc.)
-3. Reference number (usually on case, papers, or between lugs)
-4. Serial number (if visible on case or papers)
-5. Year/era of manufacture (based on design, patina, serial if visible)
-6. Movement type (automatic/manual/quartz - look for rotor through caseback or text on dial)
-7. Case material (stainless steel, gold, titanium, etc.)
-8. Case size in mm (estimate from proportions and crown size)
-9. Overall condition (new/mint/excellent/very good/good/fair)
-10. Notable features (date, chronograph, specific dial color/design, limited edition markers)
-
-Provide a detailed condition_assessment describing wear, scratches, patina visible in photos.${contextString}`,
-        file_urls: editedData.photos,
-        add_context_from_internet: editedData.identical_listing_link ? true : false,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            identified_brand: { type: "string", description: "Watch brand name" },
-            identified_model: { type: "string", description: "Model name or series" },
-            reference_number: { type: "string", description: "Reference/catalog number" },
-            serial_number: { type: "string", description: "Serial number if visible" },
-            estimated_year: { type: "string", description: "Year or era of manufacture" },
-            movement_type: { type: "string", description: "automatic, manual, quartz, or digital" },
-            case_material: { type: "string", description: "Material of the case" },
-            case_size: { type: "string", description: "Case diameter in mm" },
-            condition_assessment: { type: "string", description: "Detailed condition description" },
-            notable_features: { type: "array", items: { type: "string" }, description: "Special features and details" },
-            confidence_level: { type: "string", description: "High, Medium, or Low confidence" }
-          },
-          required: ["identified_brand", "identified_model", "condition_assessment", "confidence_level"]
-        }
-      });
-
-      console.log("Step 1 COMPLETE - Identification Result:", identificationResult);
+      console.log("Starting combined AI analysis...");
       
-      if (!identificationResult || !identificationResult.identified_brand) {
-        throw new Error("Failed to identify watch from photos");
-      }
+      const analysisResult = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a watch expert and market analyst. Complete TWO tasks:
 
-      setAnalysisStep("Step 2/2: Researching market prices...");
-      toast.info("Step 2/2: Researching market prices (30-60 seconds)...");
+TASK 1: IDENTIFY THE WATCH from photos
+Examine the photos and identify:
+- Brand and model
+- Reference number (look on case, between lugs, papers)
+- Serial number (if visible)
+- Year/era
+- Movement type (automatic/manual/quartz)
+- Case material and size
+- Condition assessment (detailed)
+- Notable features
 
-      const finalBrand = editedData.brand && editedData.brand !== "Unknown" ? editedData.brand : identificationResult.identified_brand;
-      const finalModel = editedData.model || identificationResult.identified_model;
-      const finalRef = editedData.reference_number || identificationResult.reference_number;
-      const finalYear = editedData.year || identificationResult.estimated_year;
-      const finalCondition = editedData.condition || "used";
+TASK 2: RESEARCH MARKET PRICING
+Research comprehensive pricing for this watch:
+- original_msrp: Original MSRP (0 if unknown)
+- msrp_source_link: URL for MSRP
+- current_retail_price: Current new retail price (0 if N/A)
+- average_market_value: Average market value (REQUIRED)
+- estimated_value_low and estimated_value_high: Price range
+- comparable_listings: Include 3-5 actual listing URLs
+- market_insights: Market trends
+- pricing_recommendations: Prices for whatnot, ebay, shopify, etsy, poshmark, mercari
+- pricing_rationale: Reasoning for each platform${contextStr}
 
-      const watchDescription = `${finalBrand} ${finalModel}${finalRef ? ` ref ${finalRef}` : ''}${finalYear ? ` (${finalYear})` : ''}`;
-      const isNewWatch = finalCondition && ['new', 'new_with_box', 'new_no_box'].includes(finalCondition.toLowerCase());
-
-      const linkInstructions = [];
-      if (editedData.msrp_link) {
-        linkInstructions.push(`🔴 PRIORITY: Visit ${editedData.msrp_link} first to find MSRP and current pricing.`);
-      }
-      if (editedData.identical_listing_link) {
-        linkInstructions.push(`🔴 ALSO CHECK: ${editedData.identical_listing_link} for exact watch comparison.`);
-      }
-
-      console.log("Starting Step 2: Market research for", watchDescription);
-      const marketResearchResult = await base44.integrations.Core.InvokeLLM({
-        prompt: `Research comprehensive pricing data for: ${watchDescription}
-Condition: ${finalCondition}
-
-${linkInstructions.join('\n')}
-
-YOU MUST PROVIDE ALL NUMERIC FIELDS (use 0 if data not found):
-
-REQUIRED FIELDS:
-- original_msrp (number): Original MSRP when new
-- msrp_source_link (string): URL where MSRP found
-- current_retail_price (number): Current new retail price from authorized dealers
-- average_market_value (number): ${isNewWatch ? 'Current NEW retail/street price' : 'Average from recent SOLD pre-owned listings'}
-- estimated_value_low (number): Low end of price range
-- estimated_value_high (number): High end of price range
-
-RESEARCH SOURCES:
-${isNewWatch ? '- Authorized dealer websites, Jomashop, Chrono24 NEW, Amazon NEW' : '- eBay SOLD, Chrono24 pre-owned sold, Bob\'s Watches, current marketplace listings'}
-
-Provide detailed:
-- market_insights (string): Market trends and demand
-- comparable_listings (string): Include actual URLs to 3-5 comparable listings
-- market_research_summary (string): Overall pricing summary
-
-Platform recommendations with rationale for: whatnot, ebay, shopify, etsy, poshmark, mercari`,
-        file_urls: [],
+Search online for pricing data. Check eBay sold, Chrono24, authorized dealers, etc.`,
+        file_urls: editedData.photos,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
           properties: {
+            identified_brand: { type: "string" },
+            identified_model: { type: "string" },
+            reference_number: { type: "string" },
+            serial_number: { type: "string" },
+            estimated_year: { type: "string" },
+            movement_type: { type: "string" },
+            case_material: { type: "string" },
+            case_size: { type: "string" },
+            condition_assessment: { type: "string" },
+            notable_features: { type: "array", items: { type: "string" } },
+            confidence_level: { type: "string" },
             original_msrp: { type: "number" },
             msrp_source_link: { type: "string" },
             current_retail_price: { type: "number" },
@@ -268,43 +212,36 @@ Platform recommendations with rationale for: whatnot, ebay, shopify, etsy, poshm
               }
             }
           },
-          required: ["original_msrp", "current_retail_price", "average_market_value", "estimated_value_low", "estimated_value_high"]
+          required: ["identified_brand", "identified_model", "average_market_value"]
         }
       });
 
-      console.log("Step 2 COMPLETE - Market Research Result:", marketResearchResult);
-
-      const combinedAnalysis = {
-        ...identificationResult,
-        ...marketResearchResult
-      };
-
-      console.log("FINAL Combined Analysis:", combinedAnalysis);
+      console.log("AI Analysis Complete:", analysisResult);
 
       const updatedData = {
         ...editedData,
-        ai_analysis: combinedAnalysis
+        ai_analysis: analysisResult
       };
 
-      if (marketResearchResult.msrp_source_link && !editedData.msrp_link) {
-        updatedData.msrp_link = marketResearchResult.msrp_source_link;
+      if (analysisResult.msrp_source_link && !editedData.msrp_link) {
+        updatedData.msrp_link = analysisResult.msrp_source_link;
       }
       
       setEditedData(updatedData);
       
       await base44.entities.Watch.update(watchId, { 
-        ai_analysis: combinedAnalysis,
-        ...(marketResearchResult.msrp_source_link && !editedData.msrp_link && { msrp_link: marketResearchResult.msrp_source_link })
+        ai_analysis: analysisResult,
+        ...(analysisResult.msrp_source_link && !editedData.msrp_link && { msrp_link: analysisResult.msrp_source_link })
       });
       
       const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
       setOriginalData(refreshedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      toast.success("Analysis complete! Check the AI panel for all details.");
+      toast.success("Complete! Check AI panel for all details.");
     } catch (error) {
-      console.error("AI Analysis Error:", error);
-      toast.error(`Analysis failed: ${error.message || 'Please check console and try again'}`);
+      console.error("Analysis Error:", error);
+      toast.error(`Failed: ${error.message || 'Unknown error'}`);
     } finally {
       setAnalyzing(false);
       setAnalysisStep("");
