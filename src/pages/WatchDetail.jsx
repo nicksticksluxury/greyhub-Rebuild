@@ -125,12 +125,12 @@ export default function WatchDetail() {
     setAnalysisError(null);
     
     try {
-      // STEP 1: Identify watch from user's photos (2 photos max to avoid rate limit)
-      setAnalysisStep("🔍 Step 1/4: Identifying watch from your photos...");
-      console.log("=== STEP 1: INITIAL IDENTIFICATION ===");
+      // STEP 1: Identify watch from user's photos
+      setAnalysisStep("🔍 Step 1/3: Examining your watch photos...");
+      console.log("=== STEP 1: IDENTIFICATION ===");
       
       const photosToAnalyze = editedData.photos.slice(0, 2);
-      console.log("Analyzing photos:", photosToAnalyze);
+      console.log("Photos:", photosToAnalyze);
       
       const userContext = [];
       if (editedData.brand && editedData.brand !== "Unknown") userContext.push(`Brand: ${editedData.brand}`);
@@ -138,30 +138,28 @@ export default function WatchDetail() {
       if (editedData.reference_number) userContext.push(`Ref: ${editedData.reference_number}`);
       if (editedData.year) userContext.push(`Year: ${editedData.year}`);
 
-      const contextStr = userContext.length > 0 ? `\n\nKnown info: ${userContext.join(', ')}` : '';
+      const contextStr = userContext.length > 0 ? `\n\nKnown: ${userContext.join(', ')}` : '';
 
       const identification = await base44.integrations.Core.InvokeLLM({
-        prompt: `You're a watch dealer examining this watch. Look at ALL visible text and numbers carefully.
+        prompt: `Examine this watch like a dealer. Look for ALL text and numbers:
 
-Check everywhere:
-- Dial: brand name, model name, any text
-- Case back: model numbers, serial numbers, engravings
-- Between lugs: reference numbers
-- Clasp/buckle: brand markings
-- Papers/box: any visible info
+- Dial: brand, model, any text
+- Case back: model numbers (often looks like "6694" or alphanumeric codes), serial numbers
+- Between lugs: reference numbers  
+- Clasp: markings
+- Any visible papers/docs
 
-Identify:
-- Brand name
-- Model name
-- Reference/model number (often on case back or between lugs - could be numbers like "6694" or alphanumeric)
-- Serial number (if visible)
-- Year/era estimate
-- Movement type (look for automatic rotor, manual, quartz battery)
-- Case material (steel, gold, etc)
-- Case size in mm
-- Condition notes${contextStr}
+Note: Model numbers on case back often DON'T match battery specs or dates - they're unique identifiers.
 
-Include ALL text and numbers you see, even if unsure what they are.`,
+Report:
+- Brand & model
+- Reference/model number 
+- Serial (if visible)
+- Year estimate
+- Movement (auto/manual/quartz)
+- Case material & size
+- Condition
+- ALL visible text/numbers${contextStr}`,
         file_urls: photosToAnalyze,
         response_json_schema: {
           type: "object",
@@ -182,130 +180,94 @@ Include ALL text and numbers you see, even if unsure what they are.`,
         }
       });
 
-      console.log("Initial identification:", identification);
-      toast.success("✅ Watch identified!");
+      console.log("Identified:", identification);
+      toast.success("✅ Watch examined!");
 
-      // STEP 2: Search internet for potential matches
-      setAnalysisStep("🌐 Step 2/4: Searching online for similar watches...");
-      console.log("=== STEP 2: FINDING MATCHES ===");
+      // STEP 2: Verify with identical listing OR search for match
+      setAnalysisStep("🌐 Step 2/3: Researching watch details...");
+      console.log("=== STEP 2: VERIFICATION ===");
 
-      const searchQuery = `${identification.identified_brand} ${identification.identified_model || ''} ${identification.reference_number || ''} watch`.trim();
-      console.log("Search:", searchQuery);
+      let verificationPrompt;
+      if (editedData.identical_listing_link) {
+        console.log("Using provided identical listing:", editedData.identical_listing_link);
+        verificationPrompt = `The user provided this identical watch listing: ${editedData.identical_listing_link}
 
-      const searchResults = await base44.integrations.Core.InvokeLLM({
-        prompt: `Find watches matching: ${searchQuery}
+Visit that page and extract:
+- Exact model name/number
+- Reference number
+- Year
+- All specifications
+- Listed price
+- Any other details
 
-Search eBay, Chrono24, watch forums, dealer sites.
+This is the EXACT watch we have. Use this as the source of truth.
 
-Look for:
-- Exact model matches with photos
-- Listings with clear images
-- Reference numbers matching: ${identification.reference_number || 'none found yet'}
+Based on identified info:
+Brand: ${identification.identified_brand}
+Model: ${identification.identified_model || 'Unknown'}
+Ref: ${identification.reference_number || 'Unknown'}`;
+      } else {
+        verificationPrompt = `Search for this watch online:
+"${identification.identified_brand} ${identification.identified_model || ''} ${identification.reference_number || ''} watch"
 
-Return:
-- 3-5 image URLs from different listings (actual watch photos, not site logos)
-- The listing URLs those images came from
-- Brief description of each listing
+Find listings on eBay, Chrono24, forums, dealer sites.
 
-Format as JSON with arrays: image_urls, listing_urls, descriptions`,
+Look for exact matches and extract:
+- Confirmed model name
+- Confirmed reference number  
+- Year of production
+- 3-5 listing URLs for comparison
+- Brief notes on each listing`;
+      }
+
+      const verification = await base44.integrations.Core.InvokeLLM({
+        prompt: verificationPrompt,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
           properties: {
-            image_urls: { type: "array", items: { type: "string" } },
-            listing_urls: { type: "array", items: { type: "string" } },
-            descriptions: { type: "array", items: { type: "string" } }
-          }
-        }
-      });
-
-      console.log("Found potential matches:", searchResults);
-      toast.success(`✅ Found ${searchResults.image_urls?.length || 0} potential matches`);
-
-      // STEP 3: Visual comparison - compare user's watch to found listings
-      setAnalysisStep("👁️ Step 3/4: Comparing your watch to found listings...");
-      console.log("=== STEP 3: VISUAL VERIFICATION ===");
-
-      if (!searchResults.image_urls || searchResults.image_urls.length === 0) {
-        throw new Error("No comparison images found online. Try adding more details manually.");
-      }
-
-      // Take user's first photo + up to 3 found listing photos
-      const comparisonPhotos = [photosToAnalyze[0], ...searchResults.image_urls.slice(0, 2)];
-      console.log("Comparing photos:", comparisonPhotos);
-
-      const verification = await base44.integrations.Core.InvokeLLM({
-        prompt: `Compare these watches:
-
-Photo 1: The user's watch (first image)
-Photos 2+: Potential matches from listings
-
-Are they the SAME watch model? Look at:
-- Dial layout and text
-- Case shape and lugs
-- Crown position
-- Hands style
-- Markers/indices
-- Overall proportions
-
-Which listing (if any) is the best match? 
-What's the exact model/reference confirmed?
-Confidence level?
-
-Include URLs of matching listings.`,
-        file_urls: comparisonPhotos,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            is_match: { type: "boolean" },
-            best_match_index: { type: "number" },
             confirmed_model: { type: "string" },
             confirmed_reference: { type: "string" },
+            confirmed_year: { type: "string" },
             matching_listing_urls: { type: "array", items: { type: "string" } },
-            confidence: { type: "string" },
-            match_explanation: { type: "string" }
+            specifications: { type: "string" },
+            research_notes: { type: "string" }
           }
         }
       });
 
-      console.log("Verification result:", verification);
+      console.log("Verification:", verification);
+      toast.success("✅ Watch details confirmed!");
 
-      if (!verification.is_match) {
-        throw new Error(`No confident match found. AI says: ${verification.match_explanation}`);
-      }
-
-      toast.success("✅ Match verified!");
-
-      // STEP 4: Final pricing research with confirmed info
-      setAnalysisStep("💰 Step 4/4: Researching pricing with confirmed model...");
-      console.log("=== STEP 4: FINAL PRICING ===");
-
-      const confirmedSearch = `${identification.identified_brand} ${verification.confirmed_model} ${verification.confirmed_reference} watch price sold listings`;
-      console.log("Final search:", confirmedSearch);
+      // STEP 3: Final pricing research
+      setAnalysisStep("💰 Step 3/3: Researching pricing...");
+      console.log("=== STEP 3: PRICING ===");
 
       const pricing = await base44.integrations.Core.InvokeLLM({
-        prompt: `Price research for CONFIRMED watch:
+        prompt: `Price this watch thoroughly:
 Brand: ${identification.identified_brand}
 Model: ${verification.confirmed_model}
 Reference: ${verification.confirmed_reference}
+Year: ${verification.confirmed_year}
 
-You already found these matching listings: ${verification.matching_listing_urls.join(', ')}
+You found these listings: ${verification.matching_listing_urls?.join(', ')}
 
-Now do thorough pricing research:
-1. Find MORE listings (eBay sold, Chrono24, dealers)
-2. Find HIGHEST price (becomes "MSRP" reference) - save URL
-3. Collect 8-10+ prices from various sources
-4. Calculate average_market_value (lean toward higher middle)
-5. Calculate 30% and 50% discount prices
+NOW do complete pricing research:
+1. Find 10+ listings (eBay sold, Chrono24, dealers, forums)
+2. HIGHEST price found = "MSRP" reference (save that URL!)
+3. Calculate average of all prices (lean toward higher middle)
+4. This average = your recommended listing price
+5. Calculate 30% and 50% off prices
 6. Platform pricing:
-   - whatnot: 70% of market (fast sales)
+   - whatnot: 70% (fast sales)
    - ebay: 85% (competitive)
    - shopify: 100% (direct)
    - etsy: 90%
    - poshmark: 80%
    - mercari: 75%
+7. Explain why these prices make sense
 
-Include ALL clickable links you find. Be thorough with URLs!`,
+Include ALL clickable listing URLs!`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -347,24 +309,21 @@ Include ALL clickable links you find. Be thorough with URLs!`,
         }
       });
 
-      console.log("Final pricing:", pricing);
+      console.log("Pricing:", pricing);
       toast.success("✅ Pricing complete!");
 
-      // Combine all results
-      setAnalysisStep("💾 Saving complete analysis...");
+      // Combine results
+      setAnalysisStep("💾 Saving...");
       const combinedAnalysis = {
         ...identification,
         identified_model: verification.confirmed_model || identification.identified_model,
         reference_number: verification.confirmed_reference || identification.reference_number,
+        estimated_year: verification.confirmed_year || identification.estimated_year,
         ...pricing,
-        verification_details: {
-          match_confidence: verification.confidence,
-          match_explanation: verification.match_explanation,
-          verified_listing_urls: verification.matching_listing_urls
-        }
+        verification_details: verification.research_notes
       };
 
-      console.log("=== FINAL COMBINED ANALYSIS ===", combinedAnalysis);
+      console.log("=== FINAL ===", combinedAnalysis);
 
       const updatedData = {
         ...editedData,
@@ -386,13 +345,12 @@ Include ALL clickable links you find. Be thorough with URLs!`,
       setOriginalData(refreshedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
-      console.log("=== COMPLETE ===");
-      toast.success("✅ Full analysis complete!");
+      toast.success("✅ Complete!");
       setAnalysisStep("");
     } catch (error) {
-      console.error("=== ANALYSIS FAILED ===", error);
+      console.error("=== FAILED ===", error);
       
-      const errorMsg = `${error.message}\n\n${error.response?.data?.message || 'Check console (F12) for details'}`;
+      const errorMsg = `${error.message}\n\n${error.response?.data?.message || 'Check console (F12)'}`;
       setAnalysisError(errorMsg);
       toast.error("Analysis failed");
     } finally {
