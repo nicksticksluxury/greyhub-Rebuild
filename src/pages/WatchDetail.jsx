@@ -120,6 +120,7 @@ export default function WatchDetail() {
     }
 
     setAnalyzing(true);
+    setAnalysisStep("Step 1/2: Identifying watch from photos...");
     
     try {
       const manualContext = [];
@@ -144,7 +145,6 @@ export default function WatchDetail() {
         ? `\n\n🔴 CRITICAL: The user has provided a link to an IDENTICAL watch listing: ${editedData.identical_listing_link}\n\nYou MUST visit this link to see the exact watch being sold. Use it to confirm brand, model, reference, condition, and all specifications.`
         : '';
 
-      setAnalysisStep("Step 1/2: Identifying watch from photos...");
       toast.info("Step 1/2: Analyzing photos to identify the watch...");
       
       const identificationResult = await base44.integrations.Core.InvokeLLM({
@@ -182,6 +182,8 @@ Be specific and detailed. If you cannot determine something from the photos, ind
           }
         }
       });
+
+      console.log("Identification complete:", identificationResult);
 
       setAnalysisStep("Step 2/2: Researching market prices and comparables...");
       toast.info("Step 2/2: Researching market prices online (this may take 30-60 seconds)...");
@@ -303,7 +305,7 @@ IMPORTANT: Return numeric values for ALL price fields. If you cannot find MSRP, 
         }
       });
 
-      console.log("Market Research Result:", marketResearchResult);
+      console.log("Market Research complete:", marketResearchResult);
 
       const combinedAnalysis = {
         ...identificationResult,
@@ -331,10 +333,11 @@ IMPORTANT: Return numeric values for ALL price fields. If you cannot find MSRP, 
       toast.success("Complete! Watch identified and market prices researched.");
     } catch (error) {
       console.error("AI Analysis Error:", error);
+      toast.error(`Analysis failed: ${error.message || 'Unknown error'}`);
+    } finally {
+      setAnalyzing(false);
       setAnalysisStep("");
-      toast.error(`Analysis failed: ${error.message}`);
     }
-    setAnalyzing(false);
   };
 
   const importAIData = (field, value) => {
