@@ -16,9 +16,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'file_url is required' }, { status: 400 });
     }
 
-    console.log('Fetching image from:', file_url);
+    console.log('==========================================');
+    console.log('OPTIMIZATION REQUEST STARTED');
+    console.log('==========================================');
+    console.log('Received file_url:', file_url);
+    console.log('file_url type:', typeof file_url);
+    console.log('file_url length:', file_url.length);
+    console.log('file_url (JSON):', JSON.stringify(file_url));
 
     // Download the original image with proper headers
+    console.log('Attempting to fetch image...');
     const imageResponse = await fetch(file_url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -26,12 +33,22 @@ Deno.serve(async (req) => {
       }
     });
     
+    console.log('Response status:', imageResponse.status);
+    console.log('Response statusText:', imageResponse.statusText);
+    console.log('Response headers:', JSON.stringify(Object.fromEntries(imageResponse.headers.entries())));
+    console.log('Response ok:', imageResponse.ok);
+    
     if (!imageResponse.ok) {
+      const errorBody = await imageResponse.text();
+      console.log('ERROR RESPONSE BODY:', errorBody);
       return Response.json({ 
         error: `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`,
-        url: file_url
+        url: file_url,
+        responseBody: errorBody
       }, { status: 400 });
     }
+    
+    console.log('Image fetched successfully, reading buffer...');
     
     const imageBuffer = await imageResponse.arrayBuffer();
     const buffer = new Uint8Array(imageBuffer);
