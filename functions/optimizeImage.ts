@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { Image, encode } from 'npm:imagescript@1.3.0';
+import { Image } from 'npm:imagescript@1.3.0';
 
 Deno.serve(async (req) => {
   console.log('========================================');
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
     const thumbnail = image.clone();
     const thumbSize = 300;
     thumbnail.cover(thumbSize, thumbSize);
-    const thumbnailBuffer = await encode(thumbnail, 'webp', 80);
+    const thumbnailBuffer = await thumbnail.encodeWebP(80);
     console.log('Thumbnail created, size:', thumbnailBuffer.length, 'bytes');
 
     console.log('Step 6: Creating medium (1200px)...');
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     if (medium.width > 1200 || medium.height > 1200) {
       medium.contain(1200, 1200);
     }
-    const mediumBuffer = await encode(medium, 'webp', 85);
+    const mediumBuffer = await medium.encodeWebP(85);
     console.log('Medium created, size:', mediumBuffer.length, 'bytes');
 
     console.log('Step 7: Creating full size (2400px)...');
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
     if (full.width > 2400 || full.height > 2400) {
       full.contain(2400, 2400);
     }
-    const fullBuffer = await encode(full, 'webp', 90);
+    const fullBuffer = await full.encodeWebP(90);
     console.log('Full created, size:', fullBuffer.length, 'bytes');
 
     console.log('Step 8: Creating blobs for upload...');
