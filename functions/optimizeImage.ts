@@ -65,7 +65,9 @@ Deno.serve(async (req) => {
     console.log('Image fetched successfully, reading buffer...');
     
     const imageBuffer = await imageResponse.arrayBuffer();
+    console.log('Image buffer size:', imageBuffer.byteLength, 'bytes');
     const buffer = new Uint8Array(imageBuffer);
+    console.log('Converted to Uint8Array, length:', buffer.length);
 
     // Create thumbnail (300x300) - for inventory list
     const thumbnailBuffer = await sharp(buffer)
