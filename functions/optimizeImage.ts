@@ -18,8 +18,13 @@ Deno.serve(async (req) => {
 
     console.log('Fetching image from:', file_url);
 
-    // Download the original image directly (files are public)
-    const imageResponse = await fetch(file_url);
+    // Download the original image with proper headers
+    const imageResponse = await fetch(file_url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'image/*,*/*'
+      }
+    });
     
     if (!imageResponse.ok) {
       return Response.json({ 
