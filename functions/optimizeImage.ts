@@ -117,9 +117,19 @@ Deno.serve(async (req) => {
       full: fullResult.file_url
     });
   } catch (error) {
-    console.error('Image optimization error:', error);
+    console.log('========================================');
+    console.log('FATAL ERROR OCCURRED');
+    console.log('========================================');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+    console.log('========================================');
+    
     return Response.json({ 
-      error: error.message || 'Failed to optimize image'
+      error: error.message || 'Failed to optimize image',
+      errorName: error.name,
+      errorStack: error.stack
     }, { status: 500 });
   }
 });
