@@ -66,6 +66,9 @@ export default function MigrateImages() {
           for (let j = 0; j < watch.photos.length; j++) {
             const photo = watch.photos[j];
             
+            // Debug: log the raw photo structure
+            addLog(`  🔍 Photo ${j + 1} raw structure: ${JSON.stringify(photo).substring(0, 100)}`, "info");
+            
             // Handle different photo formats (string, object, or axios response)
             let photoUrl;
             if (typeof photo === 'string') {
@@ -79,11 +82,16 @@ export default function MigrateImages() {
               photoUrl = photo.data.medium;
             } else if (photo.medium) {
               photoUrl = photo.medium;
+            } else if (photo.data?.thumbnail) {
+              photoUrl = photo.data.thumbnail;
+            } else if (photo.thumbnail) {
+              photoUrl = photo.thumbnail;
             } else {
+              addLog(`  ❌ Could not extract URL. Photo object: ${JSON.stringify(photo)}`, "error");
               throw new Error('Could not extract photo URL from photo object');
             }
             
-            addLog(`  📸 Photo ${j + 1}/${watch.photos.length}: ${photoUrl.substring(0, 60)}...`, "info");
+            addLog(`  📸 Photo ${j + 1}/${watch.photos.length} - Full URL: ${photoUrl}`, "info");
             const { data } = await base44.functions.invoke('optimizeImage', { file_url: photoUrl });
             optimizedPhotos.push(data);
           }
