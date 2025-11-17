@@ -16,19 +16,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'file_url is required' }, { status: 400 });
     }
 
-    console.log('Original file_url:', file_url);
+    console.log('Fetching image from:', file_url);
 
-    // Create a signed URL to access the private file
-    console.log('Creating signed URL...');
-    const { signed_url } = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
-      file_uri: file_url,
-      expires_in: 300 // 5 minutes
-    });
-    
-    console.log('Fetching image from signed URL');
-
-    // Download the original image using the signed URL
-    const imageResponse = await fetch(signed_url);
+    // Download the original image directly (files are public)
+    const imageResponse = await fetch(file_url);
     
     if (!imageResponse.ok) {
       return Response.json({ 
