@@ -33,32 +33,74 @@ Deno.serve(async (req) => {
     console.log('==========================================');
     console.log('OPTIMIZATION REQUEST STARTED');
     console.log('==========================================');
+    console.log('RAW REQUEST BODY:', JSON.stringify(body));
     console.log('Received file_url:', file_url);
     console.log('file_url type:', typeof file_url);
     console.log('file_url length:', file_url.length);
-    console.log('file_url (JSON):', JSON.stringify(file_url));
+    console.log('file_url first 100 chars:', file_url.substring(0, 100));
+    console.log('file_url last 50 chars:', file_url.substring(file_url.length - 50));
+    console.log('file_url (full JSON):', JSON.stringify(file_url));
+    console.log('file_url includes http:', file_url.includes('http'));
+    console.log('file_url includes https:', file_url.includes('https'));
 
     // Download the original image with proper headers
-    console.log('Attempting to fetch image...');
-    const imageResponse = await fetch(file_url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'image/*,*/*'
-      }
-    });
-    
+    console.log('==========================================');
+    console.log('ATTEMPTING TO FETCH IMAGE');
+    console.log('==========================================');
+    console.log('Fetch URL:', file_url);
+    console.log('Fetch headers:', JSON.stringify({
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Accept': 'image/*,*/*'
+    }));
+
+    let imageResponse;
+    try {
+      imageResponse = await fetch(file_url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'image/*,*/*'
+        }
+      });
+      console.log('Fetch completed without throwing');
+    } catch (fetchError) {
+      console.log('FETCH THREW AN ERROR:');
+      console.log('Error name:', fetchError.name);
+      console.log('Error message:', fetchError.message);
+      console.log('Error stack:', fetchError.stack);
+      throw fetchError;
+    }
+
+    console.log('==========================================');
+    console.log('FETCH RESPONSE RECEIVED');
+    console.log('==========================================');
     console.log('Response status:', imageResponse.status);
     console.log('Response statusText:', imageResponse.statusText);
-    console.log('Response headers:', JSON.stringify(Object.fromEntries(imageResponse.headers.entries())));
     console.log('Response ok:', imageResponse.ok);
-    
+    console.log('Response url (final):', imageResponse.url);
+    console.log('Response redirected:', imageResponse.redirected);
+    console.log('Response type:', imageResponse.type);
+    console.log('Response headers (full):', JSON.stringify(Object.fromEntries(imageResponse.headers.entries()), null, 2));
+
     if (!imageResponse.ok) {
-      const errorBody = await imageResponse.text();
-      console.log('ERROR RESPONSE BODY:', errorBody);
+      console.log('==========================================');
+      console.log('RESPONSE NOT OK - READING ERROR BODY');
+      console.log('==========================================');
+      let errorBody;
+      try {
+        errorBody = await imageResponse.text();
+        console.log('ERROR RESPONSE BODY:', errorBody);
+      } catch (e) {
+        console.log('Could not read error body:', e.message);
+        errorBody = 'Could not read response body';
+      }
+
       return Response.json({ 
         error: `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`,
-        url: file_url,
-        responseBody: errorBody
+        requestedUrl: file_url,
+        finalUrl: imageResponse.url,
+        redirected: imageResponse.redirected,
+        responseBody: errorBody,
+        responseHeaders: Object.fromEntries(imageResponse.headers.entries())
       }, { status: 400 });
     }
     
