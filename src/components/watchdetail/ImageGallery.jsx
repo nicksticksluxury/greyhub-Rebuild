@@ -15,14 +15,14 @@ export default function ImageGallery({ photos, onPhotosChange }) {
 
     setUploading(true);
     try {
-      const uploadedUrls = await Promise.all(
-        files.map(async (file) => {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-          return file_url;
-        })
-      );
-      onPhotosChange([...photos, ...uploadedUrls]);
-      toast.success("Photos uploaded!");
+      const optimizedPhotos = [];
+      for (const file of files) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const optimized = await base44.functions.invoke('optimizeImage', { file_url });
+        optimizedPhotos.push(optimized);
+      }
+      onPhotosChange([...photos, ...optimizedPhotos]);
+      toast.success("Photos uploaded and optimized!");
     } catch (error) {
       toast.error("Failed to upload photos");
     }
@@ -41,7 +41,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
         {photos.map((photo, index) => (
           <div key={index} className="relative group">
             <img
-              src={photo}
+              src={photo.medium || photo.full || photo}
               alt={`Watch ${index + 1}`}
               className="w-full h-48 object-cover rounded-lg shadow-sm"
             />

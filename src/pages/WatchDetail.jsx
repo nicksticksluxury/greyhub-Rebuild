@@ -129,7 +129,10 @@ export default function WatchDetail() {
       setAnalysisStep("🔍 Step 1/3: Examining your watch photos...");
       console.log("=== STEP 1: IDENTIFICATION ===");
       
-      const photosToAnalyze = editedData.photos.slice(0, 2);
+      // Get full resolution photos for AI analysis
+      const photosToAnalyze = editedData.photos.slice(0, 2).map(photo => 
+        photo.full || photo.medium || photo
+      );
       console.log("Photos:", photosToAnalyze);
       
       const userContext = [];
