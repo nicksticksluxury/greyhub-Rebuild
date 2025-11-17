@@ -25,93 +25,15 @@ export default function MigrateImages() {
     setProgressLog([]);
 
     try {
-      addLog("🔍 Fetching all watches from database...", "info");
-      const watches = await base44.entities.Watch.list();
-      addLog(`✅ Found ${watches.length} watches`, "success");
-
-      const stats = {
-        total: watches.length,
-        processed: 0,
-        skipped: 0,
-        failed: 0,
-        errors: []
-      };
-
-      for (let i = 0; i < watches.length; i++) {
-        const watch = watches[i];
-        const watchLabel = `${watch.brand}${watch.model ? ' ' + watch.model : ''} (${i + 1}/${watches.length})`;
-
-        try {
-          if (!watch.photos || watch.photos.length === 0) {
-            addLog(`⏭️ Skipped ${watchLabel} - No photos`, "warning");
-            stats.skipped++;
-            continue;
-          }
-
-          // Check if already optimized
-          const alreadyOptimized = watch.photos.every(photo => 
-            typeof photo === 'object' && photo.thumbnail
-          );
-
-          if (alreadyOptimized) {
-            addLog(`⏭️ Skipped ${watchLabel} - Already optimized`, "warning");
-            stats.skipped++;
-            continue;
-          }
-
-          addLog(`🔄 Processing ${watchLabel} - ${watch.photos.length} photo(s)...`, "info");
-
-          // Optimize all photos
-          const optimizedPhotos = [];
-          for (let j = 0; j < watch.photos.length; j++) {
-            const photo = watch.photos[j];
-            
-            // Debug: log the raw photo structure
-            addLog(`  🔍 Photo ${j + 1} raw structure: ${JSON.stringify(photo).substring(0, 100)}`, "info");
-            
-            // Handle different photo formats (string, object, or axios response)
-            let photoUrl;
-            if (typeof photo === 'string') {
-              photoUrl = photo;
-            } else if (photo.data?.full) {
-              // Axios response format from old AddWatch bug
-              photoUrl = photo.data.full;
-            } else if (photo.full) {
-              photoUrl = photo.full;
-            } else if (photo.data?.medium) {
-              photoUrl = photo.data.medium;
-            } else if (photo.medium) {
-              photoUrl = photo.medium;
-            } else if (photo.data?.thumbnail) {
-              photoUrl = photo.data.thumbnail;
-            } else if (photo.thumbnail) {
-              photoUrl = photo.thumbnail;
-            } else {
-              addLog(`  ❌ Could not extract URL. Photo object: ${JSON.stringify(photo)}`, "error");
-              throw new Error('Could not extract photo URL from photo object');
-            }
-            
-            addLog(`  📸 Photo ${j + 1}/${watch.photos.length} - Full URL: ${photoUrl}`, "info");
-            const { data } = await base44.functions.invoke('optimizeImage', { file_url: photoUrl });
-            optimizedPhotos.push(data);
-          }
-
-          // Update watch
-          await base44.entities.Watch.update(watch.id, { photos: optimizedPhotos });
-          addLog(`✅ Completed ${watchLabel}`, "success");
-          stats.processed++;
-        } catch (error) {
-          addLog(`❌ Failed ${watchLabel}: ${error.message}`, "error");
-          stats.failed++;
-          stats.errors.push({
-            watchId: watch.id,
-            brand: watch.brand,
-            error: error.message
-          });
-        }
+      addLog("🚀 Starting migration on backend...", "info");
+      const { data } = await base44.functions.invoke('migrateImages');
+      
+      // Display the logs from backend
+      if (data.logs) {
+        data.logs.forEach(log => addLog(log.message, log.type));
       }
-
-      setResults(stats);
+      
+      setResults(data.results);
       addLog("🎉 Migration complete!", "success");
       toast.success("Migration complete!");
     } catch (error) {
