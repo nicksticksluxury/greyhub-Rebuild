@@ -43,6 +43,11 @@ const navigationItems = [
     url: createPageUrl("Auctions"),
     icon: Gavel,
   },
+  {
+    title: "Optimize Images",
+    url: createPageUrl("MigrateImages"),
+    icon: TrendingUp,
+  },
 ];
 
 export default function Layout({ children, currentPageName }) {
