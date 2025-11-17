@@ -44,7 +44,7 @@ export default function AddWatch() {
         
         // Step 2: Optimize and create versions
         setUploadProgress({ current: i * 2 + 2, total: photos.length * 2 });
-        const optimizedVersions = await base44.functions.invoke('optimizeImage', { file_url });
+        const { data: optimizedVersions } = await base44.functions.invoke('optimizeImage', { file_url });
         optimizedPhotos.push(optimizedVersions);
       }
       

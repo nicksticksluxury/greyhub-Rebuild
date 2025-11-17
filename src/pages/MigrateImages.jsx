@@ -65,7 +65,23 @@ export default function MigrateImages() {
           const optimizedPhotos = [];
           for (let j = 0; j < watch.photos.length; j++) {
             const photo = watch.photos[j];
-            const photoUrl = typeof photo === 'string' ? photo : photo.full || photo.medium || photo;
+            
+            // Handle different photo formats (string, object, or axios response)
+            let photoUrl;
+            if (typeof photo === 'string') {
+              photoUrl = photo;
+            } else if (photo.data?.full) {
+              // Axios response format from old AddWatch bug
+              photoUrl = photo.data.full;
+            } else if (photo.full) {
+              photoUrl = photo.full;
+            } else if (photo.data?.medium) {
+              photoUrl = photo.data.medium;
+            } else if (photo.medium) {
+              photoUrl = photo.medium;
+            } else {
+              throw new Error('Could not extract photo URL from photo object');
+            }
             
             addLog(`  📸 Photo ${j + 1}/${watch.photos.length}: ${photoUrl.substring(0, 60)}...`, "info");
             const { data } = await base44.functions.invoke('optimizeImage', { file_url: photoUrl });
