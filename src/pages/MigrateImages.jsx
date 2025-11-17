@@ -9,6 +9,11 @@ import { toast } from "sonner";
 export default function MigrateImages() {
   const [migrating, setMigrating] = useState(false);
   const [results, setResults] = useState(null);
+  const [progressLog, setProgressLog] = useState([]);
+
+  const addLog = (message, type = "info") => {
+    setProgressLog(prev => [...prev, { message, type, time: new Date().toLocaleTimeString() }]);
+  };
 
   const runMigration = async () => {
     if (!confirm("This will optimize all existing watch images. Continue?")) {
@@ -17,12 +22,76 @@ export default function MigrateImages() {
 
     setMigrating(true);
     setResults(null);
+    setProgressLog([]);
 
     try {
-      const { data } = await base44.functions.invoke('migrateImages');
-      setResults(data.results);
+      addLog("🔍 Fetching all watches from database...", "info");
+      const watches = await base44.entities.Watch.list();
+      addLog(`✅ Found ${watches.length} watches`, "success");
+
+      const stats = {
+        total: watches.length,
+        processed: 0,
+        skipped: 0,
+        failed: 0,
+        errors: []
+      };
+
+      for (let i = 0; i < watches.length; i++) {
+        const watch = watches[i];
+        const watchLabel = `${watch.brand}${watch.model ? ' ' + watch.model : ''} (${i + 1}/${watches.length})`;
+
+        try {
+          if (!watch.photos || watch.photos.length === 0) {
+            addLog(`⏭️ Skipped ${watchLabel} - No photos`, "warning");
+            stats.skipped++;
+            continue;
+          }
+
+          // Check if already optimized
+          const alreadyOptimized = watch.photos.every(photo => 
+            typeof photo === 'object' && photo.thumbnail
+          );
+
+          if (alreadyOptimized) {
+            addLog(`⏭️ Skipped ${watchLabel} - Already optimized`, "warning");
+            stats.skipped++;
+            continue;
+          }
+
+          addLog(`🔄 Processing ${watchLabel} - ${watch.photos.length} photo(s)...`, "info");
+
+          // Optimize all photos
+          const optimizedPhotos = [];
+          for (let j = 0; j < watch.photos.length; j++) {
+            const photo = watch.photos[j];
+            const photoUrl = typeof photo === 'string' ? photo : photo.full || photo.medium || photo;
+            
+            addLog(`  📸 Optimizing photo ${j + 1}/${watch.photos.length}...`, "info");
+            const optimized = await base44.functions.invoke('optimizeImage', { file_url: photoUrl });
+            optimizedPhotos.push(optimized);
+          }
+
+          // Update watch
+          await base44.entities.Watch.update(watch.id, { photos: optimizedPhotos });
+          addLog(`✅ Completed ${watchLabel}`, "success");
+          stats.processed++;
+        } catch (error) {
+          addLog(`❌ Failed ${watchLabel}: ${error.message}`, "error");
+          stats.failed++;
+          stats.errors.push({
+            watchId: watch.id,
+            brand: watch.brand,
+            error: error.message
+          });
+        }
+      }
+
+      setResults(stats);
+      addLog("🎉 Migration complete!", "success");
       toast.success("Migration complete!");
     } catch (error) {
+      addLog(`❌ Migration failed: ${error.message}`, "error");
       toast.error(`Migration failed: ${error.message}`);
     } finally {
       setMigrating(false);
@@ -67,6 +136,29 @@ export default function MigrateImages() {
               </>
             )}
           </Button>
+
+          {progressLog.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3">Progress Log</h3>
+              <Card className="p-4 bg-slate-900 max-h-96 overflow-y-auto">
+                <div className="space-y-1 font-mono text-xs">
+                  {progressLog.map((log, i) => (
+                    <div 
+                      key={i} 
+                      className={`${
+                        log.type === 'success' ? 'text-green-400' : 
+                        log.type === 'error' ? 'text-red-400' : 
+                        log.type === 'warning' ? 'text-amber-400' : 
+                        'text-slate-300'
+                      }`}
+                    >
+                      <span className="text-slate-500">[{log.time}]</span> {log.message}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          )}
 
           {results && (
             <div className="mt-8 space-y-4">
