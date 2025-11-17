@@ -2,15 +2,29 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import sharp from 'npm:sharp@0.33.5';
 
 Deno.serve(async (req) => {
+  console.log('========================================');
+  console.log('FUNCTION CALLED - optimizeImage');
+  console.log('Time:', new Date().toISOString());
+  console.log('========================================');
+  
   try {
+    console.log('Step 1: Creating Base44 client');
     const base44 = createClientFromRequest(req);
+    
+    console.log('Step 2: Authenticating user');
     const user = await base44.auth.me();
+    console.log('User authenticated:', user?.email || 'No email');
     
     if (!user) {
+      console.log('ERROR: No user found');
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { file_url } = await req.json();
+    console.log('Step 3: Parsing request body');
+    const body = await req.json();
+    console.log('Request body:', JSON.stringify(body, null, 2));
+    
+    const { file_url } = body;
     
     if (!file_url) {
       return Response.json({ error: 'file_url is required' }, { status: 400 });
