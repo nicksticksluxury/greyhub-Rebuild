@@ -318,9 +318,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
             </Select>
           </div>
         </div>
-      </TabsContent>
 
-      <TabsContent value="pricing" className="space-y-4 mt-6">
         <div>
           <Label>Market Research</Label>
           <Textarea
@@ -331,19 +329,33 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
           />
         </div>
 
-        {data.comparable_listings_links && (
+        {data.comparable_listings_links && data.comparable_listings_links.length > 0 && (
           <div>
-            <Label>Comparable Listings Links</Label>
-            <Textarea
-              value={data.comparable_listings_links || ""}
-              onChange={(e) => updateField("comparable_listings_links", e.target.value)}
-              placeholder="Links to comparable listings..."
-              rows={3}
-              className="font-mono text-xs"
-            />
+            <Label>Comparable Listings</Label>
+            <div className="mt-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <ul className="space-y-2">
+                {data.comparable_listings_links.map((listing, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <a
+                      href={listing.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline flex-1 text-sm"
+                    >
+                      {listing.url}
+                    </a>
+                    {listing.price && (
+                      <span className="text-sm font-semibold text-slate-700">${listing.price}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
+      </TabsContent>
 
+      <TabsContent value="pricing" className="space-y-4 mt-6">
         <div className="grid grid-cols-4 gap-4">
           <div>
             <Label>Initial Cost</Label>

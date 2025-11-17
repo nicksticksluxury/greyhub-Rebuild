@@ -377,11 +377,24 @@ Include ALL clickable URLs!`;
       });
       toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} price imported!`);
     } else if (field === "comparable_listings_links") {
-      // Import all text but clean trailing parentheses from URLs
-      const cleanedText = value.replace(/(https?:\/\/[^\s\)]+)\)+/g, '$1');
+      // Extract URLs and prices from the text
+      const urlRegex = /(https?:\/\/[^\s\)]+)/g;
+      const urls = value.match(urlRegex) || [];
+      
+      // Clean trailing parentheses and extract prices
+      const listings = urls.map(url => {
+        const cleanUrl = url.replace(/\)+$/, '');
+        // Try to find a price near this URL (look for $XXX or $X,XXX patterns)
+        const priceMatch = value.match(new RegExp(cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^$]*\\$([\\d,]+)', 'i'));
+        return {
+          url: cleanUrl,
+          price: priceMatch ? priceMatch[1].replace(/,/g, '') : null
+        };
+      });
+      
       setEditedData({ 
         ...editedData, 
-        comparable_listings_links: cleanedText 
+        comparable_listings_links: listings 
       });
       toast.success("Comparable listings imported!");
     } else {
