@@ -84,18 +84,16 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
         <div className="space-y-4 pr-4">
           {hasBasicInfo && (
             <div className="p-3 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg border border-slate-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-700 uppercase">Watch Identification</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-200"
-                  onClick={handleImportAllBasicInfo}
-                >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import All
-                </Button>
-              </div>
+              <span className="text-xs font-semibold text-slate-700 uppercase block mb-2">Watch Identification</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-200 w-full"
+                onClick={handleImportAllBasicInfo}
+              >
+                <ArrowLeft className="w-3 h-3 mr-1" />
+                Import All
+              </Button>
             </div>
           )}
 
