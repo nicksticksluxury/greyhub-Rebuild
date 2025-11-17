@@ -20,7 +20,7 @@ export default function QuickViewDialog({ watch, onClose }) {
           <div>
             {watch.photos?.[0] && (
               <img 
-                src={watch.photos[0]} 
+                src={watch.photos[0].medium || watch.photos[0].full || watch.photos[0]} 
                 alt={watch.brand} 
                 className="w-full h-64 object-cover rounded-xl shadow-md"
               />
