@@ -321,6 +321,29 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
       </TabsContent>
 
       <TabsContent value="pricing" className="space-y-4 mt-6">
+        <div>
+          <Label>Market Research</Label>
+          <Textarea
+            value={data.market_research || ""}
+            onChange={(e) => updateField("market_research", e.target.value)}
+            placeholder="Market research and insights..."
+            rows={3}
+          />
+        </div>
+
+        {data.comparable_listings_links && (
+          <div>
+            <Label>Comparable Listings Links</Label>
+            <Textarea
+              value={data.comparable_listings_links || ""}
+              onChange={(e) => updateField("comparable_listings_links", e.target.value)}
+              placeholder="Links to comparable listings..."
+              rows={3}
+              className="font-mono text-xs"
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-4 gap-4">
           <div>
             <Label>Initial Cost</Label>
