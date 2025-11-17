@@ -85,7 +85,7 @@ export default function OptimizeImages() {
             <p className="text-slate-500 mt-1">Convert old images to optimized WebP format</p>
           </div>
           {watchesToOptimize.length > 0 && (
-            <Button onClick={optimizeAll} className="bg-amber-600 hover:bg-amber-700">
+            <Button onClick={optimizeAll} className="bg-amber-600 hover:bg-amber-700 text-white">
               <Sparkles className="w-4 h-4 mr-2" />
               Optimize All ({watchesToOptimize.length})
             </Button>
