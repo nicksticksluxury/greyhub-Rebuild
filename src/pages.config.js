@@ -5,7 +5,6 @@ import Sources from './pages/Sources';
 import Auctions from './pages/Auctions';
 import SoldInventory from './pages/SoldInventory';
 import ImportSources from './pages/ImportSources';
-import MigrateImages from './pages/MigrateImages';
 import __Layout from './Layout.jsx';
 
 
@@ -17,7 +16,6 @@ export const PAGES = {
     "Auctions": Auctions,
     "SoldInventory": SoldInventory,
     "ImportSources": ImportSources,
-    "MigrateImages": MigrateImages,
 }
 
 export const pagesConfig = {
