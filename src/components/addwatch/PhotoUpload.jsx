@@ -1,13 +1,40 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 export default function PhotoUpload({ photos, onPhotosSelected, onRemovePhoto }) {
   const fileInputRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     onPhotosSelected(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('image/')
+    );
+    
+    if (files.length > 0) {
+      onPhotosSelected(files);
+    }
   };
 
   return (
@@ -24,17 +51,35 @@ export default function PhotoUpload({ photos, onPhotosSelected, onRemovePhoto })
       {photos.length === 0 ? (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center cursor-pointer hover:border-slate-400 hover:bg-slate-50 transition-all"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all ${
+            isDragging 
+              ? 'border-slate-500 bg-slate-100 scale-[1.02]' 
+              : 'border-slate-300 hover:border-slate-400 hover:bg-slate-50'
+          }`}
         >
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <ImageIcon className="w-8 h-8 text-slate-400" />
           </div>
-          <p className="text-slate-600 font-medium mb-2">Click to upload photos</p>
-          <p className="text-sm text-slate-500">Upload multiple angles for best results</p>
+          <p className="text-slate-600 font-medium mb-2">
+            {isDragging ? 'Drop photos here' : 'Click to upload photos'}
+          </p>
+          <p className="text-sm text-slate-500">
+            {isDragging ? 'Release to upload' : 'or drag and drop multiple photos'}
+          </p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4">
+          <div 
+            className={`grid grid-cols-2 gap-4 border-2 border-dashed rounded-lg p-4 transition-all ${
+              isDragging ? 'border-slate-500 bg-slate-100' : 'border-transparent'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             {photos.map((photo, index) => (
               <div key={index} className="relative group">
                 <img
