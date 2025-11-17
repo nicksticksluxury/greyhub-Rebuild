@@ -69,34 +69,47 @@ Deno.serve(async (req) => {
     const buffer = new Uint8Array(imageBuffer);
     console.log('Converted to Uint8Array, length:', buffer.length);
 
-    // Create thumbnail (300x300) - for inventory list
+    console.log('Step 4: Creating thumbnail (300x300)...');
     const thumbnailBuffer = await sharp(buffer)
       .resize(300, 300, { fit: 'cover', position: 'center' })
       .webp({ quality: 80 })
       .toBuffer();
+    console.log('Thumbnail created, size:', thumbnailBuffer.length, 'bytes');
 
-    // Create medium size (1200 width) - for details view
+    console.log('Step 5: Creating medium (1200px)...');
     const mediumBuffer = await sharp(buffer)
       .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 85 })
       .toBuffer();
+    console.log('Medium created, size:', mediumBuffer.length, 'bytes');
 
-    // Create optimized full size (2400 width max) - for listings
+    console.log('Step 6: Creating full size (2400px)...');
     const fullBuffer = await sharp(buffer)
       .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 90 })
       .toBuffer();
+    console.log('Full created, size:', fullBuffer.length, 'bytes');
 
-    // Upload all versions
+    console.log('Step 7: Creating blobs for upload...');
     const thumbnailBlob = new Blob([thumbnailBuffer], { type: 'image/webp' });
     const mediumBlob = new Blob([mediumBuffer], { type: 'image/webp' });
     const fullBlob = new Blob([fullBuffer], { type: 'image/webp' });
+    console.log('Blobs created');
 
+    console.log('Step 8: Uploading all 3 versions to Base44...');
     const [thumbnailResult, mediumResult, fullResult] = await Promise.all([
       base44.asServiceRole.integrations.Core.UploadFile({ file: thumbnailBlob }),
       base44.asServiceRole.integrations.Core.UploadFile({ file: mediumBlob }),
       base44.asServiceRole.integrations.Core.UploadFile({ file: fullBlob })
     ]);
+    
+    console.log('Upload complete!');
+    console.log('Thumbnail URL:', thumbnailResult.file_url);
+    console.log('Medium URL:', mediumResult.file_url);
+    console.log('Full URL:', fullResult.file_url);
+    console.log('========================================');
+    console.log('SUCCESS - Returning response');
+    console.log('========================================');
 
     return Response.json({
       thumbnail: thumbnailResult.file_url,
