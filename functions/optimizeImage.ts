@@ -16,8 +16,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'file_url is required' }, { status: 400 });
     }
 
+    console.log('Fetching image from:', file_url);
+
     // Download the original image
     const imageResponse = await fetch(file_url);
+    
+    if (!imageResponse.ok) {
+      return Response.json({ 
+        error: `Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`,
+        url: file_url
+      }, { status: 400 });
+    }
+    
     const imageBuffer = await imageResponse.arrayBuffer();
     const buffer = new Uint8Array(imageBuffer);
 

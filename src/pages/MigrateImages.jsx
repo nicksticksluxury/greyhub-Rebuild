@@ -67,9 +67,9 @@ export default function MigrateImages() {
             const photo = watch.photos[j];
             const photoUrl = typeof photo === 'string' ? photo : photo.full || photo.medium || photo;
             
-            addLog(`  📸 Optimizing photo ${j + 1}/${watch.photos.length}...`, "info");
-            const optimized = await base44.functions.invoke('optimizeImage', { file_url: photoUrl });
-            optimizedPhotos.push(optimized);
+            addLog(`  📸 Photo ${j + 1}/${watch.photos.length}: ${photoUrl.substring(0, 60)}...`, "info");
+            const { data } = await base44.functions.invoke('optimizeImage', { file_url: photoUrl });
+            optimizedPhotos.push(data);
           }
 
           // Update watch
