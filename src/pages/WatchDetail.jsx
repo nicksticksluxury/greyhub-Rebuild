@@ -361,18 +361,28 @@ Include ALL clickable URLs!`;
       });
       toast.success("All basic info imported!");
     } else if (field === "pricing") {
+      // Round Whatnot prices when importing all
+      const prices = { ...value };
+      if (prices.whatnot) {
+        prices.whatnot = Math.round(prices.whatnot);
+      }
       setEditedData({
         ...editedData,
-        platform_prices: value
+        platform_prices: prices
       });
       toast.success("All platform prices imported!");
     } else if (field.startsWith("platform_price_")) {
       const platform = field.replace("platform_price_", "");
+      // Round Whatnot prices
+      let price = value;
+      if (platform === 'whatnot') {
+        price = Math.round(value);
+      }
       setEditedData({
         ...editedData,
         platform_prices: {
           ...editedData.platform_prices,
-          [platform]: value
+          [platform]: price
         }
       });
       toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} price imported!`);
