@@ -29,10 +29,12 @@ export default function OptimizeImages() {
     setProcessing(prev => ({ ...prev, [watchId]: true }));
 
     try {
+      toast.info(`Starting optimization for ${watch.brand}...`);
       const optimizedPhotos = [];
       
       for (let i = 0; i < watch.photos.length; i++) {
         const photo = watch.photos[i];
+        toast.info(`Processing image ${i + 1}/${watch.photos.length}...`);
         
         // Skip if already optimized
         if (typeof photo === 'object' && photo.thumbnail) {
@@ -52,7 +54,7 @@ export default function OptimizeImages() {
       await base44.entities.Watch.update(watchId, { photos: optimizedPhotos });
       
       queryClient.invalidateQueries({ queryKey: ['watches-to-optimize'] });
-      toast.success(`${watch.brand} optimized!`);
+      toast.success(`✅ ${watch.brand} optimized successfully!`);
     } catch (error) {
       toast.error(`Failed: ${error.message}`);
     } finally {
@@ -122,6 +124,7 @@ export default function OptimizeImages() {
                     onClick={() => optimizeWatch(watch)}
                     disabled={processing[watch.id]}
                     size="sm"
+                    className="bg-slate-800 hover:bg-slate-900 text-white"
                   >
                     {processing[watch.id] ? (
                       <>
