@@ -86,11 +86,16 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
   };
 
   const updatePlatformPrice = (platform, value) => {
+    let price = parseFloat(value) || 0;
+    // Round Whatnot prices to nearest dollar
+    if (platform === 'whatnot' && price > 0) {
+      price = Math.round(price);
+    }
     onChange({
       ...data,
       platform_prices: {
         ...data.platform_prices,
-        [platform]: parseFloat(value) || 0
+        [platform]: price
       }
     });
   };

@@ -394,17 +394,20 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   const price = aiAnalysis.pricing_recommendations[platform];
                   if (!price) return null;
                   
+                  // Round Whatnot prices to nearest dollar
+                  const displayPrice = platform === 'whatnot' ? Math.round(price) : price;
+                  
                   return (
                     <div key={platform}>
                       <div className="flex items-center justify-between bg-white/70 rounded p-2 mb-1">
                         <span className="capitalize font-semibold text-amber-900">{platform}:</span>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-amber-800">${price?.toLocaleString()}</span>
+                          <span className="font-bold text-amber-800">${displayPrice?.toLocaleString()}</span>
                           <Button
                             size="sm"
                             variant="ghost"
                             className="h-5 text-xs px-2"
-                            onClick={() => onImportData(`platform_price_${platform}`, price)}
+                            onClick={() => onImportData(`platform_price_${platform}`, displayPrice)}
                           >
                             <ArrowLeft className="w-3 h-3" />
                           </Button>
