@@ -184,44 +184,72 @@ Report:
       toast.success("✅ Watch examined!");
 
       // STEP 2: Verify with identical listing OR search for match
-      setAnalysisStep("🌐 Step 2/3: Researching watch details...");
-      console.log("=== STEP 2: VERIFICATION ===");
+      setAnalysisStep("🌐 Step 2/3: Researching watch details and pricing...");
+      console.log("=== STEP 2: VERIFICATION & PRICING ===");
 
-      let verificationPrompt;
+      let researchPrompt;
       if (editedData.identical_listing_link) {
         console.log("Using provided identical listing:", editedData.identical_listing_link);
-        verificationPrompt = `The user provided this identical watch listing: ${editedData.identical_listing_link}
+        researchPrompt = `The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}
 
-Visit that page and extract:
+STEP 1 - Visit that page and extract:
 - Exact model name/number
 - Reference number
 - Year
 - All specifications
 - Listed price
-- Any other details
 
-This is the EXACT watch we have. Use this as the source of truth.
+This is the EXACT watch we have.
 
 Based on identified info:
 Brand: ${identification.identified_brand}
 Model: ${identification.identified_model || 'Unknown'}
-Ref: ${identification.reference_number || 'Unknown'}`;
+Ref: ${identification.reference_number || 'Unknown'}
+
+STEP 2 - NOW do complete market pricing research:
+1. Find 10-15 MORE listings of this same model (eBay sold, Chrono24, dealers, forums)
+2. HIGHEST price found = "MSRP" reference (save that URL!)
+3. Calculate average of all prices (lean toward higher middle)
+4. This average = your recommended retail price
+5. Calculate 30% and 50% discount prices
+6. Platform pricing strategy:
+   - whatnot: 70% (fast sales)
+   - ebay: 85% (competitive)
+   - shopify: 100% (direct)
+   - etsy: 90%
+   - poshmark: 80%
+   - mercari: 75%
+
+Return:
+- Confirmed model details
+- ALL listing URLs found (including the identical listing)
+- Market insights and pricing rationale
+- Complete pricing breakdown
+
+Include ALL clickable listing URLs with prices!`;
       } else {
-        verificationPrompt = `Search for this watch online:
+        researchPrompt = `Search for this watch:
 "${identification.identified_brand} ${identification.identified_model || ''} ${identification.reference_number || ''} watch"
 
-Find listings on eBay, Chrono24, forums, dealer sites.
-
-Look for exact matches and extract:
+STEP 1 - Find exact matches on eBay, Chrono24, forums, dealers:
 - Confirmed model name
 - Confirmed reference number  
 - Year of production
-- 3-5 listing URLs for comparison
-- Brief notes on each listing`;
+- 3-5 listing URLs
+
+STEP 2 - Complete pricing research:
+1. Find 10-15 listings (eBay sold, Chrono24, dealers)
+2. HIGHEST price = "MSRP" reference (save URL!)
+3. Calculate average of all prices
+4. Platform pricing:
+   - whatnot: 70%, ebay: 85%, shopify: 100%
+   - etsy: 90%, poshmark: 80%, mercari: 75%
+
+Include ALL clickable URLs!`;
       }
 
-      const verification = await base44.integrations.Core.InvokeLLM({
-        prompt: verificationPrompt,
+      const pricing = await base44.integrations.Core.InvokeLLM({
+        prompt: researchPrompt,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -229,49 +257,7 @@ Look for exact matches and extract:
             confirmed_model: { type: "string" },
             confirmed_reference: { type: "string" },
             confirmed_year: { type: "string" },
-            matching_listing_urls: { type: "array", items: { type: "string" } },
             specifications: { type: "string" },
-            research_notes: { type: "string" }
-          }
-        }
-      });
-
-      console.log("Verification:", verification);
-      toast.success("✅ Watch details confirmed!");
-
-      // STEP 3: Final pricing research
-      setAnalysisStep("💰 Step 3/3: Researching pricing...");
-      console.log("=== STEP 3: PRICING ===");
-
-      const pricing = await base44.integrations.Core.InvokeLLM({
-        prompt: `Price this watch thoroughly:
-Brand: ${identification.identified_brand}
-Model: ${verification.confirmed_model}
-Reference: ${verification.confirmed_reference}
-Year: ${verification.confirmed_year}
-
-You found these listings: ${verification.matching_listing_urls?.join(', ')}
-
-NOW do complete pricing research:
-1. Find 10+ listings (eBay sold, Chrono24, dealers, forums)
-2. HIGHEST price found = "MSRP" reference (save that URL!)
-3. Calculate average of all prices (lean toward higher middle)
-4. This average = your recommended listing price
-5. Calculate 30% and 50% off prices
-6. Platform pricing:
-   - whatnot: 70% (fast sales)
-   - ebay: 85% (competitive)
-   - shopify: 100% (direct)
-   - etsy: 90%
-   - poshmark: 80%
-   - mercari: 75%
-7. Explain why these prices make sense
-
-Include ALL clickable listing URLs!`,
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: "object",
-          properties: {
             original_msrp: { type: "number" },
             msrp_source_link: { type: "string" },
             current_retail_price: { type: "number" },
@@ -310,17 +296,16 @@ Include ALL clickable listing URLs!`,
       });
 
       console.log("Pricing:", pricing);
-      toast.success("✅ Pricing complete!");
+      toast.success("✅ Research & pricing complete!");
 
       // Combine results
       setAnalysisStep("💾 Saving...");
       const combinedAnalysis = {
         ...identification,
-        identified_model: verification.confirmed_model || identification.identified_model,
-        reference_number: verification.confirmed_reference || identification.reference_number,
-        estimated_year: verification.confirmed_year || identification.estimated_year,
-        ...pricing,
-        verification_details: verification.research_notes
+        identified_model: pricing.confirmed_model || identification.identified_model,
+        reference_number: pricing.confirmed_reference || identification.reference_number,
+        estimated_year: pricing.confirmed_year || identification.estimated_year,
+        ...pricing
       };
 
       console.log("=== FINAL ===", combinedAnalysis);
@@ -392,17 +377,13 @@ Include ALL clickable listing URLs!`,
       });
       toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} price imported!`);
     } else if (field === "comparable_listings_links") {
-      // Extract only URLs from the text, fixing trailing parentheses issue
-      const urlRegex = /(https?:\/\/[^\s\)]+)/g;
-      const urls = value.match(urlRegex) || [];
-      // Remove trailing parentheses from URLs
-      const cleanedUrls = urls.map(url => url.replace(/\)+$/, ''));
-      const urlsText = cleanedUrls.join('\n');
+      // Import all text but clean trailing parentheses from URLs
+      const cleanedText = value.replace(/(https?:\/\/[^\s\)]+)\)+/g, '$1');
       setEditedData({ 
         ...editedData, 
-        comparable_listings_links: urlsText 
+        comparable_listings_links: cleanedText 
       });
-      toast.success("Comparable listing links imported!");
+      toast.success("Comparable listings imported!");
     } else {
       setEditedData({ ...editedData, [field]: value });
       toast.success("Data imported from AI analysis");
