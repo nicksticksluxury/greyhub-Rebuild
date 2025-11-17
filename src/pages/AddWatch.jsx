@@ -31,22 +31,27 @@ export default function AddWatch() {
     }
 
     setUploading(true);
-    setUploadProgress({ current: 0, total: photos.length });
+    setUploadProgress({ current: 0, total: photos.length * 2 }); // Upload + optimize
     
     try {
-      console.log("Starting photo upload...");
-      const uploadedUrls = [];
+      console.log("Starting photo upload and optimization...");
+      const optimizedPhotos = [];
       
       for (let i = 0; i < photos.length; i++) {
-        setUploadProgress({ current: i + 1, total: photos.length });
+        // Step 1: Upload original
+        setUploadProgress({ current: i * 2 + 1, total: photos.length * 2 });
         const { file_url } = await base44.integrations.Core.UploadFile({ file: photos[i] });
-        uploadedUrls.push(file_url);
+        
+        // Step 2: Optimize and create versions
+        setUploadProgress({ current: i * 2 + 2, total: photos.length * 2 });
+        const optimizedVersions = await base44.functions.invoke('optimizeImage', { file_url });
+        optimizedPhotos.push(optimizedVersions);
       }
       
-      console.log("Photos uploaded:", uploadedUrls);
+      console.log("Photos optimized:", optimizedPhotos);
 
       const watchData = {
-        photos: uploadedUrls,
+        photos: optimizedPhotos,
         brand: "Unknown"
       };
 
