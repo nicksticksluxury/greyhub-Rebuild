@@ -10,11 +10,19 @@ import { toast } from "sonner";
 export default function OptimizeImages() {
   const queryClient = useQueryClient();
   const [processing, setProcessing] = useState({});
+  const [logs, setLogs] = useState({});
 
   const { data: watches = [], isLoading } = useQuery({
     queryKey: ['watches-to-optimize'],
     queryFn: () => base44.entities.Watch.list(),
   });
+
+  const addLog = (watchId, message) => {
+    setLogs(prev => ({
+      ...prev,
+      [watchId]: [...(prev[watchId] || []), `${new Date().toLocaleTimeString()}: ${message}`]
+    }));
+  };
 
   // Filter watches that need optimization (photos are strings or missing thumbnail)
   const watchesToOptimize = watches.filter(watch => {
@@ -27,35 +35,44 @@ export default function OptimizeImages() {
   const optimizeWatch = async (watch) => {
     const watchId = watch.id;
     setProcessing(prev => ({ ...prev, [watchId]: true }));
+    setLogs(prev => ({ ...prev, [watchId]: [] }));
 
     try {
-      toast.info(`Starting optimization for ${watch.brand}...`);
+      addLog(watchId, `Starting optimization for ${watch.brand} ${watch.model || ''}`);
+      addLog(watchId, `Found ${watch.photos.length} photos to process`);
+      
       const optimizedPhotos = [];
       
       for (let i = 0; i < watch.photos.length; i++) {
         const photo = watch.photos[i];
-        toast.info(`Processing image ${i + 1}/${watch.photos.length}...`);
         
         // Skip if already optimized
         if (typeof photo === 'object' && photo.thumbnail) {
+          addLog(watchId, `Photo ${i + 1}: Already optimized, skipping`);
           optimizedPhotos.push(photo);
           continue;
         }
 
         // Get photo URL (handle string or object)
         const photoUrl = typeof photo === 'string' ? photo : (photo.full || photo.medium || photo);
+        addLog(watchId, `Photo ${i + 1}: Fetching from ${photoUrl.substring(0, 60)}...`);
         
         // Call the existing optimizeImage function
+        addLog(watchId, `Photo ${i + 1}: Calling optimization function...`);
         const { data } = await base44.functions.invoke('optimizeImage', { file_url: photoUrl });
+        addLog(watchId, `Photo ${i + 1}: Optimized! Thumbnail: ${data.thumbnail ? 'YES' : 'NO'}, Medium: ${data.medium ? 'YES' : 'NO'}, Full: ${data.full ? 'YES' : 'NO'}`);
         optimizedPhotos.push(data);
       }
 
-      // Update watch with optimized photos
+      addLog(watchId, `Updating watch in database...`);
       await base44.entities.Watch.update(watchId, { photos: optimizedPhotos });
       
+      addLog(watchId, `✅ SUCCESS! Watch optimized.`);
       queryClient.invalidateQueries({ queryKey: ['watches-to-optimize'] });
       toast.success(`✅ ${watch.brand} optimized successfully!`);
     } catch (error) {
+      addLog(watchId, `❌ ERROR: ${error.message}`);
+      console.error('Optimization error:', error);
       toast.error(`Failed: ${error.message}`);
     } finally {
       setProcessing(prev => ({ ...prev, [watchId]: false }));
@@ -104,7 +121,7 @@ export default function OptimizeImages() {
           <div className="space-y-3">
             {watchesToOptimize.map((watch) => (
               <Card key={watch.id} className="p-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 mb-2">
                   {watch.photos?.[0] && (
                     <img
                       src={typeof watch.photos[0] === 'string' ? watch.photos[0] : (watch.photos[0].thumbnail || watch.photos[0].medium || watch.photos[0].full)}
@@ -139,6 +156,14 @@ export default function OptimizeImages() {
                     )}
                   </Button>
                 </div>
+                
+                {logs[watch.id] && logs[watch.id].length > 0 && (
+                  <div className="mt-3 p-3 bg-slate-900 rounded-lg text-xs font-mono text-green-400 max-h-48 overflow-y-auto">
+                    {logs[watch.id].map((log, idx) => (
+                      <div key={idx} className="mb-1">{log}</div>
+                    ))}
+                  </div>
+                )}
               </Card>
             ))}
           </div>
