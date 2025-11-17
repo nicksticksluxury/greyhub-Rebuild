@@ -18,8 +18,8 @@ export default function ImageGallery({ photos, onPhotosChange }) {
       const optimizedPhotos = [];
       for (const file of files) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        const optimized = await base44.functions.invoke('optimizeImage', { file_url });
-        optimizedPhotos.push(optimized);
+        const { data } = await base44.functions.invoke('optimizeImage', { file_url });
+        optimizedPhotos.push(data);
       }
       onPhotosChange([...photos, ...optimizedPhotos]);
       toast.success("Photos uploaded and optimized!");
@@ -41,7 +41,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
         {photos.map((photo, index) => (
           <div key={index} className="relative group">
             <img
-              src={photo.medium || photo.full || photo}
+              src={typeof photo === 'string' ? photo : (photo.medium || photo.full || photo.thumbnail)}
               alt={`Watch ${index + 1}`}
               className="w-full h-48 object-cover rounded-lg shadow-sm"
             />
