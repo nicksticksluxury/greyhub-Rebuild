@@ -80,8 +80,12 @@ Deno.serve(async (req) => {
           
           addLog(`  📸 Photo ${j + 1}/${watch.photos.length}: ${photoUrl}`, 'info');
           
-          // Download the original image
-          const imageResponse = await fetch(photoUrl);
+          // Download the original image with auth
+          const imageResponse = await fetch(photoUrl, {
+            headers: {
+              'Authorization': req.headers.get('Authorization') || ''
+            }
+          });
           if (!imageResponse.ok) {
             throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText} - URL: ${photoUrl}`);
           }
