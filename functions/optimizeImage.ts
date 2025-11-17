@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import sharp from 'npm:sharp@0.33.5';
+import { Image, encode } from 'npm:imagescript@1.3.0';
 
 Deno.serve(async (req) => {
   console.log('========================================');
@@ -66,37 +66,41 @@ Deno.serve(async (req) => {
     
     const imageBuffer = await imageResponse.arrayBuffer();
     console.log('Image buffer size:', imageBuffer.byteLength, 'bytes');
-    const buffer = new Uint8Array(imageBuffer);
-    console.log('Converted to Uint8Array, length:', buffer.length);
+    
+    console.log('Step 4: Decoding image with imagescript...');
+    const image = await Image.decode(new Uint8Array(imageBuffer));
+    console.log('Image decoded, dimensions:', image.width, 'x', image.height);
 
-    console.log('Step 4: Creating thumbnail (300x300)...');
-    const thumbnailBuffer = await sharp(buffer)
-      .resize(300, 300, { fit: 'cover', position: 'center' })
-      .webp({ quality: 80 })
-      .toBuffer();
+    console.log('Step 5: Creating thumbnail (300x300)...');
+    const thumbnail = image.clone();
+    const thumbSize = 300;
+    thumbnail.cover(thumbSize, thumbSize);
+    const thumbnailBuffer = await encode(thumbnail, 'webp', 80);
     console.log('Thumbnail created, size:', thumbnailBuffer.length, 'bytes');
 
-    console.log('Step 5: Creating medium (1200px)...');
-    const mediumBuffer = await sharp(buffer)
-      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 85 })
-      .toBuffer();
+    console.log('Step 6: Creating medium (1200px)...');
+    const medium = image.clone();
+    if (medium.width > 1200 || medium.height > 1200) {
+      medium.contain(1200, 1200);
+    }
+    const mediumBuffer = await encode(medium, 'webp', 85);
     console.log('Medium created, size:', mediumBuffer.length, 'bytes');
 
-    console.log('Step 6: Creating full size (2400px)...');
-    const fullBuffer = await sharp(buffer)
-      .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 90 })
-      .toBuffer();
+    console.log('Step 7: Creating full size (2400px)...');
+    const full = image.clone();
+    if (full.width > 2400 || full.height > 2400) {
+      full.contain(2400, 2400);
+    }
+    const fullBuffer = await encode(full, 'webp', 90);
     console.log('Full created, size:', fullBuffer.length, 'bytes');
 
-    console.log('Step 7: Creating blobs for upload...');
+    console.log('Step 8: Creating blobs for upload...');
     const thumbnailBlob = new Blob([thumbnailBuffer], { type: 'image/webp' });
     const mediumBlob = new Blob([mediumBuffer], { type: 'image/webp' });
     const fullBlob = new Blob([fullBuffer], { type: 'image/webp' });
     console.log('Blobs created');
 
-    console.log('Step 8: Uploading all 3 versions to Base44...');
+    console.log('Step 9: Uploading all 3 versions to Base44...');
     const [thumbnailResult, mediumResult, fullResult] = await Promise.all([
       base44.asServiceRole.integrations.Core.UploadFile({ file: thumbnailBlob }),
       base44.asServiceRole.integrations.Core.UploadFile({ file: mediumBlob }),
