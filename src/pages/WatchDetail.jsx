@@ -587,13 +587,10 @@ Include ALL clickable URLs!`;
               <div className="mt-6">
                 <DescriptionGenerator 
                   watch={editedData}
-                  onDescriptionGenerated={(platform, description) => {
+                  onImport={(description) => {
                     setEditedData({
                       ...editedData,
-                      platform_descriptions: {
-                        ...editedData.platform_descriptions,
-                        [platform]: description
-                      }
+                      description: description
                     });
                   }}
                 />
