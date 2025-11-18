@@ -161,7 +161,7 @@ Report:
 - Reference/model number 
 - Serial (if visible)
 - Year estimate
-- Movement (auto/manual/quartz)
+- Movement type (MUST be one of: "Automatic", "Digital", "Manual", "Quartz", "Solar", or "Unknown" - use exact capitalization)
 - Case material & size
 - Condition
 - ALL visible text/numbers${contextStr}${msrpLinkContext}`,
@@ -174,7 +174,7 @@ Report:
             reference_number: { type: "string" },
             serial_number: { type: "string" },
             estimated_year: { type: "string" },
-            movement_type: { type: "string" },
+            movement_type: { type: "string", enum: ["Automatic", "Digital", "Manual", "Quartz", "Solar", "Unknown"], description: "Must be exactly one of these values with proper capitalization" },
             case_material: { type: "string" },
             case_size: { type: "string" },
             condition_assessment: { type: "string" },
