@@ -396,23 +396,22 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   const displayPrice = platform === 'whatnot' ? Math.round(price) : price;
                   
                   return (
-                    <div key={platform}>
-                      <div className="flex items-center justify-between bg-white/70 rounded p-2">
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="capitalize font-semibold text-amber-900 min-w-[80px]">{platform}:</span>
-                          <span className="font-bold text-amber-800 text-lg">${displayPrice?.toLocaleString()}</span>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 text-xs px-2 flex-shrink-0"
-                          onClick={() => onImportData(`platform_price_${platform}`, displayPrice)}
-                        >
-                          <ArrowLeft className="w-3 h-3" />
-                        </Button>
+                    <div key={platform} className="bg-white/70 rounded p-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-xs px-2 mb-1"
+                        onClick={() => onImportData(`platform_price_${platform}`, displayPrice)}
+                      >
+                        <ArrowLeft className="w-3 h-3 mr-1" />
+                        Import
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        <span className="capitalize font-semibold text-amber-900 min-w-[80px]">{platform}:</span>
+                        <span className="font-bold text-amber-800 text-lg">${displayPrice?.toLocaleString()}</span>
                       </div>
                       {aiAnalysis.pricing_rationale?.[platform] && (
-                        <p className="text-xs text-amber-700 px-2 mt-1 leading-relaxed">
+                        <p className="text-xs text-amber-700 mt-1 leading-relaxed">
                           {aiAnalysis.pricing_rationale[platform]}
                         </p>
                       )}
