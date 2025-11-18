@@ -59,7 +59,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
       reference_number: aiAnalysis.reference_number,
       serial_number: aiAnalysis.serial_number,
       year: aiAnalysis.estimated_year,
-      movement_type: aiAnalysis.movement_type?.toLowerCase(),
+      movement_type: aiAnalysis.movement_type,
       case_material: aiAnalysis.case_material,
       case_size: aiAnalysis.case_size
     };
@@ -189,7 +189,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   size="sm"
                   variant="ghost"
                   className="h-6 text-xs px-2"
-                  onClick={() => onImportData("movement_type", aiAnalysis.movement_type.toLowerCase())}
+                  onClick={() => onImportData("movement_type", aiAnalysis.movement_type)}
                 >
                   <ArrowLeft className="w-3 h-3" />
                 </Button>
