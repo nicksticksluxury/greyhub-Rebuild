@@ -372,24 +372,22 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {aiAnalysis.pricing_recommendations && Object.keys(aiAnalysis.pricing_recommendations).length > 0 && (
             <div className="p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-amber-700" />
-                  <span className="text-xs font-semibold text-amber-900 uppercase">
-                    Pricing Recommendations
-                  </span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 text-xs text-amber-700 hover:text-amber-900"
-                  onClick={() => onImportData("pricing", aiAnalysis.pricing_recommendations)}
-                >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Import All
-                </Button>
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-4 h-4 text-amber-700" />
+                <span className="text-xs font-semibold text-amber-900 uppercase">
+                  Pricing Recommendations
+                </span>
               </div>
-              <div className="space-y-3">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 text-xs text-amber-700 hover:text-amber-900 w-full mb-3"
+                onClick={() => onImportData("pricing", aiAnalysis.pricing_recommendations)}
+              >
+                <ArrowLeft className="w-3 h-3 mr-1" />
+                Import All
+              </Button>
+              <div className="space-y-2">
                 {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map((platform) => {
                   const price = aiAnalysis.pricing_recommendations[platform];
                   if (!price) return null;
@@ -399,22 +397,22 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   
                   return (
                     <div key={platform}>
-                      <div className="flex items-center justify-between bg-white/70 rounded p-2 mb-1">
-                        <span className="capitalize font-semibold text-amber-900">{platform}:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-amber-800">${displayPrice?.toLocaleString()}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-5 text-xs px-2"
-                            onClick={() => onImportData(`platform_price_${platform}`, displayPrice)}
-                          >
-                            <ArrowLeft className="w-3 h-3" />
-                          </Button>
+                      <div className="flex items-center justify-between bg-white/70 rounded p-2">
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="capitalize font-semibold text-amber-900 min-w-[80px]">{platform}:</span>
+                          <span className="font-bold text-amber-800 text-lg">${displayPrice?.toLocaleString()}</span>
                         </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 text-xs px-2 flex-shrink-0"
+                          onClick={() => onImportData(`platform_price_${platform}`, displayPrice)}
+                        >
+                          <ArrowLeft className="w-3 h-3" />
+                        </Button>
                       </div>
                       {aiAnalysis.pricing_rationale?.[platform] && (
-                        <p className="text-xs text-amber-700 px-2 leading-relaxed">
+                        <p className="text-xs text-amber-700 px-2 mt-1 leading-relaxed">
                           {aiAnalysis.pricing_rationale[platform]}
                         </p>
                       )}
