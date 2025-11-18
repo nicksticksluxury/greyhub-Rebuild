@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function ImageGallery({ photos, onPhotosChange }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState(null);
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files);
@@ -75,7 +77,8 @@ export default function ImageGallery({ photos, onPhotosChange }) {
                           <img
                             src={typeof photo === 'string' ? photo : (photo.medium || photo.full || photo.thumbnail)}
                             alt={`Watch ${index + 1}`}
-                            className="w-full h-48 object-cover rounded-lg shadow-sm"
+                            className="w-full h-48 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => setViewingPhoto(photo)}
                           />
                           <Button
                             size="icon"
@@ -124,6 +127,18 @@ export default function ImageGallery({ photos, onPhotosChange }) {
           </>
         )}
       </Button>
+
+      <Dialog open={!!viewingPhoto} onOpenChange={() => setViewingPhoto(null)}>
+        <DialogContent className="max-w-7xl w-full p-2">
+          {viewingPhoto && (
+            <img
+              src={typeof viewingPhoto === 'string' ? viewingPhoto : (viewingPhoto.full || viewingPhoto.medium || viewingPhoto.thumbnail)}
+              alt="Full size"
+              className="w-full h-auto max-h-[90vh] object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
