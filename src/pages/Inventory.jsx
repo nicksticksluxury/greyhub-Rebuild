@@ -23,7 +23,8 @@ export default function Inventory() {
     auction: "all",
     source: "all",
     condition: "all",
-    sold: "all"
+    movement_type: "all",
+    case_material: ""
   });
 
   const { data: watches = [], isLoading } = useQuery({
@@ -57,8 +58,10 @@ export default function Inventory() {
     const matchesAuction = filters.auction === "all" || watch.auction_id === filters.auction;
     const matchesSource = filters.source === "all" || watch.source_id === filters.source;
     const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
+    const matchesMovementType = filters.movement_type === "all" || watch.movement_type === filters.movement_type;
+    const matchesCaseMaterial = !filters.case_material || watch.case_material?.toLowerCase().includes(filters.case_material.toLowerCase());
 
-    return matchesSearch && matchesAuction && matchesSource && matchesCondition;
+    return matchesSearch && matchesAuction && matchesSource && matchesCondition && matchesMovementType && matchesCaseMaterial;
   });
 
   return (
