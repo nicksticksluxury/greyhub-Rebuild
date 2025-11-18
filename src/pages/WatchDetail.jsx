@@ -302,15 +302,15 @@ Include ALL clickable URLs!`;
             confirmed_reference: { type: "string" },
             confirmed_year: { type: "string" },
             specifications: { type: "string" },
-            original_msrp: { type: "number" },
-            msrp_source_link: { type: "string" },
+            original_msrp: { type: "number", description: "Original MSRP if found. If not found in any sources, set to null and explain why in market_insights." },
+            msrp_source_link: { type: "string", description: "URL where MSRP was found. If MSRP not found, set to empty string." },
             current_retail_price: { type: "number" },
             estimated_value_low: { type: "number" },
             estimated_value_high: { type: "number" },
             average_market_value: { type: "number" },
             discount_30_percent: { type: "number" },
             discount_50_percent: { type: "number" },
-            market_insights: { type: "string" },
+            market_insights: { type: "string", description: "Include whether MSRP was found or not, and from which source." },
             comparable_listings: { type: "string" },
             market_research_summary: { type: "string" },
             pricing_recommendations: {
@@ -491,8 +491,9 @@ Include ALL clickable URLs!`;
             <div className="flex gap-3">
               <Button
                 onClick={analyzeWithAI}
-                disabled={analyzing || !editedData.photos?.length}
+                disabled={analyzing || !editedData.photos?.length || hasUnsavedChanges}
                 className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                title={hasUnsavedChanges ? "Please save changes before analyzing" : ""}
               >
                 {analyzing ? (
                   <>
