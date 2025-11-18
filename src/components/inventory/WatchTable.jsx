@@ -200,8 +200,9 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                   const source = sources.find(s => s.id === watch.source_id);
                   const minPrice = getMinimumPrice(watch);
                   const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
-                  const markup30 = minPrice ? Math.ceil(minPrice * 1.3) : 0;
-                  const markup50 = minPrice ? Math.ceil(minPrice * 1.5) : 0;
+                  const savedMinPrice = watch.minimum_price || 0;
+                  const markup30 = savedMinPrice ? Math.ceil(savedMinPrice * 1.3) : 0;
+                  const markup50 = savedMinPrice ? Math.ceil(savedMinPrice * 1.5) : 0;
 
                 return (
                   <TableRow 
