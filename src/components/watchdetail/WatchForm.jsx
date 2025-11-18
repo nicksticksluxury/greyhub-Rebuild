@@ -278,6 +278,23 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
         </div>
 
         <div>
+          <Label>Tested</Label>
+          <Select
+            value={data.tested || "no"}
+            onValueChange={(value) => updateField("tested", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="no">No</SelectItem>
+              <SelectItem value="yes_working">Yes - Working</SelectItem>
+              <SelectItem value="yes_not_working">Yes - Not Working</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
           <Label>Description</Label>
           <Textarea
             value={data.description || ""}
