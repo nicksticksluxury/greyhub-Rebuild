@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
-export default function FilterPanel({ filters, setFilters, auctions, sources }) {
+export default function FilterPanel({ filters, setFilters, auctions, sources, caseMaterials }) {
   const resetFilters = () => {
     setFilters({
       auction: "all",
@@ -73,12 +73,17 @@ export default function FilterPanel({ filters, setFilters, auctions, sources }) 
 
         <div>
           <label className="text-sm font-medium text-slate-700 mb-2 block">Case Material</label>
-          <Input
-            value={filters.case_material || ""}
-            onChange={(e) => setFilters({...filters, case_material: e.target.value})}
-            placeholder="Filter by case material"
-            className="bg-white"
-          />
+          <Select value={filters.case_material || "all"} onValueChange={(value) => setFilters({...filters, case_material: value === "all" ? "" : value})}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="All Materials" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Materials</SelectItem>
+              {caseMaterials.map(material => (
+                <SelectItem key={material} value={material}>{material}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div>

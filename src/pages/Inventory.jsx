@@ -46,6 +46,13 @@ export default function Inventory() {
     initialData: [],
   });
 
+  // Get unique case materials from all watches
+  const caseMaterials = [...new Set(watches
+    .map(w => w.case_material)
+    .filter(Boolean)
+    .map(m => m.trim())
+  )].sort();
+
   const filteredWatches = watches.filter(watch => {
     // Filter out sold watches from regular inventory
     if (watch.sold) return false;
@@ -60,7 +67,7 @@ export default function Inventory() {
     const matchesSource = filters.source === "all" || watch.source_id === filters.source;
     const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
     const matchesMovementType = filters.movement_type === "all" || watch.movement_type === filters.movement_type;
-    const matchesCaseMaterial = !filters.case_material || watch.case_material?.toLowerCase().includes(filters.case_material.toLowerCase());
+    const matchesCaseMaterial = !filters.case_material || watch.case_material?.trim() === filters.case_material;
     const matchesTested = filters.tested === "all" || (watch.tested || "no") === filters.tested;
 
     return matchesSearch && matchesAuction && matchesSource && matchesCondition && matchesMovementType && matchesCaseMaterial && matchesTested;
@@ -140,6 +147,7 @@ export default function Inventory() {
               setFilters={setFilters}
               auctions={auctions}
               sources={sources}
+              caseMaterials={caseMaterials}
             />
           )}
         </div>
