@@ -254,7 +254,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
                 <SelectItem value="Digital">Digital</SelectItem>
                 <SelectItem value="Manual">Manual</SelectItem>
                 <SelectItem value="Quartz">Quartz</SelectItem>
-                <SelectItem value="Solar">Digital</SelectItem>
+                <SelectItem value="Solar">Solar</SelectItem>
                 <SelectItem value="Unknown">Unknown</SelectItem>
               </SelectContent>
             </Select>
