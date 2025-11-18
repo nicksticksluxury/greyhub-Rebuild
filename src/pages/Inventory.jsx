@@ -18,7 +18,7 @@ export default function Inventory() {
   const [showFilters, setShowFilters] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [selectedWatch, setSelectedWatch] = useState(null);
-  const [selectedPlatform, setSelectedPlatform] = useState("ebay");
+  const [selectedPlatform, setSelectedPlatform] = useState("whatnot");
   const [filters, setFilters] = useState({
     auction: "all",
     source: "all",

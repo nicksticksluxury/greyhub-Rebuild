@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye } from "lucide-react";
+import { Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -58,6 +59,8 @@ const conditionLabels = {
 export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform }) {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState("asc");
 
   const handleImageClick = (e, photo) => {
     e.stopPropagation();
@@ -68,6 +71,51 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
   const handleRowClick = (watchId) => {
     window.location.href = createPageUrl(`WatchDetail?id=${watchId}`);
   };
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4" />;
+    return sortDirection === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
+  };
+
+  const sortedWatches = [...watches].sort((a, b) => {
+    if (!sortField) return 0;
+
+    let aValue, bValue;
+
+    switch (sortField) {
+      case "brand":
+        aValue = a.brand?.toLowerCase() || "";
+        bValue = b.brand?.toLowerCase() || "";
+        break;
+      case "condition":
+        aValue = a.condition || "";
+        bValue = b.condition || "";
+        break;
+      case "cost":
+        aValue = a.cost || 0;
+        bValue = b.cost || 0;
+        break;
+      case "price":
+        aValue = a.platform_prices?.[selectedPlatform] || 0;
+        bValue = b.platform_prices?.[selectedPlatform] || 0;
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
 
   if (isLoading) {
     return (
@@ -97,20 +145,52 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
             <TableHeader>
               <TableRow className="bg-slate-50">
                 <TableHead className="w-20">Photo</TableHead>
-                <TableHead>Brand / Model</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort("brand")}
+                    className="h-auto p-0 hover:bg-transparent font-semibold"
+                  >
+                    Brand / Model {getSortIcon("brand")}
+                  </Button>
+                </TableHead>
                 <TableHead>Ref / Serial</TableHead>
-                <TableHead>Condition</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort("condition")}
+                    className="h-auto p-0 hover:bg-transparent font-semibold"
+                  >
+                    Condition {getSortIcon("condition")}
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort("cost")}
+                    className="h-auto p-0 hover:bg-transparent font-semibold"
+                  >
+                    Cost {getSortIcon("cost")}
+                  </Button>
+                </TableHead>
                 <TableHead className="text-right">Retail</TableHead>
                 <TableHead className="text-right">Min Price</TableHead>
-                <TableHead className="text-right">{selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)}</TableHead>
+                <TableHead className="text-right">
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort("price")}
+                    className="h-auto p-0 hover:bg-transparent font-semibold"
+                  >
+                    {selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} {getSortIcon("price")}
+                  </Button>
+                </TableHead>
                 <TableHead className="text-right">30% Markup</TableHead>
                 <TableHead className="text-right">50% Markup</TableHead>
                 <TableHead>Source</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {watches.map((watch) => {
+              {sortedWatches.map((watch) => {
                 const source = sources.find(s => s.id === watch.source_id);
                 const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
                 const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
