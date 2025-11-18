@@ -24,7 +24,8 @@ export default function Inventory() {
     source: "all",
     condition: "all",
     movement_type: "all",
-    case_material: ""
+    case_material: "",
+    tested: "all"
   });
 
   const { data: watches = [], isLoading } = useQuery({
@@ -60,8 +61,9 @@ export default function Inventory() {
     const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
     const matchesMovementType = filters.movement_type === "all" || watch.movement_type === filters.movement_type;
     const matchesCaseMaterial = !filters.case_material || watch.case_material?.toLowerCase().includes(filters.case_material.toLowerCase());
+    const matchesTested = filters.tested === "all" || (watch.tested || "no") === filters.tested;
 
-    return matchesSearch && matchesAuction && matchesSource && matchesCondition && matchesMovementType && matchesCaseMaterial;
+    return matchesSearch && matchesAuction && matchesSource && matchesCondition && matchesMovementType && matchesCaseMaterial && matchesTested;
   });
 
   return (

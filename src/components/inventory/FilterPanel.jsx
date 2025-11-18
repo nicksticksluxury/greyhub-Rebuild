@@ -11,12 +11,13 @@ export default function FilterPanel({ filters, setFilters, auctions, sources }) 
       source: "all",
       condition: "all",
       movement_type: "all",
-      case_material: ""
+      case_material: "",
+      tested: "all"
     });
   };
 
   const hasActiveFilters = filters.condition !== "all" || filters.movement_type !== "all" || 
-    filters.case_material !== "" || filters.source !== "all" || filters.auction !== "all";
+    filters.case_material !== "" || filters.source !== "all" || filters.auction !== "all" || filters.tested !== "all";
 
   return (
     <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -30,7 +31,7 @@ export default function FilterPanel({ filters, setFilters, auctions, sources }) 
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div>
           <label className="text-sm font-medium text-slate-700 mb-2 block">Condition</label>
           <Select value={filters.condition} onValueChange={(value) => setFilters({...filters, condition: value})}>
@@ -78,6 +79,21 @@ export default function FilterPanel({ filters, setFilters, auctions, sources }) 
             placeholder="Filter by case material"
             className="bg-white"
           />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700 mb-2 block">Tested</label>
+          <Select value={filters.tested || "all"} onValueChange={(value) => setFilters({...filters, tested: value})}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="no">No</SelectItem>
+              <SelectItem value="yes_working">Yes - Working</SelectItem>
+              <SelectItem value="yes_not_working">Yes - Not Working</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
