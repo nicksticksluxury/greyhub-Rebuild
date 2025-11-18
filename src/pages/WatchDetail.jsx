@@ -95,8 +95,50 @@ export default function WatchDetail() {
     },
   });
 
+  const calculateMinimumPrice = (cost) => {
+    if (!cost) return 0;
+    
+    const PLATFORM_FEES = {
+      ebay: { rate: 0.15 },
+      poshmark: { rate: 0.20 },
+      etsy: { rate: 0.065, payment: 0.03, fixed: 0.25 },
+      mercari: { rate: 0.129 },
+      whatnot: { rate: 0.10, payment: 0.029, fixed: 0.30 },
+      shopify: { rate: 0.029, fixed: 0.30 }
+    };
+    
+    // Calculate minimum price needed for each platform
+    const minimums = Object.entries(PLATFORM_FEES).map(([platform, config]) => {
+      let minPrice = 0;
+      
+      if (platform === 'ebay') {
+        minPrice = cost / (1 - config.rate);
+      } else if (platform === 'poshmark') {
+        minPrice = cost / (1 - config.rate);
+      } else if (platform === 'etsy') {
+        minPrice = (cost + config.fixed) / (1 - config.rate - config.payment);
+      } else if (platform === 'whatnot') {
+        minPrice = (cost + config.fixed) / (1 - config.rate - config.payment);
+      } else if (platform === 'shopify') {
+        minPrice = (cost + config.fixed) / (1 - config.rate);
+      } else {
+        minPrice = cost / (1 - config.rate);
+      }
+      
+      return minPrice;
+    });
+    
+    // Return the highest minimum price (most expensive platform)
+    return Math.ceil(Math.max(...minimums));
+  };
+
   const handleSave = () => {
-    updateMutation.mutate(editedData);
+    const calculatedMinPrice = calculateMinimumPrice(editedData.cost);
+    const dataToSave = {
+      ...editedData,
+      minimum_price: calculatedMinPrice
+    };
+    updateMutation.mutate(dataToSave);
   };
 
   const handleDelete = () => {
