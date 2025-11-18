@@ -250,11 +250,12 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
                 <SelectValue placeholder="Movement" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="automatic">Automatic</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
-                <SelectItem value="quartz">Quartz</SelectItem>
-                <SelectItem value="digital">Digital</SelectItem>
-                <SelectItem value="unknown">Unknown</SelectItem>
+                <SelectItem value="Automatic">Automatic</SelectItem>
+                <SelectItem value="Digital">Digital</SelectItem>
+                <SelectItem value="Manual">Manual</SelectItem>
+                <SelectItem value="Quartz">Quartz</SelectItem>
+                <SelectItem value="Solar">Digital</SelectItem>
+                <SelectItem value="Unknown">Unknown</SelectItem>
               </SelectContent>
             </Select>
           </div>
