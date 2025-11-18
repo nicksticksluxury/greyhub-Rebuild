@@ -86,36 +86,42 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
     return sortDirection === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
   };
 
+  const getMinimumPrice = (watch) => {
+    if (!watch.platform_prices) return watch.minimum_price || 0;
+    const prices = Object.values(watch.platform_prices).filter(p => p > 0);
+    return prices.length > 0 ? Math.min(...prices) : (watch.minimum_price || 0);
+  };
+
   const sortedWatches = [...watches].sort((a, b) => {
-    if (!sortField) return 0;
+      if (!sortField) return 0;
 
-    let aValue, bValue;
+      let aValue, bValue;
 
-    switch (sortField) {
-      case "brand":
-        aValue = a.brand?.toLowerCase() || "";
-        bValue = b.brand?.toLowerCase() || "";
-        break;
-      case "condition":
-        aValue = a.condition || "";
-        bValue = b.condition || "";
-        break;
-      case "cost":
-        aValue = a.cost || 0;
-        bValue = b.cost || 0;
-        break;
-      case "price":
-        aValue = a.platform_prices?.[selectedPlatform] || 0;
-        bValue = b.platform_prices?.[selectedPlatform] || 0;
-        break;
-      default:
-        return 0;
-    }
+      switch (sortField) {
+        case "brand":
+          aValue = a.brand?.toLowerCase() || "";
+          bValue = b.brand?.toLowerCase() || "";
+          break;
+        case "condition":
+          aValue = a.condition || "";
+          bValue = b.condition || "";
+          break;
+        case "cost":
+          aValue = a.cost || 0;
+          bValue = b.cost || 0;
+          break;
+        case "price":
+          aValue = a.platform_prices?.[selectedPlatform] || 0;
+          bValue = b.platform_prices?.[selectedPlatform] || 0;
+          break;
+        default:
+          return 0;
+      }
 
-    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-    return 0;
-  });
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
 
   if (isLoading) {
     return (
@@ -191,11 +197,11 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
             </TableHeader>
             <TableBody>
               {sortedWatches.map((watch) => {
-                const source = sources.find(s => s.id === watch.source_id);
-                const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
-                const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
-                const markup30 = watch.cost ? Math.ceil(watch.cost * 1.3) : 0;
-                const markup50 = watch.cost ? Math.ceil(watch.cost * 1.5) : 0;
+                  const source = sources.find(s => s.id === watch.source_id);
+                  const minPrice = getMinimumPrice(watch);
+                  const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
+                  const markup30 = minPrice ? Math.ceil(minPrice * 1.3) : 0;
+                  const markup50 = minPrice ? Math.ceil(minPrice * 1.5) : 0;
 
                 return (
                   <TableRow 
