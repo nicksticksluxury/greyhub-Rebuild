@@ -173,7 +173,7 @@ export default function WatchDetail() {
       
       // Get full resolution photos for AI analysis
       const photosToAnalyze = editedData.photos.slice(0, 2).map(photo => 
-        photo.full || photo.medium || photo
+        photo.original || photo.full || photo
       );
       console.log("Photos:", photosToAnalyze);
       

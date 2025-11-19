@@ -112,7 +112,7 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           for (let i = 0; i < 8; i++) {
             if (w.photos[i]) {
               const photo = w.photos[i];
-              imageUrls.push(photo.medium_jpg || photo.medium || photo.thumbnail || photo);
+              imageUrls.push(photo.full || photo.medium || photo.original || photo);
             } else {
               imageUrls.push("");
             }
