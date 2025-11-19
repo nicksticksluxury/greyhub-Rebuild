@@ -143,7 +143,7 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           "Not Hazmat",
           conditionMap[w.condition] || "",
           w.cost || "",
-          w.reference_number || "",
+          w.reference_number || "Unknown",
           ...imageUrls
         ];
       });
