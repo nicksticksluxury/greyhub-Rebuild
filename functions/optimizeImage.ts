@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { Image } from 'npm:imagescript@1.3.0';
 
 Deno.serve(async (req) => {
   try {
@@ -16,90 +17,51 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'file_url is required' }, { status: 400 });
     }
 
-    console.log('🔍 START: Optimizing image:', file_url);
+    console.log('🔍 Optimizing:', file_url);
 
-    // Fetch the original image
-    console.log('📥 Fetching original image...');
+    // Fetch and decode image
     const imageResponse = await fetch(file_url);
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.status}`);
-    }
-    const imageBlob = await imageResponse.blob();
-    console.log('✓ Image fetched, size:', imageBlob.size, 'bytes');
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const image = await Image.decode(new Uint8Array(imageBuffer));
+    console.log('✓ Decoded:', image.width, 'x', image.height);
     
-    // Use ImageMagick via command line (available in Deno Deploy)
-    const tempInput = `/tmp/input_${Date.now()}.jpg`;
-    const tempThumb = `/tmp/thumb_${Date.now()}.jpg`;
-    const tempMedium = `/tmp/medium_${Date.now()}.jpg`;
-    const tempFull = `/tmp/full_${Date.now()}.jpg`;
+    // Use unique timestamps for each file to prevent deduplication
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
     
-    // Write original to temp file
-    await Deno.writeFile(tempInput, new Uint8Array(await imageBlob.arrayBuffer()));
+    // Thumbnail (300x300)
+    const thumb = image.clone().cover(300, 300);
+    const thumbJPG = await thumb.encodeJPEG(85);
+    const thumbFile = new File([thumbJPG], `thumb_${timestamp}_${random}.jpg`, { type: 'image/jpeg' });
+    const { file_url: thumbUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
+    console.log('✓ Thumb:', thumbUrl);
     
-    // Generate thumbnail (300x300)
-    console.log('📐 Generating thumbnail...');
-    const thumbCmd = new Deno.Command('convert', {
-      args: [tempInput, '-resize', '300x300^', '-gravity', 'center', '-extent', '300x300', '-quality', '85', tempThumb]
-    });
-    await thumbCmd.output();
-    const thumbData = await Deno.readFile(tempThumb);
-    const thumbBlob = new Blob([thumbData], { type: 'image/jpeg' });
-    const { file_url: thumbnailUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
-      file: thumbBlob
-    });
-    console.log('✓ Thumbnail uploaded:', thumbnailUrl);
+    // Medium (1200px)
+    const medW = 1200;
+    const medH = Math.round((image.height / image.width) * medW);
+    const medium = image.clone().resize(medW, medH);
+    const medJPG = await medium.encodeJPEG(90);
+    const medFile = new File([medJPG], `medium_${timestamp}_${random}.jpg`, { type: 'image/jpeg' });
+    const { file_url: medUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: medFile });
+    console.log('✓ Medium:', medUrl);
     
-    // Generate medium (1200px width)
-    console.log('📐 Generating medium...');
-    const mediumCmd = new Deno.Command('convert', {
-      args: [tempInput, '-resize', '1200x', '-quality', '90', tempMedium]
-    });
-    await mediumCmd.output();
-    const mediumData = await Deno.readFile(tempMedium);
-    const mediumBlob = new Blob([mediumData], { type: 'image/jpeg' });
-    const { file_url: mediumUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
-      file: mediumBlob
-    });
-    console.log('✓ Medium uploaded:', mediumUrl);
-    
-    // Generate full (2400px width)
-    console.log('📐 Generating full...');
-    const fullCmd = new Deno.Command('convert', {
-      args: [tempInput, '-resize', '2400x', '-quality', '92', tempFull]
-    });
-    await fullCmd.output();
-    const fullData = await Deno.readFile(tempFull);
-    const fullBlob = new Blob([fullData], { type: 'image/jpeg' });
-    const { file_url: fullUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
-      file: fullBlob
-    });
-    console.log('✓ Full uploaded:', fullUrl);
-    
-    // Cleanup temp files
-    try {
-      await Deno.remove(tempInput);
-      await Deno.remove(tempThumb);
-      await Deno.remove(tempMedium);
-      await Deno.remove(tempFull);
-    } catch (e) {
-      console.log('Cleanup warning:', e.message);
-    }
+    // Full (2400px)
+    const fullW = 2400;
+    const fullH = Math.round((image.height / image.width) * fullW);
+    const full = image.clone().resize(fullW, fullH);
+    const fullJPG = await full.encodeJPEG(92);
+    const fullFile = new File([fullJPG], `full_${timestamp}_${random}.jpg`, { type: 'image/jpeg' });
+    const { file_url: fullUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullFile });
+    console.log('✓ Full:', fullUrl);
 
-    const result = {
+    return Response.json({
       original: file_url,
-      thumbnail: thumbnailUrl,
-      medium: mediumUrl,
+      thumbnail: thumbUrl,
+      medium: medUrl,
       full: fullUrl
-    };
-    
-    console.log('✅ COMPLETE');
-    console.log('URLs match?', (thumbnailUrl === mediumUrl && mediumUrl === fullUrl));
-
-    return Response.json(result);
+    });
   } catch (error) {
     console.error('❌ Error:', error);
-    return Response.json({ 
-      error: error.message || 'Failed to process image'
-    }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
