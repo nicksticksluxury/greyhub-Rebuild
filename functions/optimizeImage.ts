@@ -1,6 +1,6 @@
-// Image optimization function v2.0 - uses imagescript for resizing
+// Image optimization using jimp (no filesystem needed)
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { Image } from 'npm:imagescript@1.3.0';
+import Jimp from 'npm:jimp@0.22.10';
 
 Deno.serve(async (req) => {
   try {
@@ -20,48 +20,32 @@ Deno.serve(async (req) => {
 
     console.log('🔍 START:', file_url);
 
-    // Fetch original
-    const res = await fetch(file_url);
-    const buffer = await res.arrayBuffer();
-    const img = await Image.decode(new Uint8Array(buffer));
-    console.log('✓ Loaded:', img.width, 'x', img.height);
+    // Load image from URL
+    const img = await Jimp.read(file_url);
+    console.log('✓ Loaded:', img.bitmap.width, 'x', img.bitmap.height);
     
-    const ts = Date.now();
-    const rand = Math.random().toString(36).substring(2, 9);
-    
-    // Thumbnail 300x300
+    // Thumbnail 300x300 (cover crop)
     console.log('Creating thumbnail...');
-    const t = img.clone().cover(300, 300);
-    const tJpg = await t.encodeJPEG(85);
-    const tBlob = new Blob([tJpg], { type: 'image/jpeg' });
-    const { file_url: tUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: tBlob });
+    const thumb = img.clone().cover(300, 300).quality(85);
+    const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
+    const thumbBlob = new Blob([thumbBuffer], { type: 'image/jpeg' });
+    const { file_url: tUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbBlob });
     console.log('✓ Thumb:', tUrl);
     
-    // Small delay to ensure unique timestamps
-    await new Promise(r => setTimeout(r, 10));
-    const ts2 = Date.now();
-    
-    // Medium 1200px
+    // Medium 1200px (maintain aspect ratio)
     console.log('Creating medium...');
-    const mW = 1200;
-    const mH = Math.round((img.height / img.width) * mW);
-    const m = img.clone().resize(mW, mH);
-    const mJpg = await m.encodeJPEG(90);
-    const mBlob = new Blob([mJpg], { type: 'image/jpeg' });
-    const { file_url: mUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mBlob });
+    const medium = img.clone().scaleToFit(1200, 10000).quality(90);
+    const mediumBuffer = await medium.getBufferAsync(Jimp.MIME_JPEG);
+    const mediumBlob = new Blob([mediumBuffer], { type: 'image/jpeg' });
+    const { file_url: mUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mediumBlob });
     console.log('✓ Medium:', mUrl);
     
-    await new Promise(r => setTimeout(r, 10));
-    const ts3 = Date.now();
-    
-    // Full 2400px
+    // Full 2400px (maintain aspect ratio)
     console.log('Creating full...');
-    const fW = 2400;
-    const fH = Math.round((img.height / img.width) * fW);
-    const f = img.clone().resize(fW, fH);
-    const fJpg = await f.encodeJPEG(92);
-    const fBlob = new Blob([fJpg], { type: 'image/jpeg' });
-    const { file_url: fUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fBlob });
+    const full = img.clone().scaleToFit(2400, 10000).quality(92);
+    const fullBuffer = await full.getBufferAsync(Jimp.MIME_JPEG);
+    const fullBlob = new Blob([fullBuffer], { type: 'image/jpeg' });
+    const { file_url: fUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullBlob });
     console.log('✓ Full:', fUrl);
 
     const result = {
@@ -72,7 +56,7 @@ Deno.serve(async (req) => {
     };
     
     console.log('✅ DONE');
-    console.log('All same?', tUrl === mUrl && mUrl === fUrl);
+    console.log('All different?', tUrl !== mUrl && mUrl !== fUrl && tUrl !== fUrl);
 
     return Response.json(result);
   } catch (error) {
