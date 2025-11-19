@@ -11,7 +11,12 @@ export default function ReoptimizeImages() {
   const [expandedWatch, setExpandedWatch] = useState(null);
 
   const handleReoptimize = async () => {
-    if (!confirm("This will re-optimize ALL watch images. This may take several minutes. Continue?")) {
+    const limitInput = prompt('How many watches to process? (Enter a number, recommended: 5-10 at a time to avoid timeout)', '5');
+    if (!limitInput) return;
+    
+    const limit = parseInt(limitInput);
+    if (isNaN(limit) || limit < 1) {
+      toast.error('Please enter a valid number');
       return;
     }
 
@@ -19,16 +24,21 @@ export default function ReoptimizeImages() {
     setResults(null);
 
     try {
-      const response = await base44.functions.invoke('reoptimizeAllImages');
+      const response = await base44.functions.invoke('reoptimizeAllImages', { limit });
       console.log("FULL RESPONSE:", response);
       console.log("RESPONSE DATA:", response.data);
       console.log("RESULTS:", response.data.results);
       console.log("DETAILS:", response.data.results?.details);
       setResults(response.data.results);
-      toast.success("All images re-optimized successfully!");
+      toast.success(`Re-optimization complete! Processed ${response.data.results.processing} watches.`);
     } catch (error) {
-      console.error("ERROR:", error);
+      console.error("FULL ERROR:", error);
       toast.error("Failed to re-optimize images: " + error.message);
+      setResults({ 
+        errors: [{ error: error.message }],
+        details: [],
+        logs: ['❌ Function crashed or timed out. Check console for details.', error.message]
+      });
     } finally {
       setProcessing(false);
     }
@@ -95,12 +105,20 @@ export default function ReoptimizeImages() {
                   </pre>
                 </CardContent>
               </Card>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
                       <div className="text-3xl font-bold text-slate-900">{results.total}</div>
                       <div className="text-sm text-slate-600">Total Watches</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-blue-600">{results.processing || results.total}</div>
+                      <div className="text-sm text-slate-600">This Batch</div>
                     </div>
                   </CardContent>
                 </Card>
