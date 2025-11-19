@@ -89,6 +89,9 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           });
           
           description = result;
+          
+          // Save the generated description to the watch
+          await base44.entities.Watch.update(w.id, { description });
         }
         
         watchesWithDescriptions.push({ ...w, description });
