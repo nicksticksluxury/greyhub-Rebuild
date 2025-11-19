@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
-export default function FilterPanel({ filters, setFilters, auctions, sources, caseMaterials }) {
+export default function FilterPanel({ filters, setFilters, auctions, sources, caseMaterials, manufacturers }) {
   const resetFilters = () => {
     setFilters({
       auction: "all",
@@ -12,12 +12,13 @@ export default function FilterPanel({ filters, setFilters, auctions, sources, ca
       condition: "all",
       movement_type: "all",
       case_material: "",
+      manufacturer: "",
       tested: "all"
     });
   };
 
   const hasActiveFilters = filters.condition !== "all" || filters.movement_type !== "all" || 
-    filters.case_material !== "" || filters.source !== "all" || filters.auction !== "all" || filters.tested !== "all";
+    filters.case_material !== "" || filters.manufacturer !== "" || filters.source !== "all" || filters.auction !== "all" || filters.tested !== "all";
 
   return (
     <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -31,7 +32,22 @@ export default function FilterPanel({ filters, setFilters, auctions, sources, ca
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+        <div>
+          <label className="text-sm font-medium text-slate-700 mb-2 block">Manufacturer</label>
+          <Select value={filters.manufacturer || "all"} onValueChange={(value) => setFilters({...filters, manufacturer: value === "all" ? "" : value})}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="All Manufacturers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Manufacturers</SelectItem>
+              {manufacturers.map(manufacturer => (
+                <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div>
           <label className="text-sm font-medium text-slate-700 mb-2 block">Condition</label>
           <Select value={filters.condition} onValueChange={(value) => setFilters({...filters, condition: value})}>
