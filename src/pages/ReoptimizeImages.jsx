@@ -157,7 +157,6 @@ export default function ReoptimizeImages() {
                     </div>
                   )}
                   {results.details && results.details.length > 0 && (
-                  <CardContent>
                     <div className="space-y-3">
                       {results.details.map((detail, idx) => (
                         <div key={idx} className="border border-slate-200 rounded-lg p-4">
