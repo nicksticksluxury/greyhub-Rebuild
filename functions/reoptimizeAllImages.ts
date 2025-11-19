@@ -70,6 +70,12 @@ Deno.serve(async (req) => {
           
           detail.logs.push(`✓ Photo ${i + 1} optimized successfully`);
           
+          // Delay between photos to prevent overload
+          if (i < watch.photos.length - 1) {
+            await new Promise(r => setTimeout(r, 2000));
+            detail.logs.push(`⏱️ Waiting 2s before next photo...`);
+          }
+          
           detail.optimizedUrls[`photo_${i + 1}`] = {
             original: optimizeResult.data.original,
             thumbnail: optimizeResult.data.thumbnail,
@@ -106,6 +112,12 @@ Deno.serve(async (req) => {
       }
 
       results.details.push(detail);
+      
+      // Delay between watches to prevent overload
+      if (watch !== watches[watches.length - 1]) {
+        await new Promise(r => setTimeout(r, 1000));
+        results.logs.push(`⏱️ Waiting 1s before next watch...`);
+      }
     }
 
     return Response.json({
