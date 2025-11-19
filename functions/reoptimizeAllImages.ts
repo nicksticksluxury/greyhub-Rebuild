@@ -9,16 +9,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get optional limit parameter (default to 5 to avoid timeout)
+    const body = await req.json().catch(() => ({}));
+    const limit = body.limit || 5;
+
     // Fetch all watches
-    const watches = await base44.asServiceRole.entities.Watch.list();
+    const allWatches = await base44.asServiceRole.entities.Watch.list();
+    const watches = allWatches.slice(0, limit);
     
     const results = {
-      total: watches.length,
+      total: allWatches.length,
+      processing: watches.length,
       processed: 0,
       skipped: 0,
       errors: [],
       details: [],
-      logs: []
+      logs: [`📊 Processing ${watches.length} of ${allWatches.length} total watches (limited to avoid timeout)`]
     };
 
     for (const watch of watches) {
