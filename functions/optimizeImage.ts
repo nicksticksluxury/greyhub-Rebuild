@@ -1,3 +1,4 @@
+// Image optimization function v2.0 - uses imagescript for resizing
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { Image } from 'npm:imagescript@1.3.0';
 
