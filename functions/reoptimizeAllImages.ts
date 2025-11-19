@@ -16,26 +16,50 @@ Deno.serve(async (req) => {
       total: watches.length,
       processed: 0,
       skipped: 0,
-      errors: []
+      errors: [],
+      details: []
     };
 
     for (const watch of watches) {
+      const detail = {
+        watchId: watch.id,
+        brand: watch.brand || 'Unknown',
+        model: watch.model || 'Unknown',
+        photoCount: watch.photos?.length || 0,
+        status: 'processing',
+        originalUrls: [],
+        optimizedUrls: {},
+        error: null
+      };
+
       try {
         if (!watch.photos || watch.photos.length === 0) {
+          detail.status = 'skipped';
+          detail.reason = 'No photos';
           results.skipped++;
+          results.details.push(detail);
           continue;
         }
 
         const optimizedPhotos = [];
         
-        for (const photo of watch.photos) {
+        for (let i = 0; i < watch.photos.length; i++) {
+          const photo = watch.photos[i];
           // Get the original URL (could be string or object)
-          const originalUrl = typeof photo === 'string' ? photo : (photo.full || photo.medium || photo.thumbnail || photo);
+          const originalUrl = typeof photo === 'string' ? photo : (photo.original || photo.full || photo.medium || photo.thumbnail || photo);
+          detail.originalUrls.push(originalUrl);
           
           // Call the optimization function
           const optimizeResult = await base44.asServiceRole.functions.invoke('optimizeImage', {
             file_url: originalUrl
           });
+          
+          detail.optimizedUrls[`photo_${i + 1}`] = {
+            original: optimizeResult.data.original,
+            thumbnail: optimizeResult.data.thumbnail,
+            medium: optimizeResult.data.medium,
+            full: optimizeResult.data.full
+          };
           
           optimizedPhotos.push(optimizeResult.data);
         }
@@ -45,14 +69,20 @@ Deno.serve(async (req) => {
           photos: optimizedPhotos
         });
 
+        detail.status = 'success';
         results.processed++;
       } catch (error) {
+        detail.status = 'error';
+        detail.error = error.message;
         results.errors.push({
           watchId: watch.id,
           brand: watch.brand,
+          model: watch.model,
           error: error.message
         });
       }
+
+      results.details.push(detail);
     }
 
     return Response.json({
