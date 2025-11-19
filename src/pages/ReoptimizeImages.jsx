@@ -11,20 +11,11 @@ export default function ReoptimizeImages() {
   const [expandedWatch, setExpandedWatch] = useState(null);
 
   const handleReoptimize = async () => {
-    const limitInput = prompt('How many watches to process? (Enter a number, recommended: 5-10 at a time to avoid timeout)', '5');
-    if (!limitInput) return;
-    
-    const limit = parseInt(limitInput);
-    if (isNaN(limit) || limit < 1) {
-      toast.error('Please enter a valid number');
-      return;
-    }
-
     setProcessing(true);
     setResults(null);
 
     try {
-      const response = await base44.functions.invoke('reoptimizeAllImages', { limit });
+      const response = await base44.functions.invoke('reoptimizeAllImages', {});
       console.log("FULL RESPONSE:", response);
       console.log("RESPONSE DATA:", response.data);
       console.log("RESULTS:", response.data.results);
