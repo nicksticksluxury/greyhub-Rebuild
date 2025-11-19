@@ -17,7 +17,8 @@ Deno.serve(async (req) => {
       processed: 0,
       skipped: 0,
       errors: [],
-      details: []
+      details: [],
+      logs: []
     };
 
     for (const watch of watches) {
@@ -29,18 +30,22 @@ Deno.serve(async (req) => {
         status: 'processing',
         originalUrls: [],
         optimizedUrls: {},
-        error: null
+        error: null,
+        logs: []
       };
 
       try {
         if (!watch.photos || watch.photos.length === 0) {
           detail.status = 'skipped';
           detail.reason = 'No photos';
+          detail.logs.push('⚠️ Skipped: No photos found');
+          results.logs.push(`[${watch.brand} ${watch.model}] Skipped: No photos`);
           results.skipped++;
           results.details.push(detail);
           continue;
         }
 
+        detail.logs.push(`✓ Found ${watch.photos.length} photo(s) to optimize`);
         const optimizedPhotos = [];
         
         for (let i = 0; i < watch.photos.length; i++) {
@@ -50,11 +55,14 @@ Deno.serve(async (req) => {
           detail.originalUrls.push(originalUrl);
           
           // Call the optimization function
-          console.log(`Optimizing photo ${i + 1} for watch ${watch.id}: ${originalUrl}`);
+          detail.logs.push(`🔄 Optimizing photo ${i + 1}: ${originalUrl.substring(0, 60)}...`);
+          results.logs.push(`[${watch.brand} ${watch.model}] Optimizing photo ${i + 1}`);
+          
           const optimizeResult = await base44.asServiceRole.functions.invoke('optimizeImage', {
             file_url: originalUrl
           });
-          console.log(`Optimization result for photo ${i + 1}:`, optimizeResult.data);
+          
+          detail.logs.push(`✓ Photo ${i + 1} optimized successfully`);
           
           detail.optimizedUrls[`photo_${i + 1}`] = {
             original: optimizeResult.data.original,
@@ -67,16 +75,21 @@ Deno.serve(async (req) => {
         }
 
         // Update the watch with optimized photos
+        detail.logs.push(`💾 Updating watch in database...`);
         await base44.asServiceRole.entities.Watch.update(watch.id, {
           photos: optimizedPhotos
         });
 
         detail.status = 'success';
+        detail.logs.push(`✅ SUCCESS: All photos optimized and saved`);
+        results.logs.push(`[${watch.brand} ${watch.model}] ✅ SUCCESS`);
         results.processed++;
       } catch (error) {
-        console.error(`Error processing watch ${watch.id}:`, error);
+        const errorMsg = error.message + (error.response?.data ? ` - ${JSON.stringify(error.response.data)}` : '');
         detail.status = 'error';
-        detail.error = error.message + (error.response?.data ? ` - ${JSON.stringify(error.response.data)}` : '');
+        detail.error = errorMsg;
+        detail.logs.push(`❌ ERROR: ${errorMsg}`);
+        results.logs.push(`[${watch.brand} ${watch.model}] ❌ ERROR: ${errorMsg}`);
         results.errors.push({
           watchId: watch.id,
           brand: watch.brand,

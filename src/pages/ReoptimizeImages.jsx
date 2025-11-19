@@ -70,6 +70,21 @@ export default function ReoptimizeImages() {
 
           {results && (
             <div className="space-y-4">
+              {results.logs && results.logs.length > 0 && (
+                <Card className="bg-slate-800 text-white">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Processing Logs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1 text-xs font-mono max-h-96 overflow-auto">
+                      {results.logs.map((log, idx) => (
+                        <div key={idx}>{log}</div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               <Card className="bg-slate-100">
                 <CardHeader>
                   <CardTitle className="text-sm">Raw Response Data (for debugging)</CardTitle>
@@ -178,6 +193,13 @@ export default function ReoptimizeImages() {
                                 <div>Photos: {detail.photoCount}</div>
                                 {detail.reason && <div>Reason: {detail.reason}</div>}
                                 {detail.error && <div className="text-red-600">Error: {detail.error}</div>}
+                                {detail.logs && detail.logs.length > 0 && (
+                                  <div className="mt-2 text-xs font-mono bg-slate-50 p-2 rounded">
+                                    {detail.logs.map((log, i) => (
+                                      <div key={i}>{log}</div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <Button variant="ghost" size="sm">
