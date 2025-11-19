@@ -60,14 +60,28 @@ Deno.serve(async (req) => {
           const originalUrl = typeof photo === 'string' ? photo : (photo.original || photo.full || photo.medium || photo.thumbnail || photo);
           detail.originalUrls.push(originalUrl);
           
-          // Call the optimization function
+          // Call the optimization function with retry logic
           detail.logs.push(`🔄 Optimizing photo ${i + 1}: ${originalUrl.substring(0, 60)}...`);
           results.logs.push(`[${watch.brand} ${watch.model}] Optimizing photo ${i + 1}`);
-          
-          const optimizeResult = await base44.asServiceRole.functions.invoke('optimizeImage', {
-            file_url: originalUrl
-          });
-          
+
+          let optimizeResult;
+          let retries = 3;
+
+          while (retries > 0) {
+            try {
+              optimizeResult = await base44.asServiceRole.functions.invoke('optimizeImage', {
+                file_url: originalUrl
+              });
+              break; // Success - exit retry loop
+            } catch (error) {
+              retries--;
+              if (retries === 0) throw error; // All retries exhausted
+
+              detail.logs.push(`⚠️ Attempt failed, retrying... (${3 - retries}/3)`);
+              await new Promise(r => setTimeout(r, 3000)); // Wait 3s before retry
+            }
+          }
+
           detail.logs.push(`✓ Photo ${i + 1} optimized successfully`);
           
           // Delay between photos to prevent overload
