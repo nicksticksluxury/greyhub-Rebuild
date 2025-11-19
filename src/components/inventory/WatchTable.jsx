@@ -213,10 +213,10 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       {watch.photos?.[0] ? (
                         <img
-                          src={watch.photos[0].thumbnail || watch.photos[0].medium || watch.photos[0].full || watch.photos[0]}
+                          src={typeof watch.photos[0] === 'string' ? watch.photos[0] : watch.photos[0].thumbnail}
                           alt={watch.brand}
                           className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-75 transition-opacity"
-                          onClick={(e) => handleImageClick(e, watch.photos[0].medium || watch.photos[0].full || watch.photos[0])}
+                          onClick={(e) => handleImageClick(e, typeof watch.photos[0] === 'string' ? watch.photos[0] : (watch.photos[0].full || watch.photos[0].medium))}
                         />
                       ) : (
                         <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
