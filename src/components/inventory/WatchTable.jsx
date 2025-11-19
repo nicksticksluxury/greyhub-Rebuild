@@ -212,12 +212,18 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       {watch.photos?.[0] ? (
-                        <img
-                          src={typeof watch.photos[0] === 'string' ? watch.photos[0] : watch.photos[0].thumbnail}
-                          alt={watch.brand}
-                          className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-75 transition-opacity"
-                          onClick={(e) => handleImageClick(e, typeof watch.photos[0] === 'string' ? watch.photos[0] : (watch.photos[0].full || watch.photos[0].medium))}
-                        />
+                        typeof watch.photos[0] === 'object' && watch.photos[0].thumbnail ? (
+                          <img
+                            src={watch.photos[0].thumbnail}
+                            alt={watch.brand}
+                            className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-75 transition-opacity"
+                            onClick={(e) => handleImageClick(e, watch.photos[0].full || watch.photos[0].medium)}
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-amber-100 rounded-lg flex items-center justify-center border border-amber-300">
+                            <span className="text-amber-700 text-xs font-semibold">Optimize</span>
+                          </div>
+                        )
                       ) : (
                         <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
                           <span className="text-slate-400 text-xs">No photo</span>
