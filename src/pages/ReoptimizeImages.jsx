@@ -20,9 +20,14 @@ export default function ReoptimizeImages() {
 
     try {
       const response = await base44.functions.invoke('reoptimizeAllImages');
+      console.log("FULL RESPONSE:", response);
+      console.log("RESPONSE DATA:", response.data);
+      console.log("RESULTS:", response.data.results);
+      console.log("DETAILS:", response.data.results?.details);
       setResults(response.data.results);
       toast.success("All images re-optimized successfully!");
     } catch (error) {
+      console.error("ERROR:", error);
       toast.error("Failed to re-optimize images: " + error.message);
     } finally {
       setProcessing(false);
@@ -65,6 +70,16 @@ export default function ReoptimizeImages() {
 
           {results && (
             <div className="space-y-4">
+              <Card className="bg-slate-100">
+                <CardHeader>
+                  <CardTitle className="text-sm">Raw Response Data (for debugging)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <pre className="text-xs overflow-auto max-h-96 bg-white p-4 rounded">
+                    {JSON.stringify(results, null, 2)}
+                  </pre>
+                </CardContent>
+              </Card>
               <div className="grid grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="pt-6">
@@ -123,11 +138,25 @@ export default function ReoptimizeImages() {
                 </Card>
               )}
 
-              {results.details && results.details.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Processing Details ({results.details.length} watches)</CardTitle>
-                  </CardHeader>
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    Processing Details 
+                    {results.details ? ` (${results.details.length} watches)` : ' (NO DETAILS FOUND!)'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!results.details && (
+                    <div className="text-red-600 font-bold p-4 bg-red-50 rounded">
+                      ERROR: No details array found in response! Check console and raw data above.
+                    </div>
+                  )}
+                  {results.details && results.details.length === 0 && (
+                    <div className="text-amber-600 font-bold p-4 bg-amber-50 rounded">
+                      Details array exists but is empty!
+                    </div>
+                  )}
+                  {results.details && results.details.length > 0 && (
                   <CardContent>
                     <div className="space-y-3">
                       {results.details.map((detail, idx) => (
@@ -203,9 +232,9 @@ export default function ReoptimizeImages() {
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
         </CardContent>
