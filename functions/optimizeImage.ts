@@ -16,11 +16,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'file_url is required' }, { status: 400 });
     }
 
-    // Skip optimization - just use the original image for all three sizes
+    // Skip optimization - just use the original image for all sizes
     // This avoids complex image processing libraries that fail to deploy
     return Response.json({
       thumbnail: file_url,
       medium: file_url,
+      medium_jpg: file_url,
       full: file_url
     });
   } catch (error) {
