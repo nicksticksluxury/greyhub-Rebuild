@@ -73,16 +73,15 @@ Deno.serve(async (req) => {
               if (retries === 0) throw error; // All retries exhausted
 
               detail.logs.push(`⚠️ Attempt failed, retrying... (${3 - retries}/3)`);
-              await new Promise(r => setTimeout(r, 3000)); // Wait 3s before retry
+              await new Promise(r => setTimeout(r, 2000)); // Wait 2s before retry
             }
           }
 
           detail.logs.push(`✓ Photo ${i + 1} optimized successfully`);
           
-          // Delay between photos to prevent overload
+          // Small delay between photos to prevent overload
           if (i < watch.photos.length - 1) {
-            await new Promise(r => setTimeout(r, 2000));
-            detail.logs.push(`⏱️ Waiting 2s before next photo...`);
+            await new Promise(r => setTimeout(r, 500));
           }
           
           detail.optimizedUrls[`photo_${i + 1}`] = {
@@ -122,10 +121,9 @@ Deno.serve(async (req) => {
 
       results.details.push(detail);
       
-      // Delay between watches to prevent overload
+      // Small delay between watches to prevent overload
       if (watch !== watches[watches.length - 1]) {
-        await new Promise(r => setTimeout(r, 1000));
-        results.logs.push(`⏱️ Waiting 1s before next watch...`);
+        await new Promise(r => setTimeout(r, 300));
       }
     }
 
