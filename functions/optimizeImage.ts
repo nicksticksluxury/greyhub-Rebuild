@@ -28,24 +28,24 @@ Deno.serve(async (req) => {
     console.log('Creating thumbnail...');
     const thumb = img.clone().cover(300, 300).quality(85);
     const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
-    const thumbBlob = new Blob([thumbBuffer], { type: 'image/jpeg' });
-    const { file_url: tUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbBlob });
+    const thumbFile = new File([thumbBuffer], 'thumb.jpg', { type: 'image/jpeg' });
+    const { file_url: tUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
     console.log('✓ Thumb:', tUrl);
     
     // Medium 1200px (maintain aspect ratio)
     console.log('Creating medium...');
     const medium = img.clone().scaleToFit(1200, 10000).quality(90);
     const mediumBuffer = await medium.getBufferAsync(Jimp.MIME_JPEG);
-    const mediumBlob = new Blob([mediumBuffer], { type: 'image/jpeg' });
-    const { file_url: mUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mediumBlob });
+    const mediumFile = new File([mediumBuffer], 'medium.jpg', { type: 'image/jpeg' });
+    const { file_url: mUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mediumFile });
     console.log('✓ Medium:', mUrl);
     
     // Full 2400px (maintain aspect ratio)
     console.log('Creating full...');
     const full = img.clone().scaleToFit(2400, 10000).quality(92);
     const fullBuffer = await full.getBufferAsync(Jimp.MIME_JPEG);
-    const fullBlob = new Blob([fullBuffer], { type: 'image/jpeg' });
-    const { file_url: fUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullBlob });
+    const fullFile = new File([fullBuffer], 'full.jpg', { type: 'image/jpeg' });
+    const { file_url: fUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullFile });
     console.log('✓ Full:', fUrl);
 
     const result = {
