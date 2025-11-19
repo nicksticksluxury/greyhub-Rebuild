@@ -121,7 +121,9 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           for (let i = 0; i < 8; i++) imageUrls.push("");
         }
 
-        const title = w.model || `${w.brand || ""} ${w.movement_type || ""} ${w.condition || ""}`.trim();
+        const title = (w.model && w.model.toLowerCase() !== "unknown") 
+          ? w.model 
+          : `${w.brand || ""} ${w.movement_type || ""} ${w.condition || ""}`.trim();
 
         return [
           "Watches",
