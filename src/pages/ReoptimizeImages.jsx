@@ -1,0 +1,130 @@
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+
+export default function ReoptimizeImages() {
+  const [processing, setProcessing] = useState(false);
+  const [results, setResults] = useState(null);
+
+  const handleReoptimize = async () => {
+    if (!confirm("This will re-optimize ALL watch images. This may take several minutes. Continue?")) {
+      return;
+    }
+
+    setProcessing(true);
+    setResults(null);
+
+    try {
+      const response = await base44.functions.invoke('reoptimizeAllImages');
+      setResults(response.data.results);
+      toast.success("All images re-optimized successfully!");
+    } catch (error) {
+      toast.error("Failed to re-optimize images: " + error.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <RefreshCw className="w-6 h-6" />
+            Re-optimize All Images
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <p className="text-slate-600 mb-4">
+              This will re-process all watch images and generate proper thumbnails, medium, and full-size versions.
+              The optimization function has been updated to create actual optimized images instead of using the original.
+            </p>
+            <Button
+              onClick={handleReoptimize}
+              disabled={processing}
+              className="bg-slate-800 hover:bg-slate-900"
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Re-optimizing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Start Re-optimization
+                </>
+              )}
+            </Button>
+          </div>
+
+          {results && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-slate-900">{results.total}</div>
+                      <div className="text-sm text-slate-600">Total Watches</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-green-600">{results.processed}</div>
+                      <div className="text-sm text-slate-600">Processed</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-amber-600">{results.skipped}</div>
+                      <div className="text-sm text-slate-600">Skipped</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {results.errors.length > 0 && (
+                <Card className="border-red-200 bg-red-50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-700">
+                      <AlertCircle className="w-5 h-5" />
+                      Errors ({results.errors.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {results.errors.map((error, idx) => (
+                        <div key={idx} className="text-sm text-red-700">
+                          <span className="font-semibold">{error.brand}</span>: {error.error}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {results.errors.length === 0 && results.processed > 0 && (
+                <Card className="border-green-200 bg-green-50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span className="font-semibold">All images successfully re-optimized!</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
