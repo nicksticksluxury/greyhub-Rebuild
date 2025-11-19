@@ -50,9 +50,11 @@ Deno.serve(async (req) => {
           detail.originalUrls.push(originalUrl);
           
           // Call the optimization function
+          console.log(`Optimizing photo ${i + 1} for watch ${watch.id}: ${originalUrl}`);
           const optimizeResult = await base44.asServiceRole.functions.invoke('optimizeImage', {
             file_url: originalUrl
           });
+          console.log(`Optimization result for photo ${i + 1}:`, optimizeResult.data);
           
           detail.optimizedUrls[`photo_${i + 1}`] = {
             original: optimizeResult.data.original,
@@ -72,13 +74,15 @@ Deno.serve(async (req) => {
         detail.status = 'success';
         results.processed++;
       } catch (error) {
+        console.error(`Error processing watch ${watch.id}:`, error);
         detail.status = 'error';
-        detail.error = error.message;
+        detail.error = error.message + (error.response?.data ? ` - ${JSON.stringify(error.response.data)}` : '');
         results.errors.push({
           watchId: watch.id,
           brand: watch.brand,
           model: watch.model,
-          error: error.message
+          error: error.message,
+          details: error.response?.data
         });
       }
 

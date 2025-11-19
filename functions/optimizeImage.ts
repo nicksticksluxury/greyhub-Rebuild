@@ -59,8 +59,11 @@ Deno.serve(async (req) => {
       full: fullUrl
     });
   } catch (error) {
+    console.error('Image optimization error:', error);
+    console.error('Error stack:', error.stack);
     return Response.json({ 
-      error: error.message || 'Failed to process image'
+      error: error.message || 'Failed to process image',
+      details: error.stack
     }, { status: 500 });
   }
 });
