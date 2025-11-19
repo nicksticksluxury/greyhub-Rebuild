@@ -24,45 +24,38 @@ Deno.serve(async (req) => {
     // Decode the image
     const image = await Image.decode(new Uint8Array(imageBuffer));
     
-    // Generate thumbnail (300x300 WebP)
+    // Generate thumbnail (300x300 JPG)
     const thumbnail = image.clone().cover(300, 300);
-    const thumbnailWebP = await thumbnail.encodeWebP();
-    const thumbnailBlob = new Blob([thumbnailWebP], { type: 'image/webp' });
+    const thumbnailJPG = await thumbnail.encodeJPEG(85);
+    const thumbnailBlob = new Blob([thumbnailJPG], { type: 'image/jpeg' });
     const { file_url: thumbnailUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
       file: thumbnailBlob 
     });
     
-    // Generate medium (1200px width WebP)
+    // Generate medium (1200px width JPG)
     const mediumWidth = 1200;
     const mediumHeight = Math.round((image.height / image.width) * mediumWidth);
     const medium = image.clone().resize(mediumWidth, mediumHeight);
-    const mediumWebP = await medium.encodeWebP();
-    const mediumBlob = new Blob([mediumWebP], { type: 'image/webp' });
+    const mediumJPG = await medium.encodeJPEG(90);
+    const mediumBlob = new Blob([mediumJPG], { type: 'image/jpeg' });
     const { file_url: mediumUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
       file: mediumBlob 
     });
     
-    // Generate medium JPG (1200px width JPG)
-    const mediumJPG = await medium.encodeJPEG(90);
-    const mediumJPGBlob = new Blob([mediumJPG], { type: 'image/jpeg' });
-    const { file_url: mediumJpgUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
-      file: mediumJPGBlob 
-    });
-    
-    // Generate full (2400px width WebP)
+    // Generate full (2400px width JPG)
     const fullWidth = 2400;
     const fullHeight = Math.round((image.height / image.width) * fullWidth);
     const full = image.clone().resize(fullWidth, fullHeight);
-    const fullWebP = await full.encodeWebP();
-    const fullBlob = new Blob([fullWebP], { type: 'image/webp' });
+    const fullJPG = await full.encodeJPEG(92);
+    const fullBlob = new Blob([fullJPG], { type: 'image/jpeg' });
     const { file_url: fullUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
       file: fullBlob 
     });
 
     return Response.json({
+      original: file_url,
       thumbnail: thumbnailUrl,
       medium: mediumUrl,
-      medium_jpg: mediumJpgUrl,
       full: fullUrl
     });
   } catch (error) {
