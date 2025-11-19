@@ -121,10 +121,12 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           for (let i = 0; i < 8; i++) imageUrls.push("");
         }
 
+        const title = w.model || `${w.brand || ""} ${w.movement_type || ""} ${w.condition || ""}`.trim();
+
         return [
           "Watches",
           "",
-          w.model || w.brand || "",
+          title,
           w.description || "",
           w.quantity || 1,
           "Buy it Now",
