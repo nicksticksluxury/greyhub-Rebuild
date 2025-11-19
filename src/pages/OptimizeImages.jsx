@@ -24,11 +24,11 @@ export default function OptimizeImages() {
     }));
   };
 
-  // Filter watches that need optimization (photos are strings or missing thumbnail)
+  // Filter watches that need optimization (photos are strings or missing thumbnail/medium_jpg)
   const watchesToOptimize = watches.filter(watch => {
     if (!watch.photos || watch.photos.length === 0) return false;
     return watch.photos.some(photo => 
-      typeof photo === 'string' || !photo.thumbnail
+      typeof photo === 'string' || !photo.thumbnail || !photo.medium_jpg
     );
   });
 
@@ -46,8 +46,8 @@ export default function OptimizeImages() {
       for (let i = 0; i < watch.photos.length; i++) {
         const photo = watch.photos[i];
         
-        // Skip if already optimized
-        if (typeof photo === 'object' && photo.thumbnail) {
+        // Skip if already optimized (has all required formats)
+        if (typeof photo === 'object' && photo.thumbnail && photo.medium_jpg) {
           addLog(watchId, `Photo ${i + 1}: Already optimized, skipping`);
           optimizedPhotos.push(photo);
           continue;
@@ -60,7 +60,7 @@ export default function OptimizeImages() {
         // Call the existing optimizeImage function
         addLog(watchId, `Photo ${i + 1}: Calling optimization function...`);
         const { data } = await base44.functions.invoke('optimizeImage', { file_url: photoUrl });
-        addLog(watchId, `Photo ${i + 1}: Optimized! Thumbnail: ${data.thumbnail ? 'YES' : 'NO'}, Medium: ${data.medium ? 'YES' : 'NO'}, Full: ${data.full ? 'YES' : 'NO'}`);
+        addLog(watchId, `Photo ${i + 1}: Optimized! Thumbnail: ${data.thumbnail ? 'YES' : 'NO'}, Medium: ${data.medium ? 'YES' : 'NO'}, Medium JPG: ${data.medium_jpg ? 'YES' : 'NO'}, Full: ${data.full ? 'YES' : 'NO'}`);
         optimizedPhotos.push(data);
       }
 
@@ -115,7 +115,7 @@ export default function OptimizeImages() {
           <Card className="p-12 text-center">
             <Check className="w-12 h-12 text-green-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-slate-900 mb-2">All images optimized!</h2>
-            <p className="text-slate-500">All watches have optimized WebP images</p>
+            <p className="text-slate-500">All watches have optimized WebP and JPG images</p>
           </Card>
         ) : (
           <div className="space-y-3">
