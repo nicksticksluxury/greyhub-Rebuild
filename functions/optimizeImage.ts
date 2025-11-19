@@ -27,9 +27,9 @@ Deno.serve(async (req) => {
     // Generate thumbnail (300x300 JPG)
     const thumbnail = image.clone().cover(300, 300);
     const thumbnailJPG = await thumbnail.encodeJPEG(85);
-    const thumbnailBlob = new Blob([thumbnailJPG], { type: 'image/jpeg' });
+    const thumbnailFile = new File([thumbnailJPG], 'thumbnail.jpg', { type: 'image/jpeg' });
     const { file_url: thumbnailUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
-      file: thumbnailBlob 
+      file: thumbnailFile 
     });
     
     // Generate medium (1200px width JPG)
@@ -37,9 +37,9 @@ Deno.serve(async (req) => {
     const mediumHeight = Math.round((image.height / image.width) * mediumWidth);
     const medium = image.clone().resize(mediumWidth, mediumHeight);
     const mediumJPG = await medium.encodeJPEG(90);
-    const mediumBlob = new Blob([mediumJPG], { type: 'image/jpeg' });
+    const mediumFile = new File([mediumJPG], 'medium.jpg', { type: 'image/jpeg' });
     const { file_url: mediumUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
-      file: mediumBlob 
+      file: mediumFile 
     });
     
     // Generate full (2400px width JPG)
@@ -47,9 +47,9 @@ Deno.serve(async (req) => {
     const fullHeight = Math.round((image.height / image.width) * fullWidth);
     const full = image.clone().resize(fullWidth, fullHeight);
     const fullJPG = await full.encodeJPEG(92);
-    const fullBlob = new Blob([fullJPG], { type: 'image/jpeg' });
+    const fullFile = new File([fullJPG], 'full.jpg', { type: 'image/jpeg' });
     const { file_url: fullUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ 
-      file: fullBlob 
+      file: fullFile 
     });
 
     return Response.json({
