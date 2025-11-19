@@ -48,6 +48,11 @@ const navigationItems = [
     url: createPageUrl("OptimizeImages"),
     icon: TrendingUp,
   },
+  {
+    title: "Re-optimize All",
+    url: createPageUrl("ReoptimizeImages"),
+    icon: TrendingUp,
+  },
 ];
 
 export default function Layout({ children, currentPageName }) {
