@@ -75,7 +75,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
                         </div>
                         <div className="flex-1 relative">
                           <img
-                            src={typeof photo === 'string' ? photo : (photo.medium || photo.full || photo.thumbnail)}
+                            src={typeof photo === 'string' ? photo : (photo.medium || photo.thumbnail)}
                             alt={`Watch ${index + 1}`}
                             className="w-full h-48 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => setViewingPhoto(photo)}
@@ -132,7 +132,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
         <DialogContent className="max-w-7xl w-full p-2">
           {viewingPhoto && (
             <img
-              src={typeof viewingPhoto === 'string' ? viewingPhoto : (viewingPhoto.full || viewingPhoto.medium || viewingPhoto.thumbnail)}
+              src={typeof viewingPhoto === 'string' ? viewingPhoto : (viewingPhoto.full || viewingPhoto.medium)}
               alt="Full size"
               className="w-full h-auto max-h-[90vh] object-contain"
             />
