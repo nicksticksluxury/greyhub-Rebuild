@@ -310,6 +310,7 @@ export default function AuctionSummaryTab({ watch }) {
                     </div>
                   );
                 })()}
+              </div>
 
               {watch.retail_price && (
                 <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
