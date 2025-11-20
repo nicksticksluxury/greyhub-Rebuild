@@ -8,6 +8,7 @@ import ImportSources from './pages/ImportSources';
 import OptimizeImages from './pages/OptimizeImages';
 import UpdateMinimumPrices from './pages/UpdateMinimumPrices';
 import ReoptimizeImages from './pages/ReoptimizeImages';
+import WatchSummary from './pages/WatchSummary';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "OptimizeImages": OptimizeImages,
     "UpdateMinimumPrices": UpdateMinimumPrices,
     "ReoptimizeImages": ReoptimizeImages,
+    "WatchSummary": WatchSummary,
 }
 
 export const pagesConfig = {

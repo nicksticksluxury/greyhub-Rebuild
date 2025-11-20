@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Presentation } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -52,6 +52,11 @@ const navigationItems = [
     title: "Re-optimize All",
     url: createPageUrl("ReoptimizeImages"),
     icon: TrendingUp,
+  },
+  {
+    title: "Watch Summary",
+    url: createPageUrl("WatchSummary"),
+    icon: Presentation,
   },
 ];
 
