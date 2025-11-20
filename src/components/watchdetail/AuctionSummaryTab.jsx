@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { DollarSign, TrendingUp, Info } from "lucide-react";
 
 export default function AuctionSummaryTab({ watch }) {
   const [selectedPhoto, setSelectedPhoto] = useState(0);
+  const [simulatedPrice, setSimulatedPrice] = useState("");
 
   const conditionLabels = {
     new: "New",
@@ -263,6 +265,51 @@ export default function AuctionSummaryTab({ watch }) {
                   </div>
                 );
               })()}
+
+              {/* Simulated Sales */}
+              <div className="bg-slate-700 rounded-lg p-4">
+                <div className="mb-3">
+                  <label className="text-sm text-slate-300 mb-2 block">Simulated Sale Price</label>
+                  <Input
+                    type="number"
+                    placeholder="Enter sale price..."
+                    value={simulatedPrice}
+                    onChange={(e) => setSimulatedPrice(e.target.value)}
+                    className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+                  />
+                </div>
+                {simulatedPrice && parseFloat(simulatedPrice) > 0 && (() => {
+                  const price = parseFloat(simulatedPrice);
+                  const { profit, margin, roi } = calculateProfit(price);
+                  const isAboveMin = price >= (watch.minimum_price || 0);
+                  
+                  return (
+                    <div className={`rounded-lg p-3 ${isAboveMin ? 'bg-green-500/20 border border-green-500/40' : 'bg-red-500/20 border border-red-500/40'}`}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold text-white text-sm">Simulated Sale</span>
+                        <span className={`text-lg font-bold ${isAboveMin ? 'text-green-400' : 'text-red-400'}`}>
+                          ${price.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <div className="text-slate-400 text-xs">Profit</div>
+                          <div className={profit > 0 ? 'text-green-400' : 'text-red-400'}>
+                            ${profit.toFixed(2)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-slate-400 text-xs">Margin</div>
+                          <div className="text-white">{margin.toFixed(1)}%</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-400 text-xs">ROI</div>
+                          <div className="text-white">{roi.toFixed(1)}%</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
               {watch.retail_price && (
                 <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
