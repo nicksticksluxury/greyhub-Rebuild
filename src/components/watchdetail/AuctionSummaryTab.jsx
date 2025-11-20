@@ -221,25 +221,25 @@ export default function AuctionSummaryTab({ watch }) {
           </CardContent>
         </Card>
 
-        {/* Platform Prices & Profit */}
+        {/* Whatnot Pricing & Profit */}
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              Platform Pricing & Profit
+              Whatnot Pricing & Profit
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {watch.platform_prices && Object.entries(watch.platform_prices).map(([platform, price]) => {
-                if (!price) return null;
+              {watch.platform_prices?.whatnot && (() => {
+                const price = watch.platform_prices.whatnot;
                 const { profit, margin, roi } = calculateProfit(price);
                 const isAboveMin = price >= (watch.minimum_price || 0);
                 
                 return (
-                  <div key={platform} className={`rounded-lg p-4 ${isAboveMin ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+                  <div className={`rounded-lg p-4 ${isAboveMin ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-white capitalize">{platform}</span>
+                      <span className="font-semibold text-white">Whatnot</span>
                       <span className={`text-xl font-bold ${isAboveMin ? 'text-green-400' : 'text-red-400'}`}>
                         ${price.toFixed(2)}
                       </span>
@@ -262,7 +262,7 @@ export default function AuctionSummaryTab({ watch }) {
                     </div>
                   </div>
                 );
-              })}
+              })()}
 
               {watch.retail_price && (
                 <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
