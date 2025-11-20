@@ -147,13 +147,6 @@ export default function AuctionSummaryTab({ watch }) {
               </div>
             </div>
 
-            {watch.description && (
-              <div className="pt-4 border-t border-slate-700">
-                <div className="text-sm text-slate-400 mb-2">Description</div>
-                <p className="text-white text-sm leading-relaxed">{watch.description}</p>
-              </div>
-            )}
-
             {watch.ai_analysis?.notable_features && watch.ai_analysis.notable_features.length > 0 && (
               <div className="pt-4 border-t border-slate-700">
                 <div className="text-sm text-slate-400 mb-2">Notable Features</div>
@@ -165,6 +158,20 @@ export default function AuctionSummaryTab({ watch }) {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {watch.description && (
+              <div className="pt-4 border-t border-slate-700">
+                <div className="text-sm text-slate-400 mb-2">Description</div>
+                <div className="text-white text-sm leading-relaxed space-y-2">
+                  {watch.description.split(/(\*\*[^*]+\*\*)/).map((part, idx) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return <p key={idx} className="font-semibold">{part.slice(2, -2)}</p>;
+                    }
+                    return part.trim() ? <p key={idx}>{part}</p> : null;
+                  })}
+                </div>
               </div>
             )}
           </CardContent>
