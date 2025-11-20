@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,19 +11,42 @@ export default function ReoptimizeImages() {
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState(null);
   const [expandedWatch, setExpandedWatch] = useState(null);
+  const [selectedWatches, setSelectedWatches] = useState([]);
+
+  const { data: watches = [], isLoading } = useQuery({
+    queryKey: ['watches'],
+    queryFn: () => base44.entities.Watch.list(),
+  });
+
+  const handleSelectWatch = (watchId) => {
+    setSelectedWatches(prev => {
+      if (prev.includes(watchId)) {
+        return prev.filter(id => id !== watchId);
+      }
+      if (prev.length >= 5) {
+        toast.error("Maximum 5 watches at a time");
+        return prev;
+      }
+      return [...prev, watchId];
+    });
+  };
 
   const handleReoptimize = async () => {
+    if (selectedWatches.length === 0) {
+      toast.error("Please select at least one watch");
+      return;
+    }
+
     setProcessing(true);
     setResults(null);
 
     try {
-      const response = await base44.functions.invoke('reoptimizeAllImages', {});
-      console.log("FULL RESPONSE:", response);
-      console.log("RESPONSE DATA:", response.data);
-      console.log("RESULTS:", response.data.results);
-      console.log("DETAILS:", response.data.results?.details);
+      const response = await base44.functions.invoke('reoptimizeAllImages', { 
+        watchIds: selectedWatches 
+      });
       setResults(response.data.results);
       toast.success(`Re-optimization complete! Processed ${response.data.results.processing} watches.`);
+      setSelectedWatches([]);
     } catch (error) {
       console.error("FULL ERROR:", error);
       toast.error("Failed to re-optimize images: " + error.message);
@@ -35,38 +60,82 @@ export default function ReoptimizeImages() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+          <p className="text-slate-600">Loading watches...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RefreshCw className="w-6 h-6" />
-            Re-optimize All Images
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="w-6 h-6" />
+              Re-optimize Images (Select up to 5)
+            </div>
+            <span className="text-sm font-normal text-slate-600">
+              {selectedWatches.length} / 5 selected
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <p className="text-slate-600 mb-4">
-              This will re-process all watch images and generate proper thumbnails, medium, and full-size versions.
-              The optimization function has been updated to create actual optimized images instead of using the original.
-            </p>
-            <Button
-              onClick={handleReoptimize}
-              disabled={processing}
-              className="bg-slate-800 hover:bg-slate-900"
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Re-optimizing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Start Re-optimization
-                </>
-              )}
-            </Button>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-slate-600">
+                Select up to 5 watches to re-optimize their images.
+              </p>
+              <Button
+                onClick={handleReoptimize}
+                disabled={processing || selectedWatches.length === 0}
+                className="bg-slate-800 hover:bg-slate-900"
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Process Selected ({selectedWatches.length})
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <Card className="bg-slate-50">
+              <CardContent className="pt-4 max-h-96 overflow-auto">
+                <div className="space-y-2">
+                  {watches.map((watch) => (
+                    <div
+                      key={watch.id}
+                      className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300"
+                    >
+                      <Checkbox
+                        checked={selectedWatches.includes(watch.id)}
+                        onCheckedChange={() => handleSelectWatch(watch.id)}
+                        disabled={!selectedWatches.includes(watch.id) && selectedWatches.length >= 5}
+                      />
+                      <div className="flex-1">
+                        <div className="font-semibold text-slate-900">
+                          {watch.brand} {watch.model || ''}
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          {watch.photos?.length || 0} photos
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {results && (
