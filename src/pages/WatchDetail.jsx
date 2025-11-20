@@ -28,7 +28,7 @@ export default function WatchDetail() {
   const [analysisStep, setAnalysisStep] = useState("");
   const [analysisError, setAnalysisError] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState("summary");
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
