@@ -9,8 +9,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch all watches
-    const watches = await base44.asServiceRole.entities.Watch.list();
+    const body = await req.json();
+    const { watchIds } = body;
+
+    // Fetch watches - either specific IDs or all
+    let watches;
+    if (watchIds && watchIds.length > 0) {
+      const allWatches = await base44.asServiceRole.entities.Watch.list();
+      watches = allWatches.filter(w => watchIds.includes(w.id));
+    } else {
+      watches = await base44.asServiceRole.entities.Watch.list();
+    }
     
     const results = {
       total: watches.length,
