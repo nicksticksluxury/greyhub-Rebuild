@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageGallery from "../components/watchdetail/ImageGallery";
 import WatchForm from "../components/watchdetail/WatchForm";
 import AIPanel from "../components/watchdetail/AIPanel";
 import DescriptionGenerator from "../components/watchdetail/DescriptionGenerator";
+import AuctionSummaryTab from "../components/watchdetail/AuctionSummaryTab";
 
 export default function WatchDetail() {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ export default function WatchDetail() {
   const [analysisStep, setAnalysisStep] = useState("");
   const [analysisError, setAnalysisError] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
@@ -595,58 +598,73 @@ Include ALL clickable URLs!`;
       </div>
 
       <div className="max-w-[1800px] mx-auto px-6 py-6">
-        <div className="grid lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-3">
-            <ImageGallery 
-              photos={editedData.photos || []}
-              onPhotosChange={(photos) => setEditedData({...editedData, photos})}
-            />
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="details">Edit Details</TabsTrigger>
+            <TabsTrigger value="summary">Auction Summary</TabsTrigger>
+          </TabsList>
 
-          <div className="lg:col-span-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Watch Details</h2>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDescGen(!showDescGen)}
-                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Descriptions
-                </Button>
-              </div>
-
-              <WatchForm 
-                data={editedData}
-                onChange={setEditedData}
-                sources={sources}
-                auctions={auctions}
-              />
-            </div>
-
-            {showDescGen && (
-              <div className="mt-6">
-                <DescriptionGenerator 
-                  watch={editedData}
-                  onImport={(description) => {
-                    setEditedData({
-                      ...editedData,
-                      description: description
-                    });
-                  }}
+          <TabsContent value="details">
+            <div className="grid lg:grid-cols-12 gap-4">
+              <div className="lg:col-span-3">
+                <ImageGallery 
+                  photos={editedData.photos || []}
+                  onPhotosChange={(photos) => setEditedData({...editedData, photos})}
                 />
               </div>
-            )}
-          </div>
 
-          <div className="lg:col-span-3">
-            <AIPanel 
-              aiAnalysis={editedData.ai_analysis}
-              onImportData={importAIData}
-            />
-          </div>
-        </div>
+              <div className="lg:col-span-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-slate-900">Watch Details</h2>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDescGen(!showDescGen)}
+                      className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Descriptions
+                    </Button>
+                  </div>
+
+                  <WatchForm 
+                    data={editedData}
+                    onChange={setEditedData}
+                    sources={sources}
+                    auctions={auctions}
+                  />
+                </div>
+
+                {showDescGen && (
+                  <div className="mt-6">
+                    <DescriptionGenerator 
+                      watch={editedData}
+                      onImport={(description) => {
+                        setEditedData({
+                          ...editedData,
+                          description: description
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="lg:col-span-3">
+                <AIPanel 
+                  aiAnalysis={editedData.ai_analysis}
+                  onImportData={importAIData}
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="summary">
+            <div className="bg-slate-900 rounded-xl p-6">
+              <AuctionSummaryTab watch={editedData} />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
