@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Eye, Presentation, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -57,6 +58,7 @@ const conditionLabels = {
 };
 
 export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform }) {
+  const navigate = useNavigate();
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [sortField, setSortField] = useState(null);
@@ -193,6 +195,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                 <TableHead className="text-right">30% Markup</TableHead>
                 <TableHead className="text-right">50% Markup</TableHead>
                 <TableHead>Source</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -285,6 +288,30 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                       {source && (
                         <span className="text-sm text-slate-600">{source.name}</span>
                       )}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onQuickView(watch);
+                          }}
+                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                          title="Quick View"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(createPageUrl("WatchSummary") + `?id=${watch.id}`);
+                          }}
+                          className="text-amber-500 hover:text-amber-700 transition-colors"
+                          title="Auction Summary"
+                        >
+                          <Presentation className="w-4 h-4" />
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
