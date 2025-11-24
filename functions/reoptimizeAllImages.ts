@@ -95,10 +95,11 @@ async function processWatchesInBackground(base44, watches) {
           }
         });
         
-        // Call the optimizeImage function with retry logic
+        // Call the optimizeImage function with retry logic and timeout
         let optimized = null;
         let attempts = 0;
         const maxAttempts = 3;
+        const timeout = 120000; // 2 minutes in milliseconds
         
         while (attempts < maxAttempts && !optimized) {
           attempts++;
@@ -114,9 +115,19 @@ async function processWatchesInBackground(base44, watches) {
               }
             });
             
-            const result = await base44.asServiceRole.functions.invoke('optimizeImage', {
-              file_url: originalUrl
-            });
+            // Create timeout promise
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Optimization timeout after 2 minutes')), timeout)
+            );
+            
+            // Race between optimization and timeout
+            const result = await Promise.race([
+              base44.asServiceRole.functions.invoke('optimizeImage', {
+                file_url: originalUrl
+              }),
+              timeoutPromise
+            ]);
+            
             optimized = result.data;
             
             // Update for full
