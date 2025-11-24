@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageGallery from "../components/watchdetail/ImageGallery";
 import WatchForm from "../components/watchdetail/WatchForm";
 import AIPanel from "../components/watchdetail/AIPanel";
-import DescriptionGenerator from "../components/watchdetail/DescriptionGenerator";
+
 import AuctionSummaryTab from "../components/watchdetail/AuctionSummaryTab";
 
 export default function WatchDetail() {
@@ -23,7 +23,7 @@ export default function WatchDetail() {
 
   const [editedData, setEditedData] = useState(null);
   const [originalData, setOriginalData] = useState(null);
-  const [showDescGen, setShowDescGen] = useState(false);
+
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState("");
   const [analysisError, setAnalysisError] = useState(null);
@@ -965,17 +965,7 @@ export default function WatchDetail() {
 
               <div className="lg:col-span-6">
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Watch Details</h2>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDescGen(!showDescGen)}
-                      className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Descriptions
-                    </Button>
-                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-6">Watch Details</h2>
 
                   <WatchForm 
                     data={editedData}
@@ -984,20 +974,6 @@ export default function WatchDetail() {
                     auctions={auctions}
                   />
                 </div>
-
-                {showDescGen && (
-                  <div className="mt-6">
-                    <DescriptionGenerator 
-                      watch={editedData}
-                      onImport={(description) => {
-                        setEditedData({
-                          ...editedData,
-                          description: description
-                        });
-                      }}
-                    />
-                  </div>
-                )}
               </div>
 
               <div className="lg:col-span-3">
