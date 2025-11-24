@@ -40,12 +40,17 @@ Deno.serve(async (req) => {
       
       console.log(`✓ Loaded: ${img.bitmap.width}x${img.bitmap.height}`);
       
+      const UPLOAD_TIMEOUT = 8000; // 8 seconds per upload
+      
       // Process thumbnail
       console.log('📸 Processing thumbnail...');
       const thumb = img.clone().cover(300, 300).quality(85);
       const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
       const thumbFile = new File([thumbBuffer], 'thumb.jpg', { type: 'image/jpeg' });
-      const { file_url: thumbResult } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
+      const thumbResult = await Promise.race([
+        base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile }).then(r => r.file_url),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('THUMB_UPLOAD_TIMEOUT')), UPLOAD_TIMEOUT))
+      ]);
       console.log(`✓ Thumbnail uploaded`);
       
       // Process medium
@@ -53,7 +58,10 @@ Deno.serve(async (req) => {
       const medium = img.clone().scaleToFit(1200, 10000).quality(90);
       const mediumBuffer = await medium.getBufferAsync(Jimp.MIME_JPEG);
       const mediumFile = new File([mediumBuffer], 'medium.jpg', { type: 'image/jpeg' });
-      const { file_url: mediumResult } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mediumFile });
+      const mediumResult = await Promise.race([
+        base44.asServiceRole.integrations.Core.UploadFile({ file: mediumFile }).then(r => r.file_url),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('MEDIUM_UPLOAD_TIMEOUT')), UPLOAD_TIMEOUT))
+      ]);
       console.log(`✓ Medium uploaded`);
       
       // Process full
@@ -61,7 +69,10 @@ Deno.serve(async (req) => {
       const full = img.clone().scaleToFit(2400, 10000).quality(92);
       const fullBuffer = await full.getBufferAsync(Jimp.MIME_JPEG);
       const fullFile = new File([fullBuffer], 'full.jpg', { type: 'image/jpeg' });
-      const { file_url: fullResult } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullFile });
+      const fullResult = await Promise.race([
+        base44.asServiceRole.integrations.Core.UploadFile({ file: fullFile }).then(r => r.file_url),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('FULL_UPLOAD_TIMEOUT')), UPLOAD_TIMEOUT))
+      ]);
       console.log(`✓ Full uploaded`);
 
       const elapsed = Date.now() - startTime;
