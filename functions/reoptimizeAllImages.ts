@@ -84,6 +84,9 @@ async function processWatchesInBackground(base44, watches) {
 
         console.log(`Optimizing photo ${photoIndex + 1}/${watch.photos.length} for watch ${watch.id}`);
         
+        // Record start time for timeout detection
+        const startTime = Date.now();
+        
         // Update status for thumbnail
         await base44.asServiceRole.entities.Watch.update(watch.id, {
           optimization_status: {
