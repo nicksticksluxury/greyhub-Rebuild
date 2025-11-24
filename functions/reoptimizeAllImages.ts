@@ -98,52 +98,33 @@ async function processWatchesInBackground(base44, watches) {
           }
         });
         
-        // Call the optimizeImage function with strict timeout enforcement
+        // Call the optimizeImage function with hard timeout
         let optimized = null;
-        const attemptTimeout = 60000; // 60 seconds per attempt
+        const TIMEOUT_MS = 45000; // 45 seconds hard limit
         
         try {
-          console.log(`Optimizing photo ${photoIndex + 1} with 60s timeout`);
+          console.log(`⏱️ Starting photo ${photoIndex + 1} with ${TIMEOUT_MS/1000}s timeout`);
           
-          // Update status with timestamp
-          await base44.asServiceRole.entities.Watch.update(watch.id, {
-            optimization_status: {
-              status: 'processing',
-              current_photo: photoIndex + 1,
-              total_photos: watch.photos.length,
-              current_variant: 'optimizing',
-              message: `Processing photo ${photoIndex + 1}/${watch.photos.length}`,
-              start_time: startTime
-            }
+          // Race between optimization and timeout - whichever finishes first
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('TIMEOUT')), TIMEOUT_MS)
+          );
+          
+          const optimizePromise = base44.asServiceRole.functions.invoke('optimizeImage', {
+            file_url: originalUrl
           });
           
-          // Create AbortController for proper cancellation
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), attemptTimeout);
-          
-          try {
-            const result = await base44.asServiceRole.functions.invoke('optimizeImage', {
-              file_url: originalUrl
-            });
-            
-            clearTimeout(timeoutId);
-            optimized = result.data;
-            console.log(`✓ Photo ${photoIndex + 1} optimized successfully`);
-            
-          } catch (invokeError) {
-            clearTimeout(timeoutId);
-            
-            // Check if we exceeded timeout
-            const elapsed = Date.now() - startTime;
-            if (elapsed > attemptTimeout || invokeError.name === 'AbortError') {
-              console.error(`✗ Photo ${photoIndex + 1} timed out after ${elapsed}ms - SKIPPING`);
-            } else {
-              console.error(`✗ Photo ${photoIndex + 1} failed:`, invokeError.message);
-            }
-          }
+          const result = await Promise.race([optimizePromise, timeoutPromise]);
+          optimized = result.data;
+          console.log(`✅ Photo ${photoIndex + 1} done in ${Date.now() - startTime}ms`);
           
         } catch (error) {
-          console.error(`✗ Fatal error on photo ${photoIndex + 1}:`, error.message);
+          const elapsed = Date.now() - startTime;
+          if (error.message === 'TIMEOUT') {
+            console.error(`⏰ Photo ${photoIndex + 1} TIMEOUT after ${elapsed}ms - SKIPPING`);
+          } else {
+            console.error(`❌ Photo ${photoIndex + 1} error: ${error.message}`);
+          }
         }
         
         if (optimized) {
