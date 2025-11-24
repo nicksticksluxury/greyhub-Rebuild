@@ -24,39 +24,50 @@ Deno.serve(async (req) => {
     const img = await Jimp.read(file_url);
     console.log('✓ Loaded:', img.bitmap.width, 'x', img.bitmap.height);
     
-    // Thumbnail 300x300 (cover crop)
-    console.log('Creating thumbnail...');
-    const thumb = img.clone().cover(300, 300).quality(85);
-    const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
-    const thumbFile = new File([thumbBuffer], 'thumb.jpg', { type: 'image/jpeg' });
-    const { file_url: tUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
-    console.log('✓ Thumb:', tUrl);
+    console.log('Creating all sizes in parallel...');
     
-    // Medium 1200px (maintain aspect ratio)
-    console.log('Creating medium...');
-    const medium = img.clone().scaleToFit(1200, 10000).quality(90);
-    const mediumBuffer = await medium.getBufferAsync(Jimp.MIME_JPEG);
-    const mediumFile = new File([mediumBuffer], 'medium.jpg', { type: 'image/jpeg' });
-    const { file_url: mUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mediumFile });
-    console.log('✓ Medium:', mUrl);
-    
-    // Full 2400px (maintain aspect ratio)
-    console.log('Creating full...');
-    const full = img.clone().scaleToFit(2400, 10000).quality(92);
-    const fullBuffer = await full.getBufferAsync(Jimp.MIME_JPEG);
-    const fullFile = new File([fullBuffer], 'full.jpg', { type: 'image/jpeg' });
-    const { file_url: fUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullFile });
-    console.log('✓ Full:', fUrl);
+    // Create all 3 sizes in parallel
+    const [thumbResult, mediumResult, fullResult] = await Promise.all([
+      // Thumbnail 300x300 (cover crop)
+      (async () => {
+        const thumb = img.clone().cover(300, 300).quality(85);
+        const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
+        const thumbFile = new File([thumbBuffer], 'thumb.jpg', { type: 'image/jpeg' });
+        const { file_url: tUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
+        console.log('✓ Thumb:', tUrl);
+        return tUrl;
+      })(),
+      
+      // Medium 1200px (maintain aspect ratio)
+      (async () => {
+        const medium = img.clone().scaleToFit(1200, 10000).quality(90);
+        const mediumBuffer = await medium.getBufferAsync(Jimp.MIME_JPEG);
+        const mediumFile = new File([mediumBuffer], 'medium.jpg', { type: 'image/jpeg' });
+        const { file_url: mUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mediumFile });
+        console.log('✓ Medium:', mUrl);
+        return mUrl;
+      })(),
+      
+      // Full 2400px (maintain aspect ratio)
+      (async () => {
+        const full = img.clone().scaleToFit(2400, 10000).quality(92);
+        const fullBuffer = await full.getBufferAsync(Jimp.MIME_JPEG);
+        const fullFile = new File([fullBuffer], 'full.jpg', { type: 'image/jpeg' });
+        const { file_url: fUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullFile });
+        console.log('✓ Full:', fUrl);
+        return fUrl;
+      })()
+    ]);
 
     const result = {
       original: file_url,
-      thumbnail: tUrl,
-      medium: mUrl,
-      full: fUrl
+      thumbnail: thumbResult,
+      medium: mediumResult,
+      full: fullResult
     };
     
     console.log('✅ DONE');
-    console.log('All different?', tUrl !== mUrl && mUrl !== fUrl && tUrl !== fUrl);
+    console.log('All different?', thumbResult !== mediumResult && mediumResult !== fullResult && thumbResult !== fullResult);
 
     return Response.json(result);
   } catch (error) {
