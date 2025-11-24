@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -52,6 +52,15 @@ const navigationItems = [
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const [mode, setMode] = useState(() => {
+    return localStorage.getItem('watchvault_mode') || 'working';
+  });
+
+  const toggleMode = () => {
+    const newMode = mode === 'working' ? 'live' : 'working';
+    setMode(newMode);
+    localStorage.setItem('watchvault_mode', newMode);
+  };
 
   return (
     <SidebarProvider>
@@ -78,6 +87,36 @@ export default function Layout({ children, currentPageName }) {
           </SidebarHeader>
           
           <SidebarContent className="p-3">
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
+                Mode
+              </SidebarGroupLabel>
+              <div className="px-3 pb-4">
+                <button
+                  onClick={toggleMode}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
+                    mode === 'live' 
+                      ? 'bg-red-600 text-white shadow-lg' 
+                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Radio className="w-4 h-4" />
+                    <span className="font-semibold text-sm">
+                      {mode === 'live' ? 'Live Auction' : 'Working'}
+                    </span>
+                  </div>
+                  <div className={`w-10 h-6 rounded-full transition-colors ${
+                    mode === 'live' ? 'bg-red-800' : 'bg-slate-400'
+                  } relative`}>
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                      mode === 'live' ? 'right-1' : 'left-1'
+                    }`} />
+                  </div>
+                </button>
+              </div>
+            </SidebarGroup>
+            
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
                 Navigation

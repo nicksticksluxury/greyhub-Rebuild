@@ -28,7 +28,10 @@ export default function WatchDetail() {
   const [analysisStep, setAnalysisStep] = useState("");
   const [analysisError, setAnalysisError] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState(() => {
+    const mode = localStorage.getItem('watchvault_mode') || 'working';
+    return mode === 'live' ? 'summary' : 'details';
+  });
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
