@@ -12,7 +12,6 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { watchIds } = body;
 
-    // Get watches to process
     let watches;
     if (watchIds && watchIds.length > 0) {
       const allWatches = await base44.asServiceRole.entities.Watch.list();
@@ -21,8 +20,6 @@ Deno.serve(async (req) => {
       watches = await base44.asServiceRole.entities.Watch.list();
     }
 
-    // Start background processing - this function will return immediately
-    // and processing will continue in the background
     processWatchesInBackground(base44, watches);
 
     return Response.json({ 
@@ -40,7 +37,6 @@ Deno.serve(async (req) => {
   }
 });
 
-// Background processing function - runs after response is sent
 async function processWatchesInBackground(base44, watches) {
   console.log(`Starting background optimization for ${watches.length} watches`);
 
@@ -60,7 +56,6 @@ async function processWatchesInBackground(base44, watches) {
 
       console.log(`Processing watch ${watch.id}: ${watch.brand} ${watch.model || ''}`);
       
-      // Set initial status
       await base44.asServiceRole.entities.Watch.update(watch.id, {
         optimization_status: {
           status: 'processing',
@@ -70,8 +65,9 @@ async function processWatchesInBackground(base44, watches) {
         }
       });
       
-      const optimizedPhotos = [];
-      
+      let optimizedPhotos = [];
+      let failedCount = 0;
+
       for (let photoIndex = 0; photoIndex < watch.photos.length; photoIndex++) {
         const photo = watch.photos[photoIndex];
         const originalUrl = typeof photo === 'string' ? photo : photo.original || photo.full || photo;
@@ -79,33 +75,30 @@ async function processWatchesInBackground(base44, watches) {
         if (!originalUrl) {
           console.log(`Skipping photo ${photoIndex} - no URL`);
           optimizedPhotos.push(photo);
+          failedCount++;
           continue;
         }
 
         console.log(`Optimizing photo ${photoIndex + 1}/${watch.photos.length} for watch ${watch.id}`);
         
-        // Record start time for timeout detection
         const startTime = Date.now();
         
-        // Update status for thumbnail
         await base44.asServiceRole.entities.Watch.update(watch.id, {
           optimization_status: {
             status: 'processing',
             current_photo: photoIndex + 1,
             total_photos: watch.photos.length,
             current_variant: 'thumbnail',
-            message: `Processing photo ${photoIndex + 1}/${watch.photos.length} - thumbnail`
+            message: `Processing photo ${photoIndex + 1}/${watch.photos.length}`
           }
         });
         
-        // Call the optimizeImage function with hard timeout
         let optimized = null;
-        const TIMEOUT_MS = 45000; // 45 seconds hard limit
+        const TIMEOUT_MS = 45000;
         
         try {
           console.log(`⏱️ Starting photo ${photoIndex + 1} with ${TIMEOUT_MS/1000}s timeout`);
           
-          // Race between optimization and timeout - whichever finishes first
           const timeoutPromise = new Promise((_, reject) => 
             setTimeout(() => reject(new Error('TIMEOUT')), TIMEOUT_MS)
           );
@@ -120,11 +113,8 @@ async function processWatchesInBackground(base44, watches) {
           
         } catch (error) {
           const elapsed = Date.now() - startTime;
-          if (error.message === 'TIMEOUT') {
-            console.error(`⏰ Photo ${photoIndex + 1} TIMEOUT after ${elapsed}ms - SKIPPING`);
-          } else {
-            console.error(`❌ Photo ${photoIndex + 1} error: ${error.message}`);
-          }
+          console.error(`❌ Photo ${photoIndex + 1} failed after ${elapsed}ms: ${error.message}`);
+          failedCount++;
         }
         
         if (optimized) {
@@ -135,28 +125,26 @@ async function processWatchesInBackground(base44, watches) {
             full: optimized.full
           });
         } else {
-          console.log(`Failed to optimize photo ${photoIndex} - skipping`);
+          console.log(`Photo ${photoIndex} failed - keeping original`);
           optimizedPhotos.push(photo);
         }
       }
 
-      // Update watch with optimized photos and mark as optimized
       await base44.asServiceRole.entities.Watch.update(watch.id, {
         photos: optimizedPhotos,
-        images_optimized: true,
+        images_optimized: failedCount === 0,
         optimization_status: {
-          status: 'completed',
+          status: failedCount === 0 ? 'completed' : 'error',
           current_photo: watch.photos.length,
           total_photos: watch.photos.length,
-          message: 'Optimization complete'
+          message: failedCount === 0 ? 'Optimization complete' : `${failedCount} photo(s) failed`
         }
       });
       
-      console.log(`Completed optimization for watch ${watch.id}`);
+      console.log(`Completed watch ${watch.id} - ${failedCount} failed`);
       
     } catch (error) {
       console.error(`Error processing watch ${watch.id}:`, error);
-      // Mark as error
       try {
         await base44.asServiceRole.entities.Watch.update(watch.id, {
           optimization_status: {
