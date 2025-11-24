@@ -238,49 +238,45 @@ Report:
       console.log("=== STEP 2: VERIFICATION & PRICING ===");
 
       let researchPrompt;
-
+      
       // Prioritize MSRP link, then identical listing, then general search
       if (editedData.msrp_link) {
         console.log("Using MSRP Source Link (PRIMARY):", editedData.msrp_link);
         researchPrompt = `The user provided this MANUFACTURER/RETAILER link with exact specifications: ${editedData.msrp_link}
 
-      CRITICAL: This is the PRIMARY SOURCE OF TRUTH. Visit this page FIRST and extract:
-      - EXACT model name/number
-      - EXACT reference number
-      - Year of production
-      - ALL technical specifications (movement, case material, size, etc.)
-      - Original MSRP/retail price (MANDATORY - this is the new price from manufacturer/authorized retailer)
-      - Any other details
+CRITICAL: This is the PRIMARY SOURCE OF TRUTH. Visit this page FIRST and extract:
+- EXACT model name/number
+- EXACT reference number
+- Year of production
+- ALL technical specifications (movement, case material, size, etc.)
+- Original MSRP if listed
+- Any other details
 
-      Based on photos, we identified:
-      Brand: ${identification.identified_brand}
-      Model: ${identification.identified_model || 'Unknown'}
-      Ref: ${identification.reference_number || 'Unknown'}
+Based on photos, we identified:
+Brand: ${identification.identified_brand}
+Model: ${identification.identified_model || 'Unknown'}
+Ref: ${identification.reference_number || 'Unknown'}
 
-      STEP 2 - NOW do complete market pricing research:
-      1. MANDATORY: Find original MSRP for a NEW version of this watch from:
-      - Manufacturer website (like Nixon.com, Seiko.com, etc.)
-      - Authorized retailers: Amazon, Walmart, Jomashop, Chrono24 (new listings), Kay Jewelers
-      - Save the exact URL where MSRP was found
-      2. Find 10-15 comparable listings of this EXACT model (eBay sold, Chrono24, dealers, forums)
-      3. Calculate average of comparable listing prices (lean toward higher middle)
-      4. This average = your recommended retail price
-      5. Platform pricing strategy:
-      - whatnot: 70% (fast sales)
-      - ebay: 85% (competitive)
-      - shopify: 100% (direct)
-      - etsy: 90%
-      - poshmark: 80%
-      - mercari: 75%
+STEP 2 - NOW do complete market pricing research:
+1. Find 10-15 listings of this EXACT model (eBay sold, Chrono24, dealers, forums)
+2. HIGHEST price found = "MSRP" reference (save that URL!)
+3. Calculate average of all prices (lean toward higher middle)
+4. This average = your recommended retail price
+5. Platform pricing strategy:
+   - whatnot: 70% (fast sales)
+   - ebay: 85% (competitive)
+   - shopify: 100% (direct)
+   - etsy: 90%
+   - poshmark: 80%
+   - mercari: 75%
 
-      Return:
-      - Confirmed model details FROM THE MSRP LINK
-      - MSRP for NEW watch with source URL (REQUIRED)
-      - ALL comparable listing URLs found
-      - Market insights and pricing rationale
-      - Complete pricing breakdown
+Return:
+- Confirmed model details FROM THE MSRP LINK
+- ALL listing URLs found (including provided links)
+- Market insights and pricing rationale
+- Complete pricing breakdown
 
-      Include ALL clickable listing URLs with prices!`;
+Include ALL clickable listing URLs with prices!`;
       } else if (editedData.identical_listing_link) {
         console.log("Using provided identical listing:", editedData.identical_listing_link);
         const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
@@ -305,13 +301,10 @@ Report:
       IMPORTANT: This watch is ${conditionContext}.
 
       STEP 2 - NOW do complete market pricing research:
-      1. CRITICAL FIRST PRIORITY: Find the original MSRP for a NEW version of this watch from official sources:
-         - Manufacturer website (e.g., Nixon.com, Seiko.com, Casio.com, etc.)
-         - Authorized retailers: Amazon, Walmart, Jomashop.com, Chrono24 (NEW listings only), Kay Jewelers
+      1. CRITICAL: Find the original MSRP for a NEW version of this watch - search manufacturer websites, authorized dealers (like Jomashop, Chrono24 new listings), retail sites
          - This is MANDATORY even though the watch is ${conditionContext}
          - We need to show customers what it costs new to demonstrate the deal
-         - Save the EXACT source URL where you found the MSRP
-         - The MSRP must be for a brand new watch from manufacturer or authorized dealer
+         - Save the source URL where you found the MSRP
       2. Find 10-15 comparable ${conditionContext} listings of this same model (eBay sold, Chrono24, dealers, forums)
       3. Calculate average of ${conditionContext} listing prices (lean toward higher middle)
       4. This average = your recommended retail price
@@ -325,9 +318,9 @@ Report:
 
       Return:
       - Confirmed model details
-      - Original MSRP for NEW watch from manufacturer/authorized retailer (REQUIRED - with source URL)
+      - Original MSRP for NEW watch (REQUIRED - with source URL where found)
       - ALL ${conditionContext} comparable listing URLs found (including the identical listing)
-      - Market insights (must include where MSRP was found - manufacturer or which retailer)
+      - Market insights (must mention if/where MSRP was found)
       - Complete pricing breakdown
 
       Include ALL clickable listing URLs with prices!`;
@@ -347,25 +340,15 @@ Report:
       - 3-5 ${conditionContext} listing URLs
 
       STEP 2 - Complete pricing research:
-      1. CRITICAL FIRST PRIORITY: Find the original MSRP for a NEW version of this watch from official sources:
-         - Manufacturer website (e.g., Nixon.com, Seiko.com, Casio.com, Citizen.com, etc.)
-         - Authorized retailers: Amazon.com, Walmart.com, Jomashop.com, Chrono24 (NEW listings only), Kay Jewelers
+      1. CRITICAL: Find the original MSRP for a NEW version of this watch - search manufacturer websites, authorized dealers (Jomashop, Chrono24 new listings), retail sites
          - This is MANDATORY even though the watch is ${conditionContext}
          - We need to show customers what it costs new to demonstrate the deal
-         - Save the EXACT source URL where you found the MSRP
-         - The MSRP must be for a brand new watch from manufacturer or authorized dealer
+         - Save the source URL where you found the MSRP
       2. Find 10-15 ${conditionContext} listings (eBay sold, Chrono24, dealers)
       3. Calculate average of ${conditionContext} prices
       4. Platform pricing:
          - whatnot: 70%, ebay: 85%, shopify: 100%
          - etsy: 90%, poshmark: 80%, mercari: 75%
-
-      Return:
-      - Confirmed model details
-      - Original MSRP for NEW watch from manufacturer/authorized retailer (REQUIRED - with source URL)
-      - ALL ${conditionContext} comparable listing URLs
-      - Market insights (must include where MSRP was found - manufacturer or which retailer)
-      - Complete pricing breakdown
 
       Include ALL clickable URLs for ${conditionContext} comparables and the MSRP source!`;
       }
