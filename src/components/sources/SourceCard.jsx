@@ -52,7 +52,7 @@ export default function SourceCard({ source, stats, onEdit, onDelete }) {
           <div className="flex items-center gap-2">
             <span className="text-slate-500">Website:</span>
             <a href={source.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-              {source.website}
+              {source.website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]}
             </a>
           </div>
         )}
@@ -77,7 +77,14 @@ export default function SourceCard({ source, stats, onEdit, onDelete }) {
         {source.address && (
           <div className="flex items-center gap-2">
             <span className="text-slate-500">Address:</span>
-            <span className="text-slate-900">{source.address}</span>
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(source.address)}`}
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-blue-600 hover:underline"
+            >
+              {source.address}
+            </a>
           </div>
         )}
       </div>
