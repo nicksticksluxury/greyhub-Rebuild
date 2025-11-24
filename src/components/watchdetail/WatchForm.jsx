@@ -357,21 +357,31 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
             <Label>Comparable Listings</Label>
             <div className="mt-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
               <ul className="space-y-2">
-                {data.comparable_listings_links.map((listing, index) => (
-                  <li key={index} className="flex items-center gap-3">
-                    <a
-                      href={listing.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline flex-1 text-sm"
-                    >
-                      {listing.url}
-                    </a>
-                    {listing.price && (
-                      <span className="text-sm font-semibold text-slate-700">${listing.price}</span>
-                    )}
-                  </li>
-                ))}
+                {data.comparable_listings_links.map((listing, index) => {
+                  const getDomain = (url) => {
+                    try {
+                      const urlObj = new URL(url);
+                      return urlObj.hostname.replace('www.', '');
+                    } catch {
+                      return url;
+                    }
+                  };
+                  return (
+                    <li key={index} className="flex items-center gap-3">
+                      <a
+                        href={listing.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline flex-1 text-sm"
+                      >
+                        {getDomain(listing.url)}
+                      </a>
+                      {listing.price && (
+                        <span className="text-sm font-semibold text-slate-700">${listing.price}</span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>
