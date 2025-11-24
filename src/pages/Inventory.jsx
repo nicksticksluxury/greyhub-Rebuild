@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Filter, Download } from "lucide-react";
+import { Plus, Search, Filter, Download, CheckSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,6 +28,7 @@ export default function Inventory() {
     manufacturer: "",
     tested: "all"
   });
+  const [selectedWatchIds, setSelectedWatchIds] = useState([]);
 
   const { data: watches = [], isLoading } = useQuery({
     queryKey: ['watches'],
@@ -95,6 +96,20 @@ export default function Inventory() {
               </p>
             </div>
             <div className="flex gap-3">
+              {selectedWatchIds.length > 0 && (
+                <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                  <CheckSquare className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">{selectedWatchIds.length} selected</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedWatchIds([])}
+                    className="h-6 w-6 p-0 hover:bg-blue-100"
+                  >
+                    <X className="w-4 h-4 text-blue-600" />
+                  </Button>
+                </div>
+              )}
               <Button
                 variant="outline"
                 onClick={() => setShowExport(true)}
@@ -102,7 +117,7 @@ export default function Inventory() {
                 disabled={filteredWatches.length === 0}
               >
                 <Download className="w-4 h-4 mr-2" />
-                Export
+                {selectedWatchIds.length > 0 ? `Export (${selectedWatchIds.length})` : 'Export'}
               </Button>
               <Link to={createPageUrl("AddWatch")}>
                 <Button className="bg-slate-800 hover:bg-slate-900 shadow-md">
@@ -171,12 +186,18 @@ export default function Inventory() {
           sources={sources}
           auctions={auctions}
           selectedPlatform={selectedPlatform}
+          selectedIds={selectedWatchIds}
+          onSelectionChange={setSelectedWatchIds}
         />
       </div>
 
       {showExport && (
         <ExportDialog 
-          watches={filteredWatches}
+          watches={selectedWatchIds.length > 0 
+            ? filteredWatches.filter(w => selectedWatchIds.includes(w.id))
+            : filteredWatches
+          }
+          allWatches={filteredWatches}
           onClose={() => setShowExport(false)}
         />
       )}

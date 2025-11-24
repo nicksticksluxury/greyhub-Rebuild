@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -56,11 +57,30 @@ const conditionLabels = {
   parts_repair: "Parts/Repair"
 };
 
-export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform }) {
+export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform, selectedIds = [], onSelectionChange }) {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
+
+  const handleSelectAll = (checked) => {
+    if (onSelectionChange) {
+      onSelectionChange(checked ? watches.map(w => w.id) : []);
+    }
+  };
+
+  const handleSelectOne = (watchId, checked) => {
+    if (onSelectionChange) {
+      if (checked) {
+        onSelectionChange([...selectedIds, watchId]);
+      } else {
+        onSelectionChange(selectedIds.filter(id => id !== watchId));
+      }
+    }
+  };
+
+  const allSelected = watches.length > 0 && selectedIds.length === watches.length;
+  const someSelected = selectedIds.length > 0 && selectedIds.length < watches.length;
 
   const handleImageClick = (e, photo) => {
     e.stopPropagation();
@@ -150,6 +170,15 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected;
+                    }}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
                 <TableHead className="w-20">Photo</TableHead>
                 <TableHead>
                   <Button
@@ -207,9 +236,15 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                 return (
                   <TableRow 
                     key={watch.id} 
-                    className="hover:bg-slate-50 cursor-pointer transition-colors"
+                    className={`hover:bg-slate-50 cursor-pointer transition-colors ${selectedIds.includes(watch.id) ? 'bg-blue-50' : ''}`}
                     onClick={() => handleRowClick(watch.id)}
                   >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox 
+                        checked={selectedIds.includes(watch.id)}
+                        onCheckedChange={(checked) => handleSelectOne(watch.id, checked)}
+                      />
+                    </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       {watch.photos?.[0] ? (
                         typeof watch.photos[0] === 'object' && watch.photos[0].thumbnail ? (

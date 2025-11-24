@@ -6,14 +6,42 @@ import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
-export default function ExportDialog({ watches, onClose }) {
+export default function ExportDialog({ watches, allWatches, onClose }) {
   const [platform, setPlatform] = useState("csv");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState("");
+  const [exportMode, setExportMode] = useState("selected"); // "selected", "notExported", "all"
+
+  // Get watches based on export mode
+  const getWatchesToExport = () => {
+    if (exportMode === "selected") {
+      return watches;
+    } else if (exportMode === "notExported" && platform !== "csv") {
+      return (allWatches || watches).filter(w => !w.exported_to?.[platform]);
+    } else {
+      return allWatches || watches;
+    }
+  };
+
+  const watchesToExport = getWatchesToExport();
+
+  const markAsExported = async (watchList, platformName) => {
+    if (platformName === "csv") return;
+    
+    const exportDate = new Date().toISOString();
+    for (const w of watchList) {
+      await base44.entities.Watch.update(w.id, {
+        exported_to: {
+          ...w.exported_to,
+          [platformName]: exportDate
+        }
+      });
+    }
+  };
 
   const exportToCSV = () => {
     const headers = ["Brand", "Model", "Serial Number", "Reference", "Year", "Condition", "Cost", "Retail Price", "Minimum Price", "Description"];
-    const rows = watches.map(w => [
+    const rows = watchesToExport.map(w => [
       w.brand || "",
       w.model || "",
       w.serial_number || "",
@@ -41,7 +69,7 @@ export default function ExportDialog({ watches, onClose }) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    toast.success("Export successful!");
+    toast.success(`Exported ${watchesToExport.length} watches!`);
     onClose();
   };
 
@@ -63,9 +91,9 @@ export default function ExportDialog({ watches, onClose }) {
 
       // Generate descriptions for watches that don't have them
       const watchesWithDescriptions = [];
-      for (let i = 0; i < watches.length; i++) {
-        const w = watches[i];
-        setGenerationProgress(`Processing watch ${i + 1} of ${watches.length}...`);
+      for (let i = 0; i < watchesToExport.length; i++) {
+        const w = watchesToExport[i];
+        setGenerationProgress(`Processing watch ${i + 1} of ${watchesToExport.length}...`);
         
         let description = w.description;
         
@@ -162,7 +190,10 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      toast.success("Exported for Whatnot!");
+      // Mark watches as exported
+      await markAsExported(watchesToExport, "whatnot");
+      
+      toast.success(`Exported ${watchesToExport.length} watches for Whatnot!`);
       onClose();
     } catch (error) {
       toast.error("Export failed: " + error.message);
@@ -178,7 +209,7 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
       return;
     }
 
-    const platformData = watches.map(w => ({
+    const platformData = watchesToExport.map(w => ({
       title: `${w.brand} ${w.model}${w.year ? ` ${w.year}` : ""}`,
       description: w.platform_descriptions?.[selectedPlatform] || w.description || "",
       price: w.platform_prices?.[selectedPlatform] || w.retail_price || "",
@@ -210,7 +241,10 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    toast.success(`Exported for ${selectedPlatform}!`);
+    // Mark watches as exported
+    await markAsExported(watchesToExport, selectedPlatform);
+    
+    toast.success(`Exported ${watchesToExport.length} watches for ${selectedPlatform}!`);
     onClose();
   };
 
@@ -232,9 +266,32 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           </DialogTitle>
         </DialogHeader>
 
-        <div className="py-4">
-          <p className="text-sm text-slate-600 mb-4">
-            Exporting {watches.length} {watches.length === 1 ? 'watch' : 'watches'}
+        <div className="py-4 space-y-4">
+          {/* Export Mode Selection */}
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-2 block">What to Export</label>
+            <Select value={exportMode} onValueChange={setExportMode} disabled={isGenerating}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="selected">
+                  Selected watches ({watches.length})
+                </SelectItem>
+                {platform !== "csv" && (
+                  <SelectItem value="notExported">
+                    Not yet exported to {platform} ({(allWatches || watches).filter(w => !w.exported_to?.[platform]).length})
+                  </SelectItem>
+                )}
+                <SelectItem value="all">
+                  All filtered watches ({(allWatches || watches).length})
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <p className="text-sm text-slate-600">
+            Will export <span className="font-semibold">{watchesToExport.length}</span> {watchesToExport.length === 1 ? 'watch' : 'watches'}
           </p>
           
           {isGenerating && (
