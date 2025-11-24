@@ -9,12 +9,13 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import PhotoUpload from "../components/addwatch/PhotoUpload";
+import { optimizeImages } from "../components/utils/imageOptimizer";
 
 export default function AddWatch() {
   const navigate = useNavigate();
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, stage: '' });
 
   const handlePhotosSelected = async (files) => {
     setPhotos([...photos, ...files]);
@@ -31,45 +32,62 @@ export default function AddWatch() {
     }
 
     setUploading(true);
-    setUploadProgress({ current: 0, total: photos.length });
     
     try {
-      console.log("Uploading original photos...");
-      const originalUrls = [];
+      // Step 1: Optimize images locally
+      console.log("Optimizing images locally...");
+      const optimizedPhotos = await optimizeImages(photos, (current, total) => {
+        setUploadProgress({ current, total, stage: 'Optimizing' });
+      });
       
-      for (let i = 0; i < photos.length; i++) {
-        console.log(`Uploading photo ${i + 1}/${photos.length}`);
-        setUploadProgress({ current: i + 1, total: photos.length });
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: photos[i] });
-        originalUrls.push(file_url);
-        console.log(`✓ Photo ${i + 1} uploaded:`, file_url);
+      // Step 2: Upload all variants
+      console.log("Uploading optimized photos...");
+      const photoObjects = [];
+      const totalUploads = optimizedPhotos.length * 4; // 4 variants per photo
+      let uploadCount = 0;
+      
+      for (let i = 0; i < optimizedPhotos.length; i++) {
+        const variants = optimizedPhotos[i];
+        const photoObj = {};
+        
+        // Upload each variant
+        for (const variant of ['original', 'thumbnail', 'medium', 'full']) {
+          uploadCount++;
+          setUploadProgress({ 
+            current: uploadCount, 
+            total: totalUploads, 
+            stage: `Uploading ${variant}` 
+          });
+          
+          const { file_url } = await base44.integrations.Core.UploadFile({ 
+            file: variants[variant] 
+          });
+          photoObj[variant] = file_url;
+        }
+        
+        photoObjects.push(photoObj);
+        console.log(`✓ Photo ${i + 1} fully uploaded with all variants`);
       }
       
-      console.log("Creating watch with original photos...");
+      // Step 3: Create watch with pre-optimized photos
+      console.log("Creating watch with optimized photos...");
       const watchData = {
-        photos: originalUrls.map(url => ({ original: url })),
+        photos: photoObjects,
         brand: "Unknown",
-        images_optimized: false
+        images_optimized: true
       };
 
       const watch = await base44.entities.Watch.create(watchData);
       console.log("Watch created:", watch.id);
       
-      // Trigger background optimization
-      console.log("Triggering background image optimization...");
-      base44.functions.invoke('triggerBatchImageOptimization', { 
-        watchId: watch.id,
-        originalUrls 
-      }).catch(err => console.error("Background optimization trigger failed:", err));
-      
-      toast.success("Watch added! Images will optimize in the background.");
+      toast.success("Watch added with optimized images!");
       navigate(createPageUrl(`WatchDetail?id=${watch.id}`));
     } catch (error) {
       console.error("Error creating watch:", error);
       toast.error(`Failed to create watch: ${error.message || 'Unknown error'}`);
     } finally {
       setUploading(false);
-      setUploadProgress({ current: 0, total: 0 });
+      setUploadProgress({ current: 0, total: 0, stage: '' });
     }
   };
 
@@ -94,7 +112,7 @@ export default function AddWatch() {
           <Card className="p-4 mb-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-slate-600">
-                <span>Uploading photos...</span>
+                <span>{uploadProgress.stage || 'Processing'}...</span>
                 <span>{uploadProgress.current} of {uploadProgress.total}</span>
               </div>
               <Progress value={(uploadProgress.current / uploadProgress.total) * 100} />
@@ -110,7 +128,7 @@ export default function AddWatch() {
           {uploading ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-    Uploading {uploadProgress.current}/{uploadProgress.total}...
+              {uploadProgress.stage} {uploadProgress.current}/{uploadProgress.total}...
             </>
           ) : (
             <>
