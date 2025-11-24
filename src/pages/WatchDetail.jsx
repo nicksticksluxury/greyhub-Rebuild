@@ -475,6 +475,202 @@ export default function WatchDetail() {
     }
   };
 
+  const repriceWatch = async () => {
+    if (!editedData.brand) {
+      toast.error("Please set the watch brand first");
+      return;
+    }
+
+    setAnalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
+      const conditionContext = isNewCondition ? 'NEW' : 'USED';
+
+      // STEP 1: Find accurate MSRP
+      setAnalysisStep("💰 Step 1/2: Finding manufacturer MSRP...");
+      console.log("=== STEP 1: MSRP SEARCH ===");
+
+      const msrpPrompt = `Find the MANUFACTURER'S SUGGESTED RETAIL PRICE (MSRP) for a NEW version of this watch:
+
+  Watch Details:
+  - Brand: ${editedData.brand}
+  - Model: ${editedData.model || 'Unknown'}
+  - Reference Number: ${editedData.reference_number || 'Unknown'}
+  ${editedData.msrp_link ? `- Manufacturer Link Provided: ${editedData.msrp_link}` : ''}
+  ${editedData.identical_listing_link ? `- Identical Listing Link: ${editedData.identical_listing_link}` : ''}
+
+  CRITICAL MSRP SEARCH PRIORITY:
+  1. FIRST: Check the manufacturer's official website (e.g., Nixon.com, Seiko.com, Citizen.com, Rolex.com)
+  2. If not found: Check large department stores - Amazon, Walmart, Kay Jewelers
+  3. If not found on ANY of those: Leave MSRP as null
+
+  IMPORTANT: 
+  - This MUST be the original retail price for a NEW watch
+  - Do NOT use used prices, discounted prices, or sale prices
+  - Save the exact URL where you found the MSRP
+
+  Return the original MSRP and source URL, or null if you cannot find it on manufacturer/department store sites.`;
+
+      const msrpResult = await base44.integrations.Core.InvokeLLM({
+        prompt: msrpPrompt,
+        add_context_from_internet: true,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            original_msrp: { type: "number", description: "Original MSRP from manufacturer or department store. Null if not found." },
+            msrp_source_link: { type: "string", description: "URL where MSRP was found. Empty string if not found." },
+            msrp_search_notes: { type: "string", description: "Notes about where you searched and what you found or didn't find" }
+          }
+        }
+      });
+
+      console.log("MSRP Result:", msrpResult);
+      toast.success("✅ MSRP search complete!");
+
+      // STEP 2: Comprehensive pricing research
+      setAnalysisStep("🌐 Step 2/2: Researching comparable listings and pricing...");
+      console.log("=== STEP 2: PRICING RESEARCH ===");
+
+      const pricingPrompt = `Now find comparable listings and calculate recommended pricing for this watch:
+
+  Watch Details:
+  - Brand: ${editedData.brand}
+  - Model: ${editedData.model || 'Unknown'}
+  - Reference Number: ${editedData.reference_number || 'Unknown'}
+  - Year: ${editedData.year || 'Unknown'}
+  - Condition: ${conditionContext}
+  - Case Material: ${editedData.case_material || 'Unknown'}
+  - Case Size: ${editedData.case_size || 'Unknown'}
+  - Movement: ${editedData.movement_type || 'Unknown'}
+  ${editedData.identical_listing_link ? `\n\nIMPORTANT: The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}\nThis is GUARANTEED to be the exact watch. Use this as a key reference point.` : ''}
+
+  COMPREHENSIVE PRICING RESEARCH:
+
+  ${isNewCondition ? 
+  `This is a NEW watch. Search for NEW watch listings ONLY:
+   - Joma Shop (new watches)
+   - Chrono24 (new condition listings)
+   - Amazon (new watches)
+   - Watchbox (new watches)
+   - eBay listings marked as "New In Box" or "Brand New"
+   - Authorized dealers
+
+   Find 10-15 NEW listings of this exact model.` :
+  `This is a USED watch. Search for USED/PRE-OWNED sales ONLY:
+   - eBay (closed sales and active listings in used condition)
+   - Chrono24 (used/pre-owned listings)
+   - Watchbox (pre-owned section)
+   - Watch forums (sales listings)
+
+   Do NOT include:
+   - New watches
+   - Broken or parts watches
+
+   Find 10-15 USED listings of this exact model with matching condition.`}
+
+  PRICING CALCULATION:
+  1. List all comparable listings with URLs and prices
+  2. Calculate the average price (lean toward higher middle)
+  3. This average = your recommended retail price
+  4. Apply platform-specific pricing:
+   - whatnot: 70% of average (fast sales, auction format)
+   - ebay: 85% of average (competitive marketplace)
+   - shopify: 100% of average (direct sales, full control)
+   - etsy: 90% of average
+   - poshmark: 80% of average
+   - mercari: 75% of average
+
+  IMPORTANT: Include ALL clickable listing URLs with their prices!
+
+  Return complete market analysis with pricing recommendations.`;
+
+      const pricingResult = await base44.integrations.Core.InvokeLLM({
+        prompt: pricingPrompt,
+        add_context_from_internet: true,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            current_retail_price: { type: "number", description: "Average market price" },
+            estimated_value_low: { type: "number" },
+            estimated_value_high: { type: "number" },
+            average_market_value: { type: "number" },
+            market_insights: { type: "string" },
+            comparable_listings: { type: "string" },
+            market_research_summary: { type: "string" },
+            pricing_recommendations: {
+              type: "object",
+              properties: {
+                whatnot: { type: "number" },
+                ebay: { type: "number" },
+                shopify: { type: "number" },
+                etsy: { type: "number" },
+                poshmark: { type: "number" },
+                mercari: { type: "number" }
+              }
+            },
+            pricing_rationale: {
+              type: "object",
+              properties: {
+                whatnot: { type: "string" },
+                ebay: { type: "string" },
+                shopify: { type: "string" },
+                etsy: { type: "string" },
+                poshmark: { type: "string" },
+                mercari: { type: "string" }
+              }
+            }
+          }
+        }
+      });
+
+      console.log("Pricing Result:", pricingResult);
+      toast.success("✅ Pricing research complete!");
+
+      // Combine results - keep existing identification data, update pricing only
+      setAnalysisStep("💾 Saving updated pricing...");
+      const updatedAnalysis = {
+        ...(editedData.ai_analysis || {}), // Keep existing identification data
+        ...msrpResult,
+        ...pricingResult
+      };
+
+      console.log("=== UPDATED PRICING ===", updatedAnalysis);
+
+      const updatedData = {
+        ...editedData,
+        ai_analysis: updatedAnalysis
+      };
+
+      if (msrpResult.msrp_source_link && !editedData.msrp_link) {
+        updatedData.msrp_link = msrpResult.msrp_source_link;
+      }
+
+      setEditedData(updatedData);
+
+      await base44.entities.Watch.update(watchId, { 
+        ai_analysis: updatedAnalysis,
+        ...(msrpResult.msrp_source_link && !editedData.msrp_link && { msrp_link: msrpResult.msrp_source_link })
+      });
+
+      const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
+      setOriginalData(refreshedWatch);
+      queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
+
+      toast.success("✅ Watch re-priced successfully!");
+      setAnalysisStep("");
+    } catch (error) {
+      console.error("=== RE-PRICING FAILED ===", error);
+
+      const errorMsg = `${error.message}\n\n${error.response?.data?.message || 'Check console (F12)'}`;
+      setAnalysisError(errorMsg);
+      toast.error("Re-pricing failed");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const importAIData = (field, value) => {
     if (field === "basic_info_all") {
       const updates = {};
@@ -597,6 +793,28 @@ export default function WatchDetail() {
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
                     Analyze with AI
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={repriceWatch}
+                disabled={analyzing || hasUnsavedChanges || !editedData.brand}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                title={
+                  hasUnsavedChanges ? "Please save changes before re-pricing" :
+                  !editedData.brand ? "Please set watch brand before re-pricing" :
+                  ""
+                }
+              >
+                {analyzing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Re-pricing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Re-price Watch
                   </>
                 )}
               </Button>
