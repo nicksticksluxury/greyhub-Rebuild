@@ -31,60 +31,38 @@ export default function AddWatch() {
     }
 
     setUploading(true);
-    setUploadProgress({ current: 0, total: photos.length * 2 }); // Upload + optimize
+    setUploadProgress({ current: 0, total: photos.length });
     
     try {
-      console.log("Starting photo upload and optimization...");
-      const optimizedPhotos = [];
+      console.log("Uploading original photos...");
+      const originalUrls = [];
       
       for (let i = 0; i < photos.length; i++) {
-        console.log(`\n=== Processing Photo ${i + 1}/${photos.length} ===`);
-        
-        try {
-          // Step 1: Upload original
-          console.log(`[${i + 1}] Step 1: Uploading original...`);
-          setUploadProgress({ current: i * 2 + 1, total: photos.length * 2 });
-          const { file_url } = await base44.integrations.Core.UploadFile({ file: photos[i] });
-          console.log(`[${i + 1}] ✓ Original uploaded:`, file_url);
-          
-          // Step 2: Optimize and create versions
-          console.log(`[${i + 1}] Step 2: Optimizing image...`);
-          console.log(`[${i + 1}] Calling optimizeImage with:`, { file_url });
-          setUploadProgress({ current: i * 2 + 2, total: photos.length * 2 });
-          
-          const response = await base44.functions.invoke('optimizeImage', { file_url });
-          console.log(`[${i + 1}] Raw response:`, response);
-          console.log(`[${i + 1}] Response status:`, response.status);
-          console.log(`[${i + 1}] Response data:`, response.data);
-          
-          const optimizedVersions = response.data;
-          console.log(`[${i + 1}] ✓ Optimization complete:`, optimizedVersions);
-          optimizedPhotos.push(optimizedVersions);
-        } catch (error) {
-          console.error(`[${i + 1}] ❌ Failed:`, error);
-          console.error(`[${i + 1}] Error name:`, error.name);
-          console.error(`[${i + 1}] Error message:`, error.message);
-          console.error(`[${i + 1}] Error response:`, error.response);
-          console.error(`[${i + 1}] Error response data:`, error.response?.data);
-          console.error(`[${i + 1}] Error response status:`, error.response?.status);
-          console.error(`[${i + 1}] Error stack:`, error.stack);
-          throw new Error(`Failed on photo ${i + 1}: ${error.message} (Status: ${error.response?.status || 'unknown'})`);
-        }
+        console.log(`Uploading photo ${i + 1}/${photos.length}`);
+        setUploadProgress({ current: i + 1, total: photos.length });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: photos[i] });
+        originalUrls.push(file_url);
+        console.log(`✓ Photo ${i + 1} uploaded:`, file_url);
       }
-      console.log('\n=== All photos processed successfully ===');
       
-      console.log("Photos optimized:", optimizedPhotos);
-
+      console.log("Creating watch with original photos...");
       const watchData = {
-        photos: optimizedPhotos,
-        brand: "Unknown"
+        photos: originalUrls.map(url => ({ original: url })),
+        brand: "Unknown",
+        images_optimized: false
       };
 
-      console.log("Creating watch with data:", watchData);
       const watch = await base44.entities.Watch.create(watchData);
-      console.log("Watch created:", watch);
+      console.log("Watch created:", watch.id);
       
-      toast.success("Watch added to inventory!");
+      // Trigger background optimization
+      console.log("Triggering background image optimization...");
+      base44.functions.invoke('triggerBatchImageOptimization', { 
+        watchId: watch.id,
+        originalUrls 
+      }).catch(err => console.error("Background optimization trigger failed:", err));
+      
+      toast.success("Watch added! Images will optimize in the background.");
       navigate(createPageUrl(`WatchDetail?id=${watch.id}`));
     } catch (error) {
       console.error("Error creating watch:", error);
@@ -132,7 +110,7 @@ export default function AddWatch() {
           {uploading ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Uploading {uploadProgress.current} of {uploadProgress.total}...
+    Uploading {uploadProgress.current}/{uploadProgress.total}...
             </>
           ) : (
             <>
