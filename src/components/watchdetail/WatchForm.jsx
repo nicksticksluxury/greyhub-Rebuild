@@ -82,6 +82,19 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
   const [showRepairs, setShowRepairs] = useState(false);
 
   const updateField = (field, value) => {
+    // Auto-fill cost when source is selected
+    if (field === 'source_id' && value) {
+      const source = sources.find(s => s.id === value);
+      if (source && source.cost && source.initial_quantity) {
+        const costPerWatch = source.cost / source.initial_quantity;
+        onChange({ 
+          ...data, 
+          [field]: value,
+          cost: parseFloat(costPerWatch.toFixed(2))
+        });
+        return;
+      }
+    }
     onChange({ ...data, [field]: value });
   };
 
