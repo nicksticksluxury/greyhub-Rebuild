@@ -12,6 +12,7 @@ export default function ReoptimizeImages() {
   const { data: watches = [], isLoading, refetch } = useQuery({
     queryKey: ['watches'],
     queryFn: () => base44.entities.Watch.list(),
+    refetchInterval: processing ? 2000 : false,
   });
 
   // Check if a watch needs optimization
@@ -35,6 +36,8 @@ export default function ReoptimizeImages() {
   };
 
   const watchesNeedingOptimization = watches.filter(needsOptimization);
+  const processingWatches = watches.filter(w => w.optimization_status?.status === 'processing');
+  const completedCount = watches.filter(w => w.optimization_status?.status === 'completed').length;
 
   const handleReoptimize = async () => {
     if (watchesNeedingOptimization.length === 0) {
@@ -49,13 +52,8 @@ export default function ReoptimizeImages() {
       const response = await base44.functions.invoke('reoptimizeAllImages', { 
         watchIds 
       });
-      
-      toast.success(`Started background optimization for ${response.data.watchCount} watches! You can continue working while images are processed.`);
-      
-      // Refetch after a delay to show updated statuses
-      setTimeout(() => {
-        refetch();
-      }, 5000);
+
+      toast.success(`Started optimization for ${response.data.watchCount} watches!`);
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to start optimization: " + error.message);
@@ -85,13 +83,50 @@ export default function ReoptimizeImages() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {watchesNeedingOptimization.length === 0 ? (
+          {processingWatches.length > 0 && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-slate-900 mb-3">Processing {processingWatches.length} {processingWatches.length === 1 ? 'watch' : 'watches'}...</h4>
+              <div className="space-y-3">
+                {processingWatches.map(watch => {
+                  const status = watch.optimization_status || {};
+                  const progress = status.total_photos > 0 
+                    ? (status.current_photo / status.total_photos) * 100 
+                    : 0;
+
+                  return (
+                    <div key={watch.id} className="bg-white p-3 rounded-lg border border-slate-200">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-slate-700">
+                          {watch.brand} {watch.model || ''}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {status.current_photo || 0}/{status.total_photos || 0}
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-600">
+                        {status.message || 'Processing...'}
+                        {status.current_variant && ` (${status.current_variant})`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {watchesNeedingOptimization.length === 0 && processingWatches.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-slate-900 mb-2">All Images Optimized!</h3>
               <p className="text-slate-600">Every watch in your inventory has optimized images.</p>
             </div>
-          ) : (
+          ) : watchesNeedingOptimization.length > 0 && processingWatches.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
                 <Zap className="w-8 h-8 text-amber-600" />
@@ -111,7 +146,7 @@ export default function ReoptimizeImages() {
                 {processing ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Starting Background Process...
+          Starting Process...
                   </>
                 ) : (
                   <>
@@ -121,7 +156,7 @@ export default function ReoptimizeImages() {
                 )}
               </Button>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>
