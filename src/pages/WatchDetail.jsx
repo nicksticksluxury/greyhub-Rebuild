@@ -301,23 +301,26 @@ Include ALL clickable listing URLs with prices!`;
       IMPORTANT: This watch is ${conditionContext}.
 
       STEP 2 - NOW do complete market pricing research:
-      1. Find the original MSRP for a NEW version of this watch (manufacturer website, authorized dealers, retail sites) - WE ALWAYS NEED THE NEW MSRP regardless of condition
+      1. CRITICAL: Find the original MSRP for a NEW version of this watch - search manufacturer websites, authorized dealers (like Jomashop, Chrono24 new listings), retail sites
+         - This is MANDATORY even though the watch is ${conditionContext}
+         - We need to show customers what it costs new to demonstrate the deal
+         - Save the source URL where you found the MSRP
       2. Find 10-15 comparable ${conditionContext} listings of this same model (eBay sold, Chrono24, dealers, forums)
       3. Calculate average of ${conditionContext} listing prices (lean toward higher middle)
       4. This average = your recommended retail price
       5. Platform pricing strategy:
-      - whatnot: 70% (fast sales)
-      - ebay: 85% (competitive)
-      - shopify: 100% (direct)
-      - etsy: 90%
-      - poshmark: 80%
-      - mercari: 75%
+         - whatnot: 70% (fast sales)
+         - ebay: 85% (competitive)
+         - shopify: 100% (direct)
+         - etsy: 90%
+         - poshmark: 80%
+         - mercari: 75%
 
       Return:
       - Confirmed model details
-      - Original MSRP for NEW watch (with source URL)
+      - Original MSRP for NEW watch (REQUIRED - with source URL where found)
       - ALL ${conditionContext} comparable listing URLs found (including the identical listing)
-      - Market insights and pricing rationale
+      - Market insights (must mention if/where MSRP was found)
       - Complete pricing breakdown
 
       Include ALL clickable listing URLs with prices!`;
@@ -337,14 +340,17 @@ Include ALL clickable listing URLs with prices!`;
       - 3-5 ${conditionContext} listing URLs
 
       STEP 2 - Complete pricing research:
-      1. Find the original MSRP for a NEW version of this watch (manufacturer website, authorized dealers) - WE ALWAYS NEED THE NEW MSRP regardless of condition
+      1. CRITICAL: Find the original MSRP for a NEW version of this watch - search manufacturer websites, authorized dealers (Jomashop, Chrono24 new listings), retail sites
+         - This is MANDATORY even though the watch is ${conditionContext}
+         - We need to show customers what it costs new to demonstrate the deal
+         - Save the source URL where you found the MSRP
       2. Find 10-15 ${conditionContext} listings (eBay sold, Chrono24, dealers)
       3. Calculate average of ${conditionContext} prices
       4. Platform pricing:
-      - whatnot: 70%, ebay: 85%, shopify: 100%
-      - etsy: 90%, poshmark: 80%, mercari: 75%
+         - whatnot: 70%, ebay: 85%, shopify: 100%
+         - etsy: 90%, poshmark: 80%, mercari: 75%
 
-      Include ALL clickable URLs for ${conditionContext} comparables!`;
+      Include ALL clickable URLs for ${conditionContext} comparables and the MSRP source!`;
       }
 
       const pricing = await base44.integrations.Core.InvokeLLM({
