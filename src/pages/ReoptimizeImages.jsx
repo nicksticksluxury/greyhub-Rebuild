@@ -15,15 +15,33 @@ export default function ReoptimizeImages() {
     refetchInterval: processing ? 2000 : false,
   });
 
-  // Check if a watch needs optimization - simplified to trust the flag
+  // Check if a watch needs optimization - validates actual file URLs
   const needsOptimization = (watch) => {
     if (!watch.photos || watch.photos.length === 0) return false;
-    if (watch.images_optimized === true) return false;
     
-    // Check if any photo is still a plain string (not optimized) or missing variants
+    // Check if any photo needs optimization
     return watch.photos.some(photo => {
+      // Plain string = not optimized
       if (typeof photo === 'string') return true;
+      
+      // Missing variants = not optimized
       if (!photo.thumbnail || !photo.medium || !photo.full) return true;
+      
+      // If thumbnail/medium/full are the same as original, it's fake optimization
+      const original = photo.original || '';
+      if (photo.thumbnail === original || photo.medium === original || photo.full === original) {
+        return true;
+      }
+      
+      // Check if filenames have proper prefixes (thumbnail_, medium_, full_)
+      const hasProperThumbnail = photo.thumbnail && photo.thumbnail.includes('thumbnail_');
+      const hasProperMedium = photo.medium && photo.medium.includes('medium_');
+      const hasProperFull = photo.full && photo.full.includes('full_');
+      
+      if (!hasProperThumbnail || !hasProperMedium || !hasProperFull) {
+        return true;
+      }
+      
       return false;
     });
   };
