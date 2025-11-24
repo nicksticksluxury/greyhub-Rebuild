@@ -163,53 +163,20 @@ export default function ReoptimizeImages() {
 
           {results && (
             <div className="space-y-4">
-              {results.logs && results.logs.length > 0 && (
-                <Card className="bg-slate-800 text-white">
-                  <CardHeader>
-                    <CardTitle className="text-sm">Processing Logs</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1 text-xs font-mono max-h-96 overflow-auto">
-                      {results.logs.map((log, idx) => (
-                        <div key={idx}>{log}</div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              <Card className="bg-slate-100">
-                <CardHeader>
-                  <CardTitle className="text-sm">Raw Response Data (for debugging)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <pre className="text-xs overflow-auto max-h-96 bg-white p-4 rounded">
-                    {JSON.stringify(results, null, 2)}
-                  </pre>
-                </CardContent>
-              </Card>
-              <div className="grid grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-slate-900">{results.total}</div>
-                      <div className="text-sm text-slate-600">Total Watches</div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-600">{results.processing || results.total}</div>
-                      <div className="text-sm text-slate-600">This Batch</div>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="grid grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
                       <div className="text-3xl font-bold text-green-600">{results.processed}</div>
-                      <div className="text-sm text-slate-600">Processed</div>
+                      <div className="text-sm text-slate-600">Successful</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-red-600">{results.errors?.length || 0}</div>
+                      <div className="text-sm text-slate-600">Failed</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -223,12 +190,12 @@ export default function ReoptimizeImages() {
                 </Card>
               </div>
 
-              {results.errors.length > 0 && (
+              {results.errors && results.errors.length > 0 && (
                 <Card className="border-red-200 bg-red-50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-red-700">
                       <AlertCircle className="w-5 h-5" />
-                      Errors ({results.errors.length})
+                      Failed ({results.errors.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -243,120 +210,54 @@ export default function ReoptimizeImages() {
                 </Card>
               )}
 
-              {results.errors.length === 0 && results.processed > 0 && (
-                <Card className="border-green-200 bg-green-50">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-2 text-green-700">
-                      <CheckCircle2 className="w-5 h-5" />
-                      <span className="font-semibold">All images successfully re-optimized!</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    Processing Details 
-                    {results.details ? ` (${results.details.length} watches)` : ' (NO DETAILS FOUND!)'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!results.details && (
-                    <div className="text-red-600 font-bold p-4 bg-red-50 rounded">
-                      ERROR: No details array found in response! Check console and raw data above.
-                    </div>
-                  )}
-                  {results.details && results.details.length === 0 && (
-                    <div className="text-amber-600 font-bold p-4 bg-amber-50 rounded">
-                      Details array exists but is empty!
-                    </div>
-                  )}
-                  {results.details && results.details.length > 0 && (
+              {results.details && results.details.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Results ({results.details.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <div className="space-y-3">
                       {results.details.map((detail, idx) => (
                         <div key={idx} className="border border-slate-200 rounded-lg p-4">
-                          <div 
-                            className="flex items-start justify-between cursor-pointer"
-                            onClick={() => setExpandedWatch(expandedWatch === idx ? null : idx)}
-                          >
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                {detail.status === 'success' && <CheckCircle2 className="w-4 h-4 text-green-600" />}
-                                {detail.status === 'error' && <AlertCircle className="w-4 h-4 text-red-600" />}
-                                {detail.status === 'skipped' && <AlertCircle className="w-4 h-4 text-amber-600" />}
-                                <span className="font-semibold text-slate-900">
-                                  {detail.brand} {detail.model}
-                                </span>
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                <div>ID: {detail.watchId}</div>
-                                <div>Photos: {detail.photoCount}</div>
-                                {detail.reason && <div>Reason: {detail.reason}</div>}
-                                {detail.error && <div className="text-red-600">Error: {detail.error}</div>}
-                                {detail.logs && detail.logs.length > 0 && (
-                                  <div className="mt-2 text-xs font-mono bg-slate-50 p-2 rounded">
-                                    {detail.logs.map((log, i) => (
-                                      <div key={i}>{log}</div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              {expandedWatch === idx ? 'Hide' : 'Show'} Details
-                            </Button>
+                          <div className="flex items-center gap-2 mb-2">
+                            {detail.status === 'success' && <CheckCircle2 className="w-5 h-5 text-green-600" />}
+                            {detail.status === 'error' && <AlertCircle className="w-5 h-5 text-red-600" />}
+                            {detail.status === 'skipped' && <AlertCircle className="w-5 h-5 text-amber-600" />}
+                            <span className="font-semibold text-slate-900">
+                              {detail.brand} {detail.model}
+                            </span>
                           </div>
 
-                          {expandedWatch === idx && (
-                            <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
-                              {detail.originalUrls.length > 0 && (
-                                <div>
-                                  <div className="font-semibold text-sm text-slate-700 mb-2">Original URLs:</div>
-                                  {detail.originalUrls.map((url, i) => (
-                                    <div key={i} className="text-xs text-slate-600 mb-1 break-all">
-                                      {i + 1}. {url}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {detail.optimizedUrls && Object.keys(detail.optimizedUrls).length > 0 && (
-                                <div>
-                                  <div className="font-semibold text-sm text-slate-700 mb-2">Optimized URLs:</div>
-                                  {Object.entries(detail.optimizedUrls).map(([key, urls]) => (
-                                    <div key={key} className="mb-3 pl-4 border-l-2 border-slate-300">
-                                      <div className="font-medium text-xs text-slate-700 mb-1">{key}:</div>
-                                      <div className="space-y-1">
-                                        <div className="text-xs">
-                                          <span className="text-slate-500">Original:</span>
-                                          <div className="text-slate-600 break-all">{urls.original}</div>
-                                        </div>
-                                        <div className="text-xs">
-                                          <span className="text-slate-500">Thumbnail (300px):</span>
-                                          <div className="text-slate-600 break-all">{urls.thumbnail}</div>
-                                        </div>
-                                        <div className="text-xs">
-                                          <span className="text-slate-500">Medium (1200px):</span>
-                                          <div className="text-slate-600 break-all">{urls.medium}</div>
-                                        </div>
-                                        <div className="text-xs">
-                                          <span className="text-slate-500">Full (2400px):</span>
-                                          <div className="text-slate-600 break-all">{urls.full}</div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                          {detail.status === 'success' && detail.optimizedUrls && Object.keys(detail.optimizedUrls).length > 0 && (
+                            <div className="text-sm text-slate-600 space-y-1 ml-7">
+                              {Object.entries(detail.optimizedUrls).map(([key, urls]) => {
+                                const getFilename = (url) => {
+                                  if (!url) return '';
+                                  const parts = url.split('/');
+                                  return parts[parts.length - 1].split('?')[0];
+                                };
+                                return (
+                                  <div key={key}>
+                                    <span className="font-medium">{key}:</span> {getFilename(urls.thumbnail)}, {getFilename(urls.medium)}, {getFilename(urls.full)}
+                                  </div>
+                                );
+                              })}
                             </div>
+                          )}
+
+                          {detail.status === 'error' && detail.error && (
+                            <div className="text-sm text-red-600 ml-7">{detail.error}</div>
+                          )}
+
+                          {detail.status === 'skipped' && detail.reason && (
+                            <div className="text-sm text-amber-600 ml-7">{detail.reason}</div>
                           )}
                         </div>
                       ))}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </CardContent>
