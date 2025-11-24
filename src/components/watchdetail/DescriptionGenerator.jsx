@@ -33,8 +33,11 @@ export default function DescriptionGenerator({ watch, onDescriptionGenerated, on
         Format it in a clear, professional way that can be used on any sales platform.`
       });
 
-      setDescription(result);
-      toast.success("Description generated!");
+      // Directly import the generated description
+      if (onImport && result) {
+        onImport(result);
+      }
+      toast.success("Description generated and applied!");
     } catch (error) {
       console.error("Error generating description:", error);
       toast.error("Failed to generate description");
