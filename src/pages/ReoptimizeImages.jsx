@@ -15,23 +15,16 @@ export default function ReoptimizeImages() {
     refetchInterval: processing ? 2000 : false,
   });
 
-  // Check if a watch needs optimization
+  // Check if a watch needs optimization - simplified to trust the flag
   const needsOptimization = (watch) => {
-    if (watch.images_optimized) return false;
     if (!watch.photos || watch.photos.length === 0) return false;
+    if (watch.images_optimized === true) return false;
     
+    // Check if any photo is still a plain string (not optimized) or missing variants
     return watch.photos.some(photo => {
       if (typeof photo === 'string') return true;
-      
-      const { original, thumbnail, medium, full } = photo;
-      if (!thumbnail || !medium || !full) return true;
-      
-      const getFilename = (url) => url?.split('/').pop()?.split('?')[0];
-      const thumbName = getFilename(thumbnail);
-      const mediumName = getFilename(medium);
-      const fullName = getFilename(full);
-      
-      return thumbName === mediumName && mediumName === fullName;
+      if (!photo.thumbnail || !photo.medium || !photo.full) return true;
+      return false;
     });
   };
 
