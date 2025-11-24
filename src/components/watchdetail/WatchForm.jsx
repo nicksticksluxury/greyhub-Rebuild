@@ -641,6 +641,16 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label>Image Optimization</Label>
+            <div className="flex items-center h-10 px-3 border border-slate-200 rounded-md bg-slate-50">
+              {data.images_optimized ? (
+                <span className="text-sm text-green-600 font-medium">✓ Images Optimized</span>
+              ) : (
+                <span className="text-sm text-slate-500">Not Optimized</span>
+              )}
+            </div>
+          </div>
           {data.sold && (
             <>
               <div>
