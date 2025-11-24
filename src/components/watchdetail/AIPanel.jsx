@@ -9,22 +9,24 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const LinkifiedText = ({ text }) => {
   if (!text) return null;
   
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const urlRegex = /(https?:\/\/[^\s)]+)/g;
   const parts = text.split(urlRegex);
   
   return (
     <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">
       {parts.map((part, index) => {
         if (part.match(urlRegex)) {
+          // Remove trailing parenthesis if present
+          const cleanUrl = part.replace(/\)+$/, '');
           return (
             <a
               key={index}
-              href={part}
+              href={cleanUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1"
             >
-              {part}
+              {cleanUrl}
               <ExternalLink className="w-3 h-3" />
             </a>
           );
