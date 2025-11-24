@@ -28,7 +28,7 @@ export default function WatchDetail() {
   const [analysisStep, setAnalysisStep] = useState("");
   const [analysisError, setAnalysisError] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [activeTab, setActiveTab] = useState("summary");
+  const [activeTab, setActiveTab] = useState("details");
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
@@ -279,62 +279,72 @@ Return:
 Include ALL clickable listing URLs with prices!`;
       } else if (editedData.identical_listing_link) {
         console.log("Using provided identical listing:", editedData.identical_listing_link);
+        const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
+        const conditionContext = isNewCondition ? 'NEW' : 'USED';
+
         researchPrompt = `The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}
 
-STEP 1 - Visit that page and extract:
-- Exact model name/number
-- Reference number
-- Year
-- All specifications
-- Listed price
+      STEP 1 - Visit that page and extract:
+      - Exact model name/number
+      - Reference number
+      - Year
+      - All specifications
+      - Listed price
 
-This is the EXACT watch we have.
+      This is the EXACT watch we have.
 
-Based on identified info:
-Brand: ${identification.identified_brand}
-Model: ${identification.identified_model || 'Unknown'}
-Ref: ${identification.reference_number || 'Unknown'}
+      Based on identified info:
+      Brand: ${identification.identified_brand}
+      Model: ${identification.identified_model || 'Unknown'}
+      Ref: ${identification.reference_number || 'Unknown'}
 
-STEP 2 - NOW do complete market pricing research:
-1. Find 10-15 MORE listings of this same model (eBay sold, Chrono24, dealers, forums)
-2. HIGHEST price found = "MSRP" reference (save that URL!)
-3. Calculate average of all prices (lean toward higher middle)
-4. This average = your recommended retail price
-5. Calculate 30% and 50% discount prices
-6. Platform pricing strategy:
-   - whatnot: 70% (fast sales)
-   - ebay: 85% (competitive)
-   - shopify: 100% (direct)
-   - etsy: 90%
-   - poshmark: 80%
-   - mercari: 75%
+      IMPORTANT: This watch is ${conditionContext}.
 
-Return:
-- Confirmed model details
-- ALL listing URLs found (including the identical listing)
-- Market insights and pricing rationale
-- Complete pricing breakdown
+      STEP 2 - NOW do complete market pricing research:
+      1. Find the original MSRP for a NEW version of this watch (manufacturer website, authorized dealers, retail sites) - WE ALWAYS NEED THE NEW MSRP regardless of condition
+      2. Find 10-15 comparable ${conditionContext} listings of this same model (eBay sold, Chrono24, dealers, forums)
+      3. Calculate average of ${conditionContext} listing prices (lean toward higher middle)
+      4. This average = your recommended retail price
+      5. Platform pricing strategy:
+      - whatnot: 70% (fast sales)
+      - ebay: 85% (competitive)
+      - shopify: 100% (direct)
+      - etsy: 90%
+      - poshmark: 80%
+      - mercari: 75%
 
-Include ALL clickable listing URLs with prices!`;
+      Return:
+      - Confirmed model details
+      - Original MSRP for NEW watch (with source URL)
+      - ALL ${conditionContext} comparable listing URLs found (including the identical listing)
+      - Market insights and pricing rationale
+      - Complete pricing breakdown
+
+      Include ALL clickable listing URLs with prices!`;
       } else {
+        const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
+        const conditionContext = isNewCondition ? 'NEW' : 'USED';
+
         researchPrompt = `Search for this watch:
-"${identification.identified_brand} ${identification.identified_model || ''} ${identification.reference_number || ''} watch"
+      "${identification.identified_brand} ${identification.identified_model || ''} ${identification.reference_number || ''} watch"
 
-STEP 1 - Find exact matches on eBay, Chrono24, forums, dealers:
-- Confirmed model name
-- Confirmed reference number  
-- Year of production
-- 3-5 listing URLs
+      IMPORTANT: This watch is ${conditionContext}.
 
-STEP 2 - Complete pricing research:
-1. Find 10-15 listings (eBay sold, Chrono24, dealers)
-2. HIGHEST price = "MSRP" reference (save URL!)
-3. Calculate average of all prices
-4. Platform pricing:
-   - whatnot: 70%, ebay: 85%, shopify: 100%
-   - etsy: 90%, poshmark: 80%, mercari: 75%
+      STEP 1 - Find exact matches on eBay, Chrono24, forums, dealers:
+      - Confirmed model name
+      - Confirmed reference number  
+      - Year of production
+      - 3-5 ${conditionContext} listing URLs
 
-Include ALL clickable URLs!`;
+      STEP 2 - Complete pricing research:
+      1. Find the original MSRP for a NEW version of this watch (manufacturer website, authorized dealers) - WE ALWAYS NEED THE NEW MSRP regardless of condition
+      2. Find 10-15 ${conditionContext} listings (eBay sold, Chrono24, dealers)
+      3. Calculate average of ${conditionContext} prices
+      4. Platform pricing:
+      - whatnot: 70%, ebay: 85%, shopify: 100%
+      - etsy: 90%, poshmark: 80%, mercari: 75%
+
+      Include ALL clickable URLs for ${conditionContext} comparables!`;
       }
 
       const pricing = await base44.integrations.Core.InvokeLLM({
