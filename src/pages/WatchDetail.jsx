@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -27,6 +27,7 @@ export default function WatchDetail() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState("");
   const [analysisError, setAnalysisError] = useState(null);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const mode = localStorage.getItem('watchvault_mode') || 'working';
@@ -494,6 +495,39 @@ export default function WatchDetail() {
     }
   };
 
+  const generateDescription = async () => {
+    setGeneratingDescription(true);
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Create a compelling, professional product description for this watch:
+        
+        Brand: ${editedData.brand}
+        Model: ${editedData.model}
+        Reference: ${editedData.reference_number || "N/A"}
+        Year: ${editedData.year || "Unknown"}
+        Condition: ${editedData.condition || "N/A"}
+        Movement: ${editedData.movement_type || "N/A"}
+        Case Material: ${editedData.case_material || "N/A"}
+        Case Size: ${editedData.case_size || "N/A"}
+        
+        Create an engaging, accurate description that will attract buyers. 
+        Be honest about condition but emphasize the watch's strengths and unique features.
+        Keep it concise but informative (150-300 words).
+        Format it in a clear, professional way that can be used on any sales platform.`
+      });
+
+      setEditedData({
+        ...editedData,
+        description: result
+      });
+      toast.success("Description generated!");
+    } catch (error) {
+      console.error("Error generating description:", error);
+      toast.error("Failed to generate description");
+    }
+    setGeneratingDescription(false);
+  };
+
   const repriceWatch = async () => {
     if (!editedData.brand) {
       toast.error("Please set the watch brand first");
@@ -839,6 +873,24 @@ export default function WatchDetail() {
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
                     Re-price Watch
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={generateDescription}
+                disabled={generatingDescription || !editedData.brand}
+                variant="outline"
+                className="border-amber-300 text-amber-700 hover:bg-amber-50"
+              >
+                {generatingDescription ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Generate Description
                   </>
                 )}
               </Button>
