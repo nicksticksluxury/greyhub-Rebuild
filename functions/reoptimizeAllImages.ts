@@ -98,57 +98,52 @@ async function processWatchesInBackground(base44, watches) {
           }
         });
         
-        // Call the optimizeImage function with retry logic and timeout
+        // Call the optimizeImage function with strict timeout enforcement
         let optimized = null;
-        let attempts = 0;
-        const maxAttempts = 2;
-        const timeout = 120000; // 2 minutes in milliseconds
+        const attemptTimeout = 60000; // 60 seconds per attempt
         
-        while (attempts < maxAttempts && !optimized) {
-          attempts++;
+        try {
+          console.log(`Optimizing photo ${photoIndex + 1} with 60s timeout`);
+          
+          // Update status with timestamp
+          await base44.asServiceRole.entities.Watch.update(watch.id, {
+            optimization_status: {
+              status: 'processing',
+              current_photo: photoIndex + 1,
+              total_photos: watch.photos.length,
+              current_variant: 'optimizing',
+              message: `Processing photo ${photoIndex + 1}/${watch.photos.length}`,
+              start_time: startTime
+            }
+          });
+          
+          // Create AbortController for proper cancellation
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), attemptTimeout);
+          
           try {
-            console.log(`Attempt ${attempts}/${maxAttempts} for photo ${photoIndex + 1}`);
-            
-            // Update status
-            await base44.asServiceRole.entities.Watch.update(watch.id, {
-              optimization_status: {
-                status: 'processing',
-                current_photo: photoIndex + 1,
-                total_photos: watch.photos.length,
-                current_variant: 'optimizing',
-                message: `Processing photo ${photoIndex + 1}/${watch.photos.length} (attempt ${attempts}/${maxAttempts})`
-              }
+            const result = await base44.asServiceRole.functions.invoke('optimizeImage', {
+              file_url: originalUrl
             });
             
-            // Create timeout promise
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout after 2 minutes')), timeout)
-            );
-            
-            // Race between optimization and timeout
-            const result = await Promise.race([
-              base44.asServiceRole.functions.invoke('optimizeImage', {
-                file_url: originalUrl
-              }),
-              timeoutPromise
-            ]);
-            
+            clearTimeout(timeoutId);
             optimized = result.data;
-            console.log(`Successfully optimized photo ${photoIndex + 1} for watch ${watch.id}`);
+            console.log(`✓ Photo ${photoIndex + 1} optimized successfully`);
             
-          } catch (error) {
-            console.error(`Attempt ${attempts}/${maxAttempts} failed for photo ${photoIndex + 1}:`, error.message);
+          } catch (invokeError) {
+            clearTimeout(timeoutId);
             
-            // If this was the last attempt or a timeout, we'll skip this photo
-            if (attempts >= maxAttempts) {
-              console.log(`Skipping photo ${photoIndex + 1} after ${maxAttempts} failed attempts`);
-              break;
+            // Check if we exceeded timeout
+            const elapsed = Date.now() - startTime;
+            if (elapsed > attemptTimeout || invokeError.name === 'AbortError') {
+              console.error(`✗ Photo ${photoIndex + 1} timed out after ${elapsed}ms - SKIPPING`);
+            } else {
+              console.error(`✗ Photo ${photoIndex + 1} failed:`, invokeError.message);
             }
-            
-            // Wait before retry
-            console.log(`Waiting 3 seconds before retry...`);
-            await new Promise(resolve => setTimeout(resolve, 3000));
           }
+          
+        } catch (error) {
+          console.error(`✗ Fatal error on photo ${photoIndex + 1}:`, error.message);
         }
         
         if (optimized) {
