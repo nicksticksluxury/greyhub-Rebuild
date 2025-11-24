@@ -45,11 +45,6 @@ const navigationItems = [
   },
   {
     title: "Optimize Images",
-    url: createPageUrl("OptimizeImages"),
-    icon: TrendingUp,
-  },
-  {
-    title: "Re-optimize All",
     url: createPageUrl("ReoptimizeImages"),
     icon: TrendingUp,
   },
