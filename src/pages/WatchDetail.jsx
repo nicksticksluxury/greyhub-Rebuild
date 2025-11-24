@@ -326,12 +326,20 @@ export default function WatchDetail() {
          - eBay listings marked as "New In Box"
          - Find 10-15 NEW listings of this exact model
          - Calculate average NEW price (lean toward higher middle)` :
-        `Since this is a USED watch, search for USED sales ONLY:
-         - eBay closed and active sales (used condition)
-         - Chrono24 used listings
-         - Do NOT use new watches or broken watches
-         - Find 10-15 USED listings of this exact model
-         - Calculate average USED price (lean toward higher middle)`}
+        `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
+         - eBay: Search for SOLD listings (completed auctions) in USED condition ONLY
+         - Chrono24: Filter for "Pre-owned" or "Used" condition ONLY
+         - Watch forums: Pre-owned sales
+         - Watchbox: Pre-owned section ONLY
+
+         EXCLUDE completely:
+         - New watches (even discounted)
+         - Unworn watches
+         - Brand new with tags
+         - Broken/parts watches
+
+         Find 10-15 PRE-OWNED listings of this exact model in similar condition.
+         Calculate average PRE-OWNED price (lean toward higher middle of used comps).`}
 
       Platform pricing strategy:
          - whatnot: 70% (fast sales)
@@ -369,12 +377,20 @@ export default function WatchDetail() {
          - eBay listings marked as "New In Box"
          - Find 10-15 NEW listings of this exact model
          - Calculate average NEW price (lean toward higher middle)` :
-        `Since this is a USED watch, search for USED sales ONLY:
-         - eBay closed and active sales (used condition)
-         - Chrono24 used listings
-         - Do NOT use new watches or broken watches
-         - Find 10-15 USED listings of this exact model
-         - Calculate average USED price (lean toward higher middle)`}
+        `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
+         - eBay: Search for SOLD listings (completed auctions) in USED condition ONLY
+         - Chrono24: Filter for "Pre-owned" or "Used" condition ONLY
+         - Watch forums: Pre-owned sales
+         - Watchbox: Pre-owned section ONLY
+
+         EXCLUDE completely:
+         - New watches (even discounted)
+         - Unworn watches
+         - Brand new with tags
+         - Broken/parts watches
+
+         Find 10-15 PRE-OWNED listings of this exact model in similar condition.
+         Calculate average PRE-OWNED price (lean toward higher middle of used comps).`}
 
       Platform pricing strategy:
          - whatnot: 70%, ebay: 85%, shopify: 100%
