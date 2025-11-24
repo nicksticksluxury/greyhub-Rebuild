@@ -577,17 +577,22 @@ export default function WatchDetail() {
    - Authorized dealers
 
    Find 10-15 NEW listings of this exact model.` :
-  `This is a USED watch. Search for USED/PRE-OWNED sales ONLY:
-   - eBay (closed sales and active listings in used condition)
-   - Chrono24 (used/pre-owned listings)
-   - Watchbox (pre-owned section)
-   - Watch forums (sales listings)
+  `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
+   
+   Search EXCLUSIVELY in these PRE-OWNED sections:
+   - eBay: Filter for SOLD listings (completed auctions) + condition "Pre-owned" or "Used"
+   - Chrono24: Filter category "Pre-owned watches" or "Used watches" ONLY
+   - Watchbox: Pre-owned section ONLY
+   - Watch forums: Pre-owned/used sales listings
 
-   Do NOT include:
-   - New watches
-   - Broken or parts watches
+   ABSOLUTELY EXCLUDE:
+   - Any "new" watches (even if discounted)
+   - "Unworn" or "Brand new" listings
+   - Broken/parts/repair watches
+   - Any listing advertising as "new with box" or "new without box"
 
-   Find 10-15 USED listings of this exact model with matching condition.`}
+   Find 10-15 PRE-OWNED/USED listings of this exact model in similar used condition.
+   The average market value MUST be based on pre-owned comps only.`}
 
   PRICING CALCULATION:
   1. List all comparable listings with URLs and prices
