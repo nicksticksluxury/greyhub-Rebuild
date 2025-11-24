@@ -98,26 +98,28 @@ async function processWatchesInBackground(base44, watches) {
         // Call the optimizeImage function with retry logic and timeout
         let optimized = null;
         let attempts = 0;
-        const maxAttempts = 3;
+        const maxAttempts = 2;
         const timeout = 120000; // 2 minutes in milliseconds
         
         while (attempts < maxAttempts && !optimized) {
           attempts++;
           try {
-            // Update for medium
+            console.log(`Attempt ${attempts}/${maxAttempts} for photo ${photoIndex + 1}`);
+            
+            // Update status
             await base44.asServiceRole.entities.Watch.update(watch.id, {
               optimization_status: {
                 status: 'processing',
                 current_photo: photoIndex + 1,
                 total_photos: watch.photos.length,
-                current_variant: 'medium',
-                message: `Processing photo ${photoIndex + 1}/${watch.photos.length} - medium`
+                current_variant: 'optimizing',
+                message: `Processing photo ${photoIndex + 1}/${watch.photos.length} (attempt ${attempts}/${maxAttempts})`
               }
             });
             
             // Create timeout promise
             const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Optimization timeout after 2 minutes')), timeout)
+              setTimeout(() => reject(new Error('Timeout after 2 minutes')), timeout)
             );
             
             // Race between optimization and timeout
@@ -129,24 +131,20 @@ async function processWatchesInBackground(base44, watches) {
             ]);
             
             optimized = result.data;
-            
-            // Update for full
-            await base44.asServiceRole.entities.Watch.update(watch.id, {
-              optimization_status: {
-                status: 'processing',
-                current_photo: photoIndex + 1,
-                total_photos: watch.photos.length,
-                current_variant: 'full',
-                message: `Processing photo ${photoIndex + 1}/${watch.photos.length} - full size`
-              }
-            });
-            
             console.log(`Successfully optimized photo ${photoIndex + 1} for watch ${watch.id}`);
+            
           } catch (error) {
-            console.error(`Attempt ${attempts} failed for photo ${photoIndex}:`, error.message);
-            if (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+            console.error(`Attempt ${attempts}/${maxAttempts} failed for photo ${photoIndex + 1}:`, error.message);
+            
+            // If this was the last attempt or a timeout, we'll skip this photo
+            if (attempts >= maxAttempts) {
+              console.log(`Skipping photo ${photoIndex + 1} after ${maxAttempts} failed attempts`);
+              break;
             }
+            
+            // Wait before retry
+            console.log(`Waiting 3 seconds before retry...`);
+            await new Promise(resolve => setTimeout(resolve, 3000));
           }
         }
         
