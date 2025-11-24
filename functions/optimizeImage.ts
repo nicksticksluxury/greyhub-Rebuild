@@ -2,14 +2,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Jimp from 'npm:jimp@0.22.10';
 
+console.log('🔥 FUNCTION LOADED - optimizeImage.js');
+
 Deno.serve(async (req) => {
   const startTime = Date.now();
   console.log('\n========================================');
   console.log('🚀 NEW REQUEST:', new Date().toISOString());
+  console.log('Request URL:', req.url);
+  console.log('Request method:', req.method);
   
   try {
     console.log('⏱️ [0ms] Creating client...');
     const base44 = createClientFromRequest(req);
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] Client created');
     
     console.log('⏱️ [' + (Date.now() - startTime) + 'ms] Authenticating...');
     const user = await base44.auth.me();
@@ -33,20 +38,34 @@ Deno.serve(async (req) => {
 
     // Load image from URL
     console.log('⏱️ [' + (Date.now() - startTime) + 'ms] Loading image from URL...');
-    const img = await Jimp.read(file_url);
+    let img;
+    try {
+      img = await Jimp.read(file_url);
+    } catch (jimpError) {
+      console.error('❌ Jimp.read failed:', jimpError.message);
+      throw new Error('Failed to load image: ' + jimpError.message);
+    }
     console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Loaded:', img.bitmap.width, 'x', img.bitmap.height);
     
     console.log('⏱️ [' + (Date.now() - startTime) + 'ms] Creating sizes sequentially...');
     
     // Thumbnail 300x300 (cover crop)
     console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Creating thumbnail...');
-    const thumb = img.clone().cover(300, 300).quality(85);
-    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Getting thumbnail buffer...');
-    const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
-    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Uploading thumbnail (' + thumbBuffer.length + ' bytes)...');
-    const thumbFile = new File([thumbBuffer], 'thumb.jpg', { type: 'image/jpeg' });
-    const { file_url: thumbResult } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
-    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Thumb:', thumbResult);
+    let thumbResult;
+    try {
+      const thumb = img.clone().cover(300, 300).quality(85);
+      console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Getting thumbnail buffer...');
+      const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
+      console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Uploading thumbnail (' + thumbBuffer.length + ' bytes)...');
+      const thumbFile = new File([thumbBuffer], 'thumb.jpg', { type: 'image/jpeg' });
+      const uploadResponse = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
+      console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Upload response:', uploadResponse);
+      thumbResult = uploadResponse.file_url;
+      console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Thumb:', thumbResult);
+    } catch (thumbError) {
+      console.error('❌ Thumbnail failed:', thumbError.message, thumbError.stack);
+      throw new Error('Thumbnail processing failed: ' + thumbError.message);
+    }
     
     // Medium 1200px (maintain aspect ratio)
     console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🖼️  Creating medium...');

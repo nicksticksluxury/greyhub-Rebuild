@@ -49,13 +49,26 @@ export default function AddWatch() {
           
           // Step 2: Optimize and create versions
           console.log(`[${i + 1}] Step 2: Optimizing image...`);
+          console.log(`[${i + 1}] Calling optimizeImage with:`, { file_url });
           setUploadProgress({ current: i * 2 + 2, total: photos.length * 2 });
-          const { data: optimizedVersions } = await base44.functions.invoke('optimizeImage', { file_url });
+          
+          const response = await base44.functions.invoke('optimizeImage', { file_url });
+          console.log(`[${i + 1}] Raw response:`, response);
+          console.log(`[${i + 1}] Response status:`, response.status);
+          console.log(`[${i + 1}] Response data:`, response.data);
+          
+          const optimizedVersions = response.data;
           console.log(`[${i + 1}] ✓ Optimization complete:`, optimizedVersions);
           optimizedPhotos.push(optimizedVersions);
         } catch (error) {
           console.error(`[${i + 1}] ❌ Failed:`, error);
-          throw new Error(`Failed on photo ${i + 1}: ${error.message}`);
+          console.error(`[${i + 1}] Error name:`, error.name);
+          console.error(`[${i + 1}] Error message:`, error.message);
+          console.error(`[${i + 1}] Error response:`, error.response);
+          console.error(`[${i + 1}] Error response data:`, error.response?.data);
+          console.error(`[${i + 1}] Error response status:`, error.response?.status);
+          console.error(`[${i + 1}] Error stack:`, error.stack);
+          throw new Error(`Failed on photo ${i + 1}: ${error.message} (Status: ${error.response?.status || 'unknown'})`);
         }
       }
       console.log('\n=== All photos processed successfully ===');
