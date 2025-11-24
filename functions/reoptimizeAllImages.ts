@@ -154,7 +154,7 @@ async function processWatchesInBackground(base44, watches) {
             full: optimized.full
           });
         } else {
-          console.log(`Failed to optimize photo ${photoIndex} after ${maxAttempts} attempts`);
+          console.log(`Failed to optimize photo ${photoIndex} - skipping`);
           optimizedPhotos.push(photo);
         }
       }
