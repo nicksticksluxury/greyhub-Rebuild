@@ -121,13 +121,12 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           for (let i = 0; i < 8; i++) imageUrls.push("");
         }
 
-        let title = (w.model && w.model.toLowerCase() !== "unknown") 
-          ? w.model 
-          : `${w.brand || ""} ${w.movement_type || ""} ${w.condition || ""}`.trim();
-        
-        // Ensure brand is in the title
-        if (w.brand && !title.toLowerCase().includes(w.brand.toLowerCase())) {
-          title = `${w.brand} ${title}`.trim();
+        // Title formula: If reference_number exists, use Brand + Reference. Otherwise, Brand + Model.
+        let title;
+        if (w.reference_number && w.reference_number.trim() !== "" && w.reference_number.toLowerCase() !== "unknown") {
+          title = `${w.brand || ""} ${w.reference_number}`.trim();
+        } else {
+          title = `${w.brand || ""} ${w.model || ""}`.trim();
         }
 
         return [
