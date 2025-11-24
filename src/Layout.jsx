@@ -169,6 +169,7 @@ export default function Layout({ children, currentPageName }) {
             {children}
           </div>
         </main>
+        <ImageOptimizationMonitor />
       </div>
     </SidebarProvider>
   );
