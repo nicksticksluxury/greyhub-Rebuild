@@ -36,49 +36,37 @@ Deno.serve(async (req) => {
     const img = await Jimp.read(file_url);
     console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Loaded:', img.bitmap.width, 'x', img.bitmap.height);
     
-    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] Creating all sizes in parallel...');
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] Creating sizes sequentially...');
     
-    // Create all 3 sizes in parallel
-    const [thumbResult, mediumResult, fullResult] = await Promise.all([
-      // Thumbnail 300x300 (cover crop)
-      (async () => {
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Creating thumbnail...');
-        const thumb = img.clone().cover(300, 300).quality(85);
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Getting thumbnail buffer...');
-        const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Uploading thumbnail...');
-        const thumbFile = new File([thumbBuffer], 'thumb.jpg', { type: 'image/jpeg' });
-        const { file_url: tUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Thumb:', tUrl);
-        return tUrl;
-      })(),
-      
-      // Medium 1200px (maintain aspect ratio)
-      (async () => {
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🖼️  Creating medium...');
-        const medium = img.clone().scaleToFit(1200, 10000).quality(90);
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🖼️  Getting medium buffer...');
-        const mediumBuffer = await medium.getBufferAsync(Jimp.MIME_JPEG);
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🖼️  Uploading medium...');
-        const mediumFile = new File([mediumBuffer], 'medium.jpg', { type: 'image/jpeg' });
-        const { file_url: mUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mediumFile });
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Medium:', mUrl);
-        return mUrl;
-      })(),
-      
-      // Full 2400px (maintain aspect ratio)
-      (async () => {
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🎞️  Creating full...');
-        const full = img.clone().scaleToFit(2400, 10000).quality(92);
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🎞️  Getting full buffer...');
-        const fullBuffer = await full.getBufferAsync(Jimp.MIME_JPEG);
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🎞️  Uploading full...');
-        const fullFile = new File([fullBuffer], 'full.jpg', { type: 'image/jpeg' });
-        const { file_url: fUrl } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullFile });
-        console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Full:', fUrl);
-        return fUrl;
-      })()
-    ]);
+    // Thumbnail 300x300 (cover crop)
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Creating thumbnail...');
+    const thumb = img.clone().cover(300, 300).quality(85);
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Getting thumbnail buffer...');
+    const thumbBuffer = await thumb.getBufferAsync(Jimp.MIME_JPEG);
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 📸 Uploading thumbnail (' + thumbBuffer.length + ' bytes)...');
+    const thumbFile = new File([thumbBuffer], 'thumb.jpg', { type: 'image/jpeg' });
+    const { file_url: thumbResult } = await base44.asServiceRole.integrations.Core.UploadFile({ file: thumbFile });
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Thumb:', thumbResult);
+    
+    // Medium 1200px (maintain aspect ratio)
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🖼️  Creating medium...');
+    const medium = img.clone().scaleToFit(1200, 10000).quality(90);
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🖼️  Getting medium buffer...');
+    const mediumBuffer = await medium.getBufferAsync(Jimp.MIME_JPEG);
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🖼️  Uploading medium (' + mediumBuffer.length + ' bytes)...');
+    const mediumFile = new File([mediumBuffer], 'medium.jpg', { type: 'image/jpeg' });
+    const { file_url: mediumResult } = await base44.asServiceRole.integrations.Core.UploadFile({ file: mediumFile });
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Medium:', mediumResult);
+    
+    // Full 2400px (maintain aspect ratio)
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🎞️  Creating full...');
+    const full = img.clone().scaleToFit(2400, 10000).quality(92);
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🎞️  Getting full buffer...');
+    const fullBuffer = await full.getBufferAsync(Jimp.MIME_JPEG);
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] 🎞️  Uploading full (' + fullBuffer.length + ' bytes)...');
+    const fullFile = new File([fullBuffer], 'full.jpg', { type: 'image/jpeg' });
+    const { file_url: fullResult } = await base44.asServiceRole.integrations.Core.UploadFile({ file: fullFile });
+    console.log('⏱️ [' + (Date.now() - startTime) + 'ms] ✓ Full:', fullResult);
 
     const result = {
       original: file_url,
