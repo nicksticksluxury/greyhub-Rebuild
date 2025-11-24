@@ -546,9 +546,14 @@ Include ALL clickable listing URLs with prices!`;
             <div className="flex gap-3">
               <Button
                 onClick={analyzeWithAI}
-                disabled={analyzing || !editedData.photos?.length || hasUnsavedChanges}
+                disabled={analyzing || !editedData.photos?.length || hasUnsavedChanges || !editedData.condition}
                 className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                title={hasUnsavedChanges ? "Please save changes before analyzing" : ""}
+                title={
+                  !editedData.condition ? "Please set the watch condition before analyzing" :
+                  hasUnsavedChanges ? "Please save changes before analyzing" :
+                  !editedData.photos?.length ? "Please add photos before analyzing" :
+                  ""
+                }
               >
                 {analyzing ? (
                   <>
@@ -581,6 +586,14 @@ Include ALL clickable listing URLs with prices!`;
             </div>
           </div>
           
+          {!editedData.condition && (
+            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800 font-medium">
+                ℹ️ Please set the watch condition before running AI analysis (required to determine new vs used comps)
+              </p>
+            </div>
+          )}
+
           {analysisStep && (
             <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
               <p className="text-sm text-amber-800 font-medium">{analysisStep}</p>
