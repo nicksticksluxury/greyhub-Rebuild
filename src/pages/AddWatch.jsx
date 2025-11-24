@@ -38,15 +38,27 @@ export default function AddWatch() {
       const optimizedPhotos = [];
       
       for (let i = 0; i < photos.length; i++) {
-        // Step 1: Upload original
-        setUploadProgress({ current: i * 2 + 1, total: photos.length * 2 });
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: photos[i] });
+        console.log(`\n=== Processing Photo ${i + 1}/${photos.length} ===`);
         
-        // Step 2: Optimize and create versions
-        setUploadProgress({ current: i * 2 + 2, total: photos.length * 2 });
-        const { data: optimizedVersions } = await base44.functions.invoke('optimizeImage', { file_url });
-        optimizedPhotos.push(optimizedVersions);
+        try {
+          // Step 1: Upload original
+          console.log(`[${i + 1}] Step 1: Uploading original...`);
+          setUploadProgress({ current: i * 2 + 1, total: photos.length * 2 });
+          const { file_url } = await base44.integrations.Core.UploadFile({ file: photos[i] });
+          console.log(`[${i + 1}] ✓ Original uploaded:`, file_url);
+          
+          // Step 2: Optimize and create versions
+          console.log(`[${i + 1}] Step 2: Optimizing image...`);
+          setUploadProgress({ current: i * 2 + 2, total: photos.length * 2 });
+          const { data: optimizedVersions } = await base44.functions.invoke('optimizeImage', { file_url });
+          console.log(`[${i + 1}] ✓ Optimization complete:`, optimizedVersions);
+          optimizedPhotos.push(optimizedVersions);
+        } catch (error) {
+          console.error(`[${i + 1}] ❌ Failed:`, error);
+          throw new Error(`Failed on photo ${i + 1}: ${error.message}`);
+        }
       }
+      console.log('\n=== All photos processed successfully ===');
       
       console.log("Photos optimized:", optimizedPhotos);
 
