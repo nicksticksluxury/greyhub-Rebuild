@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio } from "lucide-react";
+import ImageOptimizationMonitor from "@/components/ImageOptimizationMonitor";
 import {
   Sidebar,
   SidebarContent,
