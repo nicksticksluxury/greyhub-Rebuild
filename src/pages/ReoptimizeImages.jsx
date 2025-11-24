@@ -18,6 +18,29 @@ export default function ReoptimizeImages() {
     queryFn: () => base44.entities.Watch.list(),
   });
 
+  // Check if a watch needs optimization (same filename for all sizes means not optimized)
+  const needsOptimization = (watch) => {
+    if (!watch.photos || watch.photos.length === 0) return false;
+    
+    return watch.photos.some(photo => {
+      if (typeof photo === 'string') return true; // Simple string means not optimized
+      
+      const { original, thumbnail, medium, full } = photo;
+      if (!thumbnail || !medium || !full) return true;
+      
+      // Extract filenames from URLs
+      const getFilename = (url) => url?.split('/').pop()?.split('?')[0];
+      const thumbName = getFilename(thumbnail);
+      const mediumName = getFilename(medium);
+      const fullName = getFilename(full);
+      
+      // If all three have the same filename, it's not properly optimized
+      return thumbName === mediumName && mediumName === fullName;
+    });
+  };
+
+  const watchesNeedingOptimization = watches.filter(needsOptimization);
+
   const handleSelectWatch = (watchId) => {
     setSelectedWatches(prev => {
       if (prev.includes(watchId)) {
@@ -89,7 +112,7 @@ export default function ReoptimizeImages() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <p className="text-slate-600">
-                Select up to 5 watches to re-optimize their images.
+                Select up to 5 watches to re-optimize their images. Showing {watchesNeedingOptimization.length} watches needing optimization.
               </p>
               <Button
                 onClick={handleReoptimize}
@@ -113,7 +136,7 @@ export default function ReoptimizeImages() {
             <Card className="bg-slate-50">
               <CardContent className="pt-4 max-h-96 overflow-auto">
                 <div className="space-y-2">
-                  {watches.map((watch) => (
+                  {watchesNeedingOptimization.map((watch) => (
                     <div
                       key={watch.id}
                       className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300"
