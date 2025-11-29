@@ -12,8 +12,11 @@ Deno.serve(async (req) => {
         const clientId = Deno.env.get("EBAY_APP_ID");
         const ruName = Deno.env.get("EBAY_RU_NAME");
         
-        if (!clientId || !ruName) {
-             return Response.json({ error: 'eBay App ID or RuName not configured' }, { status: 500 });
+        if (!clientId) {
+             return Response.json({ error: 'Missing Secret: EBAY_APP_ID' }, { status: 500 });
+        }
+        if (!ruName) {
+             return Response.json({ error: 'Missing Secret: EBAY_RU_NAME' }, { status: 500 });
         }
 
         // Scopes required for listing items and managing inventory

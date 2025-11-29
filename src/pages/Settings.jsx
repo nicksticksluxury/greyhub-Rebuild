@@ -74,7 +74,8 @@ export default function Settings() {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to initiate connection");
+      const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+      toast.error("Failed to initiate connection: " + errorMessage);
       setIsConnecting(false);
     }
   };
