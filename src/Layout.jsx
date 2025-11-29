@@ -51,7 +51,7 @@ const navigationItems = [
   },
   {
     title: "Settings",
-    url: createPageUrl("settings"),
+    url: createPageUrl("Settings"),
     icon: Settings,
   },
 ];
