@@ -12,19 +12,72 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const [showToken, setShowToken] = useState(false);
   const [tokenValue, setTokenValue] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
     queryFn: () => base44.entities.Setting.list(),
   });
 
   const tokenSetting = settings?.find(s => s.key === 'ebay_verification_token');
+  const accessTokenSetting = settings?.find(s => s.key === 'ebay_user_access_token');
+  const tokenExpirySetting = settings?.find(s => s.key === 'ebay_token_expiry');
+
+  const isConnected = !!accessTokenSetting;
+  const isExpired = tokenExpirySetting && new Date(tokenExpirySetting.value) <= new Date();
 
   useEffect(() => {
     if (tokenSetting) {
       setTokenValue(tokenSetting.value);
     }
   }, [tokenSetting]);
+
+  // Handle OAuth Callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    
+    if (code) {
+      const handleCallback = async () => {
+        setIsConnecting(true);
+        try {
+          // Remove code from URL to prevent re-triggering
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          const result = await base44.functions.invoke("ebayAuthCallback", { code });
+          if (result.data.success) {
+            toast.success("Successfully connected to eBay!");
+            refetch();
+          } else {
+            toast.error("Failed to connect: " + (result.data.error || "Unknown error"));
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Connection failed: " + error.message);
+        } finally {
+          setIsConnecting(false);
+        }
+      };
+      handleCallback();
+    }
+  }, []);
+
+  const handleConnectEbay = async () => {
+    try {
+      setIsConnecting(true);
+      const result = await base44.functions.invoke("ebayAuthUrl");
+      if (result.data.url) {
+        window.location.href = result.data.url;
+      } else {
+        toast.error("Failed to get authorization URL");
+        setIsConnecting(false);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to initiate connection");
+      setIsConnecting(false);
+    }
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (newValue) => {
@@ -75,11 +128,63 @@ export default function Settings() {
         <Card>
           <CardHeader>
             <CardTitle>eBay Integration</CardTitle>
-            <CardDescription>Configuration for eBay webhooks and notifications</CardDescription>
+            <CardDescription>Manage your connection and settings for eBay</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Verification Token</Label>
+            
+            {/* Account Connection Section */}
+            <div className="p-4 border border-slate-200 rounded-xl bg-white">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-medium text-slate-900">eBay Account Connection</h3>
+                  <p className="text-sm text-slate-500">Required for listing items and syncing sales</p>
+                </div>
+                {isConnected ? (
+                  <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm font-medium">
+                    <CheckCircle className="w-4 h-4" />
+                    Connected
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-slate-500 bg-slate-100 px-3 py-1 rounded-full text-sm font-medium">
+                    <AlertCircle className="w-4 h-4" />
+                    Not Connected
+                  </div>
+                )}
+              </div>
+
+              {isConnected && isExpired && (
+                <div className="mb-4 p-3 bg-amber-50 text-amber-800 text-sm rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Your connection has expired. Please reconnect.
+                </div>
+              )}
+
+              <Button 
+                onClick={handleConnectEbay} 
+                disabled={isConnecting}
+                className={isConnected ? "bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200" : "bg-[#0064D2] hover:bg-[#0051a8] text-white"}
+              >
+                {isConnecting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : isConnected ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Reconnect Account
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Connect eBay Account
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="space-y-2 pt-4 border-t border-slate-100">
+              <Label>Webhook Verification Token</Label>
               <p className="text-sm text-slate-500 mb-2">
                 Use this token in the eBay Developer Portal when setting up Marketplace Account Deletion notifications.
               </p>
