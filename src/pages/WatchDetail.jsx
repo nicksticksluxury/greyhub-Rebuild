@@ -213,11 +213,16 @@ export default function WatchDetail() {
       - Movement type (MUST be one of: "Automatic", "Digital", "Manual", "Quartz", "Solar", or "Unknown" - use exact capitalization)
       - Case material & size
       - Condition
-      - ALL visible text/numbers${contextStr}${msrpLinkContext}`,
+      - ALL visible text/numbers${contextStr}${msrpLinkContext}
+
+      Create a Listing Title optimized for eBay/Whatnot (max 80 chars).
+      Format: Brand + Model + Reference + Key Features + Color (if space)
+      Example: Rolex Submariner 16610 Stainless Steel Black Dial Automatic Watch`,
         file_urls: photosToAnalyze,
         response_json_schema: {
           type: "object",
           properties: {
+            listing_title: { type: "string", description: "Optimized listing title (max 80 chars)" },
             identified_brand: { type: "string" },
             identified_model: { type: "string" },
             reference_number: { type: "string" },

@@ -149,12 +149,15 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           for (let i = 0; i < 8; i++) imageUrls.push("");
         }
 
-        // Title formula: If reference_number exists, use Brand + Reference. Otherwise, Brand + Model.
-        let title;
-        if (w.reference_number && w.reference_number.trim() !== "" && w.reference_number.toLowerCase() !== "unknown") {
-          title = `${w.brand || ""} ${w.reference_number}`.trim();
-        } else {
-          title = `${w.brand || ""} ${w.model || ""}`.trim();
+        // Title formula: Prioritize listing_title, then Brand + Reference, then Brand + Model
+        let title = w.listing_title;
+        
+        if (!title) {
+          if (w.reference_number && w.reference_number.trim() !== "" && w.reference_number.toLowerCase() !== "unknown") {
+            title = `${w.brand || ""} ${w.reference_number}`.trim();
+          } else {
+            title = `${w.brand || ""} ${w.model || ""}`.trim();
+          }
         }
 
         return [
