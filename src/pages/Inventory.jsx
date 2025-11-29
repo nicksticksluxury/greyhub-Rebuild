@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag } from "lucide-react";
+import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +40,7 @@ export default function Inventory() {
     tested: "all"
   });
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
+  const [settingUpNotifications, setSettingUpNotifications] = useState(false);
   
   const queryClient = useQueryClient();
 
@@ -107,6 +108,26 @@ export default function Inventory() {
       toast.error("Failed to list items on eBay");
     } finally {
       setListing(false);
+    }
+  };
+
+  const handleSetupNotifications = async () => {
+    setSettingUpNotifications(true);
+    try {
+      const result = await base44.functions.invoke("setupEbayNotifications");
+      if (result.data.success) {
+        toast.success(result.data.message);
+        // Also show it in a persistent alert/dialog ideally, but toast is fine for now
+        alert("Notifications Enabled!\n\nIMPORTANT: Please ensure your 'Application Delivery URL' in the eBay Developer Portal is set to your 'ebayWebhook' function URL.");
+      } else {
+        toast.error("Failed to setup notifications: " + (result.data.error || "Unknown error"));
+        console.error("Setup details:", result.data.details);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to call setup function");
+    } finally {
+      setSettingUpNotifications(false);
     }
   };
 
@@ -195,6 +216,15 @@ export default function Inventory() {
                 </DropdownMenu>
               ) : (
                 <>
+                  <Button
+                    variant="outline"
+                    onClick={handleSetupNotifications}
+                    disabled={settingUpNotifications}
+                    className="border-slate-300 hover:bg-slate-50"
+                    title="Enable Real-time Sales Notifications"
+                  >
+                    <Bell className={`w-4 h-4 mr-2 ${settingUpNotifications ? 'animate-bounce' : ''}`} />
+                  </Button>
                   <Button
                     variant="outline"
                     onClick={handleSyncEbay}
