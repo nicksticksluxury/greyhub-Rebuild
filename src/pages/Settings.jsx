@@ -13,6 +13,8 @@ export default function Settings() {
   const [showToken, setShowToken] = useState(false);
   const [tokenValue, setTokenValue] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
+  const [manualAccessToken, setManualAccessToken] = useState("");
+  const [showManualEntry, setShowManualEntry] = useState(false);
 
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
@@ -24,6 +26,38 @@ export default function Settings() {
   const tokenExpirySetting = settings?.find(s => s.key === 'ebay_token_expiry');
 
   const isConnected = !!accessTokenSetting;
+
+  useEffect(() => {
+    if (accessTokenSetting) {
+      setManualAccessToken(accessTokenSetting.value);
+    }
+  }, [accessTokenSetting]);
+
+  const handleSaveManualToken = async () => {
+    try {
+      if (accessTokenSetting) {
+        await base44.entities.Setting.update(accessTokenSetting.id, { value: manualAccessToken });
+      } else {
+        await base44.entities.Setting.create({
+          key: 'ebay_user_access_token',
+          value: manualAccessToken,
+          description: 'eBay User Access Token'
+        });
+      }
+      // Clear expiry to prevent immediate "expired" check failures when manually setting
+      if (tokenExpirySetting) {
+        // Set expiry to 2 hours from now as a default for manual entry
+        const newExpiry = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+        await base44.entities.Setting.update(tokenExpirySetting.id, { value: newExpiry });
+      }
+      
+      toast.success("Access token saved manually");
+      refetch();
+      setShowManualEntry(false);
+    } catch (error) {
+      toast.error("Failed to save token: " + error.message);
+    }
+  };
   const isExpired = tokenExpirySetting && new Date(tokenExpirySetting.value) <= new Date();
 
   useEffect(() => {
@@ -183,6 +217,34 @@ export default function Settings() {
                   </>
                 )}
               </Button>
+
+              <div className="mt-4">
+                <button 
+                  onClick={() => setShowManualEntry(!showManualEntry)}
+                  className="text-sm text-slate-500 hover:text-slate-700 underline flex items-center"
+                >
+                  {showManualEntry ? "Hide Manual Entry" : "Having trouble? Enter token manually"}
+                </button>
+
+                {showManualEntry && (
+                  <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200 animate-in slide-in-from-top-2">
+                    <Label className="text-xs text-slate-500 mb-1.5 block">User Access Token</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={manualAccessToken}
+                        onChange={(e) => setManualAccessToken(e.target.value)}
+                        placeholder="Paste your OAuth Access Token here"
+                        className="font-mono text-xs h-9"
+                        type="password"
+                      />
+                      <Button size="sm" onClick={handleSaveManualToken}>Save</Button>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Note: Manually entered tokens expire after 2 hours.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2 pt-4 border-t border-slate-100">

@@ -23,14 +23,15 @@ Deno.serve(async (req) => {
         const refreshToken = getSetting("ebay_user_refresh_token");
         const tokenExpiry = getSetting("ebay_token_expiry");
 
-        if (!accessToken || !refreshToken) {
+        if (!accessToken) {
             return Response.json({ error: 'eBay not connected. Please connect your account in Settings.' }, { status: 400 });
         }
 
         // Check if token is expired or about to expire (within 5 mins)
         const isExpired = !tokenExpiry || new Date(tokenExpiry) <= new Date(Date.now() + 5 * 60 * 1000);
 
-        if (isExpired) {
+        // Only attempt refresh if we have a refresh token
+        if (isExpired && refreshToken) {
             console.log("eBay token expired, refreshing...");
             const clientId = Deno.env.get("EBAY_APP_ID");
             const clientSecret = Deno.env.get("EBAY_CERT_ID");
