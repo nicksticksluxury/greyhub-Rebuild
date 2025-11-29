@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
                 // Get App ID to construct the endpoint URL
                 const appId = Deno.env.get("BASE44_APP_ID");
-                const endpoint = `https://${appId}.base44.api/functions/ebayWebhook`;
+                const endpoint = `https://nicksluxury.base44.app/api/apps/6916791b25dfec3c1970eb6d/functions/ebayWebhook`;
                 
                 // Calculate SHA256 hash
                 const textToHash = challengeCode + verificationToken + endpoint;
