@@ -67,7 +67,8 @@ export default function Settings() {
       setIsConnecting(true);
       const result = await base44.functions.invoke("ebayAuthUrl");
       if (result.data.url) {
-        window.location.href = result.data.url;
+        // eBay forbids display in iframes (CSP), so we must open in a new tab
+        window.open(result.data.url, '_blank');
       } else {
         toast.error("Failed to get authorization URL");
         setIsConnecting(false);
