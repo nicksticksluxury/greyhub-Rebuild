@@ -1,41 +1,84 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { XMLParser } from 'npm:fast-xml-parser';
+import { crypto } from "jsr:@std/crypto";
 
 Deno.serve(async (req) => {
     try {
-        // 1. Handle Signature Verification (Challenge) - if eBay sends a GET for verification
-        // Note: Platform Notifications usually use a static URL, but sometimes require a challenge response during configuration
-        // For now, we'll focus on processing the POST notifications.
+        const base44 = createClientFromRequest(req);
         
-        if (req.method !== "POST") {
+        // 1. Handle Verification Challenge (GET)
+        // Required for eBay Marketplace Account Deletion endpoint validation
+        if (req.method === "GET") {
+            const url = new URL(req.url);
+            const challengeCode = url.searchParams.get("challenge_code");
+            
+            if (challengeCode) {
+                // Retrieve the verification token from Settings entity
+                // Note: We use service role to read settings securely without user context
+                const settings = await base44.asServiceRole.entities.Setting.list();
+                const tokenSetting = settings.find(s => s.key === 'ebay_verification_token');
+                const verificationToken = tokenSetting ? tokenSetting.value : null;
+                
+                if (!verificationToken) {
+                    console.error("Missing eBay Verification Token in Settings");
+                    return Response.json({ error: "Configuration missing" }, { status: 500 });
+                }
+
+                // Get App ID to construct the endpoint URL
+                const appId = Deno.env.get("BASE44_APP_ID");
+                const endpoint = `https://${appId}.base44.api/functions/ebayWebhook`;
+                
+                // Calculate SHA256 hash
+                const textToHash = challengeCode + verificationToken + endpoint;
+                const encoder = new TextEncoder();
+                const data = encoder.encode(textToHash);
+                const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const challengeResponse = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                return Response.json({ challengeResponse });
+            }
+            
             return Response.json({ message: "eBay Webhook Active" });
         }
 
-        const base44 = createClientFromRequest(req);
-        // Note: Webhooks come from eBay, not a user session. 
-        // We use service role for database updates.
-        
+        // 2. Handle POST Notifications
+        if (req.method !== "POST") {
+            return Response.json({ error: "Method not allowed" }, { status: 405 });
+        }
+
         const bodyText = await req.text();
         
-        // 2. Parse XML Payload
+        // Parse XML Payload
         const parser = new XMLParser({
             ignoreAttributes: false,
             attributeNamePrefix: "@_"
         });
         const jsonObj = parser.parse(bodyText);
         
-        // eBay notifications are wrapped in a SOAP Envelope usually
-        // Structure: Envelope -> Body -> [NotificationEventName]
-        
         const soapBody = jsonObj['soapenv:Envelope']?.['soapenv:Body'];
+        
+        // Handle Account Deletion Notification (often JSON or different XML, but usually via this same endpoint)
+        // If it's not SOAP, it might be a pure JSON notification (eBay supports both depending on config)
+        // But typically for the Trading API notifications, it's SOAP.
+        
         if (!soapBody) {
-             console.log("Not a SOAP envelope", jsonObj);
+             // Check if it's a direct JSON payload (Marketplace Account Deletion is often JSON)
+             try {
+                 const jsonBody = JSON.parse(bodyText);
+                 if (jsonBody.metadata && jsonBody.notification) {
+                     console.log("Received Account Deletion Notification", jsonBody);
+                     // Process account deletion logic here if needed
+                     return Response.json({ status: "ok" });
+                 }
+             } catch (e) {
+                 // Not JSON
+             }
+             
+             console.log("Not a recognized payload format", jsonObj);
              return Response.json({ status: "ok", ignored: true });
         }
 
-        // Check for specific events
-        // We care about: FixedPriceTransaction, ItemSold, ItemRevised (maybe for inventory count)
-        
         // Helper to process transaction
         const processTransaction = async (transaction, platformId) => {
              if (!transaction) return;
@@ -44,7 +87,6 @@ Deno.serve(async (req) => {
              const sku = item?.SKU; // We use Watch ID as SKU
              const itemID = item?.ItemID;
              
-             // If we don't have SKU, we might have stored the eBay ItemID in platform_ids
              let watch = null;
              
              if (sku) {
@@ -53,19 +95,14 @@ Deno.serve(async (req) => {
              }
              
              if (!watch && itemID) {
-                 // Fallback: search by platform_ids.ebay
-                 // Note: filter by deep object property might not work depending on DB adapter, 
-                 // but we can try or list all and find (expensive)
-                 // Better to rely on SKU.
+                 // Fallback logic if needed
                  console.log(`No watch found for SKU ${sku}. ItemID: ${itemID}`);
                  return;
              }
              
              if (watch) {
-                 // Mark as sold
-                 // TransactionPrice is usually in transaction.TransactionPrice
                  const soldPrice = parseFloat(transaction.TransactionPrice || 0);
-                 const soldDate = new Date().toISOString().split('T')[0]; // Today
+                 const soldDate = new Date().toISOString().split('T')[0];
                  
                  if (!watch.sold) {
                      await base44.asServiceRole.entities.Watch.update(watch.id, {
@@ -83,22 +120,10 @@ Deno.serve(async (req) => {
              }
         };
 
-        // Handle "FixedPriceTransaction" (Sold Buy It Now)
-        // Notification name is usually GetItemTransactionsResponse or similar container, 
-        // but for Notifications, the root element in Body IS the notification event name 
-        // e.g. <FixedPriceTransaction>...
-        
-        // Common notifications:
-        // FixedPriceTransaction
-        // ItemSold
-        
-        // Need to find keys in soapBody
         const keys = Object.keys(soapBody);
         
         for (const key of keys) {
-            if (key === 'GetItemTransactionsResponse' || key.includes('Transaction')) {
-                // Extract transaction
-                // Structure varies slightly by call
+            if (key === 'GetItemTransactionsResponse' || key.includes('Transaction') || key === 'FixedPriceTransaction') {
                 const payload = soapBody[key];
                 const transactions = payload.TransactionArray?.Transaction;
                 
@@ -109,6 +134,11 @@ Deno.serve(async (req) => {
                 } else if (transactions) {
                     await processTransaction(transactions, 'ebay');
                 }
+            } else if (key === 'ItemSold') {
+                 // Handle ItemSold event structure if different
+                 const payload = soapBody[key];
+                 // Logic typically similar to FixedPriceTransaction but payload structure might vary
+                 // usually contains ItemID, SellingStatus, etc.
             }
         }
 
@@ -116,7 +146,6 @@ Deno.serve(async (req) => {
 
     } catch (error) {
         console.error("Webhook Error:", error);
-        // Return 200 to prevent eBay from retrying/disabling if it's just a parsing error
-        return Response.json({ error: error.message }, { status: 200 });
+        return Response.json({ error: error.message }, { status: 500 });
     }
 });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings } from "lucide-react";
 import ImageOptimizationMonitor from "@/components/ImageOptimizationMonitor";
 import {
   Sidebar,
@@ -48,6 +48,11 @@ const navigationItems = [
     title: "Optimize Images",
     url: createPageUrl("ReoptimizeImages"),
     icon: TrendingUp,
+  },
+  {
+    title: "Settings",
+    url: createPageUrl("Settings"),
+    icon: Settings,
   },
 ];
 
