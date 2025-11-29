@@ -221,6 +221,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                 </TableHead>
                 <TableHead className="text-right">30% Markup</TableHead>
                 <TableHead className="text-right">50% Markup</TableHead>
+                <TableHead>Listed On</TableHead>
                 <TableHead>Source</TableHead>
               </TableRow>
             </TableHeader>
@@ -315,6 +316,19 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                       <span className="text-green-700 font-semibold">
                         {markup50 > 0 ? `$${markup50.toLocaleString()}` : '-'}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {watch.exported_to && Object.keys(watch.exported_to).length > 0 ? (
+                          Object.keys(watch.exported_to).map(platform => (
+                            <Badge key={platform} variant="secondary" className="text-[10px] px-1.5 h-5 capitalize">
+                              {platform}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400">-</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {source && (

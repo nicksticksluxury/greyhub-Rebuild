@@ -202,6 +202,21 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
           </div>
         </div>
 
+        <div>
+          <Label>Listing Title (Max 80 chars)</Label>
+          <div className="relative">
+            <Input
+              value={data.listing_title || ""}
+              onChange={(e) => updateField("listing_title", e.target.value)}
+              placeholder="Optimized title for eBay/Whatnot (e.g. Rolex Submariner 16610 Stainless Steel...)"
+              maxLength={80}
+            />
+            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-slate-400">
+              {(data.listing_title || "").length}/80
+            </span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label>Reference Number</Label>

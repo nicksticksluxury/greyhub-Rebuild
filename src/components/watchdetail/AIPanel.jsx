@@ -63,7 +63,8 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
       year: aiAnalysis.estimated_year,
       movement_type: aiAnalysis.movement_type,
       case_material: aiAnalysis.case_material,
-      case_size: aiAnalysis.case_size
+      case_size: aiAnalysis.case_size,
+      listing_title: aiAnalysis.listing_title
     };
     
     onImportData("basic_info_all", fieldsToImport);
@@ -96,6 +97,23 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                 <ArrowLeft className="w-3 h-3 mr-1" />
                 Import All
               </Button>
+            </div>
+          )}
+
+          {aiAnalysis.listing_title && (
+            <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+              <div className="flex items-center gap-2 mb-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs px-2"
+                  onClick={() => onImportData("listing_title", aiAnalysis.listing_title)}
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </Button>
+                <span className="text-xs font-semibold text-emerald-700 uppercase">Listing Title</span>
+              </div>
+              <p className="text-sm font-semibold text-emerald-900 ml-9">{aiAnalysis.listing_title}</p>
             </div>
           )}
 
