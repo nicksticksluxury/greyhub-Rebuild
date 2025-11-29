@@ -1,13 +1,22 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Filter, Download, CheckSquare, X } from "lucide-react";
+import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import WatchTable from "../components/inventory/WatchTable";
 import ExportDialog from "../components/inventory/ExportDialog";
 import FilterPanel from "../components/inventory/FilterPanel";
@@ -19,6 +28,8 @@ export default function Inventory() {
   const [showExport, setShowExport] = useState(false);
   const [selectedWatch, setSelectedWatch] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState("whatnot");
+  const [syncing, setSyncing] = useState(false);
+  const [listing, setListing] = useState(false);
   const [filters, setFilters] = useState({
     auction: "all",
     source: "all",
@@ -29,6 +40,8 @@ export default function Inventory() {
     tested: "all"
   });
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
+  
+  const queryClient = useQueryClient();
 
   const { data: watches = [], isLoading } = useQuery({
     queryKey: ['watches'],
@@ -47,6 +60,55 @@ export default function Inventory() {
     queryFn: () => base44.entities.Source.list(),
     initialData: [],
   });
+
+  const handleSyncEbay = async () => {
+    setSyncing(true);
+    try {
+      const result = await base44.functions.invoke("ebaySync");
+      if (result.data.success) {
+        toast.success(`Synced ${result.data.syncedCount} sales from eBay`);
+        if (result.data.syncedCount > 0) {
+          queryClient.invalidateQueries({ queryKey: ['watches'] });
+        }
+      } else {
+        toast.error("Sync failed: " + (result.data.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sync with eBay");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleBulkListEbay = async () => {
+    if (selectedWatchIds.length === 0) return;
+    setListing(true);
+    try {
+      const result = await base44.functions.invoke("ebayList", { watchIds: selectedWatchIds });
+      const { success, failed, errors } = result.data;
+      
+      if (success > 0) {
+        toast.success(`Successfully listed ${success} items on eBay`);
+        queryClient.invalidateQueries({ queryKey: ['watches'] });
+        setSelectedWatchIds([]);
+      }
+      
+      if (failed > 0) {
+        toast.error(`Failed to list ${failed} items`);
+        if (errors && errors.length > 0) {
+          console.error("eBay listing errors:", errors);
+          // Show first error in toast
+          toast.error(errors[0]);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to list items on eBay");
+    } finally {
+      setListing(false);
+    }
+  };
 
   // Get unique case materials from all watches
   const caseMaterials = [...new Set(watches
@@ -110,15 +172,50 @@ export default function Inventory() {
                   </Button>
                 </div>
               )}
-              <Button
-                variant="outline"
-                onClick={() => setShowExport(true)}
-                className="border-slate-300 hover:bg-slate-50"
-                disabled={filteredWatches.length === 0}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {selectedWatchIds.length > 0 ? `Export (${selectedWatchIds.length})` : 'Export'}
-              </Button>
+              
+              {selectedWatchIds.length > 0 ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="border-slate-300 hover:bg-slate-50">
+                      Bulk Actions ({selectedWatchIds.length})
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setShowExport(true)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Selected
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      {listing ? "Listing..." : "List on eBay"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleSyncEbay}
+                    disabled={syncing}
+                    className="border-slate-300 hover:bg-slate-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                    {syncing ? 'Syncing...' : 'Sync Sales'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowExport(true)}
+                    className="border-slate-300 hover:bg-slate-50"
+                    disabled={filteredWatches.length === 0}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </>
+              )}
+
               <Link to={createPageUrl("AddWatch")}>
                 <Button className="bg-slate-800 hover:bg-slate-900 shadow-md">
                   <Plus className="w-4 h-4 mr-2" />

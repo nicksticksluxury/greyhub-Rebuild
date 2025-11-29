@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle, FileText } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle, FileText, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -28,6 +28,7 @@ export default function WatchDetail() {
   const [analysisStep, setAnalysisStep] = useState("");
   const [analysisError, setAnalysisError] = useState(null);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [listingEbay, setListingEbay] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const mode = localStorage.getItem('watchvault_mode') || 'working';
@@ -533,6 +534,35 @@ export default function WatchDetail() {
     setGeneratingDescription(false);
   };
 
+  const handleListOnEbay = async () => {
+    if (hasUnsavedChanges) {
+      toast.error("Please save changes before listing");
+      return;
+    }
+    
+    setListingEbay(true);
+    try {
+      const result = await base44.functions.invoke("ebayList", { watchIds: [watchId] });
+      const { success, failed, errors } = result.data;
+      
+      if (success > 0) {
+        toast.success("Successfully listed on eBay!");
+        queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
+        // Refresh edited data to show the new exported status
+        const updatedWatch = await base44.entities.Watch.get(watchId);
+        setEditedData(updatedWatch);
+        setOriginalData(updatedWatch);
+      } else if (failed > 0) {
+        toast.error(errors?.[0] || "Failed to list on eBay");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to connect to eBay");
+    } finally {
+      setListingEbay(false);
+    }
+  };
+
   const repriceWatch = async () => {
     if (!editedData.brand) {
       toast.error("Please set the watch brand first");
@@ -897,6 +927,30 @@ export default function WatchDetail() {
                   <>
                     <FileText className="w-4 h-4 mr-2" />
                     Generate Description
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                onClick={handleListOnEbay}
+                disabled={listingEbay || hasUnsavedChanges || !editedData.brand || editedData.exported_to?.ebay}
+                variant="outline"
+                className={`border-blue-300 text-blue-700 hover:bg-blue-50 ${editedData.exported_to?.ebay ? 'opacity-50 cursor-not-allowed bg-blue-50' : ''}`}
+              >
+                {listingEbay ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Listing...
+                  </>
+                ) : editedData.exported_to?.ebay ? (
+                  <>
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Listed on eBay
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    List on eBay
                   </>
                 )}
               </Button>
