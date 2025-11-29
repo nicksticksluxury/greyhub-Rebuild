@@ -15,6 +15,7 @@ export default function Settings() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [manualAccessToken, setManualAccessToken] = useState("");
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualUrl, setManualUrl] = useState("");
 
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
@@ -32,6 +33,46 @@ export default function Settings() {
       setManualAccessToken(accessTokenSetting.value);
     }
   }, [accessTokenSetting]);
+
+  const handleManualRedirect = async () => {
+    if (!manualUrl) return;
+    
+    setIsConnecting(true);
+    try {
+      let code = manualUrl;
+      // If it's a URL, try to extract the code param
+      if (manualUrl.includes('?') || manualUrl.includes('code=')) {
+        // Handle case where user pastes just the query string or full url
+        const urlStr = manualUrl.startsWith('http') ? manualUrl : `http://dummy?${manualUrl}`;
+        const urlObj = new URL(urlStr);
+        code = urlObj.searchParams.get("code");
+      }
+      
+      if (!code) {
+        // If no code found in URL params, assume the whole string might be the code if it's long enough
+        if (manualUrl.length < 20) {
+             toast.error("Could not find valid authorization code");
+             setIsConnecting(false);
+             return;
+        }
+        code = manualUrl;
+      }
+
+      const result = await base44.functions.invoke("ebayAuthCallback", { code });
+      if (result.data.success) {
+        toast.success("Successfully connected to eBay!");
+        setManualUrl("");
+        refetch();
+      } else {
+        toast.error("Failed to connect: " + (result.data.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Connection failed: " + error.message);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   const handleSaveManualToken = async () => {
     try {
@@ -217,6 +258,26 @@ export default function Settings() {
                   </>
                 )}
               </Button>
+
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                 <h4 className="text-sm font-medium text-slate-900 mb-2">Trouble Connecting?</h4>
+                 <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 mb-3">
+                    <p className="text-xs text-amber-800 mb-2">
+                       If eBay takes you to a page that says "Authorization Successful" or a developer page but doesn't redirect you back here, copy that page's full URL and paste it below to finish the connection:
+                    </p>
+                    <div className="flex gap-2">
+                       <Input 
+                          value={manualUrl}
+                          onChange={(e) => setManualUrl(e.target.value)}
+                          placeholder="Paste the full URL here (e.g. https://developer.ebay.com/...)"
+                          className="font-mono text-xs h-9 bg-white"
+                       />
+                       <Button size="sm" onClick={handleManualRedirect} disabled={isConnecting || !manualUrl}>
+                          Complete Connection
+                       </Button>
+                    </div>
+                 </div>
+              </div>
 
               <div className="mt-4">
                 <button 
