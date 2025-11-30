@@ -112,11 +112,12 @@ Deno.serve(async (req) => {
             const userRes = await fetch("https://api.ebay.com/commerce/identity/v1/user/", { headers });
             if (!userRes.ok) {
                  const userErr = await userRes.text();
-                 // If 403, it likely means missing scope, suggesting reconnect
-                 if (userRes.status === 403) {
-                     return Response.json({ error: 'Please reconnect your eBay account in Settings to enable address fetching permissions.' }, { status: 403 });
+                 console.error(`User Profile Fetch Error (${userRes.status}):`, userErr);
+                 
+                 if (userRes.status === 403 || userRes.status === 401) {
+                     return Response.json({ error: 'Permission denied. Please disconnect and reconnect your eBay account in Settings to grant address access.' }, { status: 403 });
                  }
-                 throw new Error(`No Inventory Location found and failed to fetch user profile: ${userErr}`);
+                 throw new Error(`Failed to retrieve your eBay address to create an Inventory Location. Status: ${userRes.status}. Please ensure your eBay account has a registration address.`);
             }
             
             const userData = await userRes.json();
