@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
                     packageWeightAndSize: {
                         packageType: "PACKAGE_THICK_ENVELOPE",
                         weight: {
-                            value: 1,
+                            value: 0.5, // 8 oz
                             unit: "POUND"
                         }
                     },
