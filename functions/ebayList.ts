@@ -179,6 +179,13 @@ Deno.serve(async (req) => {
                         }
                     },
                     condition: getEbayCondition(watch.condition),
+                    packageWeightAndSize: {
+                        packageType: "PACKAGE_THICK_ENVELOPE",
+                        weight: {
+                            value: 1,
+                            unit: "POUND"
+                        }
+                    },
                     product: {
                         title: title.substring(0, 80),
                         description: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
