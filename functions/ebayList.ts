@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
                     throw new Error(`Inventory Item Error: ${inventoryResponse.status} - ${errorText}`);
                 }
 
-                // 2. Create Offer
+                // 2. Handle Offer (Create or Update)
                 const offer = {
                     sku: sku,
                     marketplaceId: "EBAY_US",
@@ -241,24 +241,46 @@ Deno.serve(async (req) => {
                     }
                 };
 
-                const offerResponse = await fetch("https://api.ebay.com/sell/inventory/v1/offer", {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                        'Content-Language': 'en-US',
-                        'Accept-Language': 'en-US'
-                    },
-                    body: JSON.stringify(offer)
-                });
+                // Log payloads for debugging
+                console.log(`[${sku}] Inventory Item Payload:`, JSON.stringify(inventoryItem, null, 2));
+                console.log(`[${sku}] Offer Payload:`, JSON.stringify(offer, null, 2));
 
-                const offerData = await offerResponse.json();
+                const apiHeaders = {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    'Content-Language': 'en-US',
+                    'Accept-Language': 'en-US'
+                };
 
-                if (!offerResponse.ok) {
-                    throw new Error(`Offer Creation Error: ${JSON.stringify(offerData)}`);
+                // Check for existing offer
+                const getOffersRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer?sku=${sku}`, { headers: apiHeaders });
+                const getOffersData = await getOffersRes.json();
+                let offerId = getOffersData.offers?.[0]?.offerId;
+
+                if (offerId) {
+                    console.log(`Found existing offer ${offerId} for SKU ${sku}, updating...`);
+                    const updateRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}`, {
+                        method: 'PUT',
+                        headers: apiHeaders,
+                        body: JSON.stringify(offer)
+                    });
+                    if (!updateRes.ok) {
+                        const err = await updateRes.text();
+                        throw new Error(`Failed to update existing offer ${offerId}: ${err}`);
+                    }
+                } else {
+                    console.log(`Creating new offer for SKU ${sku}...`);
+                    const createRes = await fetch("https://api.ebay.com/sell/inventory/v1/offer", {
+                        method: 'POST',
+                        headers: apiHeaders,
+                        body: JSON.stringify(offer)
+                    });
+                    const createData = await createRes.json();
+                    if (!createRes.ok) {
+                        throw new Error(`Offer Creation Error: ${JSON.stringify(createData)}`);
+                    }
+                    offerId = createData.offerId;
                 }
-
-                const offerId = offerData.offerId;
 
                 // 3. Publish Offer
                 const publishResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}/publish`, {
