@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag, Bell } from "lucide-react";
+import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag, Bell, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,6 +41,7 @@ export default function Inventory() {
   });
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
   const [settingUpNotifications, setSettingUpNotifications] = useState(false);
+  const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   
   const queryClient = useQueryClient();
 
@@ -131,6 +132,39 @@ export default function Inventory() {
     }
   };
 
+  const handleBulkGenerateDescriptions = async () => {
+    if (selectedWatchIds.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to generate new descriptions for ${selectedWatchIds.length} watches? This will overwrite existing descriptions.`)) {
+      return;
+    }
+
+    setGeneratingDescriptions(true);
+    try {
+      const result = await base44.functions.invoke("bulkGenerateDescriptions", { watchIds: selectedWatchIds });
+      const { success, failed, errors } = result.data;
+      
+      if (success > 0) {
+        toast.success(`Successfully generated descriptions for ${success} watches`);
+        queryClient.invalidateQueries({ queryKey: ['watches'] });
+        setSelectedWatchIds([]);
+      }
+      
+      if (failed > 0) {
+        toast.error(`Failed to generate descriptions for ${failed} watches`);
+        if (errors && errors.length > 0) {
+          console.error("Generation errors:", errors);
+          toast.error(errors[0]);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate descriptions");
+    } finally {
+      setGeneratingDescriptions(false);
+    }
+  };
+
   // Get unique case materials from all watches
   const caseMaterials = [...new Set(watches
     .map(w => w.case_material)
@@ -211,6 +245,14 @@ export default function Inventory() {
                     <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Listing..." : "List on eBay"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
+                      {generatingDescriptions ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <FileText className="w-4 h-4 mr-2" />
+                      )}
+                      {generatingDescriptions ? "Generating..." : "Create New Listing Descriptions"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
