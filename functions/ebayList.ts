@@ -347,14 +347,18 @@ Deno.serve(async (req) => {
 function getEbayCondition(condition) {
     switch (condition) {
         case 'new':
-        case 'new_with_box':
-        case 'new_no_box': return 'NEW';
-        case 'mint': return 'LIKE_NEW';
-        case 'excellent': return 'USED_EXCELLENT';
-        case 'very_good': return 'USED_VERY_GOOD';
-        case 'good': return 'USED_GOOD';
-        case 'fair': return 'USED_ACCEPTABLE';
-        case 'parts_repair': return 'FOR_PARTS_OR_NOT_WORKING';
-        default: return 'USED_GOOD';
+        case 'new_with_box': return 'NEW';       // 1000: New with tags
+        case 'new_no_box': return 'NEW_OTHER';   // 1500: New without tags
+        
+        // Category 31387 (Wristwatches) generally uses generic "Pre-owned" (3000)
+        // It does not support granular used conditions (4000, 5000, 6000)
+        case 'mint': 
+        case 'excellent': 
+        case 'very_good': 
+        case 'good': 
+        case 'fair': return 'USED_EXCELLENT';    // 3000: Pre-owned
+        
+        case 'parts_repair': return 'FOR_PARTS_OR_NOT_WORKING'; // 7000
+        default: return 'USED_EXCELLENT';
     }
 }
