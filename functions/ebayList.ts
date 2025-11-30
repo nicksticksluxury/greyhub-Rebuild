@@ -44,7 +44,6 @@ Deno.serve(async (req) => {
             const params = new URLSearchParams();
             params.append("grant_type", "refresh_token");
             params.append("refresh_token", refreshToken);
-            // scope is optional for refresh, usually keeps original scopes
 
             const refreshRes = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
                 method: "POST",
@@ -65,8 +64,6 @@ Deno.serve(async (req) => {
             accessToken = refreshData.access_token;
             const newExpiry = new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString();
 
-            // Update Settings with new token
-            // We find the ID from the originally fetched list, assuming it hasn't changed in milliseconds
             const tokenSettingId = settings.find(s => s.key === "ebay_user_access_token")?.id;
             const expirySettingId = settings.find(s => s.key === "ebay_token_expiry")?.id;
 
@@ -74,6 +71,35 @@ Deno.serve(async (req) => {
             if (expirySettingId) await base44.entities.Setting.update(expirySettingId, { value: newExpiry });
         }
         // --- END TOKEN LOGIC ---
+
+        // --- FETCH POLICIES ---
+        const headers = {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        };
+
+        const [fulfillmentRes, paymentRes, returnRes] = await Promise.all([
+            fetch("https://api.ebay.com/sell/account/v1/fulfillment_policy?marketplace_id=EBAY_US", { headers }),
+            fetch("https://api.ebay.com/sell/account/v1/payment_policy?marketplace_id=EBAY_US", { headers }),
+            fetch("https://api.ebay.com/sell/account/v1/return_policy?marketplace_id=EBAY_US", { headers })
+        ]);
+
+        const fulfillmentData = await fulfillmentRes.json();
+        const paymentData = await paymentRes.json();
+        const returnData = await returnRes.json();
+
+        const fulfillmentPolicyId = fulfillmentData.fulfillmentPolicies?.[0]?.fulfillmentPolicyId;
+        const paymentPolicyId = paymentData.paymentPolicies?.[0]?.paymentPolicyId;
+        const returnPolicyId = returnData.returnPolicies?.[0]?.returnPolicyId;
+
+        if (!fulfillmentPolicyId || !paymentPolicyId || !returnPolicyId) {
+            return Response.json({ 
+                error: 'Missing eBay Business Policies. Please set up default Fulfillment, Payment, and Return policies in your eBay account settings.',
+                details: { fulfillment: !!fulfillmentPolicyId, payment: !!paymentPolicyId, return: !!returnPolicyId }
+            }, { status: 400 });
+        }
+        // --- END FETCH POLICIES ---
 
         const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
         
@@ -91,7 +117,6 @@ Deno.serve(async (req) => {
                 continue;
             }
 
-            // Skip if missing price or title
             const price = watch.platform_prices?.ebay || watch.retail_price;
             const title = watch.listing_title || `${watch.brand} ${watch.model} ${watch.reference_number || ''}`;
 
@@ -103,9 +128,8 @@ Deno.serve(async (req) => {
 
             try {
                 // 1. Create Inventory Item Record (SKU)
-                const sku = watch.id; // Using Watch ID as SKU
+                const sku = watch.id; 
                 
-                // Construct photo URLs array
                 const photoUrls = (watch.photos || [])
                     .map(p => p.full || p.original || (typeof p === 'string' ? p : null))
                     .filter(Boolean);
@@ -118,7 +142,7 @@ Deno.serve(async (req) => {
                     },
                     condition: getEbayCondition(watch.condition),
                     product: {
-                        title: title.substring(0, 80), // eBay max length
+                        title: title.substring(0, 80),
                         description: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
                         aspects: {
                             Brand: [watch.brand || "Unbranded"],
@@ -133,7 +157,6 @@ Deno.serve(async (req) => {
                     }
                 };
 
-                // Call eBay Inventory API - Create/Update Inventory Item
                 const inventoryResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${sku}`, {
                     method: 'PUT',
                     headers: {
@@ -147,29 +170,22 @@ Deno.serve(async (req) => {
 
                 if (!inventoryResponse.ok) {
                     const errorText = await inventoryResponse.text();
-                    // Check for specific "Content-Language" error which is common
-                    if (inventoryResponse.status === 400 && errorText.includes("Content-Language")) {
-                         throw new Error("eBay API requires Content-Language header (which was sent). Please check account settings.");
-                    }
-                    throw new Error(`eBay Inventory API Error: ${inventoryResponse.status} - ${errorText}`);
+                    throw new Error(`Inventory Item Error: ${inventoryResponse.status} - ${errorText}`);
                 }
 
                 // 2. Create Offer
-                // NOTE: This step requires specific policies (fulfillment, payment, return) to be set up on the eBay account.
-                // Since we don't have a UI to select them yet, this might fail if not configured.
-                // For now, we'll attempt it but gracefully handle policy errors.
-
                 const offer = {
                     sku: sku,
                     marketplaceId: "EBAY_US",
                     format: "FIXED_PRICE",
                     availableQuantity: watch.quantity || 1,
-                    categoryId: "31387", // Wristwatches category ID
+                    categoryId: "31387", // Wristwatches
                     listingDescription: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
-                    // Policies would need to be fetched from the user's account or hardcoded
-                    // For testing, we omit them and see if eBay accepts default or drafts it.
-                    // Usually, they ARE REQUIRED for an offer to be published.
-                    // Without them, we might only get the Inventory Item created (which is a good start).
+                    listingPolicies: {
+                        fulfillmentPolicyId: fulfillmentPolicyId,
+                        paymentPolicyId: paymentPolicyId,
+                        returnPolicyId: returnPolicyId
+                    },
                     pricingSummary: {
                         price: {
                             currency: "USD",
@@ -178,16 +194,49 @@ Deno.serve(async (req) => {
                     }
                 };
 
-                /* 
-                   COMMENTED OUT OFFER CREATION FOR INITIAL TESTING
-                   To avoid "missing policy" errors blocking the flow, 
-                   we will verify the Inventory Item creation first.
-                   
-                   Once the user confirms Inventory Item creation works, 
-                   we can add Policy selection.
-                */
+                const offerResponse = await fetch("https://api.ebay.com/sell/inventory/v1/offer", {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Content-Language': 'en-US',
+                        'Accept-Language': 'en-US'
+                    },
+                    body: JSON.stringify(offer)
+                });
 
-                // Update Watch record to show it was exported (at least to inventory)
+                const offerData = await offerResponse.json();
+
+                if (!offerResponse.ok) {
+                    throw new Error(`Offer Creation Error: ${JSON.stringify(offerData)}`);
+                }
+
+                const offerId = offerData.offerId;
+
+                // 3. Publish Offer
+                const publishResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}/publish`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Content-Language': 'en-US',
+                        'Accept-Language': 'en-US'
+                    }
+                });
+
+                const publishData = await publishResponse.json();
+
+                if (!publishResponse.ok) {
+                    throw new Error(`Publish Error: ${JSON.stringify(publishData)}`);
+                }
+
+                const listingId = publishData.listingId;
+
+                if (!listingId) {
+                     throw new Error("Published but no Listing ID returned.");
+                }
+
+                // Update Watch record ONLY after successful publish
                 await base44.entities.Watch.update(watch.id, {
                     exported_to: {
                         ...(watch.exported_to || {}),
@@ -195,7 +244,7 @@ Deno.serve(async (req) => {
                     },
                     platform_ids: {
                         ...(watch.platform_ids || {}),
-                        ebay: sku // Store SKU as the ID
+                        ebay: listingId 
                     }
                 });
 
@@ -203,7 +252,18 @@ Deno.serve(async (req) => {
 
             } catch (error) {
                 console.error(`Failed to list watch ${watch.id}:`, error);
-                results.errors.push(`Failed to list ${watch.brand} ${watch.model}: ${error.message}`);
+                // Try to parse error if it's a JSON string
+                let errorMessage = error.message;
+                try {
+                    if (errorMessage.includes("{")) {
+                        const parsed = JSON.parse(errorMessage.substring(errorMessage.indexOf("{")));
+                        if (parsed.errors && parsed.errors[0] && parsed.errors[0].message) {
+                            errorMessage = parsed.errors[0].message;
+                        }
+                    }
+                } catch (e) {}
+                
+                results.errors.push(`Failed to list ${watch.brand} ${watch.model}: ${errorMessage}`);
                 results.failed++;
             }
         }
@@ -216,25 +276,16 @@ Deno.serve(async (req) => {
 });
 
 function getEbayCondition(condition) {
-    // eBay Inventory API Condition Enum Mapping
     switch (condition) {
         case 'new':
         case 'new_with_box':
-        case 'new_no_box':
-            return 'NEW';
-        case 'mint':
-            return 'LIKE_NEW';
-        case 'excellent':
-            return 'USED_EXCELLENT';
-        case 'very_good':
-            return 'USED_VERY_GOOD';
-        case 'good':
-            return 'USED_GOOD';
-        case 'fair':
-            return 'USED_ACCEPTABLE';
-        case 'parts_repair':
-            return 'FOR_PARTS_OR_NOT_WORKING';
-        default:
-            return 'USED_GOOD';
+        case 'new_no_box': return 'NEW';
+        case 'mint': return 'LIKE_NEW';
+        case 'excellent': return 'USED_EXCELLENT';
+        case 'very_good': return 'USED_VERY_GOOD';
+        case 'good': return 'USED_GOOD';
+        case 'fair': return 'USED_ACCEPTABLE';
+        case 'parts_repair': return 'FOR_PARTS_OR_NOT_WORKING';
+        default: return 'USED_GOOD';
     }
 }
