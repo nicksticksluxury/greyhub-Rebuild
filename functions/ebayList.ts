@@ -100,17 +100,63 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
-        // --- FETCH LOCATION ---
+        // --- FETCH OR CREATE LOCATION ---
         const locationsRes = await fetch("https://api.ebay.com/sell/inventory/v1/location", { headers });
         const locationsData = await locationsRes.json();
-        const merchantLocationKey = locationsData.locations?.[0]?.merchantLocationKey;
+        let merchantLocationKey = locationsData.locations?.[0]?.merchantLocationKey;
 
         if (!merchantLocationKey) {
-             return Response.json({ 
-                error: 'No eBay Merchant Location found. Please set up a location in your eBay account (My eBay -> Account -> Addresses).',
-            }, { status: 400 });
+            console.log("No inventory location found, attempting to create one from user profile...");
+            
+            // Fetch user profile to get address
+            const userRes = await fetch("https://api.ebay.com/commerce/identity/v1/user/", { headers });
+            if (!userRes.ok) {
+                 const userErr = await userRes.text();
+                 // If 403, it likely means missing scope, suggesting reconnect
+                 if (userRes.status === 403) {
+                     return Response.json({ error: 'Please reconnect your eBay account in Settings to enable address fetching permissions.' }, { status: 403 });
+                 }
+                 throw new Error(`No Inventory Location found and failed to fetch user profile: ${userErr}`);
+            }
+            
+            const userData = await userRes.json();
+            const address = userData.registrationAddress;
+            
+            if (!address || !address.country) {
+                 throw new Error("No Inventory Location found and your eBay Profile has no registration address.");
+            }
+
+            // Create a default location using the profile address
+            merchantLocationKey = "Default";
+            const locationPayload = {
+                name: "Default Warehouse",
+                location: {
+                    address: {
+                        addressLine1: address.addressLine1,
+                        addressLine2: address.addressLine2,
+                        city: address.city,
+                        stateOrProvince: address.stateOrProvince,
+                        postalCode: address.postalCode,
+                        country: address.country
+                    }
+                },
+                merchantLocationStatus: "ENABLED",
+                locationTypes: ["STORE"]
+            };
+
+            const createLocRes = await fetch(`https://api.ebay.com/sell/inventory/v1/location/${merchantLocationKey}`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(locationPayload)
+            });
+
+            if (!createLocRes.ok) {
+                const createLocErr = await createLocRes.text();
+                throw new Error(`Failed to create default inventory location: ${createLocErr}`);
+            }
+            console.log("Created default inventory location: Default");
         }
-        // --- END FETCH LOCATION ---
+        // --- END FETCH OR CREATE LOCATION ---
 
         const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
         
