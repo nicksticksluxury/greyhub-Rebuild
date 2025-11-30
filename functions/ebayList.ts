@@ -106,55 +106,19 @@ Deno.serve(async (req) => {
         let merchantLocationKey = locationsData.locations?.[0]?.merchantLocationKey;
 
         if (!merchantLocationKey) {
-            console.log("No inventory location found, attempting to create one from user profile...");
+            console.log("No inventory location found, creating 'Default' location with provided address...");
             
-            // Fetch user profile to get address
-            const userRes = await fetch("https://api.ebay.com/commerce/identity/v1/user/", { headers });
-            
-            let address = null;
-
-            if (userRes.ok) {
-                const userData = await userRes.json();
-                address = userData.registrationAddress;
-            } else {
-                 console.warn(`User Profile Fetch Failed (${userRes.status}). Using fallback address.`);
-                 // Fallback to a generic US address if user profile cannot be fetched
-                 // This allows the location to be created so listing can proceed.
-                 // User should update this in eBay Settings later.
-                 address = {
-                     addressLine1: "1 Main St",
-                     addressLine2: "",
-                     city: "San Jose",
-                     stateOrProvince: "CA",
-                     postalCode: "95125",
-                     country: "US"
-                 };
-            }
-            
-            if (!address || !address.country) {
-                 // Should catch very edge cases where fallback failed or user data was empty
-                 address = {
-                     addressLine1: "1 Main St",
-                     addressLine2: "",
-                     city: "San Jose",
-                     stateOrProvince: "CA",
-                     postalCode: "95125",
-                     country: "US"
-                 };
-            }
-
-            // Create a default location using the address (fetched or fallback)
+            // Create a default location using the provided address
             merchantLocationKey = "Default";
             const locationPayload = {
-                name: "Default Warehouse",
+                name: "Nick's Ticks and Luxury",
                 location: {
                     address: {
-                        addressLine1: address.addressLine1,
-                        addressLine2: address.addressLine2 || undefined,
-                        city: address.city,
-                        stateOrProvince: address.stateOrProvince,
-                        postalCode: address.postalCode,
-                        country: address.country
+                        addressLine1: "1290 w 280 n",
+                        city: "Salt Lake City",
+                        stateOrProvince: "UT",
+                        postalCode: "84116",
+                        country: "US"
                     }
                 },
                 merchantLocationStatus: "ENABLED",
