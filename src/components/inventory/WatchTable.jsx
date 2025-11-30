@@ -219,8 +219,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                     {selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} {getSortIcon("price")}
                   </Button>
                 </TableHead>
-                <TableHead className="text-right">30% Markup</TableHead>
-                <TableHead className="text-right">50% Markup</TableHead>
+
                 <TableHead>Listed On</TableHead>
                 <TableHead>Source</TableHead>
               </TableRow>
@@ -230,9 +229,6 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                   const source = sources.find(s => s.id === watch.source_id);
                   const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
                   const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
-                  const savedMinPrice = watch.minimum_price || 0;
-                  const markup30 = savedMinPrice ? Math.ceil(savedMinPrice * 1.3) : 0;
-                  const markup50 = savedMinPrice ? Math.ceil(savedMinPrice * 1.5) : 0;
 
                 return (
                   <TableRow 
@@ -307,27 +303,27 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                         {platformPrice > 0 ? `$${platformPrice.toLocaleString()}` : '-'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-blue-700 font-semibold">
-                        {markup30 > 0 ? `$${markup30.toLocaleString()}` : '-'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-green-700 font-semibold">
-                        {markup50 > 0 ? `$${markup50.toLocaleString()}` : '-'}
-                      </span>
-                    </TableCell>
+
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {watch.exported_to && Object.keys(watch.exported_to).length > 0 ? (
-                          Object.keys(watch.exported_to).map(platform => (
-                            <Badge key={platform} variant="secondary" className="text-[10px] px-1.5 h-5 capitalize">
-                              {platform}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-xs text-slate-400">-</span>
-                        )}
+                        {(() => {
+                          const platforms = ['ebay', 'poshmark', 'etsy', 'mercari', 'whatnot', 'shopify'];
+                          const activePlatforms = platforms.filter(p => 
+                            (watch.listing_urls && watch.listing_urls[p]) || 
+                            (watch.platform_ids && watch.platform_ids[p]) ||
+                            (watch.exported_to && watch.exported_to[p])
+                          );
+                          
+                          return activePlatforms.length > 0 ? (
+                            activePlatforms.map(platform => (
+                              <Badge key={platform} variant="secondary" className="text-[10px] px-1.5 h-5 capitalize">
+                                {platform}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-400">-</span>
+                          );
+                        })()}
                       </div>
                     </TableCell>
                     <TableCell>
