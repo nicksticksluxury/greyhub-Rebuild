@@ -99,7 +99,18 @@ Deno.serve(async (req) => {
                 details: { fulfillment: !!fulfillmentPolicyId, payment: !!paymentPolicyId, return: !!returnPolicyId }
             }, { status: 400 });
         }
-        // --- END FETCH POLICIES ---
+
+        // --- FETCH LOCATION ---
+        const locationsRes = await fetch("https://api.ebay.com/sell/inventory/v1/location", { headers });
+        const locationsData = await locationsRes.json();
+        const merchantLocationKey = locationsData.locations?.[0]?.merchantLocationKey;
+
+        if (!merchantLocationKey) {
+             return Response.json({ 
+                error: 'No eBay Merchant Location found. Please set up a location in your eBay account (My eBay -> Account -> Addresses).',
+            }, { status: 400 });
+        }
+        // --- END FETCH LOCATION ---
 
         const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
         
@@ -151,7 +162,8 @@ Deno.serve(async (req) => {
                             Department: [watch.gender === 'womens' ? 'Women' : 'Men'],
                             Movement: [watch.movement_type || "Unknown"],
                             "Case Material": [watch.case_material || "Unknown"],
-                            "Reference Number": [watch.reference_number || "Does Not Apply"]
+                            "Reference Number": [watch.reference_number || "Does Not Apply"],
+                            "Country/Region of Manufacture": ["United States"]
                         },
                         imageUrls: photoUrls
                     }
@@ -186,6 +198,7 @@ Deno.serve(async (req) => {
                         paymentPolicyId: paymentPolicyId,
                         returnPolicyId: returnPolicyId
                     },
+                    merchantLocationKey: merchantLocationKey,
                     pricingSummary: {
                         price: {
                             currency: "USD",
