@@ -113,6 +113,16 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
     });
   };
 
+  const updateListingUrl = (platform, value) => {
+    onChange({
+      ...data,
+      listing_urls: {
+        ...(data.listing_urls || {}),
+        [platform]: value
+      }
+    });
+  };
+
   const addRepairCost = () => {
     const repairs = data.repair_costs || [];
     onChange({
@@ -581,6 +591,15 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
               const minPrice = calculateMinimumPrice(totalCost, platform);
               const { fees, net } = calculateFees(price, platform);
               
+              const listingUrl = data.listing_urls?.[platform] || "";
+              const listingId = data.platform_ids?.[platform];
+              let displayUrl = listingUrl;
+              
+              // Auto-construct eBay URL if ID exists and URL is empty
+              if (platform === 'ebay' && !displayUrl && listingId) {
+                 displayUrl = `https://www.ebay.com/itm/${listingId}`;
+              }
+              
               return (
                 <div key={platform} className="p-4 bg-slate-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
@@ -603,6 +622,25 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
                     placeholder={`${platform} price`}
                     className="mb-2"
                   />
+
+                  <div className="mb-2">
+                    <Label className="text-xs text-slate-500 mb-1 block">Listing Link</Label>
+                    <div className="flex gap-2">
+                        <Input 
+                            value={listingUrl}
+                            onChange={(e) => updateListingUrl(platform, e.target.value)}
+                            placeholder={`Paste ${platform} link...`}
+                            className="h-8 text-xs"
+                        />
+                        {displayUrl && (
+                            <Button size="icon" variant="outline" className="h-8 w-8 shrink-0" asChild>
+                                <a href={displayUrl} target="_blank" rel="noopener noreferrer" title="View Listing">
+                                    <ExternalLink className="w-4 h-4" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                  </div>
                   
                   {price > 0 && (
                     <div className="grid grid-cols-2 gap-2 text-sm mt-2">
