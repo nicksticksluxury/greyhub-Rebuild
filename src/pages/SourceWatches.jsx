@@ -61,29 +61,29 @@ export default function SourceWatches() {
   const { data: watches = [], isLoading: areWatchesLoading } = useQuery({
     queryKey: ['sourceWatches', sourceId, orderId, sourceOrders.length],
     queryFn: async () => {
+      console.log("Fetching SourceWatches for:", { sourceId, orderId });
+      
       if (orderId) {
         return base44.entities.Watch.filter({ source_order_id: orderId }, "-created_date", 1000);
       }
       
       if (sourceId) {
+        // SUPER ROBUST FETCH:
+        // 1. Get orders for this source
         const orderIds = sourceOrders.map(o => o.id);
+        const orderIdSet = new Set(orderIds);
         
-        // Robust fetch: Get watches linked directly to source AND watches linked via orders
-        // This handles both legacy data (direct link) and new structure (order link)
-        // Using parallel requests for performance
-        const [bySource, byOrder] = await Promise.all([
-            base44.entities.Watch.filter({ source_id: sourceId }, "-created_date", 1000),
-            orderIds.length > 0 
-                ? base44.entities.Watch.filter({ source_order_id: { $in: orderIds } }, "-created_date", 1000)
-                : Promise.resolve([])
-        ]);
-
-        // Deduplicate results using a Map
-        const allMap = new Map();
-        if (Array.isArray(bySource)) bySource.forEach(w => allMap.set(w.id, w));
-        if (Array.isArray(byOrder)) byOrder.forEach(w => allMap.set(w.id, w));
+        // 2. Fetch ALL recent watches (client-side filtering is safest vs complex backend queries)
+        const allWatches = await base44.entities.Watch.list("-created_date", 2000);
         
-        return Array.from(allMap.values());
+        // 3. Filter in memory
+        return allWatches.filter(w => {
+           // Match by direct source_id
+           if (w.source_id === sourceId) return true;
+           // Match by order_id belonging to this source
+           if (w.source_order_id && orderIdSet.has(w.source_order_id)) return true;
+           return false;
+        });
       }
       
       return [];
@@ -106,6 +106,21 @@ export default function SourceWatches() {
     );
   }
 
+  if (!sourceId && !orderId) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center flex-col p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+          <h2 className="text-xl font-bold text-slate-900">Missing Source ID</h2>
+          <p className="text-slate-500 max-w-md mt-2">
+            The link you clicked seems to be invalid or missing the required Source ID parameter.
+          </p>
+          <Button onClick={() => navigate(createPageUrl("WatchSources"))} className="mt-6">
+            Return to Sources
+          </Button>
+        </div>
+      );
+  }
+
   const title = order 
     ? `Order #${order.order_number}` 
     : source?.name || "Source Watches";
@@ -120,7 +135,7 @@ export default function SourceWatches() {
         <div className="flex items-center gap-4 mb-8">
           <Button 
             variant="ghost" 
-            onClick={() => navigate(orderId ? createPageUrl(`WatchSourceDetail?id=${sourceId}`) : createPageUrl("WatchSources"))}
+            onClick={() => navigate(orderId ? `${createPageUrl("WatchSourceDetail")}?id=${sourceId}` : createPageUrl("WatchSources"))}
             className="hover:bg-slate-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
