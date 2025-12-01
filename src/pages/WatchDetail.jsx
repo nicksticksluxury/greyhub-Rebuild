@@ -50,6 +50,12 @@ export default function WatchDetail() {
     initialData: [],
   });
 
+  const { data: shipments = [] } = useQuery({
+    queryKey: ['shipments'],
+    queryFn: () => base44.entities.Shipment.list(),
+    initialData: [],
+  });
+
   const { data: auctions = [] } = useQuery({
     queryKey: ['auctions'],
     queryFn: () => base44.entities.Auction.list(),
@@ -1031,6 +1037,7 @@ export default function WatchDetail() {
                     data={editedData}
                     onChange={setEditedData}
                     sources={sources}
+                    shipments={shipments}
                     auctions={auctions}
                   />
                 </div>
