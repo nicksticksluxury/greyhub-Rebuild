@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { Search, Filter, Download, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,14 +17,20 @@ export default function SoldInventory() {
   const [showExport, setShowExport] = useState(false);
   const [selectedWatch, setSelectedWatch] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState("ebay");
-  const [filters, setFilters] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      auction: "all",
-      source: params.get("sourceId") || "all",
-      condition: "all"
-    };
+  const location = useLocation();
+  const [filters, setFilters] = useState({
+    auction: "all",
+    source: "all",
+    condition: "all"
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sourceId = params.get("sourceId");
+    if (sourceId) {
+      setFilters(prev => ({ ...prev, source: sourceId }));
+    }
+  }, [location.search]);
 
   const { data: watches = [], isLoading } = useQuery({
     queryKey: ['watches'],
@@ -37,15 +44,25 @@ export default function SoldInventory() {
     initialData: [],
   });
 
-  const { data: sources = [] } = useQuery({
-    queryKey: ['sources'],
-    queryFn: () => base44.entities.Source.list(),
+  const { data: watchSources = [], isLoading: isLoadingSources } = useQuery({
+    queryKey: ['watchSources'],
+    queryFn: () => base44.entities.WatchSource.list(),
+    initialData: [],
+  });
+
+  const { data: sourceOrders = [], isLoading: isLoadingOrders } = useQuery({
+    queryKey: ['sourceOrders'],
+    queryFn: () => base44.entities.SourceOrder.list(),
     initialData: [],
   });
 
   const filteredWatches = watches.filter(watch => {
     // Only show sold watches
     if (!watch.sold) return false;
+
+    // Resolve source
+    const order = sourceOrders.find(o => o.id === watch.source_order_id);
+    const sourceId = order ? order.source_id : watch.source_id;
 
     const matchesSearch = !searchTerm || 
       watch.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,7 +71,7 @@ export default function SoldInventory() {
       watch.reference_number?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesAuction = filters.auction === "all" || watch.auction_id === filters.auction;
-    const matchesSource = filters.source === "all" || watch.source_id === filters.source;
+    const matchesSource = filters.source === "all" || sourceId === filters.source;
     const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
 
     return matchesSearch && matchesAuction && matchesSource && matchesCondition;
@@ -157,7 +174,7 @@ export default function SoldInventory() {
               filters={filters}
               setFilters={setFilters}
               auctions={auctions}
-              sources={sources}
+              sources={watchSources}
             />
           )}
         </div>
@@ -166,9 +183,10 @@ export default function SoldInventory() {
       <div className="max-w-[1800px] mx-auto px-6 py-6">
         <WatchTable 
           watches={filteredWatches}
-          isLoading={isLoading}
+          isLoading={isLoading || isLoadingSources || isLoadingOrders}
           onQuickView={setSelectedWatch}
-          sources={sources}
+          sources={watchSources}
+          sourceOrders={sourceOrders}
           auctions={auctions}
           selectedPlatform={selectedPlatform}
         />

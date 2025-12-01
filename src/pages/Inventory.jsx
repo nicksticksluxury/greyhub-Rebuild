@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag, Bell, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,18 +30,24 @@ export default function Inventory() {
   const [selectedPlatform, setSelectedPlatform] = useState("whatnot");
   const [syncing, setSyncing] = useState(false);
   const [listing, setListing] = useState(false);
-  const [filters, setFilters] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      auction: "all",
-      source: params.get("sourceId") || "all",
-      condition: "all",
-      movement_type: "all",
-      case_material: "",
-      manufacturer: "",
-      tested: "all"
-    };
+  const location = useLocation();
+  const [filters, setFilters] = useState({
+    auction: "all",
+    source: "all",
+    condition: "all",
+    movement_type: "all",
+    case_material: "",
+    manufacturer: "",
+    tested: "all"
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sourceId = params.get("sourceId");
+    if (sourceId) {
+      setFilters(prev => ({ ...prev, source: sourceId }));
+    }
+  }, [location.search]);
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   
@@ -79,13 +85,13 @@ export default function Inventory() {
     initialData: [],
   });
 
-  const { data: watchSources = [] } = useQuery({
+  const { data: watchSources = [], isLoading: isLoadingSources } = useQuery({
     queryKey: ['watchSources'],
     queryFn: () => base44.entities.WatchSource.list(),
     initialData: [],
   });
 
-  const { data: sourceOrders = [] } = useQuery({
+  const { data: sourceOrders = [], isLoading: isLoadingOrders } = useQuery({
     queryKey: ['sourceOrders'],
     queryFn: () => base44.entities.SourceOrder.list(),
     initialData: [],
@@ -389,7 +395,7 @@ export default function Inventory() {
       <div className="max-w-[1800px] mx-auto px-6 py-6">
         <WatchTable 
           watches={filteredWatches}
-          isLoading={isLoading}
+          isLoading={isLoading || isLoadingSources || isLoadingOrders}
           onQuickView={setSelectedWatch}
           sources={watchSources}
           sourceOrders={sourceOrders}
