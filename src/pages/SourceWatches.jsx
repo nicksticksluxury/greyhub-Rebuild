@@ -51,7 +51,8 @@ export default function SourceWatches() {
     queryKey: ['sourceOrders', sourceId],
     queryFn: async () => {
       if (!sourceId) return [];
-      return base44.entities.SourceOrder.filter({ source_id: sourceId });
+      // Explicitly limit to 1000 to ensure we get all orders
+      return base44.entities.SourceOrder.filter({ source_id: sourceId }, "-date_received", 1000);
     },
     enabled: !!sourceId
   });
@@ -65,14 +66,24 @@ export default function SourceWatches() {
       }
       
       if (sourceId) {
-        // Fetch a large batch to ensure we catch items with deprecated source_id OR items linked via order
-        const allWatches = await base44.entities.Watch.list("-created_date", 2000);
-        const sourceOrderIds = new Set(sourceOrders.map(o => o.id));
+        const orderIds = sourceOrders.map(o => o.id);
         
-        return allWatches.filter(w => 
-           w.source_id === sourceId || 
-           (w.source_order_id && sourceOrderIds.has(w.source_order_id))
-        );
+        // Robust fetch: Get watches linked directly to source AND watches linked via orders
+        // This handles both legacy data (direct link) and new structure (order link)
+        // Using parallel requests for performance
+        const [bySource, byOrder] = await Promise.all([
+            base44.entities.Watch.filter({ source_id: sourceId }, "-created_date", 1000),
+            orderIds.length > 0 
+                ? base44.entities.Watch.filter({ source_order_id: { $in: orderIds } }, "-created_date", 1000)
+                : Promise.resolve([])
+        ]);
+
+        // Deduplicate results using a Map
+        const allMap = new Map();
+        if (Array.isArray(bySource)) bySource.forEach(w => allMap.set(w.id, w));
+        if (Array.isArray(byOrder)) byOrder.forEach(w => allMap.set(w.id, w));
+        
+        return Array.from(allMap.values());
       }
       
       return [];
