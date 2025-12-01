@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, ChevronDown, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Upload, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import SourceCard from "../components/sources/SourceCard";
@@ -12,6 +13,7 @@ import ShipmentForm from "../components/sources/ShipmentForm";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function Sources() {
+  const [searchTerm, setSearchTerm] = useState("");
   const [showSourceForm, setShowSourceForm] = useState(false);
   const [editingSource, setEditingSource] = useState(null);
   
@@ -174,7 +176,16 @@ export default function Sources() {
               <h1 className="text-3xl font-bold text-slate-900">Sources & Suppliers</h1>
               <p className="text-slate-500 mt-1">{sources.length} suppliers</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
+                <Input
+                  placeholder="Search suppliers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
               <Button
                 onClick={() => {
                   setEditingSource(null);
@@ -228,7 +239,13 @@ export default function Sources() {
           </div>
         ) : (
           <div className="grid gap-6">
-            {sources.map((source) => {
+            {sources
+              .filter(source => 
+                source.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                source.primary_contact?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                source.email?.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((source) => {
                 const isExpanded = expandedSources[source.id];
                 const sourceShipments = shipments.filter(s => s.source_id === source.id);
                 
