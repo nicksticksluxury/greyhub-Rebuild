@@ -40,10 +40,29 @@ export default function Inventory() {
     tested: "all"
   });
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
-  const [settingUpNotifications, setSettingUpNotifications] = useState(false);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   
   const queryClient = useQueryClient();
+
+  // Automatically enable notifications on mount
+  React.useEffect(() => {
+    const setupNotifications = async () => {
+      // Avoid repeated calls in the same session
+      if (sessionStorage.getItem('ebay_notifications_enabled')) return;
+
+      try {
+        const result = await base44.functions.invoke("setupEbayNotifications");
+        if (result.data.success) {
+          console.log("eBay Notifications enabled");
+          sessionStorage.setItem('ebay_notifications_enabled', 'true');
+        }
+      } catch (error) {
+        console.error("Failed to auto-enable notifications:", error);
+      }
+    };
+
+    setupNotifications();
+  }, []);
 
   const { data: watches = [], isLoading } = useQuery({
     queryKey: ['watches'],
@@ -112,25 +131,7 @@ export default function Inventory() {
     }
   };
 
-  const handleSetupNotifications = async () => {
-    setSettingUpNotifications(true);
-    try {
-      const result = await base44.functions.invoke("setupEbayNotifications");
-      if (result.data.success) {
-        toast.success(result.data.message);
-        // Also show it in a persistent alert/dialog ideally, but toast is fine for now
-        alert("Notifications Enabled!\n\nIMPORTANT: Please ensure your 'Application Delivery URL' in the eBay Developer Portal is set to your 'ebayWebhook' function URL.");
-      } else {
-        toast.error("Failed to setup notifications: " + (result.data.error || "Unknown error"));
-        console.error("Setup details:", result.data.details);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to call setup function");
-    } finally {
-      setSettingUpNotifications(false);
-    }
-  };
+
 
   const handleBulkGenerateDescriptions = async () => {
     if (selectedWatchIds.length === 0) return;
@@ -288,15 +289,7 @@ export default function Inventory() {
                 </DropdownMenu>
               ) : (
                 <>
-                  <Button
-                    variant="outline"
-                    onClick={handleSetupNotifications}
-                    disabled={settingUpNotifications}
-                    className="border-slate-300 hover:bg-slate-50"
-                    title="Enable Real-time Sales Notifications"
-                  >
-                    <Bell className={`w-4 h-4 mr-2 ${settingUpNotifications ? 'animate-bounce' : ''}`} />
-                  </Button>
+
                   <Button
                     variant="outline"
                     onClick={handleSyncEbay}
