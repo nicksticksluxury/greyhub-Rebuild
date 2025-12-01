@@ -421,6 +421,17 @@ export default function Settings() {
                >
                  Run Source Migration
                </Button>
+               <Button 
+                 onClick={async () => {
+                   const res = await base44.functions.invoke("debugData");
+                   console.log(res.data);
+                   alert(JSON.stringify(res.data, null, 2));
+                 }} 
+                 variant="outline"
+                 className="border-slate-300 ml-2"
+               >
+                 Debug Data
+               </Button>
             </div>
             </CardContent>
             </Card>
