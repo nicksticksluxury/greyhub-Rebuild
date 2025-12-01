@@ -1,169 +1,104 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
-        
-        if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        // 1. Fetch all existing Sources and Watches
-        const [sources, watches] = await Promise.all([
-            base44.asServiceRole.entities.Source.list(),
-            base44.asServiceRole.entities.Watch.list()
+        // Default to TRUE for recovery via UI button
+        const { apply = true } = await req.json().catch(() => ({}));
+
+        // Fetch all data
+        const [watches, shipments, sources] = await Promise.all([
+            base44.asServiceRole.entities.Watch.list(),
+            base44.asServiceRole.entities.Shipment.list(),
+            base44.asServiceRole.entities.Source.list()
         ]);
 
-        console.log(`Found ${sources.length} existing sources (shipments) and ${watches.length} watches`);
+        const sourceIds = new Set(sources.map(s => s.id));
+        const shipmentMap = new Map(shipments.map(s => [s.id, s]));
 
-        // Optimize watch lookup by indexing them by source_id
-        const watchesBySource = {};
-        for (const w of watches) {
-            if (w.source_id) {
-                if (!watchesBySource[w.source_id]) watchesBySource[w.source_id] = [];
-                watchesBySource[w.source_id].push(w);
-            }
-        }
-
-        // 2. Group Sources by normalized name to identify unique Suppliers
-        const supplierGroups = {};
-        
-        for (const source of sources) {
-            if (!source.name) {
-                console.warn(`Skipping source with no name: ${source.id}`);
-                continue;
-            }
-
-
-
-            const normalizedName = String(source.name).trim();
-            if (!supplierGroups[normalizedName]) {
-                supplierGroups[normalizedName] = [];
-            }
-            supplierGroups[normalizedName].push(source);
-        }
-
+        const orphans = [];
         const stats = {
-            suppliersCreated: 0,
-            shipmentsCreated: 0,
-            watchesUpdated: 0,
-            oldSourcesDeleted: 0
+            totalWatches: watches.length,
+            migratedWatches: 0,
+            validLegacyWatches: 0,
+            orphanedWatches: 0,
+            recoveredCount: 0
         };
 
-        // 3. Process each group
-        for (const [supplierName, groupSources] of Object.entries(supplierGroups)) {
-            // Find the "best" source record to use as the base for the new Supplier
-            // Logic: Use the one with the most non-empty fields
-            const bestSource = groupSources.reduce((best, current) => {
-                const currentScore = Object.values(current).filter(v => v !== null && v !== "" && v !== undefined).length;
-                const bestScore = Object.values(best).filter(v => v !== null && v !== "" && v !== undefined).length;
-                return currentScore > bestScore ? current : best;
-            }, groupSources[0]);
+        const matches = [];
 
-            // Create the new "Clean" Supplier Source
-            // Sanitize payload: remove nulls, ensure strings are strings
-            const newSourcePayload = {
-                name: String(bestSource.name || '').trim(),
-                ...(bestSource.website ? { website: String(bestSource.website) } : {}),
-                ...(bestSource.website_handle ? { website_handle: String(bestSource.website_handle) } : {}),
-                ...(bestSource.primary_contact ? { primary_contact: String(bestSource.primary_contact) } : {}),
-                ...(bestSource.email ? { email: String(bestSource.email) } : {}),
-                ...(bestSource.phone ? { phone: String(bestSource.phone) } : {}),
-                ...(bestSource.address ? { address: String(bestSource.address) } : {}),
-                ...(bestSource.notes ? { notes: String(bestSource.notes) } : {})
-            };
-
-            if (!newSourcePayload.name) {
-                console.warn("Skipping creation of supplier with empty name", bestSource);
+        for (const watch of watches) {
+            // Check if migrated (has valid shipment link)
+            if (watch.shipment_id && shipmentMap.has(watch.shipment_id)) {
+                stats.migratedWatches++;
                 continue;
             }
 
-            console.log('Creating Supplier:', newSourcePayload.name);
-            let newSupplier;
-            try {
-                newSupplier = await base44.asServiceRole.entities.Source.create(newSourcePayload);
-            } catch (err) {
-                console.error('Failed to create supplier:', newSourcePayload, err);
-                // If validation error or something else, we should probably abort this group
-                // But let's try to continue to other groups if possible?
-                // No, if we can't create supplier, we can't migrate its shipments.
-                throw new Error(`Failed to create supplier ${newSourcePayload.name}: ${err.message}`);
+            // Check if legacy but valid (has valid source link)
+            if (watch.source_id && sourceIds.has(watch.source_id)) {
+                stats.validLegacyWatches++;
+                continue;
             }
-            stats.suppliersCreated++;
 
-            // 4. Convert old Sources (Shipments) into Shipment entities
-            for (const oldSource of groupSources) {
-                await sleep(100); // Throttle to avoid rate limits
-                // Create Shipment linked to new Supplier
-                const newShipmentPayload = {
-                    source_id: newSupplier.id,
-                    order_number: String(oldSource.order_number || `MIGRATED-${oldSource.id.substring(0, 6)}`),
-                    initial_quantity: parseInt(oldSource.initial_quantity || '0', 10),
-                    cost: parseFloat(oldSource.cost || '0'),
-                    ...(oldSource.notes ? { notes: String(oldSource.notes) } : {}),
-                    date_received: (() => {
-                        try {
-                            if (oldSource.created_date) {
-                                return new Date(oldSource.created_date).toISOString().split('T')[0];
-                            }
-                        } catch (e) {
-                            console.warn('Invalid date for source', oldSource.id, oldSource.created_date);
-                        }
-                        return new Date().toISOString().split('T')[0];
-                    })()
-                };
+            // If we are here, the watch has a source_id but it points to a non-existent source
+            // OR it has no source/shipment at all (orphaned)
+            if (watch.source_id) {
+                stats.orphanedWatches++;
+                orphans.push(watch);
 
-                let newShipment;
-                try {
-                    newShipment = await base44.asServiceRole.entities.Shipment.create(newShipmentPayload);
-                } catch (err) {
-                     console.error('Failed to create shipment:', newShipmentPayload, err);
-                     throw new Error(`Failed to create shipment for ${oldSource.id}: ${err.message}`);
-                }
-                stats.shipmentsCreated++;
+                // Attempt Recovery: Match via ID fragment preserved in Shipment Order Number
+                // The migration script used: `MIGRATED-${oldSource.id.substring(0, 6)}`
+                // Or simply preserved oldSource.order_number.
+                // If it preserved order_number, we might miss it here unless the order number accidentally contains the ID.
+                // But for the "MIGRATED-" cases (which happens when order_number was missing), this is robust.
+                const idFragment = watch.source_id.substring(0, 6);
+                
+                // Find shipments that contain this ID fragment in their order number
+                const candidates = shipments.filter(s => s.order_number && s.order_number.includes(idFragment));
 
-                // 5. Find and Update Watches linked to this old Source
-                const relatedWatches = watchesBySource[oldSource.id] || [];
-
-                for (const watch of relatedWatches) {
-                    await sleep(50); // Throttle watch updates
-                    await base44.asServiceRole.entities.Watch.update(watch.id, {
-                        shipment_id: newShipment.id,
-                        // We can unset source_id if we want, but updating with new schema usually ignores unknown fields 
-                        // or keeps them. Best to just set the new field.
-                        // If we want to remove `source_id`, we might need to explicitly set it to null 
-                        // but strict schema validation might complain if source_id is not in schema.
-                        // For now, just setting shipment_id is the goal.
+                if (candidates.length === 1) {
+                    matches.push({
+                        watchId: watch.id,
+                        watchSourceId: watch.source_id,
+                        shipmentId: candidates[0].id
                     });
-                    stats.watchesUpdated++;
                 }
+            }
+        }
 
-                // 6. Delete the old Source (Shipment) record
-                try {
-                    // COMMENTED OUT TO PRESERVE DATA DURING MIGRATION ISSUES
-                    // await base44.asServiceRole.entities.Source.delete(oldSource.id);
-                    // stats.oldSourcesDeleted++;
-                } catch (deleteErr) {
-                    console.warn(`Failed to delete old source ${oldSource.id} (non-critical)`, deleteErr);
-                }
+        if (apply && matches.length > 0) {
+            console.log(`Recovering ${matches.length} watches...`);
+            // Process in chunks to avoid timeouts if many matches
+            const chunks = [];
+            const CHUNK_SIZE = 20;
+            for (let i = 0; i < matches.length; i += CHUNK_SIZE) {
+                chunks.push(matches.slice(i, i + CHUNK_SIZE));
+            }
+
+            for (const chunk of chunks) {
+                await Promise.all(chunk.map(match => 
+                    base44.asServiceRole.entities.Watch.update(match.watchId, {
+                        shipment_id: match.shipmentId
+                    })
+                ));
+                stats.recoveredCount += chunk.length;
             }
         }
 
         return Response.json({
             success: true,
-            message: "Migration completed successfully",
+            message: `Recovery Analysis: Found ${stats.orphanedWatches} orphans. Recovered ${stats.recoveredCount}.`,
             stats
         });
 
     } catch (error) {
-        console.error("Migration failed:", error);
+        console.error("Recovery failed:", error);
         return Response.json({ 
             error: error.message,
-            stack: error.stack,
-            details: "Check console for full stack trace"
+            stack: error.stack 
         }, { status: 500 });
     }
 });
