@@ -232,8 +232,13 @@ export default function Inventory() {
     if (filters.source !== "all") {
       // Find shipment for this watch
       const shipment = shipments.find(s => s.id === watch.shipment_id);
-      // Check if shipment belongs to the selected source (supplier)
-      matchesSource = shipment && shipment.source_id === filters.source;
+      // Check if shipment belongs to the selected source (supplier) OR if watch has direct legacy source_id
+      if (shipment) {
+          matchesSource = shipment.source_id === filters.source;
+      } else {
+          // Fallback to legacy source_id
+          matchesSource = watch.source_id === filters.source;
+      }
     }
 
     const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;

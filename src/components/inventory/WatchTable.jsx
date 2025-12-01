@@ -225,9 +225,14 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, s
             </TableHeader>
             <TableBody>
               {sortedWatches.map((watch) => {
-                  // Resolve Source via Shipment
+                  // Resolve Source via Shipment or Legacy ID
                   const shipment = shipments?.find(s => s.id === watch.shipment_id);
-                  const source = shipment ? sources.find(s => s.id === shipment.source_id) : null;
+                  let source = shipment ? sources.find(s => s.id === shipment.source_id) : null;
+
+                  // Fallback: Check if source_id points directly to a Source (legacy/skipped migration)
+                  if (!source && watch.source_id) {
+                      source = sources.find(s => s.id === watch.source_id);
+                  }
                   
                   const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
                   const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;

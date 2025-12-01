@@ -143,8 +143,9 @@ Deno.serve(async (req) => {
 
                 // 6. Delete the old Source (Shipment) record
                 try {
-                    await base44.asServiceRole.entities.Source.delete(oldSource.id);
-                    stats.oldSourcesDeleted++;
+                    // COMMENTED OUT TO PRESERVE DATA DURING MIGRATION ISSUES
+                    // await base44.asServiceRole.entities.Source.delete(oldSource.id);
+                    // stats.oldSourcesDeleted++;
                 } catch (deleteErr) {
                     console.warn(`Failed to delete old source ${oldSource.id} (non-critical)`, deleteErr);
                 }
