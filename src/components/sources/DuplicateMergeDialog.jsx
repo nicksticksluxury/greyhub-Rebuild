@@ -161,7 +161,31 @@ export default function DuplicateMergeDialog({ isOpen, onClose, onMergeComplete 
               </div>
             </div>
             
-            <MergeOptions mode={mergeMode} setMode={setMergeMode} />
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h4 className="font-medium text-slate-900 mb-3">Merge Strategy</h4>
+                <RadioGroup value={mergeMode} onValueChange={setMergeMode} className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                        <RadioGroupItem value="merge_all" id="merge_all" className="mt-1" />
+                        <Label htmlFor="merge_all" className="cursor-pointer">
+                            <span className="font-medium text-slate-900 block">Merge Source & Watches (Default)</span>
+                            <span className="text-slate-500 text-xs">
+                                Moves all orders and watches to the primary source. 
+                                Merges duplicate orders if they match (same order number).
+                            </span>
+                        </Label>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                        <RadioGroupItem value="merge_source_only" id="merge_source_only" className="mt-1" />
+                        <Label htmlFor="merge_source_only" className="cursor-pointer">
+                            <span className="font-medium text-slate-900 block">Merge Source Only (Remove Duplicates)</span>
+                            <span className="text-slate-500 text-xs">
+                                Updates primary source data, then deletes the duplicate source AND its orders/watches.
+                                Use this if the watches/orders in the duplicate source already exist in the primary.
+                            </span>
+                        </Label>
+                    </div>
+                </RadioGroup>
+            </div>
 
             <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md text-sm">
               <AlertTriangle className="w-4 h-4 shrink-0" />
