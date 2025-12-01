@@ -19,6 +19,63 @@ export default function WatchSourceDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const sourceId = urlParams.get('id');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState(null); // null for create (if we add it), object for edit
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: (id) => base44.entities.SourceOrder.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sourceOrders'] });
+      toast.success("Order deleted");
+    },
+    onError: (err) => toast.error("Failed to delete: " + err.message)
+  });
+
+  const saveOrderMutation = useMutation({
+    mutationFn: async (data) => {
+      if (data.id) {
+        return base44.entities.SourceOrder.update(data.id, data);
+      } else {
+        // Fallback if we ever want to create
+        return base44.entities.SourceOrder.create({ ...data, source_id: sourceId });
+      }
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['sourceOrders'] });
+        setIsOrderDialogOpen(false);
+        toast.success("Order saved");
+    },
+    onError: (err) => toast.error("Failed to save: " + err.message)
+  });
+
+  const handleEditOrder = (order) => {
+    setCurrentOrder(order);
+    setIsOrderDialogOpen(true);
+  };
+
+  const handleDeleteOrder = async (id) => {
+    if (confirm("Are you sure you want to delete this order? This will verify if watches are attached first... (Actually base44 doesn't enforce, be careful)")) {
+        // Ideally we check for watches attached to this order
+        // But for now just delete as requested
+        deleteOrderMutation.mutate(id);
+    }
+  };
+
+  const handleSaveOrder = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+        id: currentOrder?.id,
+        order_number: formData.get('order_number'),
+        date_received: formData.get('date_received'),
+        total_cost: parseFloat(formData.get('total_cost')) || 0,
+        initial_quantity: parseInt(formData.get('initial_quantity')) || 0,
+        notes: formData.get('notes'),
+    };
+    saveOrderMutation.mutate(data);
+  };
 
   const { data: source, isLoading: sourceLoading } = useQuery({
     queryKey: ['watchSource', sourceId],
