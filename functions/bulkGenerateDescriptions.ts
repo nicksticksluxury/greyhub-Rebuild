@@ -35,8 +35,9 @@ Deno.serve(async (req) => {
                         throw new Error("Missing brand");
                     }
 
-                    const prompt = `Create a compelling, professional product description for this watch:
+                    const prompt = `You are an expert watch dealer. Create a compelling product description and an optimized listing title for this watch.
 
+Watch Details:
 Brand: ${watch.brand}
 Model: ${watch.model || "Unknown"}
 Reference: ${watch.reference_number || "N/A"}
@@ -46,16 +47,29 @@ Movement: ${watch.movement_type || "N/A"}
 Case Material: ${watch.case_material || "N/A"}
 Case Size: ${watch.case_size || "N/A"}
 
-Create an engaging, accurate description that will attract buyers.
-Be honest about condition but emphasize the watch's strengths and unique features.
-Keep it concise but informative (150-300 words).
-Format it in a clear, professional way that can be used on any sales platform.`;
+Requirements:
+1. Title: Create an SEO-optimized listing title (max 80 characters) suitable for eBay. Include Brand, Model, Ref, and key specs.
+2. Description: Create an engaging, accurate, professional description (150-300 words). Emphasize strengths/features. Honest about condition.`;
 
-                    const description = await base44.integrations.Core.InvokeLLM({
-                        prompt: prompt
+                    const aiResponse = await base44.integrations.Core.InvokeLLM({
+                        prompt: prompt,
+                        response_json_schema: {
+                            type: "object",
+                            properties: {
+                                title: { type: "string", description: "Optimized listing title (max 80 chars)" },
+                                description: { type: "string", description: "Full product description" }
+                            },
+                            required: ["title", "description"]
+                        }
                     });
 
-                    await base44.entities.Watch.update(watch.id, { description });
+                    // Parse response if it comes back as a string, otherwise use directly
+                    const result = typeof aiResponse === 'string' ? JSON.parse(aiResponse) : aiResponse;
+
+                    await base44.entities.Watch.update(watch.id, { 
+                        description: result.description,
+                        listing_title: result.title
+                    });
                     results.success++;
                 } catch (error) {
                     console.error(`Failed to generate description for watch ${watch.id}:`, error);

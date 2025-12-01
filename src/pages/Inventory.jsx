@@ -135,31 +135,61 @@ export default function Inventory() {
   const handleBulkGenerateDescriptions = async () => {
     if (selectedWatchIds.length === 0) return;
     
-    if (!confirm(`Are you sure you want to generate new descriptions for ${selectedWatchIds.length} watches? This will overwrite existing descriptions.`)) {
+    if (!confirm(`Are you sure you want to generate new titles and descriptions for ${selectedWatchIds.length} watches? This will overwrite existing content.`)) {
       return;
     }
 
     setGeneratingDescriptions(true);
+    const total = selectedWatchIds.length;
+    let processed = 0;
+    let successCount = 0;
+    let failedCount = 0;
+
+    // Create a toast ID to update progress
+    const toastId = toast.loading(`Starting generation for ${total} watches...`);
+
     try {
-      const result = await base44.functions.invoke("bulkGenerateDescriptions", { watchIds: selectedWatchIds });
-      const { success, failed, errors } = result.data;
+      // Process in chunks of 1 to ensure we can show progress and avoid timeouts
+      // We could do 2 or 3, but 1 is safest for progress updates
+      const CHUNK_SIZE = 1;
       
-      if (success > 0) {
-        toast.success(`Successfully generated descriptions for ${success} watches`);
-        queryClient.invalidateQueries({ queryKey: ['watches'] });
-        setSelectedWatchIds([]);
-      }
-      
-      if (failed > 0) {
-        toast.error(`Failed to generate descriptions for ${failed} watches`);
-        if (errors && errors.length > 0) {
-          console.error("Generation errors:", errors);
-          toast.error(errors[0]);
+      for (let i = 0; i < total; i += CHUNK_SIZE) {
+        const chunk = selectedWatchIds.slice(i, i + CHUNK_SIZE);
+        
+        try {
+          // Update toast
+          toast.loading(`Generating content: ${processed + 1}/${total}`, { id: toastId });
+          
+          const result = await base44.functions.invoke("bulkGenerateDescriptions", { watchIds: chunk });
+          const { success, failed, errors } = result.data;
+          
+          successCount += success;
+          failedCount += failed;
+          
+          if (errors && errors.length > 0) {
+            console.error("Chunk errors:", errors);
+          }
+        } catch (err) {
+          console.error("Chunk failed:", err);
+          failedCount += chunk.length;
         }
+        
+        processed += chunk.length;
       }
+
+      // Final status
+      if (failedCount > 0) {
+        toast.error(`Finished: ${successCount} updated, ${failedCount} failed`, { id: toastId });
+      } else {
+        toast.success(`Successfully updated ${successCount} watches!`, { id: toastId });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['watches'] });
+      setSelectedWatchIds([]);
+
     } catch (error) {
       console.error(error);
-      toast.error("Failed to generate descriptions");
+      toast.error("Process interrupted", { id: toastId });
     } finally {
       setGeneratingDescriptions(false);
     }
@@ -252,7 +282,7 @@ export default function Inventory() {
                       ) : (
                         <FileText className="w-4 h-4 mr-2" />
                       )}
-                      {generatingDescriptions ? "Generating..." : "Create New Listing Descriptions"}
+                      {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
