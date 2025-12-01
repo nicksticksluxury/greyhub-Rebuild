@@ -18,25 +18,20 @@ export default function SoldInventory() {
   const [selectedWatch, setSelectedWatch] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState("ebay");
   const location = useLocation();
-  const [filters, setFilters] = useState(() => {
-    const search = location.search || window.location.search;
-    const params = new URLSearchParams(search);
-    const sourceId = params.get("sourceId");
-    return {
-      auction: "all",
-      source: sourceId || "all",
-      condition: "all"
-    };
+  const [filters, setFilters] = useState({
+    auction: "all",
+    source: "all",
+    condition: "all"
   });
 
   useEffect(() => {
-    const search = location.search || window.location.search;
-    const params = new URLSearchParams(search);
+    const params = new URLSearchParams(location.search);
     const sourceId = params.get("sourceId");
-    if (sourceId) {
+    
+    if (sourceId && filters.source !== sourceId) {
       setFilters(prev => ({ ...prev, source: sourceId }));
     }
-  }, [location.search]);
+  }, [location.search, filters.source]);
 
   const { data: watches = [], isLoading } = useQuery({
     queryKey: ['watches'],

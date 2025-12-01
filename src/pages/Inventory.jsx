@@ -31,32 +31,25 @@ export default function Inventory() {
   const [syncing, setSyncing] = useState(false);
   const [listing, setListing] = useState(false);
   const location = useLocation();
-  const [filters, setFilters] = useState(() => {
-    // Use window.location as fallback to ensure we catch the param on initial load
-    const search = location.search || window.location.search;
-    const params = new URLSearchParams(search);
-    const sourceId = params.get("sourceId");
-    return {
-      auction: "all",
-      source: sourceId || "all",
-      condition: "all",
-      movement_type: "all",
-      case_material: "",
-      manufacturer: "",
-      tested: "all"
-    };
+  const [filters, setFilters] = useState({
+    auction: "all",
+    source: "all",
+    condition: "all",
+    movement_type: "all",
+    case_material: "",
+    manufacturer: "",
+    tested: "all"
   });
 
+  // Sync filters with URL query params
   useEffect(() => {
-    const search = location.search || window.location.search;
-    const params = new URLSearchParams(search);
+    const params = new URLSearchParams(location.search);
     const sourceId = params.get("sourceId");
-    if (sourceId) {
+    
+    if (sourceId && filters.source !== sourceId) {
       setFilters(prev => ({ ...prev, source: sourceId }));
-      // Clear the param from URL so refreshing/navigating doesn't get stuck? 
-      // No, we want to keep it shareable.
     }
-  }, [location.search]);
+  }, [location.search, filters.source]);
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   
