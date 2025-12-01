@@ -55,7 +55,8 @@ export default function DuplicateMergeDialog({ isOpen, onClose, onMergeComplete 
     try {
       await base44.functions.invoke("mergeSources", {
         primaryId: selectedPrimary,
-        duplicateIds
+        duplicateIds,
+        mode: mergeMode
       });
       
       toast.success("Sources merged successfully");
