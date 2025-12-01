@@ -56,7 +56,7 @@ const conditionLabels = {
   parts_repair: "Parts/Repair"
 };
 
-export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform, selectedIds = [], onSelectionChange }) {
+export default function WatchTable({ watches, isLoading, onQuickView, sources, shipments, auctions, selectedPlatform, selectedIds = [], onSelectionChange }) {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [sortField, setSortField] = useState(null);
@@ -225,7 +225,10 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
             </TableHeader>
             <TableBody>
               {sortedWatches.map((watch) => {
-                  const source = sources.find(s => s.id === watch.source_id);
+                  // Resolve Source via Shipment
+                  const shipment = shipments?.find(s => s.id === watch.shipment_id);
+                  const source = shipment ? sources.find(s => s.id === shipment.source_id) : null;
+                  
                   const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
                   const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
 
@@ -327,7 +330,12 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                     </TableCell>
                     <TableCell>
                       {source && (
-                        <span className="text-sm text-slate-600">{source.name}</span>
+                        <div>
+                          <span className="text-sm text-slate-900 font-medium">{source.name}</span>
+                          {shipment && shipment.order_number && (
+                            <p className="text-xs text-slate-500">#{shipment.order_number}</p>
+                          )}
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
