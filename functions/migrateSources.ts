@@ -21,7 +21,11 @@ Deno.serve(async (req) => {
         const supplierGroups = {};
         
         for (const source of sources) {
-            const normalizedName = source.name.trim();
+            if (!source.name) {
+                console.warn(`Skipping source with no name: ${source.id}`);
+                continue;
+            }
+            const normalizedName = String(source.name).trim();
             if (!supplierGroups[normalizedName]) {
                 supplierGroups[normalizedName] = [];
             }
@@ -77,7 +81,16 @@ Deno.serve(async (req) => {
                     notes: oldSource.notes,
                     // We don't have date_received in old Source schema explicitly, 
                     // but we can use created_date of the old source record
-                    date_received: oldSource.created_date ? new Date(oldSource.created_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+                    date_received: (() => {
+                        try {
+                            if (oldSource.created_date) {
+                                return new Date(oldSource.created_date).toISOString().split('T')[0];
+                            }
+                        } catch (e) {
+                            console.warn('Invalid date for source', oldSource.id, oldSource.created_date);
+                        }
+                        return new Date().toISOString().split('T')[0];
+                    })()
                 };
 
                 const newShipment = await base44.entities.Shipment.create(newShipmentPayload);
