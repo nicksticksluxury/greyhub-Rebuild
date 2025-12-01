@@ -46,40 +46,38 @@ export default function SourceWatches() {
   // For now assume we have sourceId passed or derived. 
   // If orderId is present but sourceId missing, we might need logic, but let's assume links are correct.
 
+  // Fetch Orders for this source to help with filtering
+  const { data: sourceOrders = [] } = useQuery({
+    queryKey: ['sourceOrders', sourceId],
+    queryFn: async () => {
+      if (!sourceId) return [];
+      return base44.entities.SourceOrder.filter({ source_id: sourceId });
+    },
+    enabled: !!sourceId
+  });
+
   // Fetch Watches
   const { data: watches = [], isLoading: watchesLoading } = useQuery({
-    queryKey: ['sourceWatches', sourceId, orderId],
+    queryKey: ['sourceWatches', sourceId, orderId, sourceOrders.length],
     queryFn: async () => {
-      let filter = {};
       if (orderId) {
-        filter = { source_order_id: orderId };
-      } else if (sourceId) {
-        // We need to filter by source_id OR source_order_id that belongs to source...
-        // Actually, Watch entity has source_id directly? 
-        // Recent changes: "removing the direct source_id field from watch forms...". 
-        // But the schema still has it? 
-        // "source_id": { "type": "string", "description": "ID of the source/supplier (Deprecated)" }
-        // The migration script fixes links.
-        // Let's check if we should filter by source_order_id -> source_id
-        // OR if we can rely on source_id being populated on Watch even if deprecated on form.
-        // Ideally we rely on source_id field on Watch for fast filtering if it's maintained.
-        // If not, we'd have to fetch all orders for source, then all watches for those orders.
-        // Let's try filtering by source_id first (it should be maintained by backend hooks or migrations).
-        filter = { source_id: sourceId };
-      } else {
-        return [];
+        return base44.entities.Watch.filter({ source_order_id: orderId }, "-created_date", 1000);
       }
       
-      return base44.entities.Watch.list("-created_date", 1000); // Fetching all then filtering client side if needed or trusting API filter if we passed it
-      // Wait, .list() doesn't take a filter object as first arg in the SDK instructions?
-      // "base44.entities.Todo.filter({status: 'active'}, '-created_date', 10)"
-      
-      if (Object.keys(filter).length > 0) {
-        return base44.entities.Watch.filter(filter, "-created_date", 1000);
+      if (sourceId) {
+        // Fetch a large batch to ensure we catch items with deprecated source_id OR items linked via order
+        const allWatches = await base44.entities.Watch.list("-created_date", 2000);
+        const sourceOrderIds = new Set(sourceOrders.map(o => o.id));
+        
+        return allWatches.filter(w => 
+           w.source_id === sourceId || 
+           (w.source_order_id && sourceOrderIds.has(w.source_order_id))
+        );
       }
+      
       return [];
     },
-    enabled: !!sourceId || !!orderId
+    enabled: !!orderId || (!!sourceId && sourceOrders !== undefined)
   });
 
   const activeWatches = watches.filter(w => !w.sold);
