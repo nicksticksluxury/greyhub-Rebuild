@@ -50,20 +50,29 @@ Deno.serve(async (req) => {
             }, groupSources[0]);
 
             // Create the new "Clean" Supplier Source
+            // Sanitize payload: remove nulls, ensure strings are strings
             const newSourcePayload = {
-                name: bestSource.name,
-                website: bestSource.website,
-                website_handle: bestSource.website_handle,
-                primary_contact: bestSource.primary_contact,
-                email: bestSource.email,
-                phone: bestSource.phone,
-                address: bestSource.address,
-                notes: bestSource.notes
-                // calculated fields (total_purchases, etc.) will be updated later or via triggers, 
-                // but for now we initialize them to 0 and could calculate them if we wanted.
+                name: String(bestSource.name || '').trim(),
+                ...(bestSource.website ? { website: String(bestSource.website) } : {}),
+                ...(bestSource.website_handle ? { website_handle: String(bestSource.website_handle) } : {}),
+                ...(bestSource.primary_contact ? { primary_contact: String(bestSource.primary_contact) } : {}),
+                ...(bestSource.email ? { email: String(bestSource.email) } : {}),
+                ...(bestSource.phone ? { phone: String(bestSource.phone) } : {}),
+                ...(bestSource.address ? { address: String(bestSource.address) } : {}),
+                ...(bestSource.notes ? { notes: String(bestSource.notes) } : {})
             };
 
-            const newSupplier = await base44.entities.Source.create(newSourcePayload);
+            console.log('Creating Supplier:', newSourcePayload.name);
+            let newSupplier;
+            try {
+                newSupplier = await base44.entities.Source.create(newSourcePayload);
+            } catch (err) {
+                console.error('Failed to create supplier:', newSourcePayload, err);
+                // If we can't create the supplier, we can't process the group. 
+                // We could throw, or continue to next group. 
+                // Throwing ensures we see the error in the 500 response details if we rethrow or handle.
+                throw new Error(`Failed to create supplier ${newSourcePayload.name}: ${err.message}`);
+            }
             stats.suppliersCreated++;
 
             // 4. Convert old Sources (Shipments) into Shipment entities
@@ -71,16 +80,10 @@ Deno.serve(async (req) => {
                 // Create Shipment linked to new Supplier
                 const newShipmentPayload = {
                     source_id: newSupplier.id,
-                    // Use order_number if it existed, or generate one if not?
-                    // The old Source schema had order_number.
-                    order_number: oldSource.order_number || `MIGRATED-${oldSource.id.substring(0, 6)}`,
+                    order_number: String(oldSource.order_number || `MIGRATED-${oldSource.id.substring(0, 6)}`),
                     initial_quantity: parseInt(oldSource.initial_quantity || '0', 10),
                     cost: parseFloat(oldSource.cost || '0'),
-                    // Append old source notes to shipment notes if they differ? 
-                    // For simplicity, we keep the old source notes on the shipment too.
-                    notes: oldSource.notes,
-                    // We don't have date_received in old Source schema explicitly, 
-                    // but we can use created_date of the old source record
+                    ...(oldSource.notes ? { notes: String(oldSource.notes) } : {}),
                     date_received: (() => {
                         try {
                             if (oldSource.created_date) {
@@ -93,7 +96,13 @@ Deno.serve(async (req) => {
                     })()
                 };
 
-                const newShipment = await base44.entities.Shipment.create(newShipmentPayload);
+                let newShipment;
+                try {
+                    newShipment = await base44.entities.Shipment.create(newShipmentPayload);
+                } catch (err) {
+                     console.error('Failed to create shipment:', newShipmentPayload, err);
+                     throw new Error(`Failed to create shipment for ${oldSource.id}: ${err.message}`);
+                }
                 stats.shipmentsCreated++;
 
                 // 5. Find and Update Watches linked to this old Source
