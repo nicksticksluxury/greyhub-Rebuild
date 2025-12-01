@@ -3,9 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Package, TrendingUp, DollarSign, Users } from "lucide-react";
+import { Plus, Search, Package, TrendingUp, DollarSign, Users, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -36,12 +37,23 @@ export default function WatchSources() {
             <h1 className="text-3xl font-bold text-slate-900">Watch Sources</h1>
             <p className="text-slate-500 mt-1">Manage your suppliers and track performance</p>
           </div>
-          {/* <Link to={createPageUrl("AddWatchSource")}> 
-             <Button className="bg-slate-800 hover:bg-slate-900">
-               <Plus className="w-4 h-4 mr-2" />
-               Add Source
+          <div className="flex gap-2">
+             <Button 
+               onClick={handleRecalculate} 
+               disabled={recalculating}
+               variant="outline" 
+               className="bg-white border-slate-300"
+             >
+               <RefreshCw className={`w-4 h-4 mr-2 ${recalculating ? 'animate-spin' : ''}`} />
+               Refresh Stats
              </Button>
-          </Link> */}
+             {/* <Link to={createPageUrl("AddWatchSource")}> 
+               <Button className="bg-slate-800 hover:bg-slate-900">
+                 <Plus className="w-4 h-4 mr-2" />
+                 Add Source
+               </Button>
+            </Link> */}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
