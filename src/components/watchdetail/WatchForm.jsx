@@ -78,24 +78,27 @@ function calculateMinimumPrice(cost, platform) {
   return Math.ceil(minPrice);
 }
 
-export default function WatchForm({ data, onChange, sources, auctions }) {
+export default function WatchForm({ data, onChange, sources, orders, auctions }) {
   const [showRepairs, setShowRepairs] = useState(false);
 
   const updateField = (field, value) => {
-    // Auto-fill cost when source is selected
-    if (field === 'source_id' && value) {
-      const source = sources.find(s => s.id === value);
-      if (source && source.cost && source.initial_quantity) {
-        const costPerWatch = source.cost / source.initial_quantity;
-        onChange({ 
-          ...data, 
-          [field]: value,
-          cost: parseFloat(costPerWatch.toFixed(2))
-        });
-        return;
+    const newData = { ...data, [field]: value };
+    
+    // If source changes, reset order
+    if (field === 'source_id') {
+      newData.source_order_id = "";
+    }
+    
+    // Auto-fill cost when order is selected
+    if (field === 'source_order_id' && value && orders) {
+      const order = orders.find(o => o.id === value);
+      if (order && order.total_cost && order.initial_quantity) {
+        const costPerWatch = order.total_cost / order.initial_quantity;
+        newData.cost = parseFloat(costPerWatch.toFixed(2));
       }
     }
-    onChange({ ...data, [field]: value });
+    
+    onChange(newData);
   };
 
   const updatePlatformPrice = (platform, value) => {
@@ -179,10 +182,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
 
   const saleStats = calculateSaleStats();
 
-  const selectedSource = sources.find(s => s.id === data.source_id);
-  const orderNumbers = selectedSource 
-    ? sources.filter(s => s.name === selectedSource.name).map(s => s.order_number)
-    : [];
+  // Legacy code removed for new source/order structure
 
   return (
     <Tabs defaultValue="basic" className="w-full">
@@ -342,7 +342,7 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <Label className="text-red-600">Source *</Label>
             <Select
@@ -350,12 +350,34 @@ export default function WatchForm({ data, onChange, sources, auctions }) {
               onValueChange={(value) => updateField("source_id", value)}
             >
               <SelectTrigger className={!data.source_id ? "border-red-300" : ""}>
-                <SelectValue placeholder="Select source (required)" />
+                <SelectValue placeholder="Select source" />
               </SelectTrigger>
               <SelectContent>
                 {sources.map(source => (
                   <SelectItem key={source.id} value={source.id}>
-                    {source.name} - {source.order_number}
+                    {source.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className={data.source_id ? "text-red-600" : ""}>Order *</Label>
+            <Select
+              value={data.source_order_id || ""}
+              onValueChange={(value) => updateField("source_order_id", value)}
+              disabled={!data.source_id}
+            >
+              <SelectTrigger className={data.source_id && !data.source_order_id ? "border-red-300" : ""}>
+                <SelectValue placeholder="Select order" />
+              </SelectTrigger>
+              <SelectContent>
+                {orders
+                  ?.filter(order => order.source_id === data.source_id)
+                  .sort((a, b) => new Date(b.date_received || 0) - new Date(a.date_received || 0))
+                  .map(order => (
+                  <SelectItem key={order.id} value={order.id}>
+                    Order #{order.order_number} ({order.date_received || 'No Date'})
                   </SelectItem>
                 ))}
               </SelectContent>
