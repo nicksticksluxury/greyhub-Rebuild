@@ -412,7 +412,7 @@ export default function Settings() {
                        success: (data) => {
                          return `Migration complete! Created ${data.data.stats.createdWatchSources} suppliers and ${data.data.stats.createdSourceOrders} orders.`;
                        },
-                       error: (err) => "Migration failed: " + err.message
+                       error: (err) => "Migration failed: " + (err.response?.data?.error || err.message)
                      }
                    );
                  }} 
