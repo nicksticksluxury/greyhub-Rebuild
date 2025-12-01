@@ -176,7 +176,7 @@ export default function DuplicateMergeDialog({ isOpen, onClose, onMergeComplete 
               </Button>
               <Button onClick={handleMerge} disabled={merging || !selectedPrimary}>
                 {merging && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {currentGroupIndex < duplicates.length - 1 ? "Merge & Next" : "Merge & Finish"}
+                <span>{currentGroupIndex < duplicates.length - 1 ? "Merge & Next" : "Merge & Finish"}</span>
               </Button>
             </>
           )}
