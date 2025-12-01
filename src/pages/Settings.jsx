@@ -437,6 +437,26 @@ export default function Settings() {
                >
                  Debug Data
                </Button>
+               <Button 
+                 onClick={async () => {
+                   if (!confirm("This will scan for any sources that were missed during migration and import them. Continue?")) return;
+                   const toastId = toast.loading("Repairing sources...");
+                   try {
+                      const res = await base44.functions.invoke("repairMissingSources");
+                      if (res.data.success) {
+                          toast.success(`Repaired ${res.data.createdSources} sources and ${res.data.updatedWatches} watches`, { id: toastId });
+                      } else {
+                          toast.error("Failed: " + res.data.error, { id: toastId });
+                      }
+                   } catch (e) {
+                      toast.error("Failed to repair sources: " + e.message, { id: toastId });
+                   }
+                 }} 
+                 variant="outline"
+                 className="border-amber-300 text-amber-700 hover:bg-amber-50 ml-2"
+               >
+                 Repair Missing Sources
+               </Button>
 
                {debugData && (
                   <div className="mt-4 relative">
