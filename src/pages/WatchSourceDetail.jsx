@@ -213,20 +213,21 @@ export default function WatchSourceDetail() {
                       <TableHead className="text-center">Qty</TableHead>
                       <TableHead className="text-right">Cost</TableHead>
                       <TableHead>Notes</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {ordersLoading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-slate-500">Loading orders...</TableCell>
+                        <TableCell colSpan={6} className="text-center py-8 text-slate-500">Loading orders...</TableCell>
                       </TableRow>
                     ) : orders.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-slate-500">No orders found.</TableCell>
+                        <TableCell colSpan={6} className="text-center py-8 text-slate-500">No orders found.</TableCell>
                       </TableRow>
                     ) : (
                       orders.map((order) => (
-                        <TableRow key={order.id}>
+                        <TableRow key={order.id} className="group">
                           <TableCell className="font-medium text-slate-900">
                             {order.order_number}
                           </TableCell>
@@ -242,6 +243,16 @@ export default function WatchSourceDetail() {
                           <TableCell className="text-sm text-slate-500 max-w-[200px] truncate">
                             {order.notes}
                           </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="ghost" size="sm" onClick={() => handleEditOrder(order)} className="h-8 w-8 p-0">
+                                    <Pencil className="w-4 h-4 text-slate-500" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => handleDeleteOrder(order.id)} className="h-8 w-8 p-0 hover:text-red-600">
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -251,6 +262,44 @@ export default function WatchSourceDetail() {
             </Card>
           </div>
         </div>
+
+        <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{currentOrder ? 'Edit Order' : 'New Order'}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSaveOrder} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Order Number</Label>
+                            <Input name="order_number" defaultValue={currentOrder?.order_number} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Date Received</Label>
+                            <Input type="date" name="date_received" defaultValue={currentOrder?.date_received} />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Initial Qty</Label>
+                            <Input type="number" name="initial_quantity" defaultValue={currentOrder?.initial_quantity} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Total Cost</Label>
+                            <Input type="number" step="0.01" name="total_cost" defaultValue={currentOrder?.total_cost} />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Notes</Label>
+                        <Textarea name="notes" defaultValue={currentOrder?.notes} />
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setIsOrderDialogOpen(false)}>Cancel</Button>
+                        <Button type="submit" disabled={saveOrderMutation.isPending}>Save Order</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
