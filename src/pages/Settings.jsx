@@ -395,9 +395,36 @@ export default function Settings() {
                  )}
                </Button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
+
+            <div className="p-4 border border-slate-200 rounded-xl bg-white mt-4">
+               <h3 className="font-medium text-slate-900 mb-2">Data Migration</h3>
+               <p className="text-sm text-slate-500 mb-4">
+                 Migrate existing single-layer sources to the new 2-layer structure (Source + Orders). 
+                 This will create new Supplier and Order records and re-link your watches.
+               </p>
+               <Button 
+                 onClick={async () => {
+                   if (!confirm("This will transform your source data structure. Are you sure?")) return;
+                   toast.promise(
+                     base44.functions.invoke("migrateSources"),
+                     {
+                       loading: "Migrating data...",
+                       success: (data) => {
+                         return `Migration complete! Created ${data.data.stats.createdWatchSources} suppliers and ${data.data.stats.createdSourceOrders} orders.`;
+                       },
+                       error: (err) => "Migration failed: " + err.message
+                     }
+                   );
+                 }} 
+                 variant="outline"
+                 className="border-slate-300"
+               >
+                 Run Source Migration
+               </Button>
+            </div>
+            </CardContent>
+            </Card>
+            </div>
+            </div>
+            );
+            }
