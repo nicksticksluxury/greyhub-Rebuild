@@ -6,7 +6,6 @@ import Auctions from './pages/Auctions';
 import SoldInventory from './pages/SoldInventory';
 import ImportSources from './pages/ImportSources';
 import UpdateMinimumPrices from './pages/UpdateMinimumPrices';
-import ReoptimizeImages from './pages/ReoptimizeImages';
 import WatchSummary from './pages/WatchSummary';
 import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
@@ -21,7 +20,6 @@ export const PAGES = {
     "SoldInventory": SoldInventory,
     "ImportSources": ImportSources,
     "UpdateMinimumPrices": UpdateMinimumPrices,
-    "ReoptimizeImages": ReoptimizeImages,
     "WatchSummary": WatchSummary,
     "Settings": Settings,
 }

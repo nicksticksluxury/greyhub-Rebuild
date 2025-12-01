@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings } from "lucide-react";
-import ImageOptimizationMonitor from "@/components/ImageOptimizationMonitor";
+
 import { Toaster } from "@/components/ui/sonner";
 import {
   Sidebar,
@@ -44,11 +44,6 @@ const navigationItems = [
     title: "Auctions",
     url: createPageUrl("Auctions"),
     icon: Gavel,
-  },
-  {
-    title: "Optimize Images",
-    url: createPageUrl("ReoptimizeImages"),
-    icon: TrendingUp,
   },
   {
     title: "Settings",
@@ -175,7 +170,6 @@ export default function Layout({ children, currentPageName }) {
             {children}
           </div>
           </main>
-          <ImageOptimizationMonitor />
           <Toaster />
           </div>
           </SidebarProvider>
