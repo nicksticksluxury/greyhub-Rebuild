@@ -16,6 +16,7 @@ export default function Settings() {
   const [manualAccessToken, setManualAccessToken] = useState("");
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualUrl, setManualUrl] = useState("");
+  const [markingWhatnot, setMarkingWhatnot] = useState(false);
 
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
@@ -136,6 +137,27 @@ export default function Settings() {
       handleCallback();
     }
   }, []);
+
+  const handleMarkAllListedOnWhatnot = async () => {
+    if (!confirm("Are you sure you want to mark ALL watches (including sold ones) as listed on Whatnot? This will update the 'Listed On' status for any watch not currently marked as listed.")) {
+      return;
+    }
+    
+    setMarkingWhatnot(true);
+    try {
+      const result = await base44.functions.invoke("markAllListedOnWhatnot");
+      if (result.data.success) {
+        toast.success(`Successfully marked ${result.data.count} watches as listed on Whatnot`);
+      } else {
+        toast.error("Failed: " + (result.data.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Operation failed: " + error.message);
+    } finally {
+      setMarkingWhatnot(false);
+    }
+  };
 
   const handleConnectEbay = async () => {
     try {
@@ -342,6 +364,36 @@ export default function Settings() {
                   Save
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Data Management</CardTitle>
+            <CardDescription>Bulk operations for your inventory data</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 border border-slate-200 rounded-xl bg-white">
+               <h3 className="font-medium text-slate-900 mb-2">Whatnot Status</h3>
+               <p className="text-sm text-slate-500 mb-4">
+                 Bulk update all inventory items to show as "Listed on Whatnot". This affects both active and sold inventory.
+               </p>
+               <Button 
+                 onClick={handleMarkAllListedOnWhatnot} 
+                 disabled={markingWhatnot}
+                 variant="outline"
+                 className="border-slate-300"
+               >
+                 {markingWhatnot ? (
+                   <>
+                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                     Updating...
+                   </>
+                 ) : (
+                   "Mark ALL as Listed on Whatnot"
+                 )}
+               </Button>
             </div>
           </CardContent>
         </Card>
