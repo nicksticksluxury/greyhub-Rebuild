@@ -70,8 +70,8 @@ Deno.serve(async (req) => {
                     // Use order_number if it existed, or generate one if not?
                     // The old Source schema had order_number.
                     order_number: oldSource.order_number || `MIGRATED-${oldSource.id.substring(0, 6)}`,
-                    initial_quantity: oldSource.initial_quantity || 0,
-                    cost: oldSource.cost || 0,
+                    initial_quantity: parseInt(oldSource.initial_quantity || '0', 10),
+                    cost: parseFloat(oldSource.cost || '0'),
                     // Append old source notes to shipment notes if they differ? 
                     // For simplicity, we keep the old source notes on the shipment too.
                     notes: oldSource.notes,
