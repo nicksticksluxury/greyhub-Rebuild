@@ -31,22 +31,23 @@ export default function Inventory() {
   const [syncing, setSyncing] = useState(false);
   const [listing, setListing] = useState(false);
   const location = useLocation();
-  const [filters, setFilters] = useState({
-    auction: "all",
-    source: "all",
-    condition: "all",
-    movement_type: "all",
-    case_material: "",
-    manufacturer: "",
-    tested: "all"
+  const [filters, setFilters] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return {
+      auction: "all",
+      source: params.get("sourceId") || "all",
+      condition: "all",
+      movement_type: "all",
+      case_material: "",
+      manufacturer: "",
+      tested: "all"
+    };
   });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const sourceId = params.get("sourceId");
-    if (sourceId) {
-      setFilters(prev => ({ ...prev, source: sourceId }));
-    }
+    setFilters(prev => ({ ...prev, source: sourceId || "all" }));
   }, [location.search]);
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
