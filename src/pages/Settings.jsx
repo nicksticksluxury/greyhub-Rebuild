@@ -17,6 +17,7 @@ export default function Settings() {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualUrl, setManualUrl] = useState("");
   const [markingWhatnot, setMarkingWhatnot] = useState(false);
+  const [debugData, setDebugData] = useState(null);
 
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
@@ -423,15 +424,45 @@ export default function Settings() {
                </Button>
                <Button 
                  onClick={async () => {
-                   const res = await base44.functions.invoke("debugData");
-                   console.log(res.data);
-                   alert(JSON.stringify(res.data, null, 2));
+                   try {
+                      const res = await base44.functions.invoke("debugData");
+                      setDebugData(JSON.stringify(res.data, null, 2));
+                      toast.success("Debug data fetched");
+                   } catch (e) {
+                      toast.error("Failed to fetch debug data");
+                   }
                  }} 
                  variant="outline"
                  className="border-slate-300 ml-2"
                >
                  Debug Data
                </Button>
+
+               {debugData && (
+                  <div className="mt-4 relative">
+                    <div className="p-4 bg-slate-900 text-slate-50 rounded-lg overflow-auto max-h-[500px] font-mono text-xs whitespace-pre-wrap">
+                      {debugData}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="absolute top-2 right-2 bg-slate-700 hover:bg-slate-600"
+                      onClick={() => {
+                        navigator.clipboard.writeText(debugData);
+                        toast.success("Copied to clipboard");
+                      }}
+                    >
+                      <Copy className="w-3 h-3 mr-2" /> Copy
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute top-2 right-24 text-slate-400 hover:text-white hover:bg-slate-800"
+                      onClick={() => setDebugData(null)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+               )}
             </div>
             </CardContent>
             </Card>
