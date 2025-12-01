@@ -17,6 +17,7 @@ export default function Settings() {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualUrl, setManualUrl] = useState("");
   const [markingWhatnot, setMarkingWhatnot] = useState(false);
+  const [debugResult, setDebugResult] = useState(null);
 
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
@@ -436,10 +437,9 @@ export default function Settings() {
                  onClick={async () => {
                      try {
                          const res = await base44.functions.invoke("debugData");
-                         console.log(res.data);
-                         alert(JSON.stringify(res.data, null, 2));
+                         setDebugResult(res.data);
                      } catch(e) {
-                         alert("Error: " + e.message);
+                         toast.error("Error: " + e.message);
                      }
                  }} 
                  variant="outline"
@@ -447,6 +447,18 @@ export default function Settings() {
                  >
                  Debug Data (Inspect Orphans)
                  </Button>
+
+                 {debugResult && (
+                   <div className="mt-4 p-4 bg-slate-100 rounded-lg border border-slate-200 overflow-auto max-h-96">
+                     <div className="flex justify-between items-center mb-2">
+                       <h4 className="font-medium text-slate-900">Debug Analysis Result</h4>
+                       <Button size="sm" variant="ghost" onClick={() => setDebugResult(null)}>Close</Button>
+                     </div>
+                     <pre className="text-xs font-mono whitespace-pre-wrap">
+                       {JSON.stringify(debugResult, null, 2)}
+                     </pre>
+                   </div>
+                 )}
                  </div>
                  </CardContent>
                  </Card>
