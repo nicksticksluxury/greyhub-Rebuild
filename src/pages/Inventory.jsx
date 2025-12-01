@@ -82,12 +82,6 @@ export default function Inventory() {
     initialData: [],
   });
 
-  const { data: shipments = [] } = useQuery({
-    queryKey: ['shipments'],
-    queryFn: () => base44.entities.Shipment.list(),
-    initialData: [],
-  });
-
   const handleSyncEbay = async () => {
     setSyncing(true);
     try {
@@ -227,20 +221,7 @@ export default function Inventory() {
       watch.reference_number?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesAuction = filters.auction === "all" || watch.auction_id === filters.auction;
-    
-    let matchesSource = true;
-    if (filters.source !== "all") {
-      // Find shipment for this watch
-      const shipment = shipments.find(s => s.id === watch.shipment_id);
-      // Check if shipment belongs to the selected source (supplier) OR if watch has direct legacy source_id
-      if (shipment) {
-          matchesSource = shipment.source_id === filters.source;
-      } else {
-          // Fallback to legacy source_id
-          matchesSource = watch.source_id === filters.source;
-      }
-    }
-
+    const matchesSource = filters.source === "all" || watch.source_id === filters.source;
     const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
     const matchesMovementType = filters.movement_type === "all" || watch.movement_type === filters.movement_type;
     const matchesCaseMaterial = !filters.case_material || watch.case_material?.trim() === filters.case_material;
@@ -395,7 +376,6 @@ export default function Inventory() {
           isLoading={isLoading}
           onQuickView={setSelectedWatch}
           sources={sources}
-          shipments={shipments}
           auctions={auctions}
           selectedPlatform={selectedPlatform}
           selectedIds={selectedWatchIds}

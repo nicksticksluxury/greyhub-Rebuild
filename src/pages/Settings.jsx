@@ -17,7 +17,6 @@ export default function Settings() {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualUrl, setManualUrl] = useState("");
   const [markingWhatnot, setMarkingWhatnot] = useState(false);
-  const [debugResult, setDebugResult] = useState(null);
 
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
@@ -139,42 +138,11 @@ export default function Settings() {
     }
   }, []);
 
-  const [migrating, setMigrating] = useState(false);
-
-  const handleMigrateSources = async () => {
-    if (!confirm("Are you sure you want to migrate sources? This will restructure your supplier data and cannot be undone easily.")) {
-      return;
-    }
-
-    setMigrating(true);
-    try {
-      const result = await base44.functions.invoke("migrateSources");
-      if (result.data.success) {
-        if (result.data.stats.recoveredCount !== undefined) {
-           toast.success(`Recovery successful! Reconnected ${result.data.stats.recoveredCount} watches to their shipments.`);
-        } else {
-           toast.success(`Migration successful! Created ${result.data.stats.suppliersCreated} suppliers and ${result.data.stats.shipmentsCreated} shipments.`);
-        }
-      } else {
-        toast.error("Operation failed: " + (result.data.error || "Unknown error"));
-      }
-    } catch (error) {
-      console.error(error);
-      const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message || "Unknown error";
-      toast.error("Migration failed: " + errorMessage);
-      if (error.response?.data?.stack) {
-        console.error("Server Stack:", error.response.data.stack);
-      }
-    } finally {
-      setMigrating(false);
-    }
-  };
-
   const handleMarkAllListedOnWhatnot = async () => {
     if (!confirm("Are you sure you want to mark ALL watches (including sold ones) as listed on Whatnot? This will update the 'Listed On' status for any watch not currently marked as listed.")) {
       return;
     }
-
+    
     setMarkingWhatnot(true);
     try {
       const result = await base44.functions.invoke("markAllListedOnWhatnot");
@@ -425,43 +393,10 @@ export default function Settings() {
                  ) : (
                    "Mark ALL as Listed on Whatnot"
                  )}
-                 </Button>
-                 </div>
-
-                 <div className="p-4 border border-slate-200 rounded-xl bg-white mt-4">
-                 <h3 className="font-medium text-slate-900 mb-2">Migrate Data Structure</h3>
-                 <p className="text-sm text-slate-500 mb-4">
-                 Migrate old "Source=Shipment" data to the new two-layer "Source -> Shipment" structure.
-                 </p>
-                 <Button 
-                 onClick={async () => {
-                     try {
-                         const res = await base44.functions.invoke("debugData");
-                         setDebugResult(res.data);
-                     } catch(e) {
-                         toast.error("Error: " + e.message);
-                     }
-                 }} 
-                 variant="outline"
-                 className="border-red-300 hover:bg-red-50 text-red-800"
-                 >
-                 Debug Data (Inspect Orphans)
-                 </Button>
-
-                 {debugResult && (
-                   <div className="mt-4 p-4 bg-slate-100 rounded-lg border border-slate-200 overflow-auto max-h-96">
-                     <div className="flex justify-between items-center mb-2">
-                       <h4 className="font-medium text-slate-900">Debug Analysis Result</h4>
-                       <Button size="sm" variant="ghost" onClick={() => setDebugResult(null)}>Close</Button>
-                     </div>
-                     <pre className="text-xs font-mono whitespace-pre-wrap">
-                       {JSON.stringify(debugResult, null, 2)}
-                     </pre>
-                   </div>
-                 )}
-                 </div>
-                 </CardContent>
-                 </Card>
+               </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

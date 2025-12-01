@@ -78,15 +78,15 @@ function calculateMinimumPrice(cost, platform) {
   return Math.ceil(minPrice);
 }
 
-export default function WatchForm({ data, onChange, sources, shipments, auctions }) {
+export default function WatchForm({ data, onChange, sources, auctions }) {
   const [showRepairs, setShowRepairs] = useState(false);
 
   const updateField = (field, value) => {
-    // Auto-fill cost when shipment is selected
-    if (field === 'shipment_id' && value) {
-      const shipment = shipments.find(s => s.id === value);
-      if (shipment && shipment.cost && shipment.initial_quantity) {
-        const costPerWatch = shipment.cost / shipment.initial_quantity;
+    // Auto-fill cost when source is selected
+    if (field === 'source_id' && value) {
+      const source = sources.find(s => s.id === value);
+      if (source && source.cost && source.initial_quantity) {
+        const costPerWatch = source.cost / source.initial_quantity;
         onChange({ 
           ...data, 
           [field]: value,
@@ -178,6 +178,11 @@ export default function WatchForm({ data, onChange, sources, shipments, auctions
   };
 
   const saleStats = calculateSaleStats();
+
+  const selectedSource = sources.find(s => s.id === data.source_id);
+  const orderNumbers = selectedSource 
+    ? sources.filter(s => s.name === selectedSource.name).map(s => s.order_number)
+    : [];
 
   return (
     <Tabs defaultValue="basic" className="w-full">
@@ -339,32 +344,20 @@ export default function WatchForm({ data, onChange, sources, shipments, auctions
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-red-600">Source / Shipment *</Label>
+            <Label className="text-red-600">Source *</Label>
             <Select
-              value={data.shipment_id || ""}
-              onValueChange={(value) => updateField("shipment_id", value)}
+              value={data.source_id || ""}
+              onValueChange={(value) => updateField("source_id", value)}
             >
-              <SelectTrigger className={!data.shipment_id ? "border-red-300" : ""}>
-                <SelectValue placeholder="Select shipment (required)" />
+              <SelectTrigger className={!data.source_id ? "border-red-300" : ""}>
+                <SelectValue placeholder="Select source (required)" />
               </SelectTrigger>
               <SelectContent>
-                {sources.map(source => {
-                    const sourceShipments = shipments.filter(s => s.source_id === source.id);
-                    if (sourceShipments.length === 0) return null;
-                    
-                    return (
-                        <React.Fragment key={source.id}>
-                            <SelectItem value={`source_header_${source.id}`} disabled className="font-bold text-slate-900 opacity-100 bg-slate-50">
-                                {source.name}
-                            </SelectItem>
-                            {sourceShipments.map(shipment => (
-                                <SelectItem key={shipment.id} value={shipment.id} className="pl-8">
-                                    Order #{shipment.order_number} ({shipment.initial_quantity} watches)
-                                </SelectItem>
-                            ))}
-                        </React.Fragment>
-                    );
-                })}
+                {sources.map(source => (
+                  <SelectItem key={source.id} value={source.id}>
+                    {source.name} - {source.order_number}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

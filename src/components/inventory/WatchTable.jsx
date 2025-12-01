@@ -56,7 +56,7 @@ const conditionLabels = {
   parts_repair: "Parts/Repair"
 };
 
-export default function WatchTable({ watches, isLoading, onQuickView, sources, shipments, auctions, selectedPlatform, selectedIds = [], onSelectionChange }) {
+export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform, selectedIds = [], onSelectionChange }) {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [sortField, setSortField] = useState(null);
@@ -225,15 +225,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, s
             </TableHeader>
             <TableBody>
               {sortedWatches.map((watch) => {
-                  // Resolve Source via Shipment or Legacy ID
-                  const shipment = shipments?.find(s => s.id === watch.shipment_id);
-                  let source = shipment ? sources.find(s => s.id === shipment.source_id) : null;
-
-                  // Fallback: Check if source_id points directly to a Source (legacy/skipped migration)
-                  if (!source && watch.source_id) {
-                      source = sources.find(s => s.id === watch.source_id);
-                  }
-                  
+                  const source = sources.find(s => s.id === watch.source_id);
                   const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
                   const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
 
@@ -335,12 +327,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, s
                     </TableCell>
                     <TableCell>
                       {source && (
-                        <div>
-                          <span className="text-sm text-slate-900 font-medium">{source.name}</span>
-                          {shipment && shipment.order_number && (
-                            <p className="text-xs text-slate-500">#{shipment.order_number}</p>
-                          )}
-                        </div>
+                        <span className="text-sm text-slate-600">{source.name}</span>
                       )}
                     </TableCell>
                   </TableRow>
