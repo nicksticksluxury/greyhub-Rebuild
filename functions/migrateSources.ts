@@ -17,6 +17,15 @@ Deno.serve(async (req) => {
 
         console.log(`Found ${sources.length} existing sources (shipments) and ${watches.length} watches`);
 
+        // Optimize watch lookup by indexing them by source_id
+        const watchesBySource = {};
+        for (const w of watches) {
+            if (w.source_id) {
+                if (!watchesBySource[w.source_id]) watchesBySource[w.source_id] = [];
+                watchesBySource[w.source_id].push(w);
+            }
+        }
+
         // 2. Group Sources by normalized name to identify unique Suppliers
         const supplierGroups = {};
         
@@ -25,6 +34,16 @@ Deno.serve(async (req) => {
                 console.warn(`Skipping source with no name: ${source.id}`);
                 continue;
             }
+
+            // IMPORTANT: Skip sources that have NO watches linked to them via source_id.
+            // This avoids re-migrating already cleaned suppliers (where watches now point to shipments)
+            // or creating duplicates for unused suppliers.
+            // This also prevents an infinite loop of creating new Suppliers and then processing them as old ones.
+            if (!watchesBySource[source.id] || watchesBySource[source.id].length === 0) {
+                console.log(`Skipping source ${source.name} (${source.id}) - no linked watches (likely already migrated or unused)`);
+                continue;
+            }
+
             const normalizedName = String(source.name).trim();
             if (!supplierGroups[normalizedName]) {
                 supplierGroups[normalizedName] = [];
@@ -68,9 +87,6 @@ Deno.serve(async (req) => {
                 newSupplier = await base44.entities.Source.create(newSourcePayload);
             } catch (err) {
                 console.error('Failed to create supplier:', newSourcePayload, err);
-                // If we can't create the supplier, we can't process the group. 
-                // We could throw, or continue to next group. 
-                // Throwing ensures we see the error in the 500 response details if we rethrow or handle.
                 throw new Error(`Failed to create supplier ${newSourcePayload.name}: ${err.message}`);
             }
             stats.suppliersCreated++;
@@ -106,18 +122,7 @@ Deno.serve(async (req) => {
                 stats.shipmentsCreated++;
 
                 // 5. Find and Update Watches linked to this old Source
-                // The old Source ID is in watch.source_id (in the DB, even if schema changed)
-                // We need to move it to watch.shipment_id
-                
-                // Note: Since we just changed the schema of Watch, `source_id` might not be returned by .list() 
-                // if the SDK strictly filters by schema. 
-                // However, usually Base44/SDK returns the raw object. 
-                // If it doesn't, we have a problem. 
-                // Assuming it returns raw object properties even if not in schema, or we rely on the fact that 
-                // we fetched `watches` BEFORE we might have lost access (though schema change is immediate).
-                
-                // Actually, we fetched `watches` at step 1. Let's check if they have source_id.
-                const relatedWatches = watches.filter(w => w.source_id === oldSource.id);
+                const relatedWatches = watchesBySource[oldSource.id] || [];
 
                 for (const watch of relatedWatches) {
                     await base44.entities.Watch.update(watch.id, {
@@ -145,6 +150,10 @@ Deno.serve(async (req) => {
 
     } catch (error) {
         console.error("Migration failed:", error);
-        return Response.json({ error: error.message }, { status: 500 });
+        return Response.json({ 
+            error: error.message,
+            stack: error.stack,
+            details: "Check console for full stack trace"
+        }, { status: 500 });
     }
 });
