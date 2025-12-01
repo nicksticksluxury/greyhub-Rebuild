@@ -56,7 +56,7 @@ const conditionLabels = {
   parts_repair: "Parts/Repair"
 };
 
-export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform, selectedIds = [], onSelectionChange }) {
+export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform, selectedIds = [], onSelectionChange, sourceOrders }) {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [sortField, setSortField] = useState(null);
@@ -225,7 +225,10 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
             </TableHeader>
             <TableBody>
               {sortedWatches.map((watch) => {
-                  const source = sources.find(s => s.id === watch.source_id);
+                  const order = sourceOrders?.find(o => o.id === watch.source_order_id);
+                  const sourceId = order ? order.source_id : watch.source_id;
+                  const source = sources.find(s => s.id === sourceId);
+                  
                   const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
                   const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
 
