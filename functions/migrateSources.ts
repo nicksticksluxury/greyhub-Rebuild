@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -101,6 +103,7 @@ Deno.serve(async (req) => {
 
             // 4. Convert old Sources (Shipments) into Shipment entities
             for (const oldSource of groupSources) {
+                await sleep(100); // Throttle to avoid rate limits
                 // Create Shipment linked to new Supplier
                 const newShipmentPayload = {
                     source_id: newSupplier.id,
@@ -133,6 +136,7 @@ Deno.serve(async (req) => {
                 const relatedWatches = watchesBySource[oldSource.id] || [];
 
                 for (const watch of relatedWatches) {
+                    await sleep(50); // Throttle watch updates
                     await base44.asServiceRole.entities.Watch.update(watch.id, {
                         shipment_id: newShipment.id,
                         // We can unset source_id if we want, but updating with new schema usually ignores unknown fields 
