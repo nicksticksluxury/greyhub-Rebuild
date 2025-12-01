@@ -37,14 +37,7 @@ Deno.serve(async (req) => {
                 continue;
             }
 
-            // IMPORTANT: Skip sources that have NO watches linked to them via source_id.
-            // This avoids re-migrating already cleaned suppliers (where watches now point to shipments)
-            // or creating duplicates for unused suppliers.
-            // This also prevents an infinite loop of creating new Suppliers and then processing them as old ones.
-            if (!watchesBySource[source.id] || watchesBySource[source.id].length === 0) {
-                console.log(`Skipping source ${source.name} (${source.id}) - no linked watches (likely already migrated or unused)`);
-                continue;
-            }
+
 
             const normalizedName = String(source.name).trim();
             if (!supplierGroups[normalizedName]) {
