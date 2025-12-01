@@ -26,7 +26,10 @@ export default function WatchSources() {
     try {
       const res = await base44.functions.invoke("recalculateSourceStats");
       if (res.data.success) {
-        toast.success(`Updated stats for ${res.data.updated} sources`);
+        toast.success(`Fixed stats for ${res.data.updated} active sources (checked ${res.data.totalSources} total)`);
+        if (res.data.sampleUpdates?.length > 0) {
+            console.log("Sample updates:", res.data.sampleUpdates);
+        }
         refetch();
       } else {
         toast.error("Failed: " + res.data.error);
