@@ -76,26 +76,22 @@ export default function Inventory() {
 
   const { data: watches = [], isLoading } = useQuery({
     queryKey: ['watches'],
-    queryFn: () => base44.entities.Watch.list("-created_date"),
-    initialData: [],
+    queryFn: () => base44.entities.Watch.list("-created_date", 1000),
   });
 
   const { data: auctions = [] } = useQuery({
     queryKey: ['auctions'],
-    queryFn: () => base44.entities.Auction.list(),
-    initialData: [],
+    queryFn: () => base44.entities.Auction.list("created_date", 100),
   });
 
   const { data: watchSources = [], isLoading: isLoadingSources } = useQuery({
     queryKey: ['watchSources'],
-    queryFn: () => base44.entities.WatchSource.list(),
-    initialData: [],
+    queryFn: () => base44.entities.WatchSource.list("name", 1000),
   });
 
   const { data: sourceOrders = [], isLoading: isLoadingOrders } = useQuery({
     queryKey: ['sourceOrders'],
-    queryFn: () => base44.entities.SourceOrder.list(),
-    initialData: [],
+    queryFn: () => base44.entities.SourceOrder.list("date_received", 1000),
   });
 
   const handleSyncEbay = async () => {
