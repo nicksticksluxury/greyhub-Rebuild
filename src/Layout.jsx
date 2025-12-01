@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings } from "lucide-react";
 import ImageOptimizationMonitor from "@/components/ImageOptimizationMonitor";
+import { Toaster } from "@/components/ui/sonner";
 import {
   Sidebar,
   SidebarContent,
@@ -173,9 +174,10 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex-1 overflow-auto">
             {children}
           </div>
-        </main>
-        <ImageOptimizationMonitor />
-      </div>
-    </SidebarProvider>
+          </main>
+          <ImageOptimizationMonitor />
+          <Toaster />
+          </div>
+          </SidebarProvider>
   );
 }
