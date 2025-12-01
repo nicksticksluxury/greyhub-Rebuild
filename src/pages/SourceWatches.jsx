@@ -47,7 +47,7 @@ export default function SourceWatches() {
   // If orderId is present but sourceId missing, we might need logic, but let's assume links are correct.
 
   // Fetch Orders for this source to help with filtering
-  const { data: sourceOrders = [] } = useQuery({
+  const { data: sourceOrders = [], isLoading: isLoadingSourceOrders } = useQuery({
     queryKey: ['sourceOrders', sourceId],
     queryFn: async () => {
       if (!sourceId) return [];
@@ -57,7 +57,7 @@ export default function SourceWatches() {
   });
 
   // Fetch Watches
-  const { data: watches = [], isLoading: watchesLoading } = useQuery({
+  const { data: watches = [], isLoading: areWatchesLoading } = useQuery({
     queryKey: ['sourceWatches', sourceId, orderId, sourceOrders.length],
     queryFn: async () => {
       if (orderId) {
@@ -77,7 +77,7 @@ export default function SourceWatches() {
       
       return [];
     },
-    enabled: !!orderId || (!!sourceId && sourceOrders !== undefined)
+    enabled: !!orderId || (!!sourceId && !isLoadingSourceOrders)
   });
 
   const activeWatches = watches.filter(w => !w.sold);
