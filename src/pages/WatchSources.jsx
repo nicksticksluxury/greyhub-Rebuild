@@ -223,14 +223,14 @@ export default function WatchSources() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                          <Link to={createPageUrl(`Inventory?sourceId=${source.id}`)}>
+                          <Link to={createPageUrl(`SourceWatches?sourceId=${source.id}&view=active`)}>
                               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer">
                                   {source.active_watches_count || 0}
                               </Badge>
                           </Link>
                       </TableCell>
                       <TableCell className="text-center">
-                          <Link to={createPageUrl(`SoldInventory?sourceId=${source.id}`)}>
+                          <Link to={createPageUrl(`SourceWatches?sourceId=${source.id}&view=sold`)}>
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 cursor-pointer">
                                   {source.sold_watches_count || 0}
                               </Badge>

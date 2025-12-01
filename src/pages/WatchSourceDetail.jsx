@@ -235,7 +235,11 @@ export default function WatchSourceDetail() {
                             {order.date_received ? format(new Date(order.date_received), 'MMM d, yyyy') : '-'}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Badge variant="outline">{order.initial_quantity}</Badge>
+                            <Link to={createPageUrl(`SourceWatches?sourceId=${sourceId}&orderId=${order.id}`)}>
+                              <Badge variant="outline" className="hover:bg-slate-100 cursor-pointer transition-colors">
+                                {order.initial_quantity}
+                              </Badge>
+                            </Link>
                           </TableCell>
                           <TableCell className="text-right font-medium">
                             ${(order.total_cost || 0).toLocaleString()}

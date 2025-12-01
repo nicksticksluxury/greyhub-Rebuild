@@ -10,6 +10,7 @@ import WatchSummary from './pages/WatchSummary';
 import Settings from './pages/Settings';
 import WatchSources from './pages/WatchSources';
 import WatchSourceDetail from './pages/WatchSourceDetail';
+import SourceWatches from './pages/SourceWatches';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +27,7 @@ export const PAGES = {
     "Settings": Settings,
     "WatchSources": WatchSources,
     "WatchSourceDetail": WatchSourceDetail,
+    "SourceWatches": SourceWatches,
 }
 
 export const pagesConfig = {
