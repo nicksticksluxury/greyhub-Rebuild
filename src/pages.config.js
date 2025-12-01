@@ -1,10 +1,8 @@
 import Inventory from './pages/Inventory';
 import AddWatch from './pages/AddWatch';
 import WatchDetail from './pages/WatchDetail';
-import Sources from './pages/Sources';
 import Auctions from './pages/Auctions';
 import SoldInventory from './pages/SoldInventory';
-import ImportSources from './pages/ImportSources';
 import UpdateMinimumPrices from './pages/UpdateMinimumPrices';
 import WatchSummary from './pages/WatchSummary';
 import Settings from './pages/Settings';
@@ -18,10 +16,8 @@ export const PAGES = {
     "Inventory": Inventory,
     "AddWatch": AddWatch,
     "WatchDetail": WatchDetail,
-    "Sources": Sources,
     "Auctions": Auctions,
     "SoldInventory": SoldInventory,
-    "ImportSources": ImportSources,
     "UpdateMinimumPrices": UpdateMinimumPrices,
     "WatchSummary": WatchSummary,
     "Settings": Settings,
