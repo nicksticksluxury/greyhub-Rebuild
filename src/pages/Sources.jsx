@@ -2,81 +2,166 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import SourceCard from "../components/sources/SourceCard";
 import SourceForm from "../components/sources/SourceForm";
+import ShipmentCard from "../components/sources/ShipmentCard";
+import ShipmentForm from "../components/sources/ShipmentForm";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function Sources() {
-  const [showForm, setShowForm] = useState(false);
+  const [showSourceForm, setShowSourceForm] = useState(false);
   const [editingSource, setEditingSource] = useState(null);
+  
+  const [showShipmentForm, setShowShipmentForm] = useState(false);
+  const [editingShipment, setEditingShipment] = useState(null);
+  const [selectedSourceId, setSelectedSourceId] = useState(null);
+  
+  const [expandedSources, setExpandedSources] = useState({});
+
   const queryClient = useQueryClient();
 
-  const { data: sources = [], isLoading } = useQuery({
+  const { data: sources = [], isLoading: loadingSources } = useQuery({
     queryKey: ['sources'],
     queryFn: () => base44.entities.Source.list(),
     initialData: [],
   });
 
-  const { data: watches = [] } = useQuery({
+  const { data: shipments = [], isLoading: loadingShipments } = useQuery({
+    queryKey: ['shipments'],
+    queryFn: () => base44.entities.Shipment.list(),
+    initialData: [],
+  });
+
+  const { data: watches = [], isLoading: loadingWatches } = useQuery({
     queryKey: ['watches'],
     queryFn: () => base44.entities.Watch.list(),
     initialData: [],
   });
 
-  const createMutation = useMutation({
+  const isLoading = loadingSources || loadingShipments || loadingWatches;
+
+  // --- Source Mutations ---
+  const createSourceMutation = useMutation({
     mutationFn: (data) => base44.entities.Source.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sources'] });
-      setShowForm(false);
+      setShowSourceForm(false);
     },
   });
 
-  const updateMutation = useMutation({
+  const updateSourceMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Source.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sources'] });
-      setShowForm(false);
+      setShowSourceForm(false);
       setEditingSource(null);
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteSourceMutation = useMutation({
     mutationFn: (id) => base44.entities.Source.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sources'] });
     },
   });
 
+  // --- Shipment Mutations ---
+  const createShipmentMutation = useMutation({
+    mutationFn: (data) => base44.entities.Shipment.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shipments'] });
+      setShowShipmentForm(false);
+      setSelectedSourceId(null);
+    },
+  });
+
+  const updateShipmentMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Shipment.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shipments'] });
+      setShowShipmentForm(false);
+      setEditingShipment(null);
+    },
+  });
+
+  const deleteShipmentMutation = useMutation({
+    mutationFn: (id) => base44.entities.Shipment.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shipments'] });
+    },
+  });
+
+  // --- Helpers ---
+
+  const toggleSource = (sourceId) => {
+    setExpandedSources(prev => ({
+      ...prev,
+      [sourceId]: !prev[sourceId]
+    }));
+  };
+
   const getSourceStats = (sourceId) => {
-    const sourceWatches = watches.filter(watch => watch.source_id === sourceId);
+    const sourceShipments = shipments.filter(s => s.source_id === sourceId);
+    const sourceShipmentIds = sourceShipments.map(s => s.id);
+    // Watches linked via shipment_id (new schema)
+    // But for backward compatibility or during migration, we might check source_id too? 
+    // No, we assume migration is done.
+    const sourceWatches = watches.filter(watch => sourceShipmentIds.includes(watch.shipment_id));
     const soldWatches = sourceWatches.filter(watch => watch.sold);
-    
+
+    const totalCost = sourceShipments.reduce((sum, s) => sum + (s.cost || 0), 0);
+    const totalRevenue = soldWatches.reduce((sum, w) => sum + (w.sold_price || 0), 0);
+
     return {
-      usable_quantity: sourceWatches.length,
-      total_purchases: sourceWatches.length,
-      total_cost: sourceWatches.reduce((sum, watch) => sum + (watch.cost || 0), 0),
-      total_revenue: soldWatches.reduce((sum, watch) => sum + (watch.sold_price || 0), 0)
+      total_shipments: sourceShipments.length,
+      total_purchases: sourceWatches.length, // Watches logged
+      total_cost: totalCost,
+      total_revenue: totalRevenue
     };
   };
 
-  const handleSubmit = (data) => {
+  const getShipmentStats = (shipmentId) => {
+    const shipmentWatches = watches.filter(w => w.shipment_id === shipmentId);
+    const soldWatches = shipmentWatches.filter(w => w.sold);
+
+    return {
+      logged_count: shipmentWatches.length,
+      sold_count: soldWatches.length,
+      usable_quantity: shipmentWatches.length - soldWatches.length, // Not exactly "usable" if some are not processed, but rough idea
+      total_revenue: soldWatches.reduce((sum, w) => sum + (w.sold_price || 0), 0)
+    };
+  };
+
+  // --- Handlers ---
+
+  const handleSourceSubmit = (data) => {
     if (editingSource) {
-      updateMutation.mutate({ id: editingSource.id, data });
+      updateSourceMutation.mutate({ id: editingSource.id, data });
     } else {
-      createMutation.mutate(data);
+      createSourceMutation.mutate(data);
     }
   };
 
-  const handleEdit = (source) => {
-    setEditingSource(source);
-    setShowForm(true);
+  const handleShipmentSubmit = (data) => {
+    if (editingShipment) {
+      updateShipmentMutation.mutate({ id: editingShipment.id, data });
+    } else {
+      createShipmentMutation.mutate(data);
+    }
   };
 
-  const handleDelete = (source) => {
-    if (confirm(`Are you sure you want to delete ${source.name}?`)) {
-      deleteMutation.mutate(source.id);
+  const handleDeleteSource = (source) => {
+    if (confirm(`Are you sure you want to delete ${source.name}? This will NOT delete associated shipments automatically.`)) {
+      deleteSourceMutation.mutate(source.id);
+    }
+  };
+
+  const handleDeleteShipment = (shipment) => {
+    if (confirm(`Are you sure you want to delete shipment ${shipment.order_number}?`)) {
+      deleteShipmentMutation.mutate(shipment.id);
     }
   };
 
@@ -87,27 +172,18 @@ export default function Sources() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Sources & Suppliers</h1>
-              <p className="text-slate-500 mt-1">{sources.length} sources</p>
+              <p className="text-slate-500 mt-1">{sources.length} suppliers</p>
             </div>
             <div className="flex gap-3">
-              <Link to={createPageUrl("ImportSources")}>
-                <Button
-                  variant="outline"
-                  className="border-slate-300 hover:bg-slate-50"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Import Sources
-                </Button>
-              </Link>
               <Button
                 onClick={() => {
                   setEditingSource(null);
-                  setShowForm(!showForm);
+                  setShowSourceForm(!showSourceForm);
                 }}
                 className="bg-slate-800 hover:bg-slate-900 shadow-md"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Source
+                Add Supplier
               </Button>
             </div>
           </div>
@@ -115,16 +191,31 @@ export default function Sources() {
       </div>
 
       <div className="max-w-[1800px] mx-auto px-6 py-6">
-        {showForm && (
+        {showSourceForm && (
           <SourceForm
             source={editingSource}
-            onSubmit={handleSubmit}
+            onSubmit={handleSourceSubmit}
             onCancel={() => {
-              setShowForm(false);
+              setShowSourceForm(false);
               setEditingSource(null);
             }}
           />
         )}
+
+        <Dialog open={showShipmentForm} onOpenChange={setShowShipmentForm}>
+            <DialogContent>
+                <ShipmentForm
+                    shipment={editingShipment}
+                    sourceId={selectedSourceId}
+                    onSubmit={handleShipmentSubmit}
+                    onCancel={() => {
+                        setShowShipmentForm(false);
+                        setEditingShipment(null);
+                        setSelectedSourceId(null);
+                    }}
+                />
+            </DialogContent>
+        </Dialog>
 
         {isLoading ? (
           <div className="text-center py-12">
@@ -133,19 +224,73 @@ export default function Sources() {
           </div>
         ) : sources.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
-            <p className="text-slate-500">No sources yet. Add your first source to get started.</p>
+            <p className="text-slate-500">No suppliers yet. Add your first supplier to get started.</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sources.map((source) => (
-              <SourceCard
-                key={source.id}
-                source={source}
-                stats={getSourceStats(source.id)}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
+          <div className="grid gap-6">
+            {sources.map((source) => {
+                const isExpanded = expandedSources[source.id];
+                const sourceShipments = shipments.filter(s => s.source_id === source.id);
+                
+                return (
+                    <div key={source.id} className="space-y-2">
+                        <div 
+                            className="cursor-pointer"
+                            onClick={() => toggleSource(source.id)}
+                        >
+                            <SourceCard
+                                source={source}
+                                stats={getSourceStats(source.id)}
+                                onEdit={(s) => {
+                                    setEditingSource(s);
+                                    setShowSourceForm(true);
+                                }}
+                                onDelete={handleDeleteSource}
+                            />
+                        </div>
+                        
+                        {isExpanded && (
+                            <div className="ml-6 space-y-2 border-l-2 border-slate-200 pl-4 py-2">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h4 className="font-semibold text-slate-700 text-sm">Shipments ({sourceShipments.length})</h4>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedSourceId(source.id);
+                                            setEditingShipment(null);
+                                            setShowShipmentForm(true);
+                                        }}
+                                        className="h-8"
+                                    >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Add Shipment
+                                    </Button>
+                                </div>
+                                
+                                {sourceShipments.length === 0 ? (
+                                    <p className="text-xs text-slate-400 italic">No shipments recorded for this supplier.</p>
+                                ) : (
+                                    sourceShipments.map(shipment => (
+                                        <ShipmentCard 
+                                            key={shipment.id}
+                                            shipment={shipment}
+                                            stats={getShipmentStats(shipment.id)}
+                                            onEdit={(s) => {
+                                                setEditingShipment(s);
+                                                setSelectedSourceId(source.id);
+                                                setShowShipmentForm(true);
+                                            }}
+                                            onDelete={handleDeleteShipment}
+                                        />
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
           </div>
         )}
       </div>
