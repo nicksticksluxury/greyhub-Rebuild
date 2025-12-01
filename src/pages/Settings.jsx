@@ -433,19 +433,19 @@ export default function Settings() {
                  Migrate old "Source=Shipment" data to the new two-layer "Source -> Shipment" structure.
                  </p>
                  <Button 
-                 onClick={handleMigrateSources} 
-                 disabled={migrating}
+                 onClick={async () => {
+                     try {
+                         const res = await base44.functions.invoke("debugData");
+                         console.log(res.data);
+                         alert(JSON.stringify(res.data, null, 2));
+                     } catch(e) {
+                         alert("Error: " + e.message);
+                     }
+                 }} 
                  variant="outline"
-                 className="border-amber-300 hover:bg-amber-50 text-amber-800"
+                 className="border-red-300 hover:bg-red-50 text-red-800"
                  >
-                 {migrating ? (
-                   <>
-                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                     Migrating...
-                   </>
-                 ) : (
-                   "Run Source Migration"
-                 )}
+                 Debug Data (Inspect Orphans)
                  </Button>
                  </div>
                  </CardContent>
