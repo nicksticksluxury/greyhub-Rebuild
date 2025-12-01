@@ -6,15 +6,14 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
         
-        const { primaryId, duplicateIds } = await req.json();
+        const { primaryId, duplicateIds, mode: requestMode } = await req.json();
+        const mode = requestMode || 'merge_all';
 
         if (!primaryId || !duplicateIds || duplicateIds.length === 0) {
             return Response.json({ error: 'Invalid input' }, { status: 400 });
         }
 
         const adminBase44 = base44.asServiceRole;
-
-        const mode = (await req.json()).mode || 'merge_all'; // 'merge_all' or 'merge_source_only'
 
         // 1. Process duplicate sources
         for (const dupId of duplicateIds) {
