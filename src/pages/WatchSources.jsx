@@ -10,10 +10,13 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import DuplicateMergeDialog from "../components/sources/DuplicateMergeDialog";
+import { GitMerge } from "lucide-react";
 
 export default function WatchSources() {
   const [searchTerm, setSearchTerm] = useState("");
   const [recalculating, setRecalculating] = useState(false);
+  const [showMergeDialog, setShowMergeDialog] = useState(false);
 
   const { data: sources = [], isLoading, refetch } = useQuery({
     queryKey: ['watchSources'],
@@ -198,8 +201,13 @@ export default function WatchSources() {
               </TableBody>
             </Table>
           </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
+          </Card>
+          </div>
+          <DuplicateMergeDialog 
+          isOpen={showMergeDialog} 
+          onClose={() => setShowMergeDialog(false)}
+          onMergeComplete={refetch}
+          />
+          </div>
+          );
+          }
