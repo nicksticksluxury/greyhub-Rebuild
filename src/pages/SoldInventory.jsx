@@ -19,18 +19,23 @@ export default function SoldInventory() {
   const [selectedPlatform, setSelectedPlatform] = useState("ebay");
   const location = useLocation();
   const [filters, setFilters] = useState(() => {
-    const params = new URLSearchParams(location.search);
+    const search = location.search || window.location.search;
+    const params = new URLSearchParams(search);
+    const sourceId = params.get("sourceId");
     return {
       auction: "all",
-      source: params.get("sourceId") || "all",
+      source: sourceId || "all",
       condition: "all"
     };
   });
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const search = location.search || window.location.search;
+    const params = new URLSearchParams(search);
     const sourceId = params.get("sourceId");
-    setFilters(prev => ({ ...prev, source: sourceId || "all" }));
+    if (sourceId) {
+      setFilters(prev => ({ ...prev, source: sourceId }));
+    }
   }, [location.search]);
 
   const { data: watches = [], isLoading } = useQuery({
@@ -85,9 +90,26 @@ export default function SoldInventory() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Sold Inventory</h1>
-              <p className="text-slate-500 mt-1">
-                {filteredWatches.length} {filteredWatches.length === 1 ? 'watch' : 'watches'} sold
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-slate-500">
+                  {filteredWatches.length} {filteredWatches.length === 1 ? 'watch' : 'watches'} sold
+                </p>
+                {filters.source !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Source: {watchSources.find(s => s.id === filters.source)?.name || "Unknown"}
+                    <button 
+                      onClick={() => {
+                        setFilters(prev => ({ ...prev, source: "all" }));
+                        const newUrl = window.location.pathname;
+                        window.history.pushState({}, '', newUrl);
+                      }}
+                      className="ml-1 hover:text-blue-900"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-3">
               <Button
