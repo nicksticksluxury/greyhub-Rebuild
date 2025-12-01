@@ -63,6 +63,14 @@ export default function WatchSources() {
           </div>
           <div className="flex gap-2">
              <Button 
+               onClick={() => setShowMergeDialog(true)}
+               variant="outline" 
+               className="bg-white border-slate-300 hover:bg-slate-50"
+             >
+               <GitMerge className="w-4 h-4 mr-2" />
+               Check Duplicates
+             </Button>
+             <Button 
                onClick={handleRecalculate} 
                disabled={recalculating}
                variant="outline" 
