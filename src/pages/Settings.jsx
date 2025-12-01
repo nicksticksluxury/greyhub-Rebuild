@@ -155,7 +155,11 @@ export default function Settings() {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Migration failed: " + error.message);
+      const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message || "Unknown error";
+      toast.error("Migration failed: " + errorMessage);
+      if (error.response?.data?.stack) {
+        console.error("Server Stack:", error.response.data.stack);
+      }
     } finally {
       setMigrating(false);
     }

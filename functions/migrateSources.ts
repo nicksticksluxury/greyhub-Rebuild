@@ -81,12 +81,20 @@ Deno.serve(async (req) => {
                 ...(bestSource.notes ? { notes: String(bestSource.notes) } : {})
             };
 
+            if (!newSourcePayload.name) {
+                console.warn("Skipping creation of supplier with empty name", bestSource);
+                continue;
+            }
+
             console.log('Creating Supplier:', newSourcePayload.name);
             let newSupplier;
             try {
                 newSupplier = await base44.entities.Source.create(newSourcePayload);
             } catch (err) {
                 console.error('Failed to create supplier:', newSourcePayload, err);
+                // If validation error or something else, we should probably abort this group
+                // But let's try to continue to other groups if possible?
+                // No, if we can't create supplier, we can't migrate its shipments.
                 throw new Error(`Failed to create supplier ${newSourcePayload.name}: ${err.message}`);
             }
             stats.suppliersCreated++;
@@ -137,8 +145,12 @@ Deno.serve(async (req) => {
                 }
 
                 // 6. Delete the old Source (Shipment) record
-                await base44.entities.Source.delete(oldSource.id);
-                stats.oldSourcesDeleted++;
+                try {
+                    await base44.entities.Source.delete(oldSource.id);
+                    stats.oldSourcesDeleted++;
+                } catch (deleteErr) {
+                    console.warn(`Failed to delete old source ${oldSource.id} (non-critical)`, deleteErr);
+                }
             }
         }
 
