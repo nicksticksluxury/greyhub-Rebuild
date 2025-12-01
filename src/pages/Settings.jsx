@@ -138,11 +138,34 @@ export default function Settings() {
     }
   }, []);
 
+  const [migrating, setMigrating] = useState(false);
+
+  const handleMigrateSources = async () => {
+    if (!confirm("Are you sure you want to migrate sources? This will restructure your supplier data and cannot be undone easily.")) {
+      return;
+    }
+
+    setMigrating(true);
+    try {
+      const result = await base44.functions.invoke("migrateSources");
+      if (result.data.success) {
+        toast.success(`Migration successful! Created ${result.data.stats.suppliersCreated} suppliers and ${result.data.stats.shipmentsCreated} shipments.`);
+      } else {
+        toast.error("Migration failed: " + (result.data.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Migration failed: " + error.message);
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   const handleMarkAllListedOnWhatnot = async () => {
     if (!confirm("Are you sure you want to mark ALL watches (including sold ones) as listed on Whatnot? This will update the 'Listed On' status for any watch not currently marked as listed.")) {
       return;
     }
-    
+
     setMarkingWhatnot(true);
     try {
       const result = await base44.functions.invoke("markAllListedOnWhatnot");
@@ -393,10 +416,32 @@ export default function Settings() {
                  ) : (
                    "Mark ALL as Listed on Whatnot"
                  )}
-               </Button>
-            </div>
-          </CardContent>
-        </Card>
+                 </Button>
+                 </div>
+
+                 <div className="p-4 border border-slate-200 rounded-xl bg-white mt-4">
+                 <h3 className="font-medium text-slate-900 mb-2">Migrate Data Structure</h3>
+                 <p className="text-sm text-slate-500 mb-4">
+                 Migrate old "Source=Shipment" data to the new two-layer "Source -> Shipment" structure.
+                 </p>
+                 <Button 
+                 onClick={handleMigrateSources} 
+                 disabled={migrating}
+                 variant="outline"
+                 className="border-amber-300 hover:bg-amber-50 text-amber-800"
+                 >
+                 {migrating ? (
+                   <>
+                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                     Migrating...
+                   </>
+                 ) : (
+                   "Run Source Migration"
+                 )}
+                 </Button>
+                 </div>
+                 </CardContent>
+                 </Card>
       </div>
     </div>
   );
