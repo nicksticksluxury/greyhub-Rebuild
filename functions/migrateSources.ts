@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
 
         // 1. Fetch all existing Sources and Watches
         const [sources, watches] = await Promise.all([
-            base44.entities.Source.list(),
-            base44.entities.Watch.list()
+            base44.asServiceRole.entities.Source.list(),
+            base44.asServiceRole.entities.Watch.list()
         ]);
 
         console.log(`Found ${sources.length} existing sources (shipments) and ${watches.length} watches`);
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
             console.log('Creating Supplier:', newSourcePayload.name);
             let newSupplier;
             try {
-                newSupplier = await base44.entities.Source.create(newSourcePayload);
+                newSupplier = await base44.asServiceRole.entities.Source.create(newSourcePayload);
             } catch (err) {
                 console.error('Failed to create supplier:', newSourcePayload, err);
                 // If validation error or something else, we should probably abort this group
@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
 
                 let newShipment;
                 try {
-                    newShipment = await base44.entities.Shipment.create(newShipmentPayload);
+                    newShipment = await base44.asServiceRole.entities.Shipment.create(newShipmentPayload);
                 } catch (err) {
                      console.error('Failed to create shipment:', newShipmentPayload, err);
                      throw new Error(`Failed to create shipment for ${oldSource.id}: ${err.message}`);
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
                 const relatedWatches = watchesBySource[oldSource.id] || [];
 
                 for (const watch of relatedWatches) {
-                    await base44.entities.Watch.update(watch.id, {
+                    await base44.asServiceRole.entities.Watch.update(watch.id, {
                         shipment_id: newShipment.id,
                         // We can unset source_id if we want, but updating with new schema usually ignores unknown fields 
                         // or keeps them. Best to just set the new field.
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
 
                 // 6. Delete the old Source (Shipment) record
                 try {
-                    await base44.entities.Source.delete(oldSource.id);
+                    await base44.asServiceRole.entities.Source.delete(oldSource.id);
                     stats.oldSourcesDeleted++;
                 } catch (deleteErr) {
                     console.warn(`Failed to delete old source ${oldSource.id} (non-critical)`, deleteErr);
