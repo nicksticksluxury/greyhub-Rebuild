@@ -456,9 +456,32 @@ export default function Settings() {
                  className="border-amber-300 text-amber-700 hover:bg-amber-50 ml-2"
                >
                  Repair Missing Sources
-               </Button>
+                 </Button>
+                 <Button 
+                 onClick={async () => {
+                   if (!confirm("This will validate all watches and fix broken source links using legacy data. Continue?")) return;
+                   const toastId = toast.loading("Validating and fixing links...");
+                   try {
+                      const res = await base44.functions.invoke("validateAndFixWatchLinks");
+                      if (res.data.success) {
+                          toast.success(`Fixed ${res.data.fixed} watches. Skipped ${res.data.skipped}. Errors: ${res.data.totalErrors}`, { id: toastId });
+                          if (res.data.errors.length > 0) {
+                              setDebugData(JSON.stringify(res.data.errors, null, 2));
+                          }
+                      } else {
+                          toast.error("Failed: " + res.data.error, { id: toastId });
+                      }
+                   } catch (e) {
+                      toast.error("Failed to validate: " + e.message, { id: toastId });
+                   }
+                 }} 
+                 variant="outline"
+                 className="border-blue-300 text-blue-700 hover:bg-blue-50 ml-2"
+                 >
+                 Validate & Fix Links
+                 </Button>
 
-               {debugData && (
+                 {debugData && (
                   <div className="mt-4 relative">
                     <div className="p-4 bg-slate-900 text-slate-50 rounded-lg overflow-auto max-h-[500px] font-mono text-xs whitespace-pre-wrap">
                       {debugData}
