@@ -7,9 +7,6 @@ import { Button } from "@/components/ui/button";
 export default function SourceForm({ source, onSubmit, onCancel }) {
   const [formData, setFormData] = React.useState(source || {
     name: "",
-    order_number: "",
-    cost: "",
-    initial_quantity: "",
     website: "",
     website_handle: "",
     primary_contact: "",
@@ -21,12 +18,7 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const dataToSubmit = {
-      ...formData,
-      cost: formData.cost ? parseFloat(formData.cost) : undefined,
-      initial_quantity: formData.initial_quantity ? parseInt(formData.initial_quantity) : undefined
-    };
-    onSubmit(dataToSubmit);
+    onSubmit(formData);
   };
 
   return (
@@ -35,46 +27,14 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
         {source ? "Edit Source" : "Add New Source"}
       </h3>
       
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <Label>Source Name *</Label>
-          <Input
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-            placeholder="e.g., eBay JohnDoe"
-            required
-          />
-        </div>
-        <div>
-          <Label>Order Number</Label>
-          <Input
-            value={formData.order_number}
-            onChange={(e) => setFormData({...formData, order_number: e.target.value})}
-            placeholder="e.g., 001"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <Label>Total Cost</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={formData.cost}
-            onChange={(e) => setFormData({...formData, cost: e.target.value})}
-            placeholder="Total cost for this shipment"
-          />
-        </div>
-        <div>
-          <Label>Initial Quantity</Label>
-          <Input
-            type="number"
-            value={formData.initial_quantity}
-            onChange={(e) => setFormData({...formData, initial_quantity: e.target.value})}
-            placeholder="Number of watches received"
-          />
-        </div>
+      <div className="mb-4">
+        <Label>Source Name *</Label>
+        <Input
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          placeholder="e.g., eBay Seller, Local Dealer"
+          required
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
