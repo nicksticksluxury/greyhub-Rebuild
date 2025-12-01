@@ -14,21 +14,78 @@ Deno.serve(async (req) => {
 
         const adminBase44 = base44.asServiceRole;
 
-        // 1. Move all SourceOrders to primary
-        for (const dupId of duplicateIds) {
-            const orders = await adminBase44.entities.SourceOrder.filter({ source_id: dupId }, null, 1000);
-            for (const order of orders) {
-                await adminBase44.entities.SourceOrder.update(order.id, { source_id: primaryId });
-            }
-            
-            // Move watches directly linked (legacy or error case)
-            const watches = await adminBase44.entities.Watch.filter({ source_id: dupId }, null, 1000);
-            for (const watch of watches) {
-                await adminBase44.entities.Watch.update(watch.id, { source_id: primaryId });
-            }
+        const mode = (await req.json()).mode || 'merge_all'; // 'merge_all' or 'merge_source_only'
 
-            // Delete the duplicate source
-            await adminBase44.entities.WatchSource.delete(dupId);
+        // 1. Process duplicate sources
+        for (const dupId of duplicateIds) {
+            if (mode === 'merge_source_only') {
+                // Mode: Merge just source data, remove secondary source without merging watches
+                // This implies the secondary watches/orders are duplicates and should be removed
+                
+                // Delete watches associated with this duplicate source
+                const watches = await adminBase44.entities.Watch.filter({ source_id: dupId }, null, 1000);
+                for (const watch of watches) {
+                    await adminBase44.entities.Watch.delete(watch.id);
+                }
+
+                // Delete orders associated with this duplicate source
+                const orders = await adminBase44.entities.SourceOrder.filter({ source_id: dupId }, null, 1000);
+                for (const order of orders) {
+                    await adminBase44.entities.SourceOrder.delete(order.id);
+                }
+
+                // Delete the duplicate source
+                await adminBase44.entities.WatchSource.delete(dupId);
+            } else {
+                // Mode: Merge Source and Watches (Default)
+                // Smart merge: Check for duplicate orders by order_number
+                
+                const primaryOrders = await adminBase44.entities.SourceOrder.filter({ source_id: primaryId }, null, 1000);
+                const duplicateOrders = await adminBase44.entities.SourceOrder.filter({ source_id: dupId }, null, 1000);
+                
+                for (const dupOrder of duplicateOrders) {
+                    // Check if primary has an order with the same number
+                    const matchingPrimOrder = primaryOrders.find(po => 
+                        po.order_number && 
+                        dupOrder.order_number && 
+                        po.order_number.trim().toLowerCase() === dupOrder.order_number.trim().toLowerCase()
+                    );
+
+                    if (matchingPrimOrder) {
+                        // Duplicate order found! 
+                        // Move watches from duplicate order to primary order
+                        const orderWatches = await adminBase44.entities.Watch.filter({ source_order_id: dupOrder.id }, null, 1000);
+                        for (const watch of orderWatches) {
+                            await adminBase44.entities.Watch.update(watch.id, { 
+                                source_id: primaryId,
+                                source_order_id: matchingPrimOrder.id 
+                            });
+                        }
+                        // Delete the now-empty duplicate order
+                        await adminBase44.entities.SourceOrder.delete(dupOrder.id);
+                    } else {
+                        // No matching order, just move the order to the primary source
+                        await adminBase44.entities.SourceOrder.update(dupOrder.id, { source_id: primaryId });
+                        
+                        // Update watches linked to this order to point to new source ID
+                        const orderWatches = await adminBase44.entities.Watch.filter({ source_order_id: dupOrder.id }, null, 1000);
+                        for (const watch of orderWatches) {
+                            await adminBase44.entities.Watch.update(watch.id, { source_id: primaryId });
+                        }
+                    }
+                }
+                
+                // Handle orphaned watches (linked to source but not any order)
+                const orphanedWatches = await adminBase44.entities.Watch.filter({ source_id: dupId }, null, 1000);
+                for (const watch of orphanedWatches) {
+                    // Only update if we haven't already moved it (checked via source_id still being dupId)
+                    // The previous loops updated source_id, so filter should only return ones we missed
+                    await adminBase44.entities.Watch.update(watch.id, { source_id: primaryId });
+                }
+
+                // Delete the duplicate source
+                await adminBase44.entities.WatchSource.delete(dupId);
+            }
         }
 
         // 2. Recalculate stats for primary
