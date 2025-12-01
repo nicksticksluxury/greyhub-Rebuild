@@ -52,6 +52,10 @@ export default function WatchSources() {
 
   const totalCost = sources.reduce((acc, curr) => acc + (curr.total_cost_sourced || 0), 0);
   const totalWatches = sources.reduce((acc, curr) => acc + (curr.total_watches_sourced || 0), 0);
+  const totalGrossIncome = sources.reduce((acc, curr) => acc + (curr.total_revenue_sourced || 0), 0);
+  const totalNetRevenue = sources.reduce((acc, curr) => acc + (curr.total_net_revenue || 0), 0);
+  const totalBalance = totalCost - totalNetRevenue;
+  const isTotalProfitable = totalBalance < 0;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -88,37 +92,61 @@ export default function WatchSources() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
           <Card>
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                <Users className="w-6 h-6" />
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shrink-0">
+                <Users className="w-5 h-5" />
               </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Total Sources</p>
-                <h3 className="text-2xl font-bold text-slate-900">{sources.length}</h3>
+              <div className="overflow-hidden">
+                <p className="text-xs text-slate-500 font-medium truncate">Total Sources</p>
+                <h3 className="text-xl font-bold text-slate-900">{sources.length}</h3>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                <Package className="w-6 h-6" />
+              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 shrink-0">
+                <Package className="w-5 h-5" />
               </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Total Watches Sourced</p>
-                <h3 className="text-2xl font-bold text-slate-900">{totalWatches}</h3>
+              <div className="overflow-hidden">
+                <p className="text-xs text-slate-500 font-medium truncate">Total Watches</p>
+                <h3 className="text-xl font-bold text-slate-900">{totalWatches}</h3>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
-                <DollarSign className="w-6 h-6" />
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 shrink-0">
+                <DollarSign className="w-5 h-5" />
               </div>
-              <div>
-                <p className="text-sm text-slate-500 font-medium">Total Cost Sourced</p>
-                <h3 className="text-2xl font-bold text-slate-900">${totalCost.toLocaleString()}</h3>
+              <div className="overflow-hidden">
+                <p className="text-xs text-slate-500 font-medium truncate">Total Cost</p>
+                <h3 className="text-xl font-bold text-slate-900">${totalCost.toLocaleString()}</h3>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 shrink-0">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-xs text-slate-500 font-medium truncate">Gross Income</p>
+                <h3 className="text-xl font-bold text-green-700">${totalGrossIncome.toLocaleString()}</h3>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isTotalProfitable ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-xs text-slate-500 font-medium truncate">Balance ({isTotalProfitable ? 'Profit' : 'Invested'})</p>
+                <h3 className={`text-xl font-bold ${isTotalProfitable ? 'text-green-700' : 'text-red-600'}`}>
+                  ${Math.abs(totalBalance).toLocaleString()}
+                </h3>
               </div>
             </CardContent>
           </Card>
@@ -211,10 +239,10 @@ export default function WatchSources() {
                         ${(source.total_revenue_sourced || 0).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                          <span className={isProfitable ? "text-green-600" : "text-slate-600"}>
+                          <span className={isProfitable ? "text-green-600" : "text-red-600"}>
                               ${Math.abs(balance).toLocaleString()}
                           </span>
-                          <span className="text-[10px] text-slate-400 block">
+                          <span className={`text-[10px] block ${isProfitable ? "text-green-400" : "text-red-300"}`}>
                               {isProfitable ? "PROFIT" : "INVESTED"}
                           </span>
                       </TableCell>
