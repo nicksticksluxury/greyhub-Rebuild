@@ -36,10 +36,10 @@ const navigationItems = [
     icon: Upload,
   },
   {
-    title: "Sources",
-    url: createPageUrl("Sources"),
+    title: "Watch Sources",
+    url: createPageUrl("WatchSources"),
     icon: Package,
-  },
+    },
   {
     title: "Auctions",
     url: createPageUrl("Auctions"),

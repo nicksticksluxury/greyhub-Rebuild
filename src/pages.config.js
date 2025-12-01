@@ -8,6 +8,8 @@ import ImportSources from './pages/ImportSources';
 import UpdateMinimumPrices from './pages/UpdateMinimumPrices';
 import WatchSummary from './pages/WatchSummary';
 import Settings from './pages/Settings';
+import WatchSources from './pages/WatchSources';
+import WatchSourceDetail from './pages/WatchSourceDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +24,8 @@ export const PAGES = {
     "UpdateMinimumPrices": UpdateMinimumPrices,
     "WatchSummary": WatchSummary,
     "Settings": Settings,
+    "WatchSources": WatchSources,
+    "WatchSourceDetail": WatchSourceDetail,
 }
 
 export const pagesConfig = {
