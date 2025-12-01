@@ -158,6 +158,8 @@ export default function DuplicateMergeDialog({ isOpen, onClose, onMergeComplete 
                 </RadioGroup>
               </div>
             </div>
+            
+            <MergeOptions mode={mergeMode} setMode={setMergeMode} />
 
             <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md text-sm">
               <AlertTriangle className="w-4 h-4 shrink-0" />
