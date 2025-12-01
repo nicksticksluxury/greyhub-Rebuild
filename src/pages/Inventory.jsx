@@ -76,9 +76,15 @@ export default function Inventory() {
     initialData: [],
   });
 
-  const { data: sources = [] } = useQuery({
-    queryKey: ['sources'],
-    queryFn: () => base44.entities.Source.list(),
+  const { data: watchSources = [] } = useQuery({
+    queryKey: ['watchSources'],
+    queryFn: () => base44.entities.WatchSource.list(),
+    initialData: [],
+  });
+
+  const { data: sourceOrders = [] } = useQuery({
+    queryKey: ['sourceOrders'],
+    queryFn: () => base44.entities.SourceOrder.list(),
     initialData: [],
   });
 
@@ -214,14 +220,21 @@ export default function Inventory() {
     // Filter out sold watches from regular inventory
     if (watch.sold) return false;
 
+    // Resolve source for this watch
+    const order = sourceOrders.find(o => o.id === watch.source_order_id);
+    const sourceId = order ? order.source_id : watch.source_id;
+    const source = watchSources.find(s => s.id === sourceId);
+    const sourceName = source ? source.name : "";
+
     const matchesSearch = !searchTerm || 
       watch.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       watch.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       watch.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.reference_number?.toLowerCase().includes(searchTerm.toLowerCase());
+      watch.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sourceName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesAuction = filters.auction === "all" || watch.auction_id === filters.auction;
-    const matchesSource = filters.source === "all" || watch.source_id === filters.source;
+    const matchesSource = filters.source === "all" || sourceId === filters.source;
     const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
     const matchesMovementType = filters.movement_type === "all" || watch.movement_type === filters.movement_type;
     const matchesCaseMaterial = !filters.case_material || watch.case_material?.trim() === filters.case_material;
@@ -362,7 +375,7 @@ export default function Inventory() {
               filters={filters}
               setFilters={setFilters}
               auctions={auctions}
-              sources={sources}
+              sources={watchSources}
               caseMaterials={caseMaterials}
               manufacturers={manufacturers}
             />
@@ -375,7 +388,8 @@ export default function Inventory() {
           watches={filteredWatches}
           isLoading={isLoading}
           onQuickView={setSelectedWatch}
-          sources={sources}
+          sources={watchSources}
+          sourceOrders={sourceOrders}
           auctions={auctions}
           selectedPlatform={selectedPlatform}
           selectedIds={selectedWatchIds}
