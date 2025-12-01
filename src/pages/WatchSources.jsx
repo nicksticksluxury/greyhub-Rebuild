@@ -143,68 +143,91 @@ export default function WatchSources() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/50">
-                  <TableHead>Source Name</TableHead>
-                  <TableHead>Contact</TableHead>
+                  <TableHead className="w-[200px]">Source Name</TableHead>
                   <TableHead className="text-center">Orders</TableHead>
-                  <TableHead className="text-center">Watches</TableHead>
-                  <TableHead className="text-right">Total Cost</TableHead>
+                  <TableHead className="text-center">Init Qty</TableHead>
+                  <TableHead className="text-center">Active</TableHead>
+                  <TableHead className="text-center">Sold</TableHead>
+                  <TableHead className="text-right">Cost</TableHead>
+                  <TableHead className="text-right">Gross Income</TableHead>
+                  <TableHead className="text-right">Balance</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={9} className="text-center py-8 text-slate-500">
                       Loading sources...
                     </TableCell>
                   </TableRow>
                 ) : filteredSources.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={9} className="text-center py-8 text-slate-500">
                       No sources found matching your search.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredSources.map((source) => (
+                  filteredSources.map((source) => {
+                      const balance = (source.total_cost_sourced || 0) - (source.total_net_revenue || 0);
+                      const isProfitable = balance < 0;
+
+                      return (
                     <TableRow key={source.id} className="hover:bg-slate-50 group">
                       <TableCell>
                         <div>
-                          <p className="font-semibold text-slate-900">{source.name}</p>
-                          {source.website && (
-                            <a href={source.website} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
-                              {source.website}
-                            </a>
+                          <p className="font-semibold text-slate-900 truncate max-w-[180px]" title={source.name}>{source.name}</p>
+                          {(source.primary_contact || source.email) && (
+                              <p className="text-xs text-slate-500 truncate max-w-[180px]">
+                                  {source.primary_contact || source.email}
+                              </p>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {source.primary_contact && <p className="text-slate-900">{source.primary_contact}</p>}
-                          {source.email && <p className="text-slate-500">{source.email}</p>}
-                        </div>
+                      <TableCell className="text-center">
+                        <span className="text-slate-600 text-sm font-medium">
+                          {source.total_orders || 0}
+                        </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                          {source.total_orders || 0}
+                          {source.total_watches_sourced || 0}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-                          {source.total_watches_sourced || 0}
-                        </Badge>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {source.active_watches_count || 0}
+                          </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              {source.sold_watches_count || 0}
+                          </Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium text-slate-900">
                         ${(source.total_cost_sourced || 0).toLocaleString()}
                       </TableCell>
+                      <TableCell className="text-right font-medium text-green-700">
+                        ${(source.total_revenue_sourced || 0).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                          <span className={isProfitable ? "text-green-600" : "text-slate-600"}>
+                              ${Math.abs(balance).toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block">
+                              {isProfitable ? "PROFIT" : "INVESTED"}
+                          </span>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Link to={createPageUrl(`WatchSourceDetail?id=${source.id}`)}>
-                          <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
-                            View Details
+                          <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8 w-8 p-0">
+                            <TrendingUp className="w-4 h-4" />
                           </Button>
                         </Link>
                       </TableCell>
                     </TableRow>
-                  ))
+                  );
+                  })
                 )}
               </TableBody>
             </Table>
