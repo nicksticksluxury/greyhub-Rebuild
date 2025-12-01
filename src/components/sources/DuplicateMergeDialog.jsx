@@ -174,9 +174,13 @@ export default function DuplicateMergeDialog({ isOpen, onClose, onMergeComplete 
               <Button variant="outline" onClick={handleSkip} disabled={merging}>
                 {currentGroupIndex < duplicates.length - 1 ? "Skip Group" : "Cancel"}
               </Button>
-              <Button onClick={handleMerge} disabled={merging || !selectedPrimary}>
+              <Button 
+                onClick={handleMerge} 
+                disabled={merging || !selectedPrimary}
+                className="bg-slate-900 text-white hover:bg-slate-800 min-w-[140px]"
+              >
                 {merging && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                <span>{currentGroupIndex < duplicates.length - 1 ? "Merge & Next" : "Merge & Finish"}</span>
+                {!merging && (currentGroupIndex < duplicates.length - 1 ? "Merge & Next" : "Merge & Finish")}
               </Button>
             </>
           )}
