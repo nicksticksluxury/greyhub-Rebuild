@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
                         description: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
                         aspects: {
                             Brand: [watch.brand || "Unbranded"],
-                            Model: [watch.model || "Unknown"],
+                            Model: [(watch.model || "Unknown").substring(0, 65)],
                             Type: ["Wristwatch"],
                             Department: [watch.gender === 'womens' ? 'Women' : 'Men'],
                             Movement: [watch.movement_type || "Unknown"],
