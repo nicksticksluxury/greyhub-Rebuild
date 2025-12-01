@@ -30,14 +30,17 @@ export default function Inventory() {
   const [selectedPlatform, setSelectedPlatform] = useState("whatnot");
   const [syncing, setSyncing] = useState(false);
   const [listing, setListing] = useState(false);
-  const [filters, setFilters] = useState({
-    auction: "all",
-    source: "all",
-    condition: "all",
-    movement_type: "all",
-    case_material: "",
-    manufacturer: "",
-    tested: "all"
+  const [filters, setFilters] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      auction: "all",
+      source: params.get("sourceId") || "all",
+      condition: "all",
+      movement_type: "all",
+      case_material: "",
+      manufacturer: "",
+      tested: "all"
+    };
   });
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);

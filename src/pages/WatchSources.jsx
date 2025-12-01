@@ -223,14 +223,18 @@ export default function WatchSources() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              {source.active_watches_count || 0}
-                          </Badge>
+                          <Link to={createPageUrl(`Inventory?sourceId=${source.id}`)}>
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer">
+                                  {source.active_watches_count || 0}
+                              </Badge>
+                          </Link>
                       </TableCell>
                       <TableCell className="text-center">
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              {source.sold_watches_count || 0}
-                          </Badge>
+                          <Link to={createPageUrl(`SoldInventory?sourceId=${source.id}`)}>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 cursor-pointer">
+                                  {source.sold_watches_count || 0}
+                              </Badge>
+                          </Link>
                       </TableCell>
                       <TableCell className="text-right font-medium text-slate-900">
                         ${(source.total_cost_sourced || 0).toLocaleString()}

@@ -16,10 +16,13 @@ export default function SoldInventory() {
   const [showExport, setShowExport] = useState(false);
   const [selectedWatch, setSelectedWatch] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState("ebay");
-  const [filters, setFilters] = useState({
-    auction: "all",
-    source: "all",
-    condition: "all"
+  const [filters, setFilters] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      auction: "all",
+      source: params.get("sourceId") || "all",
+      condition: "all"
+    };
   });
 
   const { data: watches = [], isLoading } = useQuery({
