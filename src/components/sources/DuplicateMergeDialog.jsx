@@ -15,6 +15,7 @@ export default function DuplicateMergeDialog({ isOpen, onClose, onMergeComplete 
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
   const [selectedPrimary, setSelectedPrimary] = useState(null);
   const [merging, setMerging] = useState(false);
+  const [mergeMode, setMergeMode] = useState('merge_all');
 
   // Fetch duplicates when dialog opens
   React.useEffect(() => {
