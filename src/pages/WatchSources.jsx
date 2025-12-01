@@ -13,12 +13,30 @@ import { Badge } from "@/components/ui/badge";
 
 export default function WatchSources() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [recalculating, setRecalculating] = useState(false);
 
-  const { data: sources = [], isLoading } = useQuery({
+  const { data: sources = [], isLoading, refetch } = useQuery({
     queryKey: ['watchSources'],
     queryFn: () => base44.entities.WatchSource.list("-total_watches_sourced"),
     initialData: [],
   });
+
+  const handleRecalculate = async () => {
+    setRecalculating(true);
+    try {
+      const res = await base44.functions.invoke("recalculateSourceStats");
+      if (res.data.success) {
+        toast.success(`Updated stats for ${res.data.updated} sources`);
+        refetch();
+      } else {
+        toast.error("Failed: " + res.data.error);
+      }
+    } catch (err) {
+      toast.error("Error: " + err.message);
+    } finally {
+      setRecalculating(false);
+    }
+  };
 
   const filteredSources = sources.filter(source => 
     source.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
