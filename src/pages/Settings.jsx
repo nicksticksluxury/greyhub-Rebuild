@@ -149,9 +149,13 @@ export default function Settings() {
     try {
       const result = await base44.functions.invoke("migrateSources");
       if (result.data.success) {
-        toast.success(`Migration successful! Created ${result.data.stats.suppliersCreated} suppliers and ${result.data.stats.shipmentsCreated} shipments.`);
+        if (result.data.stats.recoveredCount !== undefined) {
+           toast.success(`Recovery successful! Reconnected ${result.data.stats.recoveredCount} watches to their shipments.`);
+        } else {
+           toast.success(`Migration successful! Created ${result.data.stats.suppliersCreated} suppliers and ${result.data.stats.shipmentsCreated} shipments.`);
+        }
       } else {
-        toast.error("Migration failed: " + (result.data.error || "Unknown error"));
+        toast.error("Operation failed: " + (result.data.error || "Unknown error"));
       }
     } catch (error) {
       console.error(error);
