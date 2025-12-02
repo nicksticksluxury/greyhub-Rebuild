@@ -61,7 +61,7 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const publicPages = ['Index', 'SalesView'];
+      const publicPages = ['index', 'Index', 'SalesView'];
       // If page is not public, check if user is logged in
       if (!publicPages.includes(currentPageName)) {
         try {
@@ -86,7 +86,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Render simplified layout for public pages
-  if (currentPageName === 'Index' || currentPageName === 'SalesView') {
+  if (currentPageName === 'index' || currentPageName === 'Index' || currentPageName === 'SalesView') {
     return (
       <>
         <style>{`
