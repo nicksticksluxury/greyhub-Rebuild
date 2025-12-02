@@ -785,6 +785,8 @@ export default function WatchDetail() {
       if (value.movement_type) updates.movement_type = value.movement_type;
       if (value.case_material) updates.case_material = value.case_material;
       if (value.case_size) updates.case_size = value.case_size;
+      if (value.dial_color) updates.dial_color = value.dial_color;
+      if (value.bracelet_material) updates.bracelet_material = value.bracelet_material;
       if (value.listing_title) updates.listing_title = value.listing_title;
       
       setEditedData({
