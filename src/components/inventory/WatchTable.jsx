@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPageUrl } from "@/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -221,6 +221,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
 
                 <TableHead>Listed On</TableHead>
                 <TableHead>Source</TableHead>
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -332,6 +333,17 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                       {source && (
                         <span className="text-sm text-slate-600">{source.name}</span>
                       )}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        title="Open Sales Tool"
+                        className="h-8 w-8 hover:bg-amber-50 hover:text-amber-600"
+                        onClick={() => window.open(createPageUrl(`WhatnotSalesTool?id=${watch.id}`), '_blank', 'width=450,height=850')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
