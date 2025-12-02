@@ -9,20 +9,39 @@ export default function SalesView() {
   const urlParams = new URLSearchParams(window.location.search);
   const watchId = urlParams.get('id');
 
-  // Simplify auth logic: Just try to fetch. If it fails, we know we need auth.
-  const { data: watch, isLoading, error, refetch } = useQuery({
+  // 1. Try to recover data passed from parent window to bypass auth requirement
+  const cachedData = React.useMemo(() => {
+      try {
+          const stored = localStorage.getItem('sales_view_data');
+          if (stored) {
+              const parsed = JSON.parse(stored);
+              if (parsed && parsed.id === watchId) {
+                  console.log("Loaded from cache");
+                  return parsed;
+              }
+          }
+      } catch (e) {
+          console.error(e);
+      }
+      return null;
+  }, [watchId]);
+
+  // 2. If no cache, try to fetch (requires auth)
+  const { data: watch, isLoading, error } = useQuery({
     queryKey: ['watch', watchId],
     queryFn: async () => {
       if (!watchId) return null;
-      // Fetching list() requires auth. If this fails, we catch the 401.
       const watches = await base44.entities.Watch.list();
       return watches.find(w => w.id === watchId);
     },
-    enabled: !!watchId, // Run immediately
+    initialData: cachedData,
+    // Only fetch if we don't have the data already
+    enabled: !!watchId && !cachedData,
     retry: false
   });
 
-  const isAuthError = error && (
+  // Only show auth error if we truly have no data AND the fetch failed
+  const isAuthError = !watch && error && (
       error.message?.includes('401') || 
       error.message?.includes('auth') || 
       error.status === 401
