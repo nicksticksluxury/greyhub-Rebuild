@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings } from "lucide-react";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -57,6 +58,26 @@ export default function Layout({ children, currentPageName }) {
   const [mode, setMode] = useState(() => {
     return localStorage.getItem('watchvault_mode') || 'working';
   });
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const publicPages = ['Index', 'SalesView'];
+      // If page is not public, check if user is logged in
+      if (!publicPages.includes(currentPageName)) {
+        try {
+          const user = await base44.auth.me();
+          if (!user) {
+            base44.auth.redirectToLogin();
+          }
+        } catch (error) {
+          // If auth check fails (likely 401), redirect
+          base44.auth.redirectToLogin();
+        }
+      }
+    };
+    
+    checkAuth();
+  }, [currentPageName]);
 
   const toggleMode = () => {
     const newMode = mode === 'working' ? 'live' : 'working';
