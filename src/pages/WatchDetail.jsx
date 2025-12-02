@@ -219,6 +219,8 @@ export default function WatchDetail() {
       - Year estimate
       - Movement type (MUST be one of: "Automatic", "Digital", "Manual", "Quartz", "Solar", or "Unknown" - use exact capitalization)
       - Case material & size
+      - Dial Color
+      - Bracelet/Strap Material
       - Condition
       - ALL visible text/numbers${contextStr}${msrpLinkContext}
 
@@ -238,6 +240,8 @@ export default function WatchDetail() {
             movement_type: { type: "string", enum: ["Automatic", "Digital", "Manual", "Quartz", "Solar", "Unknown"], description: "Must be exactly one of these values with proper capitalization" },
             case_material: { type: "string" },
             case_size: { type: "string" },
+            dial_color: { type: "string" },
+            bracelet_material: { type: "string" },
             condition_assessment: { type: "string" },
             notable_features: { type: "array", items: { type: "string" } },
             all_visible_text: { type: "string" },

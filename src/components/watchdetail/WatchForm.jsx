@@ -265,7 +265,10 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
                 <SelectValue placeholder="Select condition" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="new_full_set">New - With Box & Papers</SelectItem>
+                <SelectItem value="new">New (No Box/Papers)</SelectItem>
+                <SelectItem value="new_with_box">New (Box Only)</SelectItem>
+                <SelectItem value="new_no_box">New (No Box)</SelectItem>
                 <SelectItem value="mint">Mint</SelectItem>
                 <SelectItem value="excellent">Excellent</SelectItem>
                 <SelectItem value="very_good">Very Good</SelectItem>
@@ -311,6 +314,25 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
               value={data.case_size || ""}
               onChange={(e) => updateField("case_size", e.target.value)}
               placeholder="e.g., 40mm"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Dial Color</Label>
+            <Input
+              value={data.dial_color || ""}
+              onChange={(e) => updateField("dial_color", e.target.value)}
+              placeholder="e.g., Black, Blue"
+            />
+          </div>
+          <div>
+            <Label>Bracelet Material</Label>
+            <Input
+              value={data.bracelet_material || ""}
+              onChange={(e) => updateField("bracelet_material", e.target.value)}
+              placeholder="e.g., Stainless Steel, Leather"
             />
           </div>
         </div>

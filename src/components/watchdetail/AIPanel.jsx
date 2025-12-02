@@ -72,7 +72,8 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
   const hasBasicInfo = aiAnalysis.identified_brand || aiAnalysis.identified_model || 
     aiAnalysis.reference_number || aiAnalysis.serial_number || aiAnalysis.estimated_year ||
-    aiAnalysis.movement_type || aiAnalysis.case_material || aiAnalysis.case_size;
+    aiAnalysis.movement_type || aiAnalysis.case_material || aiAnalysis.case_size ||
+    aiAnalysis.dial_color || aiAnalysis.bracelet_material;
 
   return (
     <Card className="p-6">
@@ -250,6 +251,40 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                 <span className="text-xs font-semibold text-slate-500 uppercase">Case Size</span>
               </div>
               <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.case_size}</p>
+            </div>
+          )}
+
+          {aiAnalysis.dial_color && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs px-2"
+                  onClick={() => onImportData("dial_color", aiAnalysis.dial_color)}
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Dial Color</span>
+              </div>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.dial_color}</p>
+            </div>
+          )}
+
+          {aiAnalysis.bracelet_material && (
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs px-2"
+                  onClick={() => onImportData("bracelet_material", aiAnalysis.bracelet_material)}
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </Button>
+                <span className="text-xs font-semibold text-slate-500 uppercase">Bracelet Material</span>
+              </div>
+              <p className="text-sm font-semibold text-slate-900 ml-9">{aiAnalysis.bracelet_material}</p>
             </div>
           )}
 
