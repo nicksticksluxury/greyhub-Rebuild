@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { createPageUrl } from "@/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function SalesView() {
   const [data, setData] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     
+    // Handle images with fallback to single 'image' param for backward compatibility
+    let images = params.get("images") ? params.get("images").split('|') : [];
+    if (images.length === 0 && params.get("image")) {
+        images = [params.get("image")];
+    }
+
     const watchData = {
       brand: params.get("brand") || "",
       model: params.get("model") || "",
@@ -15,8 +23,8 @@ export default function SalesView() {
       condition: params.get("condition") || "",
       msrp: params.get("msrp") || "",
       price: params.get("price") || "",
-      whatnotPrice: params.get("whatnotPrice") || "",
-      images: params.get("images") ? params.get("images").split('|') : [],
+      whatnotPrice: params.get("whatnotPrice") || "N/A",
+      images: images,
       desc: params.get("desc") || "",
       highlights: params.get("highlights") ? params.get("highlights").split(",") : [],
       comparableListings: params.get("comparableListings") ? JSON.parse(decodeURIComponent(params.get("comparableListings"))) : [],
@@ -33,6 +41,14 @@ export default function SalesView() {
   const borderClass = isRolex ? 'border-emerald-800' : 'border-amber-800';
   const accentBg = isRolex ? 'bg-emerald-500' : 'bg-amber-500';
 
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % data.images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + data.images.length) % data.images.length);
+  };
+
   return (
     <div className={`min-h-screen ${bgClass} text-white font-sans flex flex-col p-4 overflow-y-auto`}>
        <style>{`
@@ -48,23 +64,48 @@ export default function SalesView() {
           </div>
         </div>
 
-        {/* Image Gallery */}
-        <div className="relative mb-6 shrink-0">
-          <div className="flex overflow-x-auto snap-x snap-mandatory rounded-2xl border-2 border-white/10 shadow-2xl bg-black/40 py-2 scrollbar-hide">
-            {data.images.length > 0 ? (
-              data.images.map((imgSrc, index) => (
-                <div key={index} className="flex-shrink-0 w-full aspect-square snap-center px-2">
-                  <img 
-                    src={imgSrc} 
-                    alt={`Watch image ${index + 1}`}
-                    className="w-full h-full object-contain p-2"
-                  />
-                </div>
-              ))
-            ) : (
-              <div className="flex-shrink-0 w-full aspect-square flex items-center justify-center text-slate-600">No Images</div>
-            )}
-          </div>
+        {/* Image Carousel */}
+        <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 border-2 border-white/10 shadow-2xl bg-black/40 shrink-0 group">
+          {data.images.length > 0 ? (
+            <>
+              <img 
+                src={data.images[currentImageIndex]} 
+                alt={`Watch image ${currentImageIndex + 1}`}
+                className="w-full h-full object-contain p-2 transition-opacity duration-300"
+              />
+              
+              {data.images.length > 1 && (
+                <>
+                  <button 
+                    onClick={prevImage}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button 
+                    onClick={nextImage}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                  
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                    {data.images.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentImageIndex(idx)}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/40'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-slate-600">No Images</div>
+          )}
           <div className="absolute top-4 right-4">
              <span className="bg-white/90 text-black font-bold text-sm px-3 py-1 shadow-lg rounded-full uppercase">
                {data.condition.replace(/_/g, ' ')}
