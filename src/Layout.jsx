@@ -23,7 +23,7 @@ import {
 const navigationItems = [
   {
     title: "Dashboard",
-    url: createPageUrl("Index"),
+    url: createPageUrl("index"),
     icon: LayoutList,
   },
   {
@@ -66,7 +66,7 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const publicPages = ['index', 'Index', 'SalesView'];
+      const publicPages = ['index', 'SalesView'];
       // If page is not public, check if user is logged in
       if (!publicPages.includes(currentPageName)) {
         try {
@@ -91,7 +91,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Render simplified layout for public pages
-  if (currentPageName === 'index' || currentPageName === 'Index' || currentPageName === 'SalesView') {
+  if (currentPageName === 'index' || currentPageName === 'SalesView') {
       return (
         <>
         <style>{`
