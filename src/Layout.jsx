@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut } from "lucide-react";
 
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -88,6 +88,10 @@ export default function Layout({ children, currentPageName }) {
     const newMode = mode === 'working' ? 'live' : 'working';
     setMode(newMode);
     localStorage.setItem('watchvault_mode', newMode);
+  };
+
+  const handleLogout = () => {
+    base44.auth.logout("/");
   };
 
   // Render simplified layout for public pages
@@ -191,14 +195,23 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-slate-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center shadow-md">
-                <span className="text-slate-900 font-bold text-sm">W</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+                <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center shadow-md shrink-0">
+                  <span className="text-slate-900 font-bold text-sm">W</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 text-sm truncate">Watch Dealer</p>
+                  <p className="text-xs text-slate-500 truncate">Inventory Manager</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-900 text-sm truncate">Watch Dealer</p>
-                <p className="text-xs text-slate-500 truncate">Inventory Manager</p>
-              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
             </div>
           </SidebarFooter>
         </Sidebar>

@@ -31,7 +31,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "index",
+    mainPage: "Inventory",
     Pages: PAGES,
     Layout: __Layout,
 };
