@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle, FileText, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle, FileText, ShoppingBag, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
