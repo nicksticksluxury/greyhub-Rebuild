@@ -976,20 +976,28 @@ export default function WatchDetail() {
                     params.set("year", editedData.year || "");
                     params.set("condition", editedData.condition || "");
 
-                    // Images
-                    const img = editedData.photos?.[0]?.optimized?.full || editedData.photos?.[0]?.original || editedData.photos?.[0] || "";
-                    params.set("image", img);
+                    // Images - pass all available full-size images
+                    const allImages = editedData.photos?.map(p => p.full || p.original || p).filter(Boolean) || [];
+                    if (allImages.length > 0) {
+                      params.set("images", allImages.join('|'));
+                    }
 
                     // Prices
                     const format = (val) => val ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
                     params.set("msrp", format(editedData.msrp || editedData.ai_analysis?.original_msrp));
                     params.set("price", format(editedData.retail_price || editedData.ai_analysis?.average_market_value));
+                    params.set("whatnotPrice", format(editedData.ai_analysis?.pricing_recommendations?.whatnot));
 
                     // Highlights
                     if (editedData.ai_analysis?.notable_features?.length) {
                       params.set("highlights", editedData.ai_analysis.notable_features.join(","));
                     } else if (editedData.description) {
                       params.set("desc", editedData.description.substring(0, 200));
+                    }
+
+                    // Comparable Listings
+                    if (editedData.comparable_listings_links?.length) {
+                      params.set("comparableListings", encodeURIComponent(JSON.stringify(editedData.comparable_listings_links)));
                     }
 
                     window.open(createPageUrl(`SalesView?${params.toString()}`), '_blank', 'width=450,height=850');

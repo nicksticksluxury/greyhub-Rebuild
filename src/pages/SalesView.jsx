@@ -15,9 +15,11 @@ export default function SalesView() {
       condition: params.get("condition") || "",
       msrp: params.get("msrp") || "",
       price: params.get("price") || "",
-      image: params.get("image") || "",
+      whatnotPrice: params.get("whatnotPrice") || "",
+      images: params.get("images") ? params.get("images").split('|') : [],
       desc: params.get("desc") || "",
-      highlights: params.get("highlights") ? params.get("highlights").split(",") : []
+      highlights: params.get("highlights") ? params.get("highlights").split(",") : [],
+      comparableListings: params.get("comparableListings") ? JSON.parse(decodeURIComponent(params.get("comparableListings"))) : [],
     };
 
     setData(watchData);
@@ -46,17 +48,23 @@ export default function SalesView() {
           </div>
         </div>
 
-        {/* Main Image */}
-        <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 border-2 border-white/10 shadow-2xl bg-black/40 shrink-0">
-          {data.image ? (
-            <img 
-              src={data.image} 
-              alt="Watch"
-              className="w-full h-full object-contain p-2"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-600">No Image</div>
-          )}
+        {/* Image Gallery */}
+        <div className="relative mb-6 shrink-0">
+          <div className="flex overflow-x-auto snap-x snap-mandatory rounded-2xl border-2 border-white/10 shadow-2xl bg-black/40 py-2 scrollbar-hide">
+            {data.images.length > 0 ? (
+              data.images.map((imgSrc, index) => (
+                <div key={index} className="flex-shrink-0 w-full aspect-square snap-center px-2">
+                  <img 
+                    src={imgSrc} 
+                    alt={`Watch image ${index + 1}`}
+                    className="w-full h-full object-contain p-2"
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="flex-shrink-0 w-full aspect-square flex items-center justify-center text-slate-600">No Images</div>
+            )}
+          </div>
           <div className="absolute top-4 right-4">
              <span className="bg-white/90 text-black font-bold text-sm px-3 py-1 shadow-lg rounded-full uppercase">
                {data.condition.replace(/_/g, ' ')}
@@ -79,23 +87,54 @@ export default function SalesView() {
         </div>
 
         {/* Pricing */}
-        <div className="grid grid-cols-2 gap-3 mb-6 shrink-0">
-          <div className="bg-white/5 rounded-xl p-3 border border-white/10 text-center relative overflow-hidden">
-            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">MSRP / Retail</p>
-            <p className="text-lg font-bold line-through decoration-red-500/70 text-slate-500">
-               {data.msrp !== "N/A" ? data.msrp : "-"}
-            </p>
+        <div className="space-y-3 mb-6 shrink-0">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white/5 rounded-xl p-3 border border-white/10 text-center relative overflow-hidden">
+              <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Whatnot Ask</p>
+              <p className="text-lg font-bold text-white">
+                 {data.whatnotPrice}
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-3 border border-white/10 text-center relative overflow-hidden">
+              <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">MSRP</p>
+              <p className="text-lg font-bold line-through decoration-red-500/70 text-slate-500">
+                 {data.msrp !== "N/A" ? data.msrp : "-"}
+              </p>
+            </div>
+            <div className={`rounded-xl p-3 border ${borderClass} bg-gradient-to-b from-white/10 to-white/5 text-center relative overflow-hidden shadow-lg`}>
+              <div className={`absolute top-0 left-0 w-full h-1 ${accentBg}`}></div>
+              <p className={`text-xs ${accentClass} uppercase font-bold tracking-wider mb-1`}>
+                Retail Value
+              </p>
+              <p className="text-2xl font-black text-white">
+                 {data.price}
+              </p>
+            </div>
           </div>
 
-          <div className={`rounded-xl p-3 border ${borderClass} bg-gradient-to-b from-white/10 to-white/5 text-center relative overflow-hidden shadow-lg`}>
-            <div className={`absolute top-0 left-0 w-full h-1 ${accentBg}`}></div>
-            <p className={`text-xs ${accentClass} uppercase font-bold tracking-wider mb-1`}>
-              Avg. Market Value
-            </p>
-            <p className="text-2xl font-black text-white">
-               {data.price}
-            </p>
-          </div>
+          {data.comparableListings.length > 0 && (
+            <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`${accentClass} font-bold`}>🔗</span>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Comparable Listings</h3>
+              </div>
+              <ul className="space-y-2">
+                {data.comparableListings.map((comp, i) => (
+                  <li key={i} className="flex justify-between items-center text-sm">
+                    <a 
+                      href={comp.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 underline text-sm flex-1 truncate"
+                    >
+                      {comp.url.slice(0, -8)}XXXXXXXX
+                    </a>
+                    {comp.price && <span className="text-white font-semibold ml-2">{comp.price}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Highlights */}

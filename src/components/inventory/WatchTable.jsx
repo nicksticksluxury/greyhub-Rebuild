@@ -349,21 +349,29 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                           params.set("ref", watch.reference_number || "");
                           params.set("year", watch.year || "");
                           params.set("condition", watch.condition || "");
-                          
-                          // Images
-                          const img = watch.photos?.[0]?.optimized?.full || watch.photos?.[0]?.original || watch.photos?.[0] || "";
-                          params.set("image", img);
+
+                          // Images - pass all available full-size images
+                          const allImages = watch.photos?.map(p => p.full || p.original || p).filter(Boolean) || [];
+                          if (allImages.length > 0) {
+                            params.set("images", allImages.join('|'));
+                          }
 
                           // Prices
                           const format = (val) => val ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
                           params.set("msrp", format(watch.msrp || watch.ai_analysis?.original_msrp));
                           params.set("price", format(watch.retail_price || watch.ai_analysis?.average_market_value));
+                          params.set("whatnotPrice", format(watch.ai_analysis?.pricing_recommendations?.whatnot));
 
                           // Highlights
                           if (watch.ai_analysis?.notable_features?.length) {
                             params.set("highlights", watch.ai_analysis.notable_features.join(","));
                           } else if (watch.description) {
                             params.set("desc", watch.description.substring(0, 200));
+                          }
+
+                          // Comparable Listings
+                          if (watch.comparable_listings_links?.length) {
+                            params.set("comparableListings", encodeURIComponent(JSON.stringify(watch.comparable_listings_links)));
                           }
 
                           window.open(createPageUrl(`SalesView?${params.toString()}`), '_blank', 'width=450,height=850');
