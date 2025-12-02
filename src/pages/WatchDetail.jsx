@@ -968,21 +968,31 @@ export default function WatchDetail() {
               </Button>
               <Button
                   variant="outline"
-                  onClick={async () => {
-                      const toastId = toast.loading("Creating temporary public view...");
-                      try {
-                        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-                        const share = await base44.entities.PublicSharedView.create({
-                          data: editedData,
-                          expires_at: expiresAt,
-                          view_type: "sales_tool"
-                        });
-                        window.open(`/functions/renderSharedView?id=${share.id}`, '_blank', 'width=450,height=850');
-                        toast.dismiss(toastId);
-                      } catch (e) {
-                        console.error(e);
-                        toast.error("Failed to create view", { id: toastId });
-                      }
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    params.set("brand", editedData.brand || "");
+                    params.set("model", editedData.model || "");
+                    params.set("ref", editedData.reference_number || "");
+                    params.set("year", editedData.year || "");
+                    params.set("condition", editedData.condition || "");
+
+                    // Images
+                    const img = editedData.photos?.[0]?.optimized?.full || editedData.photos?.[0]?.original || editedData.photos?.[0] || "";
+                    params.set("image", img);
+
+                    // Prices
+                    const format = (val) => val ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
+                    params.set("msrp", format(editedData.msrp || editedData.ai_analysis?.original_msrp));
+                    params.set("price", format(editedData.retail_price || editedData.ai_analysis?.average_market_value));
+
+                    // Highlights
+                    if (editedData.ai_analysis?.notable_features?.length) {
+                      params.set("highlights", editedData.ai_analysis.notable_features.join(","));
+                    } else if (editedData.description) {
+                      params.set("desc", editedData.description.substring(0, 200));
+                    }
+
+                    window.open(createPageUrl(`SalesView?${params.toString()}`), '_blank', 'width=450,height=850');
                   }}
                   className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
               >

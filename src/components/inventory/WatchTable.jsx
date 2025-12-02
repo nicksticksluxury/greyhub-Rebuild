@@ -342,24 +342,31 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                         size="icon"
                         title="Open Sales Tool"
                         className="h-8 w-8 hover:bg-amber-50 hover:text-amber-600"
-                        onClick={async () => {
-                          const toastId = toast.loading("Creating temporary public view...");
-                          try {
-                            // Create a temporary shared view valid for 24 hours
-                            const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-                            const share = await base44.entities.PublicSharedView.create({
-                              data: watch,
-                              expires_at: expiresAt,
-                              view_type: "sales_tool"
-                            });
-                            
-                            // Open the public backend function with the SHARE ID (not watch ID)
-                            window.open(`/functions/renderSharedView?id=${share.id}`, '_blank', 'width=450,height=850');
-                            toast.dismiss(toastId);
-                          } catch (e) {
-                            console.error(e);
-                            toast.error("Failed to create view", { id: toastId });
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          params.set("brand", watch.brand || "");
+                          params.set("model", watch.model || "");
+                          params.set("ref", watch.reference_number || "");
+                          params.set("year", watch.year || "");
+                          params.set("condition", watch.condition || "");
+                          
+                          // Images
+                          const img = watch.photos?.[0]?.optimized?.full || watch.photos?.[0]?.original || watch.photos?.[0] || "";
+                          params.set("image", img);
+
+                          // Prices
+                          const format = (val) => val ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
+                          params.set("msrp", format(watch.msrp || watch.ai_analysis?.original_msrp));
+                          params.set("price", format(watch.retail_price || watch.ai_analysis?.average_market_value));
+
+                          // Highlights
+                          if (watch.ai_analysis?.notable_features?.length) {
+                            params.set("highlights", watch.ai_analysis.notable_features.join(","));
+                          } else if (watch.description) {
+                            params.set("desc", watch.description.substring(0, 200));
                           }
+
+                          window.open(createPageUrl(`SalesView?${params.toString()}`), '_blank', 'width=450,height=850');
                         }}
                       >
                         <ExternalLink className="w-4 h-4" />
