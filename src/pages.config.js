@@ -9,8 +9,7 @@ import Settings from './pages/Settings';
 import WatchSources from './pages/WatchSources';
 import WatchSourceDetail from './pages/WatchSourceDetail';
 import SourceWatches from './pages/SourceWatches';
-import SalesTool from './pages/SalesTool';
-import WhatnotSalesTool from './pages/WhatnotSalesTool';
+import SalesView from './pages/SalesView';
 import __Layout from './Layout.jsx';
 
 
@@ -26,8 +25,7 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSourceDetail": WatchSourceDetail,
     "SourceWatches": SourceWatches,
-    "SalesTool": SalesTool,
-    "WhatnotSalesTool": WhatnotSalesTool,
+    "SalesView": SalesView,
 }
 
 export const pagesConfig = {

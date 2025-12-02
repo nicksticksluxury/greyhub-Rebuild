@@ -65,9 +65,9 @@ export default function Layout({ children, currentPageName }) {
   };
 
   // Special Layout for Sales Tool (Standalone, no Sidebar)
-  // Check for both SalesTool and WhatnotSalesTool to be safe, and be case insensitive for robust matching
+  // Check for both SalesTool, SalesView and WhatnotSalesTool to be safe, and be case insensitive for robust matching
   const path = location.pathname.toLowerCase();
-  if (path.includes('salestool') || path.includes('whatnot')) {
+  if (path.includes('salestool') || path.includes('salesview') || path.includes('whatnot')) {
       return (
           <div className="min-h-screen bg-slate-900">
               {children}
