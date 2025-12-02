@@ -10,6 +10,7 @@ import WatchSources from './pages/WatchSources';
 import WatchSourceDetail from './pages/WatchSourceDetail';
 import SourceWatches from './pages/SourceWatches';
 import SalesView from './pages/SalesView';
+import Index from './pages/Index';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +27,7 @@ export const PAGES = {
     "WatchSourceDetail": WatchSourceDetail,
     "SourceWatches": SourceWatches,
     "SalesView": SalesView,
+    "Index": Index,
 }
 
 export const pagesConfig = {

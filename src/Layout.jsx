@@ -64,7 +64,24 @@ export default function Layout({ children, currentPageName }) {
     localStorage.setItem('watchvault_mode', newMode);
   };
 
-  // Special Layout check removed as SalesView is now a backend function
+  // Render simplified layout for public pages
+  if (currentPageName === 'Index' || currentPageName === 'SalesView') {
+    return (
+      <>
+        <style>{`
+          :root {
+            --primary: #1e293b;
+            --primary-dark: #0f172a;
+            --accent: #d4af37;
+            --accent-light: #fbbf24;
+          }
+        `}</style>
+        <main className="min-h-screen bg-slate-950">
+          {children}
+        </main>
+      </>
+    );
+  }
 
   return (
     <SidebarProvider>
