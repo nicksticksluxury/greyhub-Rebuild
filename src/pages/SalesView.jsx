@@ -35,6 +35,7 @@ export default function SalesView() {
             desc: watch.description || "",
             highlights: watch.ai_analysis?.notable_features || [],
             comparableListings: watch.comparable_listings_links || [],
+            marketResearch: watch.market_research || watch.ai_analysis?.market_insights || "",
           });
         } catch (error) {
           console.error("Failed to fetch watch details", error);
@@ -166,9 +167,10 @@ export default function SalesView() {
         {/* Pricing */}
         <div className="space-y-3 mb-6 shrink-0">
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white/5 rounded-xl p-3 border border-white/10 text-center relative overflow-hidden">
-              <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Whatnot Ask</p>
-              <p className="text-lg font-bold text-white">
+            <div className="rounded-xl p-3 border border-green-800 bg-gradient-to-b from-white/10 to-white/5 text-center relative overflow-hidden shadow-lg">
+              <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+              <p className="text-xs text-green-400 uppercase font-bold tracking-wider mb-1">Whatnot Ask</p>
+              <p className="text-2xl font-black text-white">
                  {data.whatnotPrice}
               </p>
             </div>
@@ -213,6 +215,12 @@ export default function SalesView() {
             ) : (
               <p className="text-slate-400 text-sm italic">No comparable listings available.</p>
             )}
+            {data.marketResearch && (
+              <div className="mt-4 pt-3 border-t border-white/10">
+                <p className="text-xs text-slate-400 uppercase font-bold mb-1">Market Analysis</p>
+                <p className="text-sm text-slate-300 leading-relaxed">{data.marketResearch}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -222,8 +230,8 @@ export default function SalesView() {
                 <span className={`${accentClass} font-bold`}>✦</span>
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Key Highlights</h3>
               </div>
-              {data.highlights.length > 0 ? (
-                <ul className="space-y-2">
+              {data.highlights.length > 0 && (
+                <ul className="space-y-2 mb-3">
                   {data.highlights.slice(0, 3).map((f, i) => (
                     <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
                       <span className={`mt-1.5 w-1 h-1 rounded-full ${accentBg} shrink-0`}></span>
@@ -231,8 +239,14 @@ export default function SalesView() {
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p className="text-sm text-slate-300 line-clamp-3 italic">{data.desc || 'No description available.'}</p>
+              )}
+              {data.desc && (
+                <p className="text-sm text-slate-300 leading-relaxed border-t border-white/10 pt-3 mt-3">
+                  {data.desc}
+                </p>
+              )}
+              {!data.highlights.length && !data.desc && (
+                <p className="text-sm text-slate-300 italic">No details available.</p>
               )}
         </div>
         
