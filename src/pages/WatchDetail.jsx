@@ -967,6 +967,14 @@ export default function WatchDetail() {
                 )}
               </Button>
               <Button
+                  variant="outline"
+                  onClick={() => window.open(createPageUrl(`WhatnotSalesTool?id=${watchId}`), '_blank', 'width=450,height=850')}
+                  className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+              >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Sales Tool
+              </Button>
+              <Button
                 variant="outline"
                 onClick={handleDelete}
                 className="border-red-300 text-red-600 hover:bg-red-50"
