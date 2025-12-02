@@ -1,37 +1,73 @@
 import React, { useEffect, useState } from "react";
 import { createPageUrl } from "@/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 export default function SalesView() {
   const [data, setData] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    
-    // Handle images with fallback to single 'image' param for backward compatibility
-    let images = params.get("images") ? params.get("images").split('|') : [];
-    if (images.length === 0 && params.get("image")) {
-        images = [params.get("image")];
-    }
+    const fetchData = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
 
-    const watchData = {
-      brand: params.get("brand") || "",
-      model: params.get("model") || "",
-      ref: params.get("ref") || "",
-      year: params.get("year") || "",
-      condition: params.get("condition") || "",
-      msrp: params.get("msrp") || "",
-      price: params.get("price") || "",
-      whatnotPrice: params.get("whatnotPrice") || "N/A",
-      images: images,
-      desc: params.get("desc") || "",
-      highlights: params.get("highlights") ? params.get("highlights").split(",") : [],
-      comparableListings: params.get("comparableListings") ? JSON.parse(decodeURIComponent(params.get("comparableListings"))) : [],
+      if (id) {
+        try {
+          const { data: watch } = await base44.functions.invoke("getWatchDetails", { id });
+          
+          const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
+          
+          const images = watch.photos?.map(p => p.full || p.original || p).filter(Boolean) || [];
+          const whatnotPrice = watch.platform_prices?.whatnot || watch.ai_analysis?.pricing_recommendations?.whatnot;
+          
+          setData({
+            brand: watch.brand || "",
+            model: watch.model || "",
+            ref: watch.reference_number || "",
+            year: watch.year || "",
+            condition: watch.condition || "",
+            msrp: format(watch.msrp || watch.ai_analysis?.original_msrp),
+            price: format(watch.retail_price || watch.ai_analysis?.average_market_value),
+            whatnotPrice: format(whatnotPrice),
+            images: images,
+            desc: watch.description || "",
+            highlights: watch.ai_analysis?.notable_features || [],
+            comparableListings: watch.comparable_listings_links || [],
+          });
+        } catch (error) {
+          console.error("Failed to fetch watch details", error);
+        }
+      } else {
+        // Legacy URL param support
+        let images = params.get("images") ? params.get("images").split('|') : [];
+        if (images.length === 0 && params.get("image")) {
+            images = [params.get("image")];
+        }
+
+        setData({
+          brand: params.get("brand") || "",
+          model: params.get("model") || "",
+          ref: params.get("ref") || "",
+          year: params.get("year") || "",
+          condition: params.get("condition") || "",
+          msrp: params.get("msrp") || "",
+          price: params.get("price") || "",
+          whatnotPrice: params.get("whatnotPrice") || "N/A",
+          images: images,
+          desc: params.get("desc") || "",
+          highlights: params.get("highlights") ? params.get("highlights").split(",") : [],
+          comparableListings: params.get("comparableListings") ? JSON.parse(decodeURIComponent(params.get("comparableListings"))) : [],
+        });
+      }
+      setLoading(false);
     };
 
-    setData(watchData);
+    fetchData();
   }, []);
+
+  if (loading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>;
 
   if (!data) return null;
 

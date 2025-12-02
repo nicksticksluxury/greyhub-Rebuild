@@ -372,11 +372,8 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                             params.set("desc", watch.description.substring(0, 200));
                           }
 
-                          // Comparable Listings
-                          if (watch.comparable_listings_links?.length) {
-                            params.set("comparableListings", encodeURIComponent(JSON.stringify(watch.comparable_listings_links)));
-                          }
-
+                          // Use ID for cleaner URLs and reliable data fetching
+                          params.set("id", watch.id);
                           window.open(createPageUrl(`SalesView?${params.toString()}`), '_blank', 'width=450,height=850');
                         }}
                       >

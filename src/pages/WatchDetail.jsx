@@ -998,11 +998,8 @@ export default function WatchDetail() {
                       params.set("desc", editedData.description.substring(0, 200));
                     }
 
-                    // Comparable Listings
-                    if (editedData.comparable_listings_links?.length) {
-                      params.set("comparableListings", encodeURIComponent(JSON.stringify(editedData.comparable_listings_links)));
-                    }
-
+                    // Use ID for cleaner URLs and reliable data fetching
+                    params.set("id", watchId);
                     window.open(createPageUrl(`SalesView?${params.toString()}`), '_blank', 'width=450,height=850');
                   }}
                   className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
