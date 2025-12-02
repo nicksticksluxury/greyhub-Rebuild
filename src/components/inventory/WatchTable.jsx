@@ -6,6 +6,8 @@ import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -340,7 +342,25 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                         size="icon"
                         title="Open Sales Tool"
                         className="h-8 w-8 hover:bg-amber-50 hover:text-amber-600"
-                        onClick={() => window.open(`/functions/renderSalesView?id=${watch.id}`, '_blank', 'width=450,height=850')}
+                        onClick={async () => {
+                          const toastId = toast.loading("Creating temporary public view...");
+                          try {
+                            // Create a temporary shared view valid for 24 hours
+                            const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                            const share = await base44.entities.PublicSharedView.create({
+                              data: watch,
+                              expires_at: expiresAt,
+                              view_type: "sales_tool"
+                            });
+                            
+                            // Open the public backend function with the SHARE ID (not watch ID)
+                            window.open(`/functions/renderSharedView?id=${share.id}`, '_blank', 'width=450,height=850');
+                            toast.dismiss(toastId);
+                          } catch (e) {
+                            console.error(e);
+                            toast.error("Failed to create view", { id: toastId });
+                          }
+                        }}
                       >
                         <ExternalLink className="w-4 h-4" />
                       </Button>

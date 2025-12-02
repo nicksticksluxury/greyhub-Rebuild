@@ -968,7 +968,22 @@ export default function WatchDetail() {
               </Button>
               <Button
                   variant="outline"
-                  onClick={() => window.open(`/functions/renderSalesView?id=${watchId}`, '_blank', 'width=450,height=850')}
+                  onClick={async () => {
+                      const toastId = toast.loading("Creating temporary public view...");
+                      try {
+                        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                        const share = await base44.entities.PublicSharedView.create({
+                          data: editedData,
+                          expires_at: expiresAt,
+                          view_type: "sales_tool"
+                        });
+                        window.open(`/functions/renderSharedView?id=${share.id}`, '_blank', 'width=450,height=850');
+                        toast.dismiss(toastId);
+                      } catch (e) {
+                        console.error(e);
+                        toast.error("Failed to create view", { id: toastId });
+                      }
+                  }}
                   className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
               >
                   <ExternalLink className="w-4 h-4 mr-2" />
