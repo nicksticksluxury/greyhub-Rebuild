@@ -9,53 +9,24 @@ export default function SalesView() {
   const urlParams = new URLSearchParams(window.location.search);
   const watchId = urlParams.get('id');
 
-  const [user, setUser] = useState(null);
-  const [authError, setAuthError] = useState(null);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const checkAuth = async () => {
-        try {
-            // Try to get the user object directly - this validates the session
-            const currentUser = await base44.auth.me();
-            if (mounted) {
-                setUser(currentUser);
-                setIsAuthChecking(false);
-            }
-        } catch (err) {
-            console.error("Auth check failed:", err);
-            if (mounted) {
-                setUser(null);
-                setAuthError(err.message || "Session invalid");
-                setIsAuthChecking(false);
-            }
-        }
-    };
-
-    checkAuth();
-    return () => { mounted = false; };
-  }, []);
-
-  const { data: watch, isLoading } = useQuery({
+  // Simplify auth logic: Just try to fetch. If it fails, we know we need auth.
+  const { data: watch, isLoading, error, refetch } = useQuery({
     queryKey: ['watch', watchId],
     queryFn: async () => {
       if (!watchId) return null;
-      // Use the specific get() instead of list() for efficiency and better error handling
-      try {
-          // First try list() as it's cached usually, but if that fails/empty, we could try get
-          // Sticking to list() as per existing pattern to ensure we find it even if permissions are weird
-          const watches = await base44.entities.Watch.list();
-          return watches.find(w => w.id === watchId);
-      } catch (e) {
-          console.error("Error fetching watch:", e);
-          throw e;
-      }
+      // Fetching list() requires auth. If this fails, we catch the 401.
+      const watches = await base44.entities.Watch.list();
+      return watches.find(w => w.id === watchId);
     },
-    enabled: !!watchId && !!user,
+    enabled: !!watchId, // Run immediately
     retry: false
   });
+
+  const isAuthError = error && (
+      error.message?.includes('401') || 
+      error.message?.includes('auth') || 
+      error.status === 401
+  );
 
   if (isAuthChecking) {
     return (
@@ -68,7 +39,7 @@ export default function SalesView() {
     );
   }
 
-  if (!isAuthChecking && !user) {
+  if (isAuthError) {
       return (
         <div className="flex items-center justify-center min-h-screen bg-slate-900 text-white p-6">
           <div className="text-center max-w-sm">
@@ -76,22 +47,27 @@ export default function SalesView() {
                <Sparkles className="w-8 h-8 text-amber-400" />
             </div>
             <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
-            <p className="text-slate-400 mb-4">Please log in to view this sales tool.</p>
+            <p className="text-slate-400 mb-4">Session may have expired or is missing.</p>
             
-            {authError && (
-                <div className="bg-red-900/30 border border-red-800 p-3 rounded mb-6 text-xs text-red-300 font-mono text-left">
-                    Error: {authError}
-                    <br/>
-                    Cookie: {document.cookie ? "Present" : "Missing"}
-                </div>
-            )}
-
-            <button 
-              onClick={() => base44.auth.redirectToLogin(window.location.href)}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg transition-all transform hover:scale-[1.02] shadow-lg shadow-amber-500/20"
-            >
-              Log In via Base44
-            </button>
+            <div className="space-y-3">
+                <button 
+                  onClick={() => base44.auth.redirectToLogin(window.location.href)}
+                  className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg transition-all shadow-lg shadow-amber-500/20"
+                >
+                  Log In via Base44
+                </button>
+                
+                <button 
+                  onClick={() => window.opener ? window.opener.focus() : null}
+                  className="text-sm text-slate-500 hover:text-slate-300 underline"
+                >
+                  Back to Inventory
+                </button>
+            </div>
+            
+            <div className="mt-8 p-4 bg-black/30 rounded text-xs font-mono text-slate-500 break-all">
+                Debug: {error?.message || "Unknown error"}
+            </div>
           </div>
         </div>
       );
