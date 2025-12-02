@@ -340,10 +340,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                         size="icon"
                         title="Open Sales Tool"
                         className="h-8 w-8 hover:bg-amber-50 hover:text-amber-600"
-                        onClick={() => {
-                          localStorage.setItem('sales_view_data', JSON.stringify(watch));
-                          window.open(createPageUrl(`SalesView?id=${watch.id}`), '_blank', 'width=450,height=850');
-                        }}
+                        onClick={() => window.open(`/functions/renderSalesView?id=${watch.id}`, '_blank', 'width=450,height=850')}
                       >
                         <ExternalLink className="w-4 h-4" />
                       </Button>
