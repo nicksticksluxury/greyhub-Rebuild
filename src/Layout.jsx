@@ -22,6 +22,11 @@ import {
 
 const navigationItems = [
   {
+    title: "Dashboard",
+    url: createPageUrl("Index"),
+    icon: LayoutList,
+  },
+  {
     title: "Inventory",
     url: createPageUrl("Inventory"),
     icon: LayoutList,
@@ -87,8 +92,8 @@ export default function Layout({ children, currentPageName }) {
 
   // Render simplified layout for public pages
   if (currentPageName === 'index' || currentPageName === 'Index' || currentPageName === 'SalesView') {
-    return (
-      <>
+      return (
+        <>
         <style>{`
           :root {
             --primary: #1e293b;
