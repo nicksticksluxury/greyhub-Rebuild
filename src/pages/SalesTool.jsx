@@ -9,25 +9,64 @@ export default function SalesTool() {
   const urlParams = new URLSearchParams(window.location.search);
   const watchId = urlParams.get('id');
 
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(isAuth => {
+      setIsAuthenticated(isAuth);
+      setIsAuthChecking(false);
+    });
+  }, []);
+
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
     queryFn: async () => {
       if (!watchId) return null;
-      const watches = await base44.entities.Watch.list();
-      return watches.find(w => w.id === watchId);
+      // Fetch specific watch if possible, or list (list is safer if get isn't exposed or if we need filtering)
+      // Using list to match previous logic, but get(id) is better if available.
+      // Trying list first as per original code.
+      try {
+          const watches = await base44.entities.Watch.list();
+          return watches.find(w => w.id === watchId);
+      } catch (e) {
+          console.error("Error fetching watch:", e);
+          return null;
+      }
     },
-    enabled: !!watchId,
+    enabled: !!watchId && isAuthenticated,
+    retry: false // Don't retry on failure to avoid loops
   });
 
-  if (isLoading) {
+  if (isAuthChecking || (isAuthenticated && isLoading)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-900 text-white">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-amber-400 font-bold tracking-wider">LOADING WATCH DATA...</p>
+          <p className="text-amber-400 font-bold tracking-wider">LOADING...</p>
         </div>
       </div>
     );
+  }
+
+  if (isAuthenticated === false) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-slate-900 text-white p-6">
+          <div className="text-center max-w-sm">
+            <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg border border-slate-700">
+               <Sparkles className="w-8 h-8 text-amber-400" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
+            <p className="text-slate-400 mb-8">Please log in to view this sales tool.</p>
+            <button 
+              onClick={() => base44.auth.redirectToLogin(window.location.href)}
+              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg transition-all transform hover:scale-[1.02] shadow-lg shadow-amber-500/20"
+            >
+              Log In via Base44
+            </button>
+          </div>
+        </div>
+      );
   }
 
   if (!watch) {
@@ -36,6 +75,7 @@ export default function SalesTool() {
           <div className="text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <p className="text-red-400 font-bold tracking-wider">WATCH NOT FOUND</p>
+            <p className="text-slate-500 text-sm mt-2">ID: {watchId}</p>
           </div>
         </div>
       );
