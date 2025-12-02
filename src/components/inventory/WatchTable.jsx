@@ -357,10 +357,13 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                           }
 
                           // Prices
-                          const format = (val) => val ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
+                          const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
                           params.set("msrp", format(watch.msrp || watch.ai_analysis?.original_msrp));
                           params.set("price", format(watch.retail_price || watch.ai_analysis?.average_market_value));
-                          params.set("whatnotPrice", format(watch.ai_analysis?.pricing_recommendations?.whatnot));
+                          
+                          // Prioritize set platform price, fallback to AI recommendation
+                          const whatnotPrice = watch.platform_prices?.whatnot || watch.ai_analysis?.pricing_recommendations?.whatnot;
+                          params.set("whatnotPrice", format(whatnotPrice));
 
                           // Highlights
                           if (watch.ai_analysis?.notable_features?.length) {

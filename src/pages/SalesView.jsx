@@ -153,12 +153,12 @@ export default function SalesView() {
             </div>
           </div>
 
-          {data.comparableListings.length > 0 && (
-            <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`${accentClass} font-bold`}>🔗</span>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Comparable Listings</h3>
-              </div>
+          <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`${accentClass} font-bold`}>🔗</span>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Comparable Listings</h3>
+            </div>
+            {data.comparableListings.length > 0 ? (
               <ul className="space-y-2">
                 {data.comparableListings.map((comp, i) => (
                   <li key={i} className="flex justify-between items-center text-sm">
@@ -168,14 +168,16 @@ export default function SalesView() {
                       rel="noopener noreferrer"
                       className="text-blue-400 hover:text-blue-300 underline text-sm flex-1 truncate"
                     >
-                      {comp.url.slice(0, -8)}XXXXXXXX
+                      {comp.url ? (comp.url.length > 30 ? comp.url.substring(0, 25) + "..." : comp.url) : "Link"}
                     </a>
                     {comp.price && <span className="text-white font-semibold ml-2">{comp.price}</span>}
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="text-slate-400 text-sm italic">No comparable listings available.</p>
+            )}
+          </div>
         </div>
 
         {/* Highlights */}

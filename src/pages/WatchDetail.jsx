@@ -983,10 +983,13 @@ export default function WatchDetail() {
                     }
 
                     // Prices
-                    const format = (val) => val ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
+                    const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
                     params.set("msrp", format(editedData.msrp || editedData.ai_analysis?.original_msrp));
                     params.set("price", format(editedData.retail_price || editedData.ai_analysis?.average_market_value));
-                    params.set("whatnotPrice", format(editedData.ai_analysis?.pricing_recommendations?.whatnot));
+                    
+                    // Prioritize set platform price, fallback to AI recommendation
+                    const whatnotPrice = editedData.platform_prices?.whatnot || editedData.ai_analysis?.pricing_recommendations?.whatnot;
+                    params.set("whatnotPrice", format(whatnotPrice));
 
                     // Highlights
                     if (editedData.ai_analysis?.notable_features?.length) {
