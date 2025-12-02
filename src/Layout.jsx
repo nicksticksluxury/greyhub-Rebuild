@@ -64,6 +64,16 @@ export default function Layout({ children, currentPageName }) {
     localStorage.setItem('watchvault_mode', newMode);
   };
 
+  // Special Layout for Sales Tool (Standalone, no Sidebar)
+  if (location.pathname.includes('WhatnotSalesTool')) {
+      return (
+          <div className="min-h-screen bg-slate-900">
+              {children}
+              <Toaster />
+          </div>
+      );
+  }
+
   return (
     <SidebarProvider>
       <style>{`
