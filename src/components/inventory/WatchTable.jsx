@@ -374,7 +374,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
 
                           // Use ID for cleaner URLs and reliable data fetching
                           params.set("id", watch.id);
-                          window.open(createPageUrl(`SalesView?${params.toString()}`), '_blank', 'width=450,height=850');
+                          window.open(createPageUrl(`SalesView?${params.toString()}`), 'ObsWindow', 'width=450,height=850,menubar=no,toolbar=no,location=no,status=no');
                         }}
                       >
                         <ExternalLink className="w-4 h-4" />

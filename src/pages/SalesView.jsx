@@ -68,6 +68,12 @@ export default function SalesView() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (data) {
+      document.title = `OBS WHATNOT SHARE - ${data.brand} ${data.model}`;
+    }
+  }, [data]);
+
   if (loading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>;
 
   if (!data) return null;

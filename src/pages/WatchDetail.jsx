@@ -1000,7 +1000,7 @@ export default function WatchDetail() {
 
                     // Use ID for cleaner URLs and reliable data fetching
                     params.set("id", watchId);
-                    window.open(createPageUrl(`SalesView?${params.toString()}`), '_blank', 'width=450,height=850');
+                    window.open(createPageUrl(`SalesView?${params.toString()}`), 'ObsWindow', 'width=450,height=850,menubar=no,toolbar=no,location=no,status=no');
                   }}
                   className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
               >
