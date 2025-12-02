@@ -968,7 +968,7 @@ export default function WatchDetail() {
               </Button>
               <Button
                   variant="outline"
-                  onClick={() => window.open(createPageUrl(`WhatnotSalesTool?id=${watchId}`), '_blank', 'width=450,height=850')}
+                  onClick={() => window.open(createPageUrl(`SalesTool?id=${watchId}`), '_blank', 'width=450,height=850')}
                   className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
               >
                   <ExternalLink className="w-4 h-4 mr-2" />
