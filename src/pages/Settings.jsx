@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink, Sparkles } from "lucide-react";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -436,6 +436,41 @@ export default function Settings() {
                  className="border-slate-300 ml-2"
                >
                  Debug Data
+               </Button>
+               <Button 
+                 onClick={async () => {
+                   if (!confirm("This will analyze all watches to fill in newly added fields (Dial Color, Bracelet Material). This process may take a while. Continue?")) return;
+                   
+                   const toastId = toast.loading("Starting bulk update...");
+                   try {
+                      // Fetch all watches first
+                      const allWatches = await base44.entities.Watch.list();
+                      const watchIds = allWatches.map(w => w.id);
+                      const total = watchIds.length;
+                      let processed = 0;
+                      let successCount = 0;
+                      
+                      // Process in chunks of 5 to avoid browser timeouts on long requests
+                      const CHUNK_SIZE = 5;
+                      for (let i = 0; i < total; i += CHUNK_SIZE) {
+                          const chunk = watchIds.slice(i, i + CHUNK_SIZE);
+                          toast.loading(`Processing ${processed}/${total}...`, { id: toastId });
+                          
+                          const res = await base44.functions.invoke("bulkUpdateWatchIdentification", { watchIds: chunk });
+                          successCount += res.data.success;
+                          processed += chunk.length;
+                      }
+                      
+                      toast.success(`Completed! Updated ${successCount} watches.`, { id: toastId });
+                   } catch (e) {
+                      toast.error("Failed to run update: " + e.message, { id: toastId });
+                   }
+                 }} 
+                 variant="outline"
+                 className="border-purple-300 text-purple-700 hover:bg-purple-50 ml-2"
+               >
+                 <Sparkles className="w-4 h-4 mr-2" />
+                 Update AI Fields
                </Button>
                <Button 
                  onClick={async () => {
