@@ -70,7 +70,7 @@ export default function SalesView() {
 
   useEffect(() => {
     if (data) {
-      document.title = `OBS WHATNOT SHARE - ${data.brand} ${data.model}`;
+      document.title = "OBS WHATNOT SHARE";
     }
   }, [data]);
 
