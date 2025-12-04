@@ -100,9 +100,12 @@ export default function Inventory() {
     try {
       const result = await base44.functions.invoke("ebaySync");
       if (result.data.success) {
-        toast.success(`Synced ${result.data.syncedCount} sales from eBay`);
         if (result.data.syncedCount > 0) {
+          toast.success(`Synced ${result.data.syncedCount} sales: ${result.data.syncedItems.join(", ")}`);
           queryClient.invalidateQueries({ queryKey: ['watches'] });
+          queryClient.invalidateQueries({ queryKey: ['alerts'] });
+        } else {
+          toast.info("Sync complete. No new sales found.");
         }
       } else {
         toast.error("Sync failed: " + (result.data.error || "Unknown error"));
