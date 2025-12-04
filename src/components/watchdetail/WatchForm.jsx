@@ -351,25 +351,6 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Dial Color</Label>
-            <Input
-              value={data.dial_color || ""}
-              onChange={(e) => updateField("dial_color", e.target.value)}
-              placeholder="e.g., Black, Blue"
-            />
-          </div>
-          <div>
-            <Label>Bracelet Material</Label>
-            <Input
-              value={data.bracelet_material || ""}
-              onChange={(e) => updateField("bracelet_material", e.target.value)}
-              placeholder="e.g., Stainless Steel, Leather"
-            />
-          </div>
-        </div>
-
 
 
         <div>
