@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
 
         // fetch recent orders from eBay
         // Using Fulfillment API
-        const response = await fetch('https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=orderstatus:{COMPLETED|IN_PROGRESS}', {
+        const response = await fetch('https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=paymentstatus:{PAID}', {
             headers: {
                 'Authorization': `Bearer ${ebayToken}`,
                 'Content-Type': 'application/json'
