@@ -201,8 +201,15 @@ export default function WatchSourceDetail() {
             </div>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Order History</CardTitle>
+                <Button onClick={() => {
+                    setCurrentOrder(null);
+                    setIsOrderDialogOpen(true);
+                }} size="sm" className="bg-slate-800 hover:bg-slate-900">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Shipment
+                </Button>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>

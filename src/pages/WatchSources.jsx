@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Plus, Search, Package, TrendingUp, DollarSign, Users, RefreshCw } from "lucide-react";
@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import DuplicateMergeDialog from "../components/sources/DuplicateMergeDialog";
 import { GitMerge } from "lucide-react";
 
@@ -17,6 +20,8 @@ export default function WatchSources() {
   const [searchTerm, setSearchTerm] = useState("");
   const [recalculating, setRecalculating] = useState(false);
   const [showMergeDialog, setShowMergeDialog] = useState(false);
+  const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: sources = [], isLoading, refetch } = useQuery({
     queryKey: ['watchSources'],
@@ -42,6 +47,31 @@ export default function WatchSources() {
     } finally {
       setRecalculating(false);
     }
+  };
+
+  const createSourceMutation = useMutation({
+    mutationFn: (data) => base44.entities.WatchSource.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchSources'] });
+      setIsAddSourceOpen(false);
+      toast.success("Source created successfully");
+    },
+    onError: (err) => toast.error("Failed to create source: " + err.message)
+  });
+
+  const handleCreateSource = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+        name: formData.get('name'),
+        website: formData.get('website'),
+        primary_contact: formData.get('primary_contact'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        address: formData.get('address'),
+        notes: formData.get('notes'),
+    };
+    createSourceMutation.mutate(data);
   };
 
   const filteredSources = sources.filter(source => 
@@ -83,12 +113,10 @@ export default function WatchSources() {
                <RefreshCw className={`w-4 h-4 mr-2 ${recalculating ? 'animate-spin' : ''}`} />
                Refresh Stats
              </Button>
-             {/* <Link to={createPageUrl("AddWatchSource")}> 
-               <Button className="bg-slate-800 hover:bg-slate-900">
-                 <Plus className="w-4 h-4 mr-2" />
-                 Add Source
-               </Button>
-            </Link> */}
+             <Button onClick={() => setIsAddSourceOpen(true)} className="bg-slate-800 hover:bg-slate-900">
+               <Plus className="w-4 h-4 mr-2" />
+               Add Source
+             </Button>
           </div>
         </div>
 
@@ -271,6 +299,53 @@ export default function WatchSources() {
           onClose={() => setShowMergeDialog(false)}
           onMergeComplete={refetch}
           />
+
+        <Dialog open={isAddSourceOpen} onOpenChange={setIsAddSourceOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Source</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleCreateSource} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Source Name *</Label>
+                        <Input name="name" required placeholder="e.g. Bob's Watches" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Primary Contact</Label>
+                            <Input name="primary_contact" placeholder="Contact Name" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Email</Label>
+                            <Input type="email" name="email" placeholder="email@example.com" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Phone</Label>
+                            <Input name="phone" placeholder="Phone Number" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Website</Label>
+                            <Input name="website" placeholder="https://..." />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Address</Label>
+                        <Input name="address" placeholder="Physical Address" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Notes</Label>
+                        <Textarea name="notes" placeholder="Additional notes..." />
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setIsAddSourceOpen(false)}>Cancel</Button>
+                        <Button type="submit" disabled={createSourceMutation.isPending}>Create Source</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+
           </div>
           );
           }
