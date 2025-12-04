@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench } from "lucide-react";
+import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench, Pencil } from "lucide-react";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -80,6 +80,7 @@ function calculateMinimumPrice(cost, platform) {
 
 export default function WatchForm({ data, onChange, sources, orders, auctions }) {
   const [showRepairs, setShowRepairs] = useState(false);
+  const [editingNet, setEditingNet] = useState(false);
 
   const updateField = (field, value) => {
     const newData = { ...data, [field]: value };
@@ -162,7 +163,18 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
     const totalCost = getTotalCost();
     const platform = data.sold_platform.toLowerCase();
     
-    const { fees, net } = calculateFees(soldPrice, platform);
+    let fees, net;
+
+    // Use overridden net proceeds if available
+    if (data.sold_net_proceeds !== undefined && data.sold_net_proceeds !== null) {
+        net = parseFloat(data.sold_net_proceeds);
+        fees = soldPrice - net;
+    } else {
+        const calculated = calculateFees(soldPrice, platform);
+        fees = calculated.fees;
+        net = calculated.net;
+    }
+
     const profit = net - totalCost;
     const margin = totalCost > 0 ? (profit / totalCost) * 100 : 0;
     const markup = totalCost > 0 ? ((soldPrice - totalCost) / totalCost) * 100 : 0;
@@ -852,11 +864,37 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
                 <p className="text-xs text-red-200 mt-1">{PLATFORM_FEES[data.sold_platform.toLowerCase()].description}</p>
               </div>
               <div className="bg-emerald-500/20 rounded-lg p-3 border border-emerald-400/30">
-                <p className="text-xs text-emerald-200 uppercase font-semibold mb-1 flex items-center gap-1">
-                  <DollarSign className="w-3 h-3" />
-                  Net Proceeds
+                <p className="text-xs text-emerald-200 uppercase font-semibold mb-1 flex items-center gap-1 justify-between">
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="w-3 h-3" />
+                    Net Proceeds
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-4 w-4 text-emerald-200 hover:text-emerald-100 p-0"
+                    onClick={() => setEditingNet(!editingNet)}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </Button>
                 </p>
-                <p className="text-xl font-bold text-emerald-100">${saleStats.net.toFixed(2)}</p>
+                
+                {editingNet ? (
+                    <div className="flex items-center gap-2">
+                        <span className="text-emerald-100 font-bold">$</span>
+                        <Input 
+                            type="number"
+                            step="0.01"
+                            className="h-8 bg-black/20 border-emerald-500/50 text-white font-bold w-full"
+                            value={data.sold_net_proceeds !== undefined ? data.sold_net_proceeds : saleStats.net.toFixed(2)}
+                            onChange={(e) => updateField("sold_net_proceeds", parseFloat(e.target.value))}
+                            onBlur={() => setEditingNet(false)}
+                            autoFocus
+                        />
+                    </div>
+                ) : (
+                    <p className="text-xl font-bold text-emerald-100">${saleStats.net.toFixed(2)}</p>
+                )}
               </div>
             </div>
 
