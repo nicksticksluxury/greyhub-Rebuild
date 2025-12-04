@@ -9,9 +9,25 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const ebayToken = Deno.env.get("EBAY_API_KEY");
+        // Try to get token from Settings first (OAuth flow), fall back to Env
+        let ebayToken = null;
+        try {
+            // Access settings securely (if user has read access to settings, or use service role if needed)
+            // Since this is triggered by user action usually, we try user access. 
+            // But Settings entity might be restricted. Let's use service role for reliability in backend function.
+            const settings = await base44.asServiceRole.entities.Setting.list();
+            const tokenSetting = settings.find(s => s.key === 'ebay_user_access_token');
+            if (tokenSetting) ebayToken = tokenSetting.value;
+        } catch (e) {
+            console.error("Failed to read settings", e);
+        }
+
         if (!ebayToken) {
-            return Response.json({ error: 'EBAY_API_KEY not configured' }, { status: 500 });
+            ebayToken = Deno.env.get("EBAY_API_KEY");
+        }
+
+        if (!ebayToken) {
+            return Response.json({ error: 'eBay Access Token not configured. Please connect eBay in Settings.' }, { status: 500 });
         }
 
         // fetch recent orders from eBay
@@ -71,6 +87,20 @@ Deno.serve(async (req) => {
                         sold_price: soldPrice,
                         sold_platform: 'ebay'
                     });
+
+                    // Create Alert
+                    try {
+                        await base44.asServiceRole.entities.Alert.create({
+                            type: "success",
+                            title: "Item Sold on eBay",
+                            message: `Sold: ${watch.brand} ${watch.model} for $${soldPrice}`,
+                            link: `WatchDetail?id=${watch.id}`,
+                            read: false,
+                            metadata: { watch_id: watch.id, platform: 'ebay', price: soldPrice }
+                        });
+                    } catch (alertErr) {
+                        console.error("Failed to create alert", alertErr);
+                    }
 
                     syncedCount++;
                     syncedItems.push(`${watch.brand} ${watch.model}`);

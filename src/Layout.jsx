@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut } from "lucide-react";
+import AlertsBell from "./components/layout/AlertsBell";
 
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -205,22 +206,28 @@ export default function Layout({ children, currentPageName }) {
                   <p className="text-xs text-slate-500 truncate">Inventory Manager</p>
                 </div>
               </div>
-              <button
-                onClick={handleLogout}
-                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
+              <div className="flex items-center gap-1">
+                  <AlertsBell />
+                  <button
+                  onClick={handleLogout}
+                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Logout"
+                  >
+                  <LogOut className="w-5 h-5" />
+                  </button>
+              </div>
+              </div>
           </SidebarFooter>
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
           <header className="bg-white border-b border-slate-200 px-6 py-4 md:hidden">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors duration-200" />
-              <h1 className="text-xl font-bold text-slate-900">WatchVault</h1>
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-4">
+                    <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors duration-200" />
+                    <h1 className="text-xl font-bold text-slate-900">WatchVault</h1>
+                </div>
+                <AlertsBell />
             </div>
           </header>
 
