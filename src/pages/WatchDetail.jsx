@@ -775,7 +775,23 @@ export default function WatchDetail() {
   };
 
   const importAIData = (field, value) => {
-    if (field === "basic_info_all") {
+    if (field === "batch_update") {
+      const updates = { ...value };
+      
+      // Merge platform_prices if present
+      if (updates.platform_prices) {
+        updates.platform_prices = {
+          ...(editedData.platform_prices || {}),
+          ...updates.platform_prices
+        };
+      }
+
+      setEditedData({
+        ...editedData,
+        ...updates
+      });
+      toast.success("Selected items imported!");
+    } else if (field === "basic_info_all") {
       const updates = {};
       if (value.brand) updates.brand = value.brand;
       if (value.model) updates.model = value.model;
