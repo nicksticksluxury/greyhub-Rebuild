@@ -115,6 +115,20 @@ Deno.serve(async (req) => {
                              ebay_transaction_id: transaction.TransactionID
                          }
                      });
+                     // Create Alert
+                     try {
+                        await base44.asServiceRole.entities.Alert.create({
+                            type: "success",
+                            title: "Item Sold on eBay",
+                            message: `Sold: ${watch.brand} ${watch.model} for $${soldPrice}`,
+                            link: `WatchDetail?id=${watch.id}`,
+                            read: false,
+                            metadata: { watch_id: watch.id, platform: 'ebay', price: soldPrice }
+                        });
+                     } catch (alertErr) {
+                         console.error("Failed to create alert", alertErr);
+                     }
+
                      console.log(`Marked watch ${watch.id} as sold on eBay`);
                  }
              }
