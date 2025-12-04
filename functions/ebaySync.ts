@@ -32,7 +32,11 @@ Deno.serve(async (req) => {
 
         // fetch recent orders from eBay
         // Using Fulfillment API
-        const response = await fetch('https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=paymentstatus:{PAID}', {
+        // Filter by creation date (last 60 days) to capture recent sales
+        const date = new Date();
+        date.setDate(date.getDate() - 60);
+        const dateStr = date.toISOString();
+        const response = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=creationdate:[${dateStr}..]`, {
             headers: {
                 'Authorization': `Bearer ${ebayToken}`,
                 'Content-Type': 'application/json'
