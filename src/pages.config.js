@@ -11,6 +11,7 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import SourceWatches from './pages/SourceWatches';
 import SalesView from './pages/SalesView';
 import index from './pages/index';
+import OutForRepair from './pages/OutForRepair';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "SourceWatches": SourceWatches,
     "SalesView": SalesView,
     "index": index,
+    "OutForRepair": OutForRepair,
 }
 
 export const pagesConfig = {
