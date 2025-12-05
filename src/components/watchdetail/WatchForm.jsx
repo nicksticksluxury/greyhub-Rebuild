@@ -767,17 +767,35 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
       <TabsContent value="details" className="space-y-4 mt-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label>Sold</Label>
+            <Label>Status</Label>
+            <div className="flex gap-2">
+              <Select
+                value={data.sold ? "true" : "false"}
+                onValueChange={(value) => updateField("sold", value === "true")}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="false">Available</SelectItem>
+                  <SelectItem value="true">Sold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label>Repair Status</Label>
             <Select
-              value={data.sold ? "true" : "false"}
-              onValueChange={(value) => updateField("sold", value === "true")}
+              value={data.repair_status || "in_inventory"}
+              onValueChange={(value) => updateField("repair_status", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className={data.repair_status === 'out_for_repair' ? 'border-amber-500 bg-amber-50 text-amber-900' : ''}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="false">Not Sold</SelectItem>
-                <SelectItem value="true">Sold</SelectItem>
+                <SelectItem value="in_inventory">In Inventory</SelectItem>
+                <SelectItem value="out_for_repair">Out for Repair</SelectItem>
               </SelectContent>
             </Select>
           </div>

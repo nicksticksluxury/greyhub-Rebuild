@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
         const watches = await base44.asServiceRole.entities.Watch.list('-created_date', 1000);
 
         // 2. Map watches to Chrono24 format
-        const chrono24Listings = watches.filter(w => !w.sold).map(w => {
+        const chrono24Listings = watches.filter(w => !w.sold && w.repair_status !== 'out_for_repair').map(w => {
             // Map Condition
             let condition = "Very good";
             let scopeOfDelivery = "No original box, no original papers";

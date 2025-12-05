@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut, Wrench } from "lucide-react";
 import AlertsBell from "./components/layout/AlertsBell";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -31,6 +31,11 @@ const navigationItems = [
     title: "Inventory",
     url: createPageUrl("Inventory"),
     icon: LayoutList,
+  },
+  {
+    title: "Out for Repair",
+    url: createPageUrl("OutForRepair"),
+    icon: Wrench,
   },
   {
     title: "Sold",

@@ -227,8 +227,9 @@ export default function Inventory() {
   )].sort();
 
   const filteredWatches = watches.filter(watch => {
-    // Filter out sold watches from regular inventory
+    // Filter out sold watches and watches out for repair from regular inventory
     if (watch.sold) return false;
+    if (watch.repair_status === 'out_for_repair') return false;
 
     // Resolve source for this watch
     const order = sourceOrders.find(o => o.id === watch.source_order_id);
