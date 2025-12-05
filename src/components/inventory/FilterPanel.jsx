@@ -13,12 +13,13 @@ export default function FilterPanel({ filters, setFilters, auctions, sources, ca
       movement_type: "all",
       case_material: "",
       manufacturer: "",
-      tested: "all"
+      tested: "all",
+      gender: "all"
     });
   };
 
   const hasActiveFilters = filters.condition !== "all" || filters.movement_type !== "all" || 
-    filters.case_material !== "" || filters.manufacturer !== "" || filters.source !== "all" || filters.auction !== "all" || filters.tested !== "all";
+    filters.case_material !== "" || filters.manufacturer !== "" || filters.source !== "all" || filters.auction !== "all" || filters.tested !== "all" || filters.gender !== "all";
 
   return (
     <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -113,6 +114,21 @@ export default function FilterPanel({ filters, setFilters, auctions, sources, ca
               <SelectItem value="no">No</SelectItem>
               <SelectItem value="yes_working">Yes - Working</SelectItem>
               <SelectItem value="yes_not_working">Yes - Not Working</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700 mb-2 block">Gender</label>
+          <Select value={filters.gender || "all"} onValueChange={(value) => setFilters({...filters, gender: value})}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="All Genders" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Genders</SelectItem>
+              <SelectItem value="mens">Men's</SelectItem>
+              <SelectItem value="womens">Women's</SelectItem>
+              <SelectItem value="unisex">Unisex</SelectItem>
             </SelectContent>
           </Select>
         </div>
