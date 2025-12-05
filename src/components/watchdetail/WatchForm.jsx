@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench, Pencil, HelpCircle } from "lucide-react";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -81,6 +82,8 @@ function calculateMinimumPrice(cost, platform) {
 export default function WatchForm({ data, onChange, sources, orders, auctions }) {
   const [showRepairs, setShowRepairs] = useState(false);
   const [editingNet, setEditingNet] = useState(false);
+  const [showZeroReasonDialog, setShowZeroReasonDialog] = useState(false);
+  const [tempReason, setTempReason] = useState("");
 
   const updateField = (field, value) => {
     const newData = { ...data, [field]: value };
@@ -818,10 +821,39 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
                   value={data.sold_price === 0 ? 0 : (data.sold_price || "")}
                   onChange={(e) => {
                     const val = e.target.value;
-                    updateField("sold_price", val === "" ? "" : parseFloat(val));
+                    const numVal = val === "" ? "" : parseFloat(val);
+                    updateField("sold_price", numVal);
+                    if (numVal === 0) {
+                      setTempReason(data.zero_price_reason || "");
+                      setShowZeroReasonDialog(true);
+                    }
                   }}
                   placeholder="Sold price"
                 />
+                {data.sold_price === 0 && (
+                  <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-amber-800 flex items-center gap-1 text-xs uppercase font-bold">
+                        <HelpCircle className="w-3 h-3" />
+                        Reason for $0 Sale
+                      </Label>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100"
+                        onClick={() => {
+                          setTempReason(data.zero_price_reason || "");
+                          setShowZeroReasonDialog(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                    <p className="text-sm text-amber-900 italic">
+                      {data.zero_price_reason || "No reason provided"}
+                    </p>
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Sold Date</Label>
@@ -955,6 +987,33 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           </div>
         )}
       </TabsContent>
+      
+      <Dialog open={showZeroReasonDialog} onOpenChange={setShowZeroReasonDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reason for $0 Sale</DialogTitle>
+            <DialogDescription>
+              Please provide a reason why this watch is being sold/recorded for $0 (e.g., Giveaway, Trade, Gift, Error correction).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label className="mb-2 block">Reason</Label>
+            <Textarea 
+              value={tempReason} 
+              onChange={(e) => setTempReason(e.target.value)} 
+              placeholder="Enter reason..."
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowZeroReasonDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+              updateField("zero_price_reason", tempReason);
+              setShowZeroReasonDialog(false);
+            }}>Save Reason</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Tabs>
   );
 }
