@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag, Bell, FileText, Loader2 } from "lucide-react";
+import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag, Bell, FileText, Loader2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +16,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import WatchTable from "../components/inventory/WatchTable";
 import ExportDialog from "../components/inventory/ExportDialog";
@@ -36,6 +39,7 @@ export default function Inventory() {
     source: "all",
     condition: "all",
     movement_type: "all",
+    gender: "all",
     case_material: "",
     manufacturer: "",
     tested: "all"
@@ -149,6 +153,29 @@ export default function Inventory() {
 
 
 
+  const handleBulkUpdateGender = async (gender) => {
+    if (selectedWatchIds.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to set the gender to "${gender}" for ${selectedWatchIds.length} watches?`)) {
+      return;
+    }
+
+    const toastId = toast.loading("Updating watches...");
+    try {
+      // Process in parallel
+      await Promise.all(selectedWatchIds.map(id => 
+        base44.entities.Watch.update(id, { gender })
+      ));
+
+      toast.success(`Updated ${selectedWatchIds.length} watches to ${gender}`, { id: toastId });
+      queryClient.invalidateQueries({ queryKey: ['watches'] });
+      setSelectedWatchIds([]);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update watches", { id: toastId });
+    }
+  };
+
   const handleBulkGenerateDescriptions = async () => {
     if (selectedWatchIds.length === 0) return;
     
@@ -251,8 +278,9 @@ export default function Inventory() {
     const matchesCaseMaterial = !filters.case_material || watch.case_material?.trim() === filters.case_material;
     const matchesManufacturer = !filters.manufacturer || watch.brand?.trim() === filters.manufacturer;
     const matchesTested = filters.tested === "all" || (watch.tested || "no") === filters.tested;
+    const matchesGender = filters.gender === "all" || watch.gender === filters.gender;
 
-    return matchesSearch && matchesAuction && matchesSource && matchesCondition && matchesMovementType && matchesCaseMaterial && matchesManufacturer && matchesTested;
+    return matchesSearch && matchesAuction && matchesSource && matchesCondition && matchesMovementType && matchesCaseMaterial && matchesManufacturer && matchesTested && matchesGender;
   });
 
   return (
@@ -315,6 +343,25 @@ export default function Inventory() {
                       <Download className="w-4 h-4 mr-2" />
                       Export Selected
                     </DropdownMenuItem>
+                    
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <User className="w-4 h-4 mr-2" />
+                        Set Gender
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("mens")}>
+                          Men's
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("womens")}>
+                          Women's
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("unisex")}>
+                          Unisex
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
                     <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Listing..." : "List on eBay"}
