@@ -217,6 +217,7 @@ export default function WatchDetail() {
       - Reference/model number 
       - Serial (if visible)
       - Year estimate
+      - Gender (Mens, Womens, or Unisex)
       - Movement type (MUST be one of: "Automatic", "Digital", "Manual", "Quartz", "Solar", or "Unknown" - use exact capitalization)
       - Case material & size
       - Dial Color
@@ -237,6 +238,7 @@ export default function WatchDetail() {
             reference_number: { type: "string" },
             serial_number: { type: "string" },
             estimated_year: { type: "string" },
+            identified_gender: { type: "string", enum: ["mens", "womens", "unisex"] },
             movement_type: { type: "string", enum: ["Automatic", "Digital", "Manual", "Quartz", "Solar", "Unknown"], description: "Must be exactly one of these values with proper capitalization" },
             case_material: { type: "string" },
             case_size: { type: "string" },
@@ -798,6 +800,7 @@ export default function WatchDetail() {
       if (value.reference_number) updates.reference_number = value.reference_number;
       if (value.serial_number) updates.serial_number = value.serial_number;
       if (value.year) updates.year = value.year;
+      if (value.gender) updates.gender = value.gender;
       if (value.movement_type) updates.movement_type = value.movement_type;
       if (value.case_material) updates.case_material = value.case_material;
       if (value.case_size) updates.case_size = value.case_size;

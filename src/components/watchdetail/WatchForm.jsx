@@ -260,7 +260,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <Label>Year</Label>
             <Input
@@ -268,6 +268,22 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
               onChange={(e) => updateField("year", e.target.value)}
               placeholder="e.g., 1990"
             />
+          </div>
+          <div>
+            <Label>Gender</Label>
+            <Select
+              value={data.gender || ""}
+              onValueChange={(value) => updateField("gender", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mens">Men's</SelectItem>
+                <SelectItem value="womens">Women's</SelectItem>
+                <SelectItem value="unisex">Unisex</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Condition</Label>

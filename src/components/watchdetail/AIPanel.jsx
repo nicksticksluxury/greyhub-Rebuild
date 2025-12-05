@@ -112,6 +112,8 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
          updates.serial_number = aiAnalysis.serial_number;
       } else if (key === 'year') {
          updates.year = aiAnalysis.estimated_year;
+      } else if (key === 'gender') {
+         updates.gender = aiAnalysis.identified_gender;
       } else if (key === 'movement_type') {
          updates.movement_type = aiAnalysis.movement_type;
       } else if (key === 'case_material') {
@@ -207,6 +209,9 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
             )}
             {aiAnalysis.estimated_year && (
               <SelectableItem id="year" label="Year" value={aiAnalysis.estimated_year} />
+            )}
+            {aiAnalysis.identified_gender && (
+              <SelectableItem id="gender" label="Gender" value={aiAnalysis.identified_gender} />
             )}
             {aiAnalysis.movement_type && (
               <SelectableItem id="movement_type" label="Movement" value={aiAnalysis.movement_type} />
