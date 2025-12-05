@@ -157,9 +157,9 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
   };
 
   const calculateSaleStats = () => {
-    if (!data.sold_price || !data.sold_platform) return null;
+    if ((data.sold_price === undefined || data.sold_price === null || data.sold_price === "") || !data.sold_platform) return null;
 
-    const soldPrice = data.sold_price;
+    const soldPrice = parseFloat(data.sold_price);
     const totalCost = getTotalCost();
     const platform = data.sold_platform.toLowerCase();
     
@@ -815,8 +815,11 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
                 <Label>Sold Price</Label>
                 <Input
                   type="number"
-                  value={data.sold_price || ""}
-                  onChange={(e) => updateField("sold_price", parseFloat(e.target.value))}
+                  value={data.sold_price === 0 ? 0 : (data.sold_price || "")}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    updateField("sold_price", val === "" ? "" : parseFloat(val));
+                  }}
                   placeholder="Sold price"
                 />
               </div>
