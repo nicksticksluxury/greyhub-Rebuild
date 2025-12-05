@@ -284,13 +284,12 @@ export default function WatchDetail() {
       STEP 2 - NOW find comparable listings for pricing:
       ${isNewCondition ? 
       `Since this is a NEW watch, search for NEW watch listings ONLY:
-      - Online watch stores selling NEW (Joma Shop, Chrono24, Amazon, Watchbox)
+      - Online watch stores selling NEW (Joma Shop, Amazon, Watchbox)
       - eBay listings marked as "New In Box"
       - Find 10-15 NEW listings of this exact model
       - Calculate average NEW price (lean toward higher middle)` :
       `Since this is a USED watch, search for USED sales ONLY:
       - eBay closed and active sales (used condition)
-      - Chrono24 used listings
       - Do NOT use new watches or broken watches
       - Find 10-15 USED listings of this exact model
       - Calculate average USED price (lean toward higher middle)`}
@@ -651,7 +650,6 @@ export default function WatchDetail() {
   ${isNewCondition ? 
   `This is a NEW watch. Search for NEW watch listings ONLY:
    - Joma Shop (new watches)
-   - Chrono24 (new condition listings)
    - Amazon (new watches)
    - Watchbox (new watches)
    - eBay listings marked as "New In Box" or "Brand New"
@@ -659,10 +657,9 @@ export default function WatchDetail() {
 
    Find 10-15 NEW listings of this exact model.` :
   `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
-   
+
    Search EXCLUSIVELY in these PRE-OWNED sections:
    - eBay: Filter for SOLD listings (completed auctions) + condition "Pre-owned" or "Used"
-   - Chrono24: Filter category "Pre-owned watches" or "Used watches" ONLY
    - Watchbox: Pre-owned section ONLY
    - Watch forums: Pre-owned/used sales listings
 
