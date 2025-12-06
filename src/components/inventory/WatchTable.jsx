@@ -180,6 +180,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
+                <TableHead className="w-12 text-center font-bold text-slate-700">QTY</TableHead>
                 <TableHead className="w-20">Photo</TableHead>
                 <TableHead>
                   <Button
@@ -201,7 +202,6 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                   </Button>
                 </TableHead>
                 <TableHead>Gender</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
                 <TableHead className="text-right">
                   <Button
                     variant="ghost"
@@ -249,6 +249,9 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                         onCheckedChange={(checked) => handleSelectOne(watch.id, checked)}
                       />
                     </TableCell>
+                    <TableCell className="text-center font-medium text-slate-600">
+                      {watch.quantity || 1}
+                    </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       {watch.photos?.[0] ? (
                         typeof watch.photos[0] === 'object' && watch.photos[0].thumbnail ? (
@@ -293,9 +296,6 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                       {watch.gender && (
                         <span className="capitalize text-slate-700">{watch.gender}</span>
                       )}
-                    </TableCell>
-                    <TableCell className="text-right text-slate-600">
-                      {watch.quantity || 1}
                     </TableCell>
                     <TableCell className="text-right font-semibold">
                       {watch.cost ? `$${watch.cost.toLocaleString()}` : '-'}
