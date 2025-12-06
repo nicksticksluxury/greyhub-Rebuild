@@ -273,6 +273,16 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
             />
           </div>
           <div>
+            <Label>Quantity</Label>
+            <Input
+              type="number"
+              min="0"
+              value={data.quantity || 1}
+              onChange={(e) => updateField("quantity", parseInt(e.target.value) || 0)}
+              placeholder="Qty"
+            />
+          </div>
+          <div>
             <Label>Gender</Label>
             <Select
               value={data.gender || ""}
