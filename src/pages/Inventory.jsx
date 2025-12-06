@@ -139,13 +139,40 @@ export default function Inventory() {
         toast.error(`Failed to list ${failed} items`);
         if (errors && errors.length > 0) {
           console.error("eBay listing errors:", errors);
-          // Show first error in toast
           toast.error(errors[0]);
         }
       }
     } catch (error) {
       console.error(error);
       toast.error("Failed to list items on eBay");
+    } finally {
+      setListing(false);
+    }
+  };
+
+  const handleBulkUpdateEbay = async () => {
+    if (selectedWatchIds.length === 0) return;
+    setListing(true);
+    try {
+      const result = await base44.functions.invoke("ebayUpdate", { watchIds: selectedWatchIds });
+      const { success, failed, errors } = result.data;
+      
+      if (success > 0) {
+        toast.success(`Successfully updated ${success} items on eBay`);
+        queryClient.invalidateQueries({ queryKey: ['watches'] });
+        setSelectedWatchIds([]);
+      }
+      
+      if (failed > 0) {
+        toast.error(`Failed to update ${failed} items`);
+        if (errors && errors.length > 0) {
+          console.error("eBay update errors:", errors);
+          toast.error(errors[0]);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update items on eBay");
     } finally {
       setListing(false);
     }
@@ -365,6 +392,10 @@ export default function Inventory() {
                     <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Listing..." : "List on eBay"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkUpdateEbay} disabled={listing}>
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      {listing ? "Updating..." : "Update eBay"}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
                       {generatingDescriptions ? (

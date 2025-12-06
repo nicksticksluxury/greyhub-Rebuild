@@ -30,6 +30,7 @@ export default function WatchDetail() {
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [listingEbay, setListingEbay] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [needsEbayUpdate, setNeedsEbayUpdate] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const mode = localStorage.getItem('watchvault_mode') || 'working';
     return mode === 'live' ? 'summary' : 'details';
@@ -66,6 +67,12 @@ export default function WatchDetail() {
     if (watch && !editedData) {
       setEditedData(watch);
       setOriginalData(watch);
+      // Check if watch needs eBay update (saved after last export)
+      if (watch.exported_to?.ebay && watch.updated_date) {
+        const lastExport = new Date(watch.exported_to.ebay);
+        const lastUpdate = new Date(watch.updated_date);
+        setNeedsEbayUpdate(lastUpdate > lastExport);
+      }
     }
   }, [watch]);
 
@@ -153,6 +160,10 @@ export default function WatchDetail() {
       minimum_price: calculatedMinPrice
     };
     updateMutation.mutate(dataToSave);
+    // Mark as needing eBay update if already listed
+    if (editedData.exported_to?.ebay) {
+      setNeedsEbayUpdate(true);
+    }
   };
 
   const handleDelete = () => {
@@ -551,20 +562,23 @@ export default function WatchDetail() {
       return;
     }
     
+    const isUpdate = editedData.exported_to?.ebay;
+    const functionName = isUpdate ? "ebayUpdate" : "ebayList";
+    
     setListingEbay(true);
     try {
-      const result = await base44.functions.invoke("ebayList", { watchIds: [watchId] });
+      const result = await base44.functions.invoke(functionName, { watchIds: [watchId] });
       const { success, failed, errors } = result.data;
       
       if (success > 0) {
-        toast.success("Successfully listed on eBay!");
+        toast.success(isUpdate ? "Successfully updated on eBay!" : "Successfully listed on eBay!");
         queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
-        // Refresh edited data to show the new exported status
         const updatedWatch = await base44.entities.Watch.get(watchId);
         setEditedData(updatedWatch);
         setOriginalData(updatedWatch);
+        setNeedsEbayUpdate(false);
       } else if (failed > 0) {
-        toast.error(errors?.[0] || "Failed to list on eBay");
+        toast.error(errors?.[0] || `Failed to ${isUpdate ? 'update' : 'list'} on eBay`);
       }
     } catch (error) {
       console.error(error);
@@ -961,19 +975,19 @@ export default function WatchDetail() {
               
               <Button
                 onClick={handleListOnEbay}
-                disabled={listingEbay || hasUnsavedChanges || !editedData.brand || editedData.exported_to?.ebay}
+                disabled={listingEbay || hasUnsavedChanges || !editedData.brand || (editedData.exported_to?.ebay && !needsEbayUpdate)}
                 variant="outline"
-                className={`border-blue-300 text-blue-700 hover:bg-blue-50 ${editedData.exported_to?.ebay ? 'opacity-50 cursor-not-allowed bg-blue-50' : ''}`}
+                className={`border-blue-300 text-blue-700 hover:bg-blue-50 ${needsEbayUpdate ? 'border-amber-400 bg-amber-50 text-amber-700' : ''}`}
               >
                 {listingEbay ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Listing...
+                    {editedData.exported_to?.ebay ? 'Updating...' : 'Listing...'}
                   </>
                 ) : editedData.exported_to?.ebay ? (
                   <>
                     <ShoppingBag className="w-4 h-4 mr-2" />
-                    Listed on eBay
+                    {needsEbayUpdate ? 'Update eBay' : 'Listed on eBay'}
                   </>
                 ) : (
                   <>
