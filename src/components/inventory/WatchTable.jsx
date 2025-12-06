@@ -200,6 +200,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                     Condition {getSortIcon("condition")}
                   </Button>
                 </TableHead>
+                <TableHead>Gender</TableHead>
                 <TableHead className="text-right">
                   <Button
                     variant="ghost"
@@ -276,13 +277,8 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {watch.reference_number && (
-                          <p className="text-slate-700">Ref: {watch.reference_number}</p>
-                        )}
-                        {watch.serial_number && (
-                          <p className="text-slate-500">S/N: {watch.serial_number}</p>
-                        )}
+                      <div className="text-sm text-slate-700">
+                        {[watch.reference_number, watch.serial_number].filter(Boolean).join(" / ")}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -290,6 +286,11 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                         <Badge variant="outline" className="capitalize">
                           {conditionLabels[watch.condition] || watch.condition.replace(/_/g, ' ')}
                         </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {watch.gender && (
+                        <span className="capitalize text-slate-700">{watch.gender}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-semibold">
