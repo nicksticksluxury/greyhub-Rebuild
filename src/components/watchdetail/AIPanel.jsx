@@ -202,6 +202,13 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
     setSelectedKeys(newSet);
   };
 
+  const selectAllMarketValue = () => {
+    const newSet = new Set(selectedKeys);
+    if (aiAnalysis.original_msrp > 0) newSet.add('msrp');
+    if (aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) newSet.add('retail_price');
+    setSelectedKeys(newSet);
+  };
+
   return (
     <Card className="p-6 flex flex-col h-full max-h-screen">
       <div className="flex items-center justify-between mb-4 shrink-0">
@@ -291,10 +298,18 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           )}
 
           {/* MSRP & Retail */}
+          {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
+            <div className="flex items-center justify-between mt-4 mb-1">
+              <div className="text-xs font-semibold text-slate-400 uppercase pl-1">Market Value</div>
+              <button
+                onClick={selectAllMarketValue}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Select All
+              </button>
+            </div>
+          )}
           <div className="space-y-2">
-            {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
-                <div className="text-xs font-semibold text-slate-400 uppercase mt-4 mb-1 pl-1">Market Value</div>
-            )}
             
             {aiAnalysis.original_msrp > 0 && (
               <SelectableItem id="msrp" label="Original MSRP" value={`$${aiAnalysis.original_msrp.toLocaleString()}`} className="bg-blue-50/30" />
