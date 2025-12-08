@@ -224,8 +224,8 @@ export default function WatchDetail() {
       Note: Model numbers on case back often DON'T match battery specs or dates - they're unique identifiers.
 
       Report:
-      - Brand & model
-      - Reference/model number 
+      - Brand & model name
+      - Model number (reference/catalog number) 
       - Serial (if visible)
       - Year estimate
       - Gender (Mens, Womens, or Unisex)
@@ -237,7 +237,7 @@ export default function WatchDetail() {
       - ALL visible text/numbers${contextStr}${msrpLinkContext}
 
       Create a Listing Title optimized for eBay/Whatnot (max 80 chars).
-      Format: Brand + Model + Reference + Key Features + Color (if space)
+      Format: Brand + Model Name + Model Number + Key Features + Color (if space)
       Example: Rolex Submariner 16610 Stainless Steel Black Dial Automatic Watch`,
         file_urls: photosToAnalyze,
         response_json_schema: {
@@ -641,25 +641,25 @@ export default function WatchDetail() {
       setAnalysisStep("💰 Step 1/2: Finding manufacturer MSRP...");
       console.log("=== STEP 1: MSRP SEARCH ===");
 
-      const msrpPrompt = `Find the MANUFACTURER'S SUGGESTED RETAIL PRICE (MSRP) for a NEW version with EXACT reference match:
+      const msrpPrompt = `Find the MANUFACTURER'S SUGGESTED RETAIL PRICE (MSRP) for a NEW version with EXACT model number match:
 
       Watch Details (EXACT MATCH REQUIRED):
       - Brand: ${editedData.brand}
-      - Model: ${editedData.model || 'Unknown'}
-      - Reference/Model Number: ${editedData.reference_number || 'Unknown'} ← MUST MATCH EXACTLY
+      - Model Name: ${editedData.model || 'Unknown'}
+      - Model Number: ${editedData.reference_number || 'Unknown'} ← MUST MATCH EXACTLY
       ${editedData.msrp_link ? `- Manufacturer Link Provided: ${editedData.msrp_link}` : ''}
       ${editedData.identical_listing_link ? `- Identical Listing Link: ${editedData.identical_listing_link}` : ''}
 
       ${editedData.reference_number ?
-        `CRITICAL MSRP SEARCH PRIORITY (use reference number ONLY):
-      1. Jomashop.com - Search ONLY "${editedData.reference_number}" (not brand+model)
+        `CRITICAL MSRP SEARCH PRIORITY (use model number ONLY):
+      1. Jomashop.com - Search ONLY "${editedData.reference_number}" (not brand+model name)
       2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number}"
       3. Manufacturer's website
       4. Kay Jewelers, Walmart
-      VERIFY: Every price must be for reference number "${editedData.reference_number}"` :
-        `STOP - Find reference number first:
-      1. Search manufacturer/Jomashop for ${editedData.brand} ${editedData.model} to find exact reference
-      2. Once found, search ONLY with that reference number
+      VERIFY: Every price must be for model number "${editedData.reference_number}"` :
+        `STOP - Find model number first:
+      1. Search manufacturer/Jomashop for ${editedData.brand} ${editedData.model} to find exact model number
+      2. Once found, search ONLY with that model number
       3. Do NOT use generic model names in searches`}
 
       VERIFICATION CRITICAL: 
@@ -691,14 +691,14 @@ export default function WatchDetail() {
       setAnalysisStep("🌐 Step 2/2: Researching comparable listings and pricing...");
       console.log("=== STEP 2: PRICING RESEARCH ===");
 
-      const pricingPrompt = `Find comparable listings with EXACT reference number match and calculate pricing:
+      const pricingPrompt = `Find comparable listings with EXACT model number match and calculate pricing:
 
       Watch Details:
       - Brand: ${editedData.brand}
-      - Model: ${editedData.model || 'Unknown'}
+      - Model Name: ${editedData.model || 'Unknown'}
       ${editedData.reference_number ? 
-        `- Reference/Model Number: ${editedData.reference_number} ← THIS IS THE CRITICAL IDENTIFIER` :
-        `- Reference/Model Number: NOT PROVIDED - YOU MUST FIND IT FIRST`}
+        `- Model Number: ${editedData.reference_number} ← THIS IS THE CRITICAL IDENTIFIER` :
+        `- Model Number: NOT PROVIDED - YOU MUST FIND IT FIRST`}
       - Year: ${editedData.year || 'Unknown'}
       - Condition: ${conditionContext}
       - Case Material: ${editedData.case_material || 'Unknown'}
@@ -707,19 +707,19 @@ export default function WatchDetail() {
       ${editedData.identical_listing_link ? `\n\nIMPORTANT: The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}\nThis is GUARANTEED to be the exact watch. Use this as a key reference point.` : ''}
 
       ${editedData.reference_number ? 
-      `REFERENCE NUMBER VERIFICATION MANDATORY:
-      Every comparable listing MUST show reference number "${editedData.reference_number}". 
-      - Different reference = different watch = EXCLUDE
-      - Similar model name but different reference = EXCLUDE
+      `MODEL NUMBER VERIFICATION MANDATORY:
+      Every comparable listing MUST show model number "${editedData.reference_number}". 
+      - Different model number = different watch = EXCLUDE
+      - Similar model name but different model number = EXCLUDE
       - DO NOT search with just brand and model name
-      - ONLY search with the reference number "${editedData.reference_number}"` :
-      `CRITICAL - REFERENCE NUMBER REQUIRED:
-      You do NOT have the reference number yet. Before searching for ANY comparables:
-      1. Use the brand "${editedData.brand}" and model "${editedData.model || 'Unknown'}" to find the EXACT reference/model number
+      - ONLY search with the model number "${editedData.reference_number}"` :
+      `CRITICAL - MODEL NUMBER REQUIRED:
+      You do NOT have the model number yet. Before searching for ANY comparables:
+      1. Use the brand "${editedData.brand}" and model name "${editedData.model || 'Unknown'}" to find the EXACT model number
       2. Check manufacturer sites, Jomashop, or the identical listing if provided
-      3. Once you have the EXACT reference number, use ONLY that for all comparable searches
-      4. DO NOT proceed with comparables until you have the reference number
-      5. DO NOT use generic model names like "Submariner" for searches - find the specific reference like "16610"`}
+      3. Once you have the EXACT model number, use ONLY that for all comparable searches
+      4. DO NOT proceed with comparables until you have the model number
+      5. DO NOT use generic model names like "Submariner" for searches - find the specific model number like "16610"`}
 
       COMPREHENSIVE PRICING RESEARCH WITH EXACT MATCH:
 

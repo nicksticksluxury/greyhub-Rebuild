@@ -238,7 +238,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
             />
           </div>
           <div>
-            <Label>Model</Label>
+            <Label>Model Name</Label>
             <Input
               value={data.model || ""}
               onChange={(e) => updateField("model", e.target.value)}
@@ -249,7 +249,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label>Reference Number</Label>
+            <Label>Model Number</Label>
             <Input
               value={data.reference_number || ""}
               onChange={(e) => updateField("reference_number", e.target.value)}
