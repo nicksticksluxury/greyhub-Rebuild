@@ -238,8 +238,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {/* Basic Info Section */}
           {hasBasicInfo && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs font-semibold text-slate-400 uppercase">Basic Info</div>
+              <div className="flex items-center gap-2 mb-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -248,6 +247,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                 >
                   Select All
                 </Button>
+                <div className="text-xs font-semibold text-slate-400 uppercase">Basic Info</div>
               </div>
                 {aiAnalysis.identified_brand && (
                   <SelectableItem id="brand" label="Brand" value={aiAnalysis.identified_brand} />
@@ -302,8 +302,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {/* MSRP & Retail */}
           {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-semibold text-slate-400 uppercase">Market Value</div>
+              <div className="flex items-center gap-2 mb-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -312,6 +311,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                 >
                   Select All
                 </Button>
+                <div className="text-xs font-semibold text-slate-400 uppercase">Market Value</div>
               </div>
                 
                 {aiAnalysis.original_msrp > 0 && (
@@ -347,10 +347,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {/* Comparable Listings */}
           {aiAnalysis.comparable_listings && (
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="flex items-center justify-between mb-3">
-                   <span className="text-xs font-semibold uppercase text-slate-500">
-                       Comparable Listings
-                   </span>
+                <div className="flex items-center gap-2 mb-3">
                    <Button
                      variant="outline"
                      size="sm"
@@ -359,6 +356,9 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                    >
                      Select All
                    </Button>
+                   <span className="text-xs font-semibold uppercase text-slate-500">
+                       Comparable Listings
+                   </span>
                 </div>
                 <div className="space-y-2">
                    {(() => {
@@ -409,13 +409,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {/* Pricing Recommendations */}
           {aiAnalysis.pricing_recommendations && Object.keys(aiAnalysis.pricing_recommendations).length > 0 && (
             <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg p-3 border border-amber-100">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-amber-700" />
-                  <span className="text-xs font-semibold text-amber-900 uppercase">
-                    Pricing Recommendations
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 mb-3">
                 <Button
                   variant="outline"
                   size="sm"
@@ -424,6 +418,10 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                 >
                   Select All
                 </Button>
+                <DollarSign className="w-4 h-4 text-amber-700" />
+                <span className="text-xs font-semibold text-amber-900 uppercase">
+                  Pricing Recommendations
+                </span>
               </div>
               <div className="space-y-2">
                 {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map((platform) => {
