@@ -683,27 +683,73 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
         </div>
 
         <div>
-          <Label className="flex items-center gap-2">
-            Identical Watch Listing
-            {data.identical_listing_link && (
-              <a 
-                href={data.identical_listing_link} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            )}
+          <Label className="flex items-center justify-between">
+            <span>Identical Watch Listings (EXACT Match)</span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const listings = data.identical_listing_links || [];
+                onChange({ ...data, identical_listing_links: [...listings, ""] });
+              }}
+              className="h-7"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add Listing
+            </Button>
           </Label>
-          <Input
-            type="url"
-            value={data.identical_listing_link || ""}
-            onChange={(e) => updateField("identical_listing_link", e.target.value)}
-            placeholder="https://ebay.com/item/... or similar listing"
-            className="mt-1"
-          />
-          <p className="text-xs text-slate-500 mt-1">Link to an identical watch listing to help AI identify and price accurately</p>
+          <div className="space-y-2 mt-2">
+            {(data.identical_listing_links && data.identical_listing_links.length > 0) ? (
+              data.identical_listing_links.map((link, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    type="url"
+                    value={link || ""}
+                    onChange={(e) => {
+                      const listings = [...(data.identical_listing_links || [])];
+                      listings[index] = e.target.value;
+                      onChange({ ...data, identical_listing_links: listings });
+                    }}
+                    placeholder="https://ebay.com/item/... or similar listing"
+                  />
+                  {link && (
+                    <Button size="icon" variant="outline" className="h-10 w-10 shrink-0" asChild>
+                      <a href={link} target="_blank" rel="noopener noreferrer" title="View Listing">
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      const listings = [...(data.identical_listing_links || [])];
+                      listings.splice(index, 1);
+                      onChange({ ...data, identical_listing_links: listings });
+                    }}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-10 w-10 shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onChange({ ...data, identical_listing_links: [""] })}
+                className="w-full border-dashed"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Listing
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            <strong>CRITICAL:</strong> Add links to the EXACT same watch. AI will prioritize these for identification and pricing.
+          </p>
         </div>
 
         <div className="pt-4 border-t">
