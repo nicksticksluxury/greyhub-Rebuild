@@ -7,7 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench, Pencil, HelpCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench, Pencil, HelpCircle, Check, ChevronsUpDown } from "lucide-react";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -84,6 +86,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
   const [editingNet, setEditingNet] = useState(false);
   const [showZeroReasonDialog, setShowZeroReasonDialog] = useState(false);
   const [tempReason, setTempReason] = useState("");
+  const [sourceOpen, setSourceOpen] = useState(false);
 
   const updateField = (field, value) => {
     const newData = { ...data, [field]: value };
@@ -410,21 +413,48 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
         <div className="grid grid-cols-3 gap-4">
           <div>
             <Label className="text-red-600">Source *</Label>
-            <Select
-              value={data.source_id || ""}
-              onValueChange={(value) => updateField("source_id", value)}
-            >
-              <SelectTrigger className={!data.source_id ? "border-red-300" : ""}>
-                <SelectValue placeholder="Select source" />
-              </SelectTrigger>
-              <SelectContent>
-                {sources.map(source => (
-                  <SelectItem key={source.id} value={source.id}>
-                    {source.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={sourceOpen} onOpenChange={setSourceOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={sourceOpen}
+                  className={`w-full justify-between ${!data.source_id ? "border-red-300" : ""}`}
+                >
+                  {data.source_id
+                    ? sources.find(s => s.id === data.source_id)?.name
+                    : "Select source"}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search sources..." />
+                  <CommandList>
+                    <CommandEmpty>No source found.</CommandEmpty>
+                    <CommandGroup>
+                      {sources.map(source => (
+                        <CommandItem
+                          key={source.id}
+                          value={source.name}
+                          onSelect={() => {
+                            updateField("source_id", source.id);
+                            setSourceOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              data.source_id === source.id ? "opacity-100" : "opacity-0"
+                            }`}
+                          />
+                          {source.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
             <Label className={data.source_id ? "text-red-600" : ""}>Order *</Label>
