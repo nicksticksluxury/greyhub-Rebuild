@@ -213,32 +213,68 @@ export default function WatchDetail() {
       const msrpLinkContext = editedData.msrp_link ? `\n\nIMPORTANT: The user provided this manufacturer/retailer link with exact specifications: ${editedData.msrp_link}\nUse this as the PRIMARY source of truth for model details.` : '';
 
       const identification = await base44.integrations.Core.InvokeLLM({
-        prompt: `Examine this watch like a dealer. Look for ALL text and numbers:
+        prompt: `You are an expert watch dealer examining this watch. Your goal is to identify the EXACT model number.
 
-      - Dial: brand, model, any text
-      - Case back: model numbers (often looks like "6694" or alphanumeric codes), serial numbers
-      - Between lugs: reference numbers  
-      - Clasp: markings
-      - Any visible papers/docs
+STEP 1 - PHOTOGRAPH EXAMINATION:
+Carefully examine ALL areas of the watch in these photos:
 
-      Note: Model numbers on case back often DON'T match battery specs or dates - they're unique identifiers.
+1. DIAL FACE:
+   - Brand name (top center)
+   - Model name (below brand or on dial)
+   - Any text, numbers, or codes
+   - Subdial markings
 
-      Report:
-      - Brand & model name
-      - Model number (reference/catalog number) 
-      - Serial (if visible)
-      - Year estimate
-      - Gender (Mens, Womens, or Unisex)
-      - Movement type (MUST be one of: "Automatic", "Digital", "Manual", "Quartz", "Solar", or "Unknown" - use exact capitalization)
-      - Case material & size
-      - Dial Color
-      - Bracelet/Strap Material
-      - Condition
-      - ALL visible text/numbers${contextStr}${msrpLinkContext}
+2. CASE BACK:
+   - Model/Reference numbers (often 4-6 digits like "6694" or alphanumeric)
+   - Serial numbers
+   - DO NOT confuse battery specs or water resistance ratings with model numbers
+   - Material markings (e.g., "STAINLESS STEEL")
 
-      Create a Listing Title optimized for eBay/Whatnot (max 80 chars).
-      Format: Brand + Model Name + Model Number + Key Features + Color (if space)
-      Example: Rolex Submariner 16610 Stainless Steel Black Dial Automatic Watch`,
+3. BETWEEN LUGS (where strap attaches):
+   - Reference numbers often stamped here
+   - Look at BOTH sides (12 o'clock and 6 o'clock positions)
+
+4. CLASP/BUCKLE:
+   - Brand logos
+   - Additional reference codes
+
+5. ANY PAPERS/DOCUMENTATION visible in photos
+
+CRITICAL - MODEL NUMBER IDENTIFICATION:
+- The MODEL NUMBER is usually a 4-6 digit code or alphanumeric string
+- It's different from the serial number
+- Examples: "16610", "6694", "SKX007", "AQ230"
+- This is THE MOST IMPORTANT piece of information - without it, pricing will be wrong
+
+${msrpLinkContext}${contextStr}
+
+STEP 2 - REPORT YOUR FINDINGS:
+List EVERYTHING you see:
+- Brand (e.g., "Rolex", "Seiko", "Nixon")
+- Model Name (e.g., "Submariner", "Speedmaster", "Sentry")
+- Model Number/Reference (THE CRITICAL IDENTIFIER - e.g., "16610", "SKX007")
+- Serial Number (if visible and different from model number)
+- Year estimate (based on style, condition, serial if visible)
+- Gender (Mens, Womens, or Unisex)
+- Movement Type (MUST be: "Automatic", "Digital", "Manual", "Quartz", "Solar", or "Unknown")
+- Case Material (e.g., "Stainless Steel", "Gold", "Titanium")
+- Case Size (e.g., "40mm", "42mm")
+- Dial Color (e.g., "Black", "White", "Blue")
+- Bracelet/Strap Material (e.g., "Stainless Steel", "Leather", "Rubber")
+- Condition Assessment
+- Notable Features
+- ALL visible text and numbers from every part of the watch
+
+STEP 3 - CREATE LISTING TITLE:
+Format: Brand + Model Name + Model Number + Key Material + Color + "Watch"
+Max 80 characters
+Example: "Rolex Submariner 16610 Stainless Steel Black Dial Automatic Watch"
+
+CONFIDENCE LEVEL:
+Rate your confidence in the model number identification:
+- "High" if you can clearly see the model number in photos
+- "Medium" if you're inferring from model name/features
+- "Low" if you're guessing`,
         file_urls: photosToAnalyze,
         response_json_schema: {
           type: "object",
@@ -387,71 +423,154 @@ export default function WatchDetail() {
 
       Include ALL clickable listing URLs with prices!`;
       } else {
-        researchPrompt = `Search for this watch using EXACT model/reference number match:
-        
-      CRITICAL - EXACT MATCH REQUIRED:
-      Brand: ${identification.identified_brand}
-      Model: ${identification.identified_model || 'Unknown'}
-      Reference/Model Number: ${identification.reference_number || 'Unknown'} ← THIS MUST MATCH EXACTLY
-      
-      ${identification.reference_number ? 
-        `The reference number "${identification.reference_number}" is CRITICAL - only use listings that explicitly show THIS EXACT reference/model number. Different numbers = different watches = different values.` : 
-        'Find the exact reference number and ONLY use listings with that exact number.'}
+        researchPrompt = `You are researching pricing for this specific watch. Accuracy is CRITICAL.
 
-      Condition: ${conditionContext}
+WATCH IDENTIFICATION:
+Brand: ${identification.identified_brand}
+Model Name: ${identification.identified_model || 'Unknown'}
+Model Number: ${identification.reference_number || 'NOT IDENTIFIED'}
+Condition: ${conditionContext}
 
-      STEP 1 - Find the MSRP:
-      Search for the original MSRP of a NEW version with EXACT reference number:
-      1. FIRST: Jomashop.com (best new watch prices - search exact model number)
-      2. Amazon.com (search brand + model + reference number)
-      3. Manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com)
-      4. Kay Jewelers or Walmart
-      IMPORTANT: VERIFY the model/reference number MATCHES before using price. Save source URL.
+${!identification.reference_number ? `
+⚠️ CRITICAL PROBLEM: Model number was NOT identified from the photos.
+Before you can find comparable pricing, you MUST:
+1. Search "${identification.identified_brand} ${identification.identified_model}" to find the model number
+2. Check manufacturer site, Jomashop, or watch databases
+3. Once you have the EXACT model number, STOP and return it
+4. Do NOT attempt to find comparables without the exact model number
 
-      STEP 2 - Find comparable listings with EXACT SAME reference number:
-      ${isNewCondition ? 
-        `Since this is a NEW watch, search for NEW watch listings with EXACT reference match ONLY:
-         
-         MANDATORY STEPS:
-         1. Jomashop.com - Search exact model/reference number "${identification.reference_number || identification.identified_model}"
-         2. Amazon.com - Search "${identification.identified_brand} ${identification.reference_number || identification.identified_model}"
-         3. eBay NEW listings - Search exact reference, filter "New In Box"
-         4. Watchbox NEW section - Exact model match
-         
-         VERIFICATION: Every listing MUST show reference number "${identification.reference_number || '[model]'}"
-         - Different reference = different watch = EXCLUDE
-         - No reference shown = EXCLUDE
-         
-         Find 10-15 NEW listings with VERIFIED reference match.
-         Calculate average NEW price (lean toward higher middle)` :
-        `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales with EXACT reference match:
-         
-         MANDATORY STEPS:
-         1. eBay SOLD listings: Search "${identification.identified_brand} ${identification.reference_number || identification.identified_model}" 
-            - Filter: SOLD items only, Pre-owned/Used condition ONLY
-            - VERIFY each listing shows the exact reference number ${identification.reference_number || '[model]'} before including
-         2. Watchbox.com: Pre-owned section with exact model match
-         3. Watch forums: Pre-owned sales (verify reference number)
+If you cannot find the model number, return the result with a note explaining this.
+` : `
+✓ Model number identified: "${identification.reference_number}"
 
-         VERIFICATION REQUIRED:
-         - EVERY listing must show the EXACT reference number "${identification.reference_number || '[model]'}"
-         - If reference number is missing from listing, DO NOT include it
-         - Different reference = different watch = wrong data
+PRICING RESEARCH PROTOCOL:
+You will now find the MSRP and comparable pricing for EXACTLY this model number.
 
-         EXCLUDE completely:
-         - New watches (even discounted)
-         - Unworn watches  
-         - Similar models with different reference numbers
-         - Broken/parts watches
+═══════════════════════════════════════════════════════
+STEP 1: FIND ORIGINAL MSRP (New Retail Price)
+═══════════════════════════════════════════════════════
 
-         Find 10-15 PRE-OWNED listings with VERIFIED reference number match.
-         Calculate average PRE-OWNED price (lean toward higher middle of used comps).`}
+Search in this EXACT order:
+1. Jomashop.com - Search ONLY: "${identification.reference_number}"
+2. Amazon.com - Search: "${identification.identified_brand} ${identification.reference_number}"
+3. Manufacturer's website (${identification.identified_brand}.com)
+4. Kay Jewelers, Walmart (if not luxury brand)
 
-      Platform pricing strategy:
-         - whatnot: 70%, ebay: 85%, shopify: 100%
-         - etsy: 90%, poshmark: 80%, mercari: 75%
+VERIFICATION RULES:
+✓ The listing MUST show model number "${identification.reference_number}"
+✓ Must be NEW/unworn condition
+✓ Must be current selling price (not clearance/discontinued)
+✗ REJECT if model number doesn't match
+✗ REJECT if used/pre-owned
+✗ REJECT if listing is ambiguous about model
 
-      Include ALL clickable URLs for ${conditionContext} comparables with VERIFIED reference match and the MSRP source (if found)!`;
+Save the exact URL where you found the MSRP.
+
+═══════════════════════════════════════════════════════
+STEP 2: FIND COMPARABLE LISTINGS
+═══════════════════════════════════════════════════════
+
+${isNewCondition ? `
+THIS IS A NEW WATCH - Find NEW comparables only:
+
+SEARCH PROTOCOL:
+1. eBay:
+   • Search: "${identification.reference_number}"
+   • Filter: "Buy It Now", "New" condition
+   • VERIFY model number in title or description
+   • Record: URL + Price
+
+2. Jomashop.com:
+   • Search: "${identification.reference_number}"
+   • Must show model number in listing
+   • Record: URL + Price
+
+3. Amazon:
+   • Search: "${identification.identified_brand} ${identification.reference_number}"
+   • Verify model number in product details
+   • Record: URL + Price
+
+TARGET: Find 8-12 NEW listings with VERIFIED model number match
+` : `
+THIS IS A USED WATCH - Find USED comparables only:
+
+SEARCH PROTOCOL:
+1. eBay SOLD Listings (MOST IMPORTANT):
+   • Go to eBay Advanced Search
+   • Search: "${identification.reference_number}"
+   • Check "Sold listings"
+   • Filter: Pre-owned/Used condition ONLY
+   • Look at last 90 days of sales
+   • For EACH result:
+     → Verify model number "${identification.reference_number}" appears in title or description
+     → If model number matches, record: URL + Final Sold Price
+     → If model number missing or different, SKIP IT
+
+2. Watchbox.com Pre-owned:
+   • Search pre-owned section for "${identification.reference_number}"
+   • Verify model number
+   • Record: URL + Price
+
+3. Chrono24 (used section):
+   • Search: "${identification.identified_brand} ${identification.reference_number}"
+   • Filter: Pre-owned
+   • Record: URL + Price
+
+CRITICAL RULES:
+✓ Every listing MUST show model number "${identification.reference_number}"
+✗ EXCLUDE any listing that doesn't show the model number
+✗ EXCLUDE "New", "Unworn", "Brand new with tags"
+✗ EXCLUDE different model numbers (even if same model name)
+✗ EXCLUDE "for parts" or "not working"
+
+TARGET: Find 8-12 USED sold listings with VERIFIED model number match
+`}
+
+═══════════════════════════════════════════════════════
+STEP 3: EXTRACT PRICES FROM EACH LISTING
+═══════════════════════════════════════════════════════
+
+For EVERY comparable listing you find:
+1. Copy the FULL URL
+2. Find the price (look for $XXX or USD XXX)
+3. Format as: "URL - $PRICE"
+
+Example format:
+"https://www.ebay.com/itm/123456 - $450
+https://www.jomashop.com/product - $520
+https://www.amazon.com/dp/XYZ - $495"
+
+═══════════════════════════════════════════════════════
+STEP 4: CALCULATE PRICING
+═══════════════════════════════════════════════════════
+
+Once you have 8-12 comparables:
+1. List all prices
+2. Calculate the average
+3. Remove obvious outliers (too high/too low)
+4. Recalculate average
+5. This average = your Market Value
+
+Platform Pricing Formula:
+• Whatnot: 70% of market value (fast auction sales)
+• eBay: 85% of market value (competitive)
+• Shopify: 100% of market value (direct sales)
+• Etsy: 90% of market value
+• Poshmark: 80% of market value
+• Mercari: 75% of market value
+
+═══════════════════════════════════════════════════════
+YOUR RESPONSE MUST INCLUDE:
+═══════════════════════════════════════════════════════
+
+1. Confirmed model details (especially model number)
+2. MSRP with source URL
+3. ALL comparable listing URLs with their prices
+4. Average market value calculation
+5. Platform-specific pricing recommendations
+6. Market insights about availability and demand
+7. Confidence level in your research
+`}`;
       }
 
       const pricing = await base44.integrations.Core.InvokeLLM({
