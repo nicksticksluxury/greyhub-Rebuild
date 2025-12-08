@@ -132,7 +132,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
         <DialogContent className="max-w-7xl w-full p-2">
           {viewingPhoto && (
             <img
-              src={typeof viewingPhoto === 'string' ? viewingPhoto : (viewingPhoto.full || viewingPhoto.original)}
+              src={typeof viewingPhoto === 'string' ? viewingPhoto : (viewingPhoto.full || viewingPhoto.medium || viewingPhoto.original)}
               alt="Full size"
               className="w-full h-auto max-h-[90vh] object-contain"
             />

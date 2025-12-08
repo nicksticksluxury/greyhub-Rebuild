@@ -19,7 +19,7 @@ export default function SalesView() {
           
           const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
           
-          const images = watch.photos?.map(p => p.full || p.original || p).filter(Boolean) || [];
+          const images = watch.photos?.map(p => p.full || p.medium || p.original || p).filter(Boolean) || [];
           const whatnotPrice = watch.platform_prices?.whatnot || watch.ai_analysis?.pricing_recommendations?.whatnot;
           
           setData({
