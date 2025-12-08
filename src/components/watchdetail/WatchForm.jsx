@@ -764,6 +764,16 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
                             </Button>
                         )}
                     </div>
+                    {displayUrl && (
+                      <a
+                        href={displayUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline text-xs mt-1 block break-all"
+                      >
+                        {displayUrl}
+                      </a>
+                    )}
                   </div>
                   
                   {price > 0 && (
