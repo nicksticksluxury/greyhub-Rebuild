@@ -35,9 +35,11 @@ Deno.serve(async (req) => {
                         throw new Error("Missing brand");
                     }
 
-                    const prompt = `You are an expert watch dealer. Create a compelling product description and an optimized listing title for this watch.
+                    const aiCondition = watch.ai_analysis?.condition_assessment || "";
+                    const conditionContext = aiCondition ? `\n\nAI Analysis of Condition:\n${aiCondition}` : "";
 
-Watch Details:
+                    const prompt = `Create a compelling, professional product description for this watch:
+
 Brand: ${watch.brand}
 Model: ${watch.model || "Unknown"}
 Reference: ${watch.reference_number || "N/A"}
@@ -45,30 +47,24 @@ Year: ${watch.year || "Unknown"}
 Condition: ${watch.condition || "N/A"}
 Movement: ${watch.movement_type || "N/A"}
 Case Material: ${watch.case_material || "N/A"}
-Case Size: ${watch.case_size || "N/A"}
+Case Size: ${watch.case_size || "N/A"}${conditionContext}
 
-Requirements:
-1. Title: Create an SEO-optimized listing title (max 80 characters) suitable for eBay. Include Brand, Model, Ref, and key specs.
-2. Description: Create an engaging, accurate, professional description (150-300 words). Emphasize strengths/features. Honest about condition.`;
+Create an engaging, accurate description that will attract buyers while being completely honest about condition.
 
-                    const aiResponse = await base44.integrations.Core.InvokeLLM({
-                        prompt: prompt,
-                        response_json_schema: {
-                            type: "object",
-                            properties: {
-                                title: { type: "string", description: "Optimized listing title (max 80 chars)" },
-                                description: { type: "string", description: "Full product description" }
-                            },
-                            required: ["title", "description"]
-                        }
-                    });
+CRITICAL CONDITION REQUIREMENTS:
+- If there are scratches, wear, tears, damage, or any cosmetic issues, clearly state them
+- Be specific about the location and severity of any condition issues
+- Use clear, honest language about wear (e.g., "light scratches on bezel", "moderate wear on bracelet")
+- Don't hide or minimize flaws - transparency builds trust
+- After noting any issues, you can emphasize strengths and features
 
-                    // Parse response if it comes back as a string, otherwise use directly
-                    const result = typeof aiResponse === 'string' ? JSON.parse(aiResponse) : aiResponse;
+Keep it concise but informative (150-300 words).
+Format it in a clear, professional way that can be used on any sales platform.`;
+
+                    const description = await base44.integrations.Core.InvokeLLM({ prompt: prompt });
 
                     await base44.entities.Watch.update(watch.id, { 
-                        description: result.description,
-                        listing_title: result.title
+                        description: description
                     });
                     results.success++;
                 } catch (error) {
