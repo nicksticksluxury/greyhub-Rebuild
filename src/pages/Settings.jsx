@@ -18,6 +18,7 @@ export default function Settings() {
   const [manualUrl, setManualUrl] = useState("");
   const [markingWhatnot, setMarkingWhatnot] = useState(false);
   const [debugData, setDebugData] = useState(null);
+  const [reoptimizing, setReoptimizing] = useState(false);
 
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
