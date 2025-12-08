@@ -219,6 +219,7 @@ export default function WatchSourceDetail() {
                       <TableHead>Date</TableHead>
                       <TableHead className="text-center">Qty</TableHead>
                       <TableHead className="text-right">Cost</TableHead>
+                      <TableHead className="text-right">Avg/Watch</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -226,11 +227,11 @@ export default function WatchSourceDetail() {
                   <TableBody>
                     {ordersLoading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-slate-500">Loading orders...</TableCell>
+                        <TableCell colSpan={7} className="text-center py-8 text-slate-500">Loading orders...</TableCell>
                       </TableRow>
                     ) : orders.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-slate-500">No orders found.</TableCell>
+                        <TableCell colSpan={7} className="text-center py-8 text-slate-500">No orders found.</TableCell>
                       </TableRow>
                     ) : (
                       orders.map((order) => (
@@ -250,6 +251,9 @@ export default function WatchSourceDetail() {
                           </TableCell>
                           <TableCell className="text-right font-medium">
                             ${(order.total_cost || 0).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right text-slate-600">
+                            {order.initial_quantity > 0 ? `$${(order.total_cost / order.initial_quantity).toFixed(2)}` : '-'}
                           </TableCell>
                           <TableCell className="text-sm text-slate-500 max-w-[200px] truncate">
                             {order.notes}
@@ -300,6 +304,14 @@ export default function WatchSourceDetail() {
                             <Input type="number" step="0.01" name="total_cost" defaultValue={currentOrder?.total_cost} />
                         </div>
                     </div>
+                    {currentOrder?.total_cost > 0 && currentOrder?.initial_quantity > 0 && (
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <p className="text-xs text-slate-500 font-medium uppercase">Average Cost Per Watch</p>
+                            <p className="text-xl font-bold text-slate-900 mt-1">
+                                ${(currentOrder.total_cost / currentOrder.initial_quantity).toFixed(2)}
+                            </p>
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label>Notes</Label>
                         <Textarea name="notes" defaultValue={currentOrder?.notes} />
