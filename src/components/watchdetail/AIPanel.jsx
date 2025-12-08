@@ -82,16 +82,22 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
         // Round whatnot prices
         if (platform === 'whatnot' && price) price = Math.round(price);
         if (price) prices[platform] = price;
-      } else if (key === 'comparable_listings') {
+      } else if (key.startsWith('listing_')) {
+        // Individual listing selected
+        const idx = parseInt(key.replace('listing_', ''));
         const text = aiAnalysis.comparable_listings;
         const urlRegex = /(https?:\/\/[^\s\)]+)/g;
         const urls = text.match(urlRegex) || [];
-        const listings = urls.map(url => {
-             const cleanUrl = url.replace(/\)+$/, '');
-             const priceMatch = text.match(new RegExp(cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^$]*\\$([\\d,]+)', 'i'));
-             return { url: cleanUrl, price: priceMatch ? priceMatch[1].replace(/,/g, '') : null };
-        });
-        updates.comparable_listings_links = listings;
+        const cleanUrl = urls[idx]?.replace(/\)+$/, '');
+        if (cleanUrl) {
+          const priceMatch = text.match(new RegExp(cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^$]*\\$([\\d,]+)', 'i'));
+          const listing = { url: cleanUrl, price: priceMatch ? priceMatch[1].replace(/,/g, '') : null };
+          // Append to existing listings
+          if (!updates.comparable_listings_links) {
+            updates.comparable_listings_links = [];
+          }
+          updates.comparable_listings_links.push(listing);
+        }
       } else if (key === 'msrp') {
         updates.msrp = aiAnalysis.original_msrp;
       } else if (key === 'retail_price') {
@@ -281,16 +287,56 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {/* Comparable Listings */}
           {aiAnalysis.comparable_listings && (
-             <SelectableItem id="comparable_listings" label="Comparable Listings">
-                 <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs font-semibold uppercase ${selectedKeys.has('comparable_listings') ? 'text-blue-700' : 'text-slate-500'}`}>
-                        Comparable Listings
-                    </span>
-                 </div>
-                 <div className={`${selectedKeys.has('comparable_listings') ? 'opacity-100' : 'opacity-70'}`}>
-                    <LinkifiedText text={aiAnalysis.comparable_listings} />
-                 </div>
-             </SelectableItem>
+            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="flex items-center gap-2 mb-3">
+                   <span className="text-xs font-semibold uppercase text-slate-500">
+                       Comparable Listings
+                   </span>
+                </div>
+                <div className="space-y-2">
+                   {(() => {
+                     const urlRegex = /(https?:\/\/[^\s\)]+)/g;
+                     const urls = aiAnalysis.comparable_listings.match(urlRegex) || [];
+                     return urls.map((url, idx) => {
+                       const cleanUrl = url.replace(/\)+$/, '');
+                       const priceMatch = aiAnalysis.comparable_listings.match(new RegExp(cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^$]*\\$([\\d,]+)', 'i'));
+                       const isSelected = selectedKeys.has(`listing_${idx}`);
+
+                       return (
+                         <div 
+                           key={idx}
+                           className={`p-2 rounded cursor-pointer border transition-colors ${isSelected ? 'bg-blue-50 border-blue-300' : 'bg-white border-transparent hover:bg-slate-100'}`}
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             toggleSelection(`listing_${idx}`);
+                           }}
+                         >
+                           <div className="flex items-start gap-3">
+                             <div className={`mt-0.5 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`}>
+                               {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                             </div>
+                             <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                               <a
+                                 href={cleanUrl}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="text-blue-600 hover:text-blue-800 underline text-sm flex items-center gap-1 truncate"
+                                 onClick={(e) => e.stopPropagation()}
+                               >
+                                 {cleanUrl.length > 50 ? cleanUrl.substring(0, 47) + '...' : cleanUrl}
+                                 <ExternalLink className="w-3 h-3 shrink-0" />
+                               </a>
+                               {priceMatch && (
+                                 <span className="text-sm font-semibold text-slate-700 shrink-0">${priceMatch[1]}</span>
+                               )}
+                             </div>
+                           </div>
+                         </div>
+                       );
+                     });
+                   })()}
+                </div>
+            </div>
           )}
 
           {/* Pricing Recommendations */}
