@@ -237,19 +237,18 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {/* Basic Info Section */}
           {hasBasicInfo && (
-            <>
+            <div className="space-y-2">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs font-semibold text-slate-400 uppercase">Basic Info</div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={selectAllBasicInfo}
-                  className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
+                  className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
                 >
                   Select All
                 </Button>
               </div>
-              <div className="space-y-2">
                 {aiAnalysis.identified_brand && (
                   <SelectableItem id="brand" label="Brand" value={aiAnalysis.identified_brand} />
                 )}
@@ -283,8 +282,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                 {aiAnalysis.bracelet_material && (
                   <SelectableItem id="bracelet_material" label="Bracelet Material" value={aiAnalysis.bracelet_material} />
                 )}
-              </div>
-            </>
+            </div>
           )}
 
           {/* Condition / Description */}
@@ -303,19 +301,18 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {/* MSRP & Retail */}
           {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
-            <>
-              <div className="flex items-center justify-between mt-4 mb-1">
-                <div className="text-xs font-semibold text-slate-400 uppercase pl-1">Market Value</div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold text-slate-400 uppercase">Market Value</div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={selectAllMarketValue}
-                  className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
+                  className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
                 >
                   Select All
                 </Button>
               </div>
-              <div className="space-y-2">
                 
                 {aiAnalysis.original_msrp > 0 && (
                   <SelectableItem id="msrp" label="Original MSRP" value={`$${aiAnalysis.original_msrp.toLocaleString()}`} className="bg-blue-50/30" />
@@ -329,8 +326,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                     className="bg-emerald-50/30"
                   />
                 )}
-              </div>
-            </>
+            </div>
           )}
 
           {/* Market Research */}
@@ -359,7 +355,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                      variant="outline"
                      size="sm"
                      onClick={selectAllListings}
-                     className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
+                     className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
                    >
                      Select All
                    </Button>
@@ -424,7 +420,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   variant="outline"
                   size="sm"
                   onClick={selectAllPricing}
-                  className="h-6 text-xs text-amber-700 hover:text-amber-900 border-amber-200"
+                  className="h-6 px-2 text-xs text-amber-700 hover:text-amber-900 border-amber-200"
                 >
                   Select All
                 </Button>
