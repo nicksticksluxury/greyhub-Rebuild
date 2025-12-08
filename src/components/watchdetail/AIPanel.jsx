@@ -237,53 +237,55 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {/* Basic Info Section */}
           {hasBasicInfo && (
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-xs font-semibold text-slate-400 uppercase">Basic Info</div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={selectAllBasicInfo}
-                className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
-              >
-                Select All
-              </Button>
-            </div>
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold text-slate-400 uppercase">Basic Info</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAllBasicInfo}
+                  className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
+                >
+                  Select All
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {aiAnalysis.identified_brand && (
+                  <SelectableItem id="brand" label="Brand" value={aiAnalysis.identified_brand} />
+                )}
+                {aiAnalysis.identified_model && (
+                  <SelectableItem id="model" label="Model" value={aiAnalysis.identified_model} />
+                )}
+                {aiAnalysis.reference_number && (
+                  <SelectableItem id="reference_number" label="Reference" value={aiAnalysis.reference_number} />
+                )}
+                {aiAnalysis.serial_number && (
+                  <SelectableItem id="serial_number" label="Serial" value={aiAnalysis.serial_number} />
+                )}
+                {aiAnalysis.estimated_year && (
+                  <SelectableItem id="year" label="Year" value={aiAnalysis.estimated_year} />
+                )}
+                {aiAnalysis.identified_gender && (
+                  <SelectableItem id="gender" label="Gender" value={aiAnalysis.identified_gender} />
+                )}
+                {aiAnalysis.movement_type && (
+                  <SelectableItem id="movement_type" label="Movement" value={aiAnalysis.movement_type} />
+                )}
+                {aiAnalysis.case_material && (
+                  <SelectableItem id="case_material" label="Case Material" value={aiAnalysis.case_material} />
+                )}
+                {aiAnalysis.case_size && (
+                  <SelectableItem id="case_size" label="Case Size" value={aiAnalysis.case_size} />
+                )}
+                {aiAnalysis.dial_color && (
+                  <SelectableItem id="dial_color" label="Dial Color" value={aiAnalysis.dial_color} />
+                )}
+                {aiAnalysis.bracelet_material && (
+                  <SelectableItem id="bracelet_material" label="Bracelet Material" value={aiAnalysis.bracelet_material} />
+                )}
+              </div>
+            </>
           )}
-          <div className="space-y-2">
-            {aiAnalysis.identified_brand && (
-              <SelectableItem id="brand" label="Brand" value={aiAnalysis.identified_brand} />
-            )}
-            {aiAnalysis.identified_model && (
-              <SelectableItem id="model" label="Model" value={aiAnalysis.identified_model} />
-            )}
-            {aiAnalysis.reference_number && (
-              <SelectableItem id="reference_number" label="Reference" value={aiAnalysis.reference_number} />
-            )}
-            {aiAnalysis.serial_number && (
-              <SelectableItem id="serial_number" label="Serial" value={aiAnalysis.serial_number} />
-            )}
-            {aiAnalysis.estimated_year && (
-              <SelectableItem id="year" label="Year" value={aiAnalysis.estimated_year} />
-            )}
-            {aiAnalysis.identified_gender && (
-              <SelectableItem id="gender" label="Gender" value={aiAnalysis.identified_gender} />
-            )}
-            {aiAnalysis.movement_type && (
-              <SelectableItem id="movement_type" label="Movement" value={aiAnalysis.movement_type} />
-            )}
-            {aiAnalysis.case_material && (
-              <SelectableItem id="case_material" label="Case Material" value={aiAnalysis.case_material} />
-            )}
-            {aiAnalysis.case_size && (
-              <SelectableItem id="case_size" label="Case Size" value={aiAnalysis.case_size} />
-            )}
-            {aiAnalysis.dial_color && (
-              <SelectableItem id="dial_color" label="Dial Color" value={aiAnalysis.dial_color} />
-            )}
-            {aiAnalysis.bracelet_material && (
-              <SelectableItem id="bracelet_material" label="Bracelet Material" value={aiAnalysis.bracelet_material} />
-            )}
-          </div>
 
           {/* Condition / Description */}
           {aiAnalysis.condition_assessment && (
@@ -301,33 +303,35 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
           {/* MSRP & Retail */}
           {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
-            <div className="flex items-center justify-between mt-4 mb-1">
-              <div className="text-xs font-semibold text-slate-400 uppercase pl-1">Market Value</div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={selectAllMarketValue}
-                className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
-              >
-                Select All
-              </Button>
-            </div>
+            <>
+              <div className="flex items-center justify-between mt-4 mb-1">
+                <div className="text-xs font-semibold text-slate-400 uppercase pl-1">Market Value</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAllMarketValue}
+                  className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
+                >
+                  Select All
+                </Button>
+              </div>
+              <div className="space-y-2">
+                
+                {aiAnalysis.original_msrp > 0 && (
+                  <SelectableItem id="msrp" label="Original MSRP" value={`$${aiAnalysis.original_msrp.toLocaleString()}`} className="bg-blue-50/30" />
+                )}
+                
+                {(aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
+                  <SelectableItem 
+                    id="retail_price" 
+                    label="Market Value" 
+                    value={`$${(aiAnalysis.current_retail_price || aiAnalysis.average_market_value).toLocaleString()}`} 
+                    className="bg-emerald-50/30"
+                  />
+                )}
+              </div>
+            </>
           )}
-          <div className="space-y-2">
-            
-            {aiAnalysis.original_msrp > 0 && (
-              <SelectableItem id="msrp" label="Original MSRP" value={`$${aiAnalysis.original_msrp.toLocaleString()}`} className="bg-blue-50/30" />
-            )}
-            
-            {(aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
-              <SelectableItem 
-                id="retail_price" 
-                label="Market Value" 
-                value={`$${(aiAnalysis.current_retail_price || aiAnalysis.average_market_value).toLocaleString()}`} 
-                className="bg-emerald-50/30"
-              />
-            )}
-          </div>
 
           {/* Market Research */}
           {aiAnalysis.market_research_summary && (
