@@ -5,9 +5,13 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         
         // Authenticate user
-        const user = await base44.auth.me();
-        if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        try {
+            const isAuth = await base44.auth.isAuthenticated();
+            if (!isAuth) {
+                return Response.json({ error: 'Unauthorized' }, { status: 401 });
+            }
+        } catch (authError) {
+            return Response.json({ error: 'Authentication failed', details: authError.message }, { status: 401 });
         }
 
         // Get all watches
