@@ -516,6 +516,43 @@ export default function Settings() {
                  >
                  Validate & Fix Links
                  </Button>
+                 <Button 
+                 onClick={async () => {
+                   if (!confirm("This will re-optimize all watches that still have original image URLs. This may take several minutes. Continue?")) return;
+                   const toastId = toast.loading("Starting image re-optimization...");
+                   setReoptimizing(true);
+                   try {
+                      const res = await base44.functions.invoke("reoptimizeWatchImages");
+                      if (res.data.success) {
+                          toast.success(`Optimized ${res.data.successCount} watches. Failed: ${res.data.failedCount}`, { id: toastId });
+                          if (res.data.results) {
+                              setDebugData(JSON.stringify(res.data.results, null, 2));
+                          }
+                      } else {
+                          toast.error("Failed: " + res.data.error, { id: toastId });
+                      }
+                   } catch (e) {
+                      toast.error("Failed to re-optimize: " + e.message, { id: toastId });
+                   } finally {
+                      setReoptimizing(false);
+                   }
+                 }} 
+                 variant="outline"
+                 className="border-green-300 text-green-700 hover:bg-green-50 ml-2 mt-2"
+                 disabled={reoptimizing}
+                 >
+                 {reoptimizing ? (
+                   <>
+                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                     Re-optimizing...
+                   </>
+                 ) : (
+                   <>
+                     <Sparkles className="w-4 h-4 mr-2" />
+                     Re-optimize Images
+                   </>
+                 )}
+                 </Button>
 
                  {debugData && (
                   <div className="mt-4 relative">
