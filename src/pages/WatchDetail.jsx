@@ -650,12 +650,17 @@ export default function WatchDetail() {
       ${editedData.msrp_link ? `- Manufacturer Link Provided: ${editedData.msrp_link}` : ''}
       ${editedData.identical_listing_link ? `- Identical Listing Link: ${editedData.identical_listing_link}` : ''}
 
-      CRITICAL MSRP SEARCH PRIORITY (verify reference number on EVERY site):
-      1. Jomashop.com - Search exact model/reference number "${editedData.reference_number || editedData.model}"
-      2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number || editedData.model}"
-      3. Manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com, Rolex.com)
+      ${editedData.reference_number ?
+        `CRITICAL MSRP SEARCH PRIORITY (use reference number ONLY):
+      1. Jomashop.com - Search ONLY "${editedData.reference_number}" (not brand+model)
+      2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number}"
+      3. Manufacturer's website
       4. Kay Jewelers, Walmart
-      5. If not found on ANY: Leave MSRP as null
+      VERIFY: Every price must be for reference number "${editedData.reference_number}"` :
+        `STOP - Find reference number first:
+      1. Search manufacturer/Jomashop for ${editedData.brand} ${editedData.model} to find exact reference
+      2. Once found, search ONLY with that reference number
+      3. Do NOT use generic model names in searches`}
 
       VERIFICATION CRITICAL: 
       - MUST verify the reference/model number MATCHES before using any price
@@ -688,10 +693,12 @@ export default function WatchDetail() {
 
       const pricingPrompt = `Find comparable listings with EXACT reference number match and calculate pricing:
 
-      Watch Details (EXACT MATCH REQUIRED):
+      Watch Details:
       - Brand: ${editedData.brand}
       - Model: ${editedData.model || 'Unknown'}
-      - Reference/Model Number: ${editedData.reference_number || 'Unknown'} ← THIS IS CRITICAL
+      ${editedData.reference_number ? 
+        `- Reference/Model Number: ${editedData.reference_number} ← THIS IS THE CRITICAL IDENTIFIER` :
+        `- Reference/Model Number: NOT PROVIDED - YOU MUST FIND IT FIRST`}
       - Year: ${editedData.year || 'Unknown'}
       - Condition: ${conditionContext}
       - Case Material: ${editedData.case_material || 'Unknown'}
@@ -699,40 +706,58 @@ export default function WatchDetail() {
       - Movement: ${editedData.movement_type || 'Unknown'}
       ${editedData.identical_listing_link ? `\n\nIMPORTANT: The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}\nThis is GUARANTEED to be the exact watch. Use this as a key reference point.` : ''}
 
-      REFERENCE NUMBER VERIFICATION MANDATORY:
       ${editedData.reference_number ? 
-      `Every comparable listing MUST show reference number "${editedData.reference_number}". Different reference = different watch = EXCLUDE.` :
-      'Find the exact reference number first, then ONLY use listings with that exact number.'}
+      `REFERENCE NUMBER VERIFICATION MANDATORY:
+      Every comparable listing MUST show reference number "${editedData.reference_number}". 
+      - Different reference = different watch = EXCLUDE
+      - Similar model name but different reference = EXCLUDE
+      - DO NOT search with just brand and model name
+      - ONLY search with the reference number "${editedData.reference_number}"` :
+      `CRITICAL - REFERENCE NUMBER REQUIRED:
+      You do NOT have the reference number yet. Before searching for ANY comparables:
+      1. Use the brand "${editedData.brand}" and model "${editedData.model || 'Unknown'}" to find the EXACT reference/model number
+      2. Check manufacturer sites, Jomashop, or the identical listing if provided
+      3. Once you have the EXACT reference number, use ONLY that for all comparable searches
+      4. DO NOT proceed with comparables until you have the reference number
+      5. DO NOT use generic model names like "Submariner" for searches - find the specific reference like "16610"`}
 
       COMPREHENSIVE PRICING RESEARCH WITH EXACT MATCH:
 
   ${isNewCondition ? 
   `This is a NEW watch. Search for NEW watch listings with EXACT reference match ONLY:
 
-   MANDATORY STEPS:
-   1. Jomashop.com - Search "${editedData.reference_number || editedData.model}" (best new prices)
-   2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number || editedData.model}"
-   3. eBay NEW - Filter "New In Box", verify reference number
-   4. Watchbox NEW section
-   5. Authorized dealers
+   ${editedData.reference_number ? 
+     `MANDATORY STEPS - Search with reference number ONLY:
+   1. Jomashop.com - Search ONLY "${editedData.reference_number}" (not brand+model)
+   2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number}"
+   3. eBay NEW - Search "${editedData.reference_number}", filter "New In Box"
+   4. Watchbox NEW section - Search "${editedData.reference_number}"
 
-   VERIFICATION: MUST show reference "${editedData.reference_number || '[model]'}" on every listing
-
+   VERIFICATION: Every listing MUST explicitly show "${editedData.reference_number}"
    Find 10-15 NEW listings with VERIFIED reference match.` :
+     `STOP - You need the reference number first:
+   1. Find the exact reference number from manufacturer/Jomashop for ${editedData.brand} ${editedData.model}
+   2. Once found, search ONLY with that reference number
+   3. Do NOT search with generic model names`}` :
   `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED sales with EXACT reference match:
 
-   MANDATORY STEPS WITH VERIFICATION:
+   ${editedData.reference_number ?
+     `MANDATORY STEPS WITH VERIFICATION:
    1. eBay SOLD listings:
-      - Search: "${editedData.brand} ${editedData.reference_number || editedData.model}"
+      - Search ONLY: "${editedData.reference_number}" (not brand+model)
       - Filter: SOLD items + Pre-owned/Used condition ONLY
-      - VERIFY: Each listing shows exact reference "${editedData.reference_number || '[model]'}"
-   2. Watchbox Pre-owned: Exact reference match only
-   3. Watch forums: Verify reference in each listing
+      - VERIFY: Each listing shows exact reference "${editedData.reference_number}"
+   2. Watchbox Pre-owned: Search "${editedData.reference_number}" only
+   3. Watch forums: Search "${editedData.reference_number}" only
 
    REFERENCE VERIFICATION CRITICAL:
-   - Every listing MUST show reference "${editedData.reference_number || '[model]'}"
+   - Every listing MUST explicitly show "${editedData.reference_number}"
    - Different reference = different watch = EXCLUDE
-   - No reference shown = EXCLUDE
+   - No reference shown = EXCLUDE` :
+     `STOP - You need the reference number first:
+   1. Find exact reference number from manufacturer/Jomashop for ${editedData.brand} ${editedData.model}
+   2. Once found, search ONLY with that reference number
+   3. Do NOT search with generic model names`}
 
    ABSOLUTELY EXCLUDE:
    - Any "new" watches (even discounted)
