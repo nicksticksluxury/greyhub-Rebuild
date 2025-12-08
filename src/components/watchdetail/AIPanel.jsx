@@ -239,12 +239,14 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {hasBasicInfo && (
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs font-semibold text-slate-400 uppercase">Basic Info</div>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={selectAllBasicInfo}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
               >
                 Select All
-              </button>
+              </Button>
             </div>
           )}
           <div className="space-y-2">
@@ -301,12 +303,14 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
             <div className="flex items-center justify-between mt-4 mb-1">
               <div className="text-xs font-semibold text-slate-400 uppercase pl-1">Market Value</div>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={selectAllMarketValue}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
               >
                 Select All
-              </button>
+              </Button>
             </div>
           )}
           <div className="space-y-2">
@@ -347,12 +351,14 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                    <span className="text-xs font-semibold uppercase text-slate-500">
                        Comparable Listings
                    </span>
-                   <button
+                   <Button
+                     variant="outline"
+                     size="sm"
                      onClick={selectAllListings}
-                     className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                     className="h-6 text-xs text-blue-600 hover:text-blue-800 border-blue-200"
                    >
                      Select All
-                   </button>
+                   </Button>
                 </div>
                 <div className="space-y-2">
                    {(() => {
@@ -410,12 +416,14 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                     Pricing Recommendations
                   </span>
                 </div>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={selectAllPricing}
-                  className="text-xs text-amber-700 hover:text-amber-900 font-medium"
+                  className="h-6 text-xs text-amber-700 hover:text-amber-900 border-amber-200"
                 >
                   Select All
-                </button>
+                </Button>
               </div>
               <div className="space-y-2">
                 {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map((platform) => {
