@@ -211,6 +211,7 @@ export default function WatchDetail() {
 
       const contextStr = userContext.length > 0 ? `\n\nKnown: ${userContext.join(', ')}` : '';
       const msrpLinkContext = editedData.msrp_link ? `\n\nIMPORTANT: The user provided this manufacturer/retailer link with exact specifications: ${editedData.msrp_link}\nUse this as the PRIMARY source of truth for model details.` : '';
+      const aiInstructionsContext = editedData.ai_instructions ? `\n\n🔴 CRITICAL USER INSTRUCTIONS:\n${editedData.ai_instructions}\n\nYou MUST consider these user instructions carefully in your analysis.` : '';
 
       const identification = await base44.integrations.Core.InvokeLLM({
         prompt: `You are an expert watch dealer examining this watch. Your goal is to identify the EXACT model number.
@@ -246,7 +247,7 @@ CRITICAL - MODEL NUMBER IDENTIFICATION:
 - Examples: "16610", "6694", "SKX007", "AQ230"
 - This is THE MOST IMPORTANT piece of information - without it, pricing will be wrong
 
-${msrpLinkContext}${contextStr}
+${msrpLinkContext}${contextStr}${aiInstructionsContext}
 
 STEP 2 - REPORT YOUR FINDINGS:
 List EVERYTHING you see:
@@ -309,6 +310,7 @@ Rate your confidence in the model number identification:
       let researchPrompt;
       const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
       const conditionContext = isNewCondition ? 'NEW' : 'USED';
+      const aiInstructionsContext = editedData.ai_instructions ? `\n\n🔴🔴🔴 CRITICAL USER INSTRUCTIONS - READ CAREFULLY:\n${editedData.ai_instructions}\n\nYou MUST take these user instructions into account. If the user says the watch is worth more than your initial findings suggest, re-examine your comparable searches and pricing logic.` : '';
 
       // Build identical listings context
       const identicalListingsContext = (editedData.identical_listing_links || []).filter(Boolean).length > 0
@@ -334,7 +336,7 @@ Based on photos, we identified:
 Brand: ${identification.identified_brand}
 Model: ${identification.identified_model || 'Unknown'}
 Ref: ${identification.reference_number || 'Unknown'}
-Condition: ${conditionContext}
+Condition: ${conditionContext}${aiInstructionsContext}
 
 STEP 1 - EXTRACT FROM IDENTICAL LISTINGS:
 Visit each identical listing URL above and extract:
@@ -433,7 +435,7 @@ Based on photos, we identified:
 Brand: ${identification.identified_brand}
 Model: ${identification.identified_model || 'Unknown'}
 Ref: ${identification.reference_number || 'Unknown'}
-Condition: ${conditionContext}
+Condition: ${conditionContext}${aiInstructionsContext}
 
 STEP 1 - EXTRACT FROM IDENTICAL LISTING:
 Visit the identical listing URL and extract:
@@ -901,7 +903,7 @@ YOUR RESPONSE MUST INCLUDE:
       - Condition: ${conditionContext}
       - Case Material: ${editedData.case_material || 'Unknown'}
       - Case Size: ${editedData.case_size || 'Unknown'}
-      - Movement: ${editedData.movement_type || 'Unknown'}
+      - Movement: ${editedData.movement_type || 'Unknown'}${aiInstructionsContext}
       ${(editedData.identical_listing_links || []).filter(Boolean).length > 0 ? 
         `\n\n🔴 CRITICAL - ${(editedData.identical_listing_links || []).filter(Boolean).length} IDENTICAL WATCH LISTING(S) PROVIDED:
 ${(editedData.identical_listing_links || []).filter(Boolean).map((link, i) => `${i + 1}. ${link}`).join('\n')}

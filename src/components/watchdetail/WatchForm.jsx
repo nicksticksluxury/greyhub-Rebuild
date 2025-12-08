@@ -498,6 +498,20 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
         </div>
 
         <div>
+          <Label>AI Instructions / Context</Label>
+          <Textarea
+            value={data.ai_instructions || ""}
+            onChange={(e) => updateField("ai_instructions", e.target.value)}
+            placeholder="e.g., 'This watch is worth well over $1000, hand verified. Please check into this.' or 'Focus on luxury market comps only'"
+            rows={2}
+            className="bg-amber-50 border-amber-300 text-amber-900 placeholder:text-amber-600/60"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Provide specific instructions or context to help AI analyze this watch accurately
+          </p>
+        </div>
+
+        <div>
           <div className="flex items-center justify-between mb-2">
             <Label>Market Research</Label>
             {data.ai_confidence_level && (
