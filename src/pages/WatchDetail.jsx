@@ -326,51 +326,48 @@ export default function WatchDetail() {
 
         researchPrompt = `The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}
 
-        STEP 1 - Visit that page and extract:
-        - Exact model name/number
-        - Reference number
-        - Year
-        - All specifications
-        - Listed price
+      STEP 1 - Visit that page and extract:
+      - Exact model name/number
+      - Reference number
+      - Year
+      - All specifications
+      - Listed price
 
-        This is the EXACT watch we have.
+      This is the EXACT watch we have.
 
-        Based on identified info:
-        Brand: ${identification.identified_brand}
-        Model: ${identification.identified_model || 'Unknown'}
-        Ref: ${identification.reference_number || 'Unknown'}
-        Condition: ${conditionContext}
+      Based on identified info:
+      Brand: ${identification.identified_brand}
+      Model: ${identification.identified_model || 'Unknown'}
+      Ref: ${identification.reference_number || 'Unknown'}
+      Condition: ${conditionContext}
 
-        STEP 2 - Find the MSRP:
-        Search for the original MSRP of a NEW version of this exact watch:
-        1. FIRST: Check manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com)
-        2. If not found: Check Jomashop.com, Amazon, Kay Jewelers, or Walmart
-        3. If not found on those: Leave MSRP blank
-        IMPORTANT: Save the source URL where you found the MSRP
+      STEP 2 - Find the MSRP:
+      Search for the original MSRP of a NEW version of this exact watch:
+      1. FIRST: Check manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com)
+      2. If not found: Check Amazon, Kay Jewelers, or Walmart
+      3. If not found on those: Leave MSRP blank
+      IMPORTANT: Save the source URL where you found the MSRP
 
-        STEP 3 - Find comparable listings:
+      STEP 3 - Find comparable listings:
+      ${isNewCondition ? 
+        `Since this is a NEW watch, search for NEW watch listings ONLY:
+         - Online watch stores selling NEW (Joma Shop, Amazon, Watchbox)
+         - eBay listings marked as "New In Box"
+         - Find 10-15 NEW listings of this exact model
+         - Calculate average NEW price (lean toward higher middle)` :
+        `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
+         - eBay: Search for SOLD listings (completed auctions) in USED condition ONLY
 
-        CRITICAL MODEL NUMBER MATCHING:
-        - You MUST search for the EXACT model number/reference number: "${identification.reference_number || identification.identified_model}"
-        - DO NOT substitute with similar models or different variants
-        - All comparables MUST have the same model/reference number
-        - If you can't find the exact model, state this clearly in market_insights
+         - Watch forums: Pre-owned sales
+         - Watchbox: Pre-owned section ONLY
 
-        ${isNewCondition ? 
-        `Since this is a NEW watch, search these sources for the EXACT model number:
-         1. Jomashop.com - search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}"
-         2. Amazon.com - search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}"
-         3. eBay - filter "New In Box" + search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}"
+         EXCLUDE completely:
+         - New watches (even discounted)
+         - Unworn watches
+         - Brand new with tags
+         - Broken/parts watches
 
-         Find 10-15 NEW listings of this EXACT model number.
-         Calculate average NEW price (lean toward higher middle).` :
-        `CRITICAL: This is a USED/PRE-OWNED watch. Search these sources for the EXACT model number:
-         1. eBay SOLD listings - search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}" + filter "Sold items" + condition "Pre-owned"
-         2. eBay active listings - search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}" + condition "Pre-owned"
-
-         CRITICAL: All comparables MUST match the exact model/reference number.
-         DO NOT include different models even if they look similar.
-         Find 10-15 PRE-OWNED listings of this EXACT model.
+         Find 10-15 PRE-OWNED listings of this exact model in similar condition.
          Calculate average PRE-OWNED price (lean toward higher middle of used comps).`}
 
       Platform pricing strategy:
@@ -390,43 +387,38 @@ export default function WatchDetail() {
 
       Include ALL clickable listing URLs with prices!`;
       } else {
-        researchPrompt = `Search for this watch using the EXACT model number.
+        researchPrompt = `Search for this watch:
+      "${identification.identified_brand} ${identification.identified_model || ''} ${identification.reference_number || ''} watch"
 
-        Brand: ${identification.identified_brand}
-        Model: ${identification.identified_model || 'Unknown'}
-        Reference/Model Number: ${identification.reference_number || identification.identified_model || 'Unknown'}
-        Condition: ${conditionContext}
+      Condition: ${conditionContext}
 
-        STEP 1 - Find the MSRP:
-        Search for the original MSRP of a NEW version of this exact watch:
-        1. FIRST: Check manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com)
-        2. If not found: Check Jomashop.com, Amazon.com, Kay Jewelers, or Walmart
-        3. If not found on those: Leave MSRP blank
-        IMPORTANT: Save the source URL where you found the MSRP
+      STEP 1 - Find the MSRP:
+      Search for the original MSRP of a NEW version of this exact watch:
+      1. FIRST: Check manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com)
+      2. If not found: Check Amazon, Kay Jewelers, or Walmart
+      3. If not found on those: Leave MSRP blank
+      IMPORTANT: Save the source URL where you found the MSRP
 
-        STEP 2 - Find comparable listings:
+      STEP 2 - Find comparable listings:
+      ${isNewCondition ? 
+        `Since this is a NEW watch, search for NEW watch listings ONLY:
+         - Online watch stores selling NEW (Joma Shop, Amazon, Watchbox)
+         - eBay listings marked as "New In Box"
+         - Find 10-15 NEW listings of this exact model
+         - Calculate average NEW price (lean toward higher middle)` :
+        `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
+         - eBay: Search for SOLD listings (completed auctions) in USED condition ONLY
 
-        CRITICAL MODEL NUMBER MATCHING:
-        - You MUST search for the EXACT model number/reference number: "${identification.reference_number || identification.identified_model}"
-        - DO NOT substitute with similar models or different variants
-        - All comparables MUST have the same model/reference number
-        - If you can't find the exact model, state this clearly in market_insights
+         - Watch forums: Pre-owned sales
+         - Watchbox: Pre-owned section ONLY
 
-        ${isNewCondition ? 
-        `Since this is a NEW watch, search these sources for the EXACT model number:
-         1. Jomashop.com - search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}"
-         2. Amazon.com - search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}"
-         3. eBay - filter "New In Box" + search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}"
+         EXCLUDE completely:
+         - New watches (even discounted)
+         - Unworn watches
+         - Brand new with tags
+         - Broken/parts watches
 
-         Find 10-15 NEW listings of this EXACT model number.
-         Calculate average NEW price (lean toward higher middle).` :
-        `CRITICAL: This is a USED/PRE-OWNED watch. Search these sources for the EXACT model number:
-         1. eBay SOLD listings - search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}" + filter "Sold items" + condition "Pre-owned"
-         2. eBay active listings - search: "${identification.identified_brand} ${identification.reference_number || identification.identified_model}" + condition "Pre-owned"
-
-         CRITICAL: All comparables MUST match the exact model/reference number.
-         DO NOT include different models even if they look similar.
-         Find 10-15 PRE-OWNED listings of this EXACT model.
+         Find 10-15 PRE-OWNED listings of this exact model in similar condition.
          Calculate average PRE-OWNED price (lean toward higher middle of used comps).`}
 
       Platform pricing strategy:
@@ -666,41 +658,43 @@ export default function WatchDetail() {
 
       const pricingPrompt = `Now find comparable listings and calculate recommended pricing for this watch:
 
-      Watch Details:
-      - Brand: ${editedData.brand}
-      - Model: ${editedData.model || 'Unknown'}
-      - Reference Number: ${editedData.reference_number || 'Unknown'}
-      - Year: ${editedData.year || 'Unknown'}
-      - Condition: ${conditionContext}
-      - Case Material: ${editedData.case_material || 'Unknown'}
-      - Case Size: ${editedData.case_size || 'Unknown'}
-      - Movement: ${editedData.movement_type || 'Unknown'}
-      ${editedData.identical_listing_link ? `\n\nIMPORTANT: The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}\nThis is GUARANTEED to be the exact watch. Use this as a key reference point.` : ''}
+  Watch Details:
+  - Brand: ${editedData.brand}
+  - Model: ${editedData.model || 'Unknown'}
+  - Reference Number: ${editedData.reference_number || 'Unknown'}
+  - Year: ${editedData.year || 'Unknown'}
+  - Condition: ${conditionContext}
+  - Case Material: ${editedData.case_material || 'Unknown'}
+  - Case Size: ${editedData.case_size || 'Unknown'}
+  - Movement: ${editedData.movement_type || 'Unknown'}
+  ${editedData.identical_listing_link ? `\n\nIMPORTANT: The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}\nThis is GUARANTEED to be the exact watch. Use this as a key reference point.` : ''}
 
-      COMPREHENSIVE PRICING RESEARCH:
+  COMPREHENSIVE PRICING RESEARCH:
 
-      CRITICAL MODEL NUMBER MATCHING:
-      - You MUST search for the EXACT model number/reference number: "${editedData.reference_number || editedData.model}"
-      - DO NOT substitute with similar models or different variants
-      - All comparables MUST have the same model/reference number
-      - If you can't find the exact model, state this clearly in market_insights
+  ${isNewCondition ? 
+  `This is a NEW watch. Search for NEW watch listings ONLY:
+   - Joma Shop (new watches)
+   - Amazon (new watches)
+   - Watchbox (new watches)
+   - eBay listings marked as "New In Box" or "Brand New"
+   - Authorized dealers
 
-      ${isNewCondition ? 
-      `This is a NEW watch. Search these sources for the EXACT model number:
-      1. Jomashop.com - search: "${editedData.brand} ${editedData.reference_number || editedData.model}"
-      2. Amazon.com - search: "${editedData.brand} ${editedData.reference_number || editedData.model}"
-      3. eBay - filter "New In Box" + search: "${editedData.brand} ${editedData.reference_number || editedData.model}"
+   Find 10-15 NEW listings of this exact model.` :
+  `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
 
-      Find 10-15 NEW listings of this EXACT model number.` :
-      `CRITICAL: This is a USED/PRE-OWNED watch. Search these sources for the EXACT model number:
+   Search EXCLUSIVELY in these PRE-OWNED sections:
+   - eBay: Filter for SOLD listings (completed auctions) + condition "Pre-owned" or "Used"
+   - Watchbox: Pre-owned section ONLY
+   - Watch forums: Pre-owned/used sales listings
 
-      1. eBay SOLD listings - search: "${editedData.brand} ${editedData.reference_number || editedData.model}" + filter "Sold items" + condition "Pre-owned"
-      2. eBay active listings - search: "${editedData.brand} ${editedData.reference_number || editedData.model}" + condition "Pre-owned"
+   ABSOLUTELY EXCLUDE:
+   - Any "new" watches (even if discounted)
+   - "Unworn" or "Brand new" listings
+   - Broken/parts/repair watches
+   - Any listing advertising as "new with box" or "new without box"
 
-      CRITICAL: All comparables MUST match the exact model/reference number.
-      DO NOT include different models even if they look similar.
-      Find 10-15 PRE-OWNED/USED listings of this EXACT model.
-      The average market value MUST be based on pre-owned comps only.`}
+   Find 10-15 PRE-OWNED/USED listings of this exact model in similar used condition.
+   The average market value MUST be based on pre-owned comps only.`}
 
   PRICING CALCULATION:
   1. List all comparable listings with URLs and prices
@@ -806,20 +800,13 @@ export default function WatchDetail() {
   const importAIData = (field, value) => {
     if (field === "batch_update") {
       const updates = { ...value };
-
+      
       // Merge platform_prices if present
       if (updates.platform_prices) {
         updates.platform_prices = {
           ...(editedData.platform_prices || {}),
           ...updates.platform_prices
         };
-      }
-
-      // Save confidence level if market data is being imported
-      if (updates.market_research || updates.retail_price || updates.msrp) {
-        if (editedData.ai_analysis?.confidence_level) {
-          updates.ai_confidence_level = editedData.ai_analysis.confidence_level;
-        }
       }
 
       setEditedData({
