@@ -36,7 +36,7 @@ export default function AuctionSummaryTab({ watch }) {
   const currentPhoto = photos[selectedPhoto];
   const photoUrl = typeof currentPhoto === 'string' 
     ? currentPhoto 
-    : currentPhoto?.full || currentPhoto?.medium || currentPhoto?.original;
+    : currentPhoto?.full || currentPhoto?.medium || currentPhoto?.thumbnail;
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
@@ -65,7 +65,7 @@ export default function AuctionSummaryTab({ watch }) {
                 {photos.map((photo, idx) => {
                   const thumbUrl = typeof photo === 'string' 
                     ? photo 
-                    : photo?.thumbnail || photo?.medium || photo?.original;
+                    : photo?.thumbnail || photo?.medium || photo?.full;
                   return (
                     <button
                       key={idx}
