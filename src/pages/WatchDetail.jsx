@@ -310,7 +310,6 @@ Rate your confidence in the model number identification:
       let researchPrompt;
       const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
       const conditionContext = isNewCondition ? 'NEW' : 'USED';
-      const aiInstructionsContext = editedData.ai_instructions ? `\n\n🔴🔴🔴 CRITICAL USER INSTRUCTIONS - READ CAREFULLY:\n${editedData.ai_instructions}\n\nYou MUST take these user instructions into account. If the user says the watch is worth more than your initial findings suggest, re-examine your comparable searches and pricing logic.` : '';
 
       // Build identical listings context
       const identicalListingsContext = (editedData.identical_listing_links || []).filter(Boolean).length > 0
@@ -903,7 +902,8 @@ YOUR RESPONSE MUST INCLUDE:
       - Condition: ${conditionContext}
       - Case Material: ${editedData.case_material || 'Unknown'}
       - Case Size: ${editedData.case_size || 'Unknown'}
-      - Movement: ${editedData.movement_type || 'Unknown'}${aiInstructionsContext}
+      - Movement: ${editedData.movement_type || 'Unknown'}
+      ${editedData.ai_instructions ? `\n\n🔴🔴🔴 CRITICAL USER INSTRUCTIONS - READ CAREFULLY:\n${editedData.ai_instructions}\n\nYou MUST take these user instructions into account. If the user says the watch is worth more than your initial findings suggest, re-examine your comparable searches and pricing logic.` : ''}
       ${(editedData.identical_listing_links || []).filter(Boolean).length > 0 ? 
         `\n\n🔴 CRITICAL - ${(editedData.identical_listing_links || []).filter(Boolean).length} IDENTICAL WATCH LISTING(S) PROVIDED:
 ${(editedData.identical_listing_links || []).filter(Boolean).map((link, i) => `${i + 1}. ${link}`).join('\n')}
