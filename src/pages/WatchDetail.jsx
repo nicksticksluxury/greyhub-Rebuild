@@ -387,45 +387,71 @@ export default function WatchDetail() {
 
       Include ALL clickable listing URLs with prices!`;
       } else {
-        researchPrompt = `Search for this watch:
-      "${identification.identified_brand} ${identification.identified_model || ''} ${identification.reference_number || ''} watch"
+        researchPrompt = `Search for this watch using EXACT model/reference number match:
+        
+      CRITICAL - EXACT MATCH REQUIRED:
+      Brand: ${identification.identified_brand}
+      Model: ${identification.identified_model || 'Unknown'}
+      Reference/Model Number: ${identification.reference_number || 'Unknown'} ← THIS MUST MATCH EXACTLY
+      
+      ${identification.reference_number ? 
+        `The reference number "${identification.reference_number}" is CRITICAL - only use listings that explicitly show THIS EXACT reference/model number. Different numbers = different watches = different values.` : 
+        'Find the exact reference number and ONLY use listings with that exact number.'}
 
       Condition: ${conditionContext}
 
       STEP 1 - Find the MSRP:
-      Search for the original MSRP of a NEW version of this exact watch:
-      1. FIRST: Check manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com)
-      2. If not found: Check Amazon, Kay Jewelers, or Walmart
-      3. If not found on those: Leave MSRP blank
-      IMPORTANT: Save the source URL where you found the MSRP
+      Search for the original MSRP of a NEW version with EXACT reference number:
+      1. FIRST: Jomashop.com (best new watch prices - search exact model number)
+      2. Amazon.com (search brand + model + reference number)
+      3. Manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com)
+      4. Kay Jewelers or Walmart
+      IMPORTANT: VERIFY the model/reference number MATCHES before using price. Save source URL.
 
-      STEP 2 - Find comparable listings:
+      STEP 2 - Find comparable listings with EXACT SAME reference number:
       ${isNewCondition ? 
-        `Since this is a NEW watch, search for NEW watch listings ONLY:
-         - Online watch stores selling NEW (Joma Shop, Amazon, Watchbox)
-         - eBay listings marked as "New In Box"
-         - Find 10-15 NEW listings of this exact model
-         - Calculate average NEW price (lean toward higher middle)` :
-        `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
-         - eBay: Search for SOLD listings (completed auctions) in USED condition ONLY
+        `Since this is a NEW watch, search for NEW watch listings with EXACT reference match ONLY:
+         
+         MANDATORY STEPS:
+         1. Jomashop.com - Search exact model/reference number "${identification.reference_number || identification.identified_model}"
+         2. Amazon.com - Search "${identification.identified_brand} ${identification.reference_number || identification.identified_model}"
+         3. eBay NEW listings - Search exact reference, filter "New In Box"
+         4. Watchbox NEW section - Exact model match
+         
+         VERIFICATION: Every listing MUST show reference number "${identification.reference_number || '[model]'}"
+         - Different reference = different watch = EXCLUDE
+         - No reference shown = EXCLUDE
+         
+         Find 10-15 NEW listings with VERIFIED reference match.
+         Calculate average NEW price (lean toward higher middle)` :
+        `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales with EXACT reference match:
+         
+         MANDATORY STEPS:
+         1. eBay SOLD listings: Search "${identification.identified_brand} ${identification.reference_number || identification.identified_model}" 
+            - Filter: SOLD items only, Pre-owned/Used condition ONLY
+            - VERIFY each listing shows the exact reference number ${identification.reference_number || '[model]'} before including
+         2. Watchbox.com: Pre-owned section with exact model match
+         3. Watch forums: Pre-owned sales (verify reference number)
 
-         - Watch forums: Pre-owned sales
-         - Watchbox: Pre-owned section ONLY
+         VERIFICATION REQUIRED:
+         - EVERY listing must show the EXACT reference number "${identification.reference_number || '[model]'}"
+         - If reference number is missing from listing, DO NOT include it
+         - Different reference = different watch = wrong data
 
          EXCLUDE completely:
          - New watches (even discounted)
-         - Unworn watches
-         - Brand new with tags
+         - Unworn watches  
+         - Similar models with different reference numbers
          - Broken/parts watches
 
-         Find 10-15 PRE-OWNED listings of this exact model in similar condition.
+         Find 10-15 PRE-OWNED listings with VERIFIED reference number match.
          Calculate average PRE-OWNED price (lean toward higher middle of used comps).`}
 
       Platform pricing strategy:
          - whatnot: 70%, ebay: 85%, shopify: 100%
          - etsy: 90%, poshmark: 80%, mercari: 75%
 
-      Include ALL clickable URLs for ${conditionContext} comparables and the MSRP source (if found)!`;
+      Include ALL clickable URLs for ${conditionContext} comparables with VERIFIED reference match and the MSRP source (if found)!`;
       }
 
       const pricing = await base44.integrations.Core.InvokeLLM({

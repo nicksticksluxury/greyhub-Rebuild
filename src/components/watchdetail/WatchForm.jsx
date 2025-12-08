@@ -498,7 +498,14 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
         </div>
 
         <div>
-          <Label>Market Research</Label>
+          <div className="flex items-center justify-between mb-2">
+            <Label>Market Research</Label>
+            {data.ai_confidence_level && (
+              <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                AI Confidence: {data.ai_confidence_level}
+              </span>
+            )}
+          </div>
           <Textarea
             value={data.market_research || ""}
             onChange={(e) => updateField("market_research", e.target.value)}
