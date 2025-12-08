@@ -130,8 +130,8 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
       const headers = [
         "Category", "Sub Category", "Title", "Description", "Quantity", "Type", 
         "Price", "Shipping Profile", "Offerable", "Hazmat", "Condition", 
-        "Cost Per Item", "SKU", "Images", "Images", "Images", 
-        "Images", "Images", "Images", "Images", "Images"
+        "Cost Per Item", "SKU", "Image URL 1", "Image URL 2", "Image URL 3", 
+        "Image URL 4", "Image URL 5", "Image URL 6", "Image URL 7", "Image URL 8"
       ];
 
       const rows = watchesWithDescriptions.map(w => {
