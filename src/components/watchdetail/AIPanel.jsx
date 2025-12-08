@@ -173,6 +173,35 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
 
   const hasBasicInfo = aiAnalysis.identified_brand || aiAnalysis.identified_model;
 
+  const selectAllBasicInfo = () => {
+    const basicInfoKeys = ['brand', 'model', 'reference_number', 'serial_number', 'year', 'gender', 'movement_type', 'case_material', 'case_size', 'dial_color', 'bracelet_material'];
+    const newSet = new Set(selectedKeys);
+    basicInfoKeys.forEach(key => {
+      if (aiAnalysis[key] || aiAnalysis[`identified_${key}`]) {
+        newSet.add(key);
+      }
+    });
+    setSelectedKeys(newSet);
+  };
+
+  const selectAllListings = () => {
+    const urlRegex = /(https?:\/\/[^\s\)]+)/g;
+    const urls = aiAnalysis.comparable_listings?.match(urlRegex) || [];
+    const newSet = new Set(selectedKeys);
+    urls.forEach((_, idx) => newSet.add(`listing_${idx}`));
+    setSelectedKeys(newSet);
+  };
+
+  const selectAllPricing = () => {
+    const newSet = new Set(selectedKeys);
+    ['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].forEach(platform => {
+      if (aiAnalysis.pricing_recommendations?.[platform]) {
+        newSet.add(`price_${platform}`);
+      }
+    });
+    setSelectedKeys(newSet);
+  };
+
   return (
     <Card className="p-6 flex flex-col h-full max-h-screen">
       <div className="flex items-center justify-between mb-4 shrink-0">
@@ -200,6 +229,17 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           )}
 
           {/* Basic Info Section */}
+          {hasBasicInfo && (
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold text-slate-400 uppercase">Basic Info</div>
+              <button
+                onClick={selectAllBasicInfo}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Select All
+              </button>
+            </div>
+          )}
           <div className="space-y-2">
             {aiAnalysis.identified_brand && (
               <SelectableItem id="brand" label="Brand" value={aiAnalysis.identified_brand} />
@@ -288,10 +328,16 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {/* Comparable Listings */}
           {aiAnalysis.comparable_listings && (
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center justify-between mb-3">
                    <span className="text-xs font-semibold uppercase text-slate-500">
                        Comparable Listings
                    </span>
+                   <button
+                     onClick={selectAllListings}
+                     className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                   >
+                     Select All
+                   </button>
                 </div>
                 <div className="space-y-2">
                    {(() => {
@@ -342,11 +388,19 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           {/* Pricing Recommendations */}
           {aiAnalysis.pricing_recommendations && Object.keys(aiAnalysis.pricing_recommendations).length > 0 && (
             <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg p-3 border border-amber-100">
-              <div className="flex items-center gap-2 mb-3">
-                <DollarSign className="w-4 h-4 text-amber-700" />
-                <span className="text-xs font-semibold text-amber-900 uppercase">
-                  Pricing Recommendations
-                </span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-amber-700" />
+                  <span className="text-xs font-semibold text-amber-900 uppercase">
+                    Pricing Recommendations
+                  </span>
+                </div>
+                <button
+                  onClick={selectAllPricing}
+                  className="text-xs text-amber-700 hover:text-amber-900 font-medium"
+                >
+                  Select All
+                </button>
               </div>
               <div className="space-y-2">
                 {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map((platform) => {
