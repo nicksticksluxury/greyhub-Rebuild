@@ -16,8 +16,6 @@ export default function Settings() {
   const [manualAccessToken, setManualAccessToken] = useState("");
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualUrl, setManualUrl] = useState("");
-  const [markingWhatnot, setMarkingWhatnot] = useState(false);
-  const [debugData, setDebugData] = useState(null);
   const [reoptimizing, setReoptimizing] = useState(false);
 
   const { data: settings, isLoading, refetch } = useQuery({
@@ -140,26 +138,7 @@ export default function Settings() {
     }
   }, []);
 
-  const handleMarkAllListedOnWhatnot = async () => {
-    if (!confirm("Are you sure you want to mark ALL watches (including sold ones) as listed on Whatnot? This will update the 'Listed On' status for any watch not currently marked as listed.")) {
-      return;
-    }
-    
-    setMarkingWhatnot(true);
-    try {
-      const result = await base44.functions.invoke("markAllListedOnWhatnot");
-      if (result.data.success) {
-        toast.success(`Successfully marked ${result.data.count} watches as listed on Whatnot`);
-      } else {
-        toast.error("Failed: " + (result.data.error || "Unknown error"));
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Operation failed: " + error.message);
-    } finally {
-      setMarkingWhatnot(false);
-    }
-  };
+
 
   const handleConnectEbay = async () => {
     try {
@@ -372,151 +351,16 @@ export default function Settings() {
 
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Data Management</CardTitle>
-            <CardDescription>Bulk operations for your inventory data</CardDescription>
+            <CardTitle>Image Optimization</CardTitle>
+            <CardDescription>Manage image optimization for your inventory</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="p-4 border border-slate-200 rounded-xl bg-white">
-               <h3 className="font-medium text-slate-900 mb-2">Whatnot Status</h3>
+               <h3 className="font-medium text-slate-900 mb-2">Re-optimize Unoptimized Images</h3>
                <p className="text-sm text-slate-500 mb-4">
-                 Bulk update all inventory items to show as "Listed on Whatnot". This affects both active and sold inventory.
+                 Find and re-optimize all watches that still have original image URLs. This will create optimized variants and remove original URLs.
                </p>
                <Button 
-                 onClick={handleMarkAllListedOnWhatnot} 
-                 disabled={markingWhatnot}
-                 variant="outline"
-                 className="border-slate-300"
-               >
-                 {markingWhatnot ? (
-                   <>
-                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                     Updating...
-                   </>
-                 ) : (
-                   "Mark ALL as Listed on Whatnot"
-                 )}
-               </Button>
-            </div>
-
-            <div className="p-4 border border-slate-200 rounded-xl bg-white mt-4">
-               <h3 className="font-medium text-slate-900 mb-2">Data Migration</h3>
-               <p className="text-sm text-slate-500 mb-4">
-                 Migrate existing single-layer sources to the new 2-layer structure (Source + Orders). 
-                 This will create new Supplier and Order records and re-link your watches.
-               </p>
-               <Button 
-                 onClick={async () => {
-                   if (!confirm("This will transform your source data structure. Are you sure?")) return;
-                   toast.promise(
-                     base44.functions.invoke("migrateSources"),
-                     {
-                       loading: "Migrating data...",
-                       success: (data) => {
-                         return `Migration complete! Created ${data.data.stats.createdWatchSources} suppliers and ${data.data.stats.createdSourceOrders} orders.`;
-                       },
-                       error: (err) => "Migration failed: " + (err.response?.data?.error || err.message)
-                     }
-                   );
-                 }} 
-                 variant="outline"
-                 className="border-slate-300"
-               >
-                 Run Source Migration
-               </Button>
-               <Button 
-                 onClick={async () => {
-                   try {
-                      const res = await base44.functions.invoke("debugData");
-                      setDebugData(JSON.stringify(res.data, null, 2));
-                      toast.success("Debug data fetched");
-                   } catch (e) {
-                      toast.error("Failed to fetch debug data");
-                   }
-                 }} 
-                 variant="outline"
-                 className="border-slate-300 ml-2"
-               >
-                 Debug Data
-               </Button>
-               <Button 
-                 onClick={async () => {
-                   if (!confirm("This will analyze all watches to fill in newly added fields (Dial Color, Bracelet Material). This process may take a while. Continue?")) return;
-                   
-                   const toastId = toast.loading("Starting bulk update...");
-                   try {
-                      // Fetch all watches first
-                      const allWatches = await base44.entities.Watch.list();
-                      const watchIds = allWatches.map(w => w.id);
-                      const total = watchIds.length;
-                      let processed = 0;
-                      let successCount = 0;
-                      
-                      // Process in chunks of 5 to avoid browser timeouts on long requests
-                      const CHUNK_SIZE = 5;
-                      for (let i = 0; i < total; i += CHUNK_SIZE) {
-                          const chunk = watchIds.slice(i, i + CHUNK_SIZE);
-                          toast.loading(`Processing ${processed}/${total}...`, { id: toastId });
-                          
-                          const res = await base44.functions.invoke("bulkUpdateWatchIdentification", { watchIds: chunk });
-                          successCount += res.data.success;
-                          processed += chunk.length;
-                      }
-                      
-                      toast.success(`Completed! Updated ${successCount} watches.`, { id: toastId });
-                   } catch (e) {
-                      toast.error("Failed to run update: " + e.message, { id: toastId });
-                   }
-                 }} 
-                 variant="outline"
-                 className="border-purple-300 text-purple-700 hover:bg-purple-50 ml-2"
-               >
-                 <Sparkles className="w-4 h-4 mr-2" />
-                 Update AI Fields
-               </Button>
-               <Button 
-                 onClick={async () => {
-                   if (!confirm("This will scan for any sources that were missed during migration and import them. Continue?")) return;
-                   const toastId = toast.loading("Repairing sources...");
-                   try {
-                      const res = await base44.functions.invoke("repairMissingSources");
-                      if (res.data.success) {
-                          toast.success(`Repaired ${res.data.createdSources} sources and ${res.data.updatedWatches} watches`, { id: toastId });
-                      } else {
-                          toast.error("Failed: " + res.data.error, { id: toastId });
-                      }
-                   } catch (e) {
-                      toast.error("Failed to repair sources: " + e.message, { id: toastId });
-                   }
-                 }} 
-                 variant="outline"
-                 className="border-amber-300 text-amber-700 hover:bg-amber-50 ml-2"
-               >
-                 Repair Missing Sources
-                 </Button>
-                 <Button 
-                 onClick={async () => {
-                   if (!confirm("This will validate all watches and fix broken source links using legacy data. Continue?")) return;
-                   const toastId = toast.loading("Validating and fixing links...");
-                   try {
-                      const res = await base44.functions.invoke("validateAndFixWatchLinks");
-                      if (res.data.success) {
-                          toast.success(`Fixed ${res.data.fixed} watches. Skipped ${res.data.skipped}. Errors: ${res.data.totalErrors}`, { id: toastId });
-                          if (res.data.errors.length > 0) {
-                              setDebugData(JSON.stringify(res.data.errors, null, 2));
-                          }
-                      } else {
-                          toast.error("Failed: " + res.data.error, { id: toastId });
-                      }
-                   } catch (e) {
-                      toast.error("Failed to validate: " + e.message, { id: toastId });
-                   }
-                 }} 
-                 variant="outline"
-                 className="border-blue-300 text-blue-700 hover:bg-blue-50 ml-2"
-                 >
-                 Validate & Fix Links
-                 </Button>
-                 <Button 
                  onClick={async () => {
                    if (!confirm("This will re-optimize all watches that still have original image URLs. This may take several minutes. Continue?")) return;
                    const toastId = toast.loading("Starting image re-optimization...");
@@ -525,9 +369,6 @@ export default function Settings() {
                       const res = await base44.functions.invoke("reoptimizeWatchImages");
                       if (res.data.success) {
                           toast.success(`Optimized ${res.data.successCount} watches. Failed: ${res.data.failedCount}`, { id: toastId });
-                          if (res.data.results) {
-                              setDebugData(JSON.stringify(res.data.results, null, 2));
-                          }
                       } else {
                           toast.error("Failed: " + res.data.error, { id: toastId });
                       }
@@ -538,9 +379,9 @@ export default function Settings() {
                    }
                  }} 
                  variant="outline"
-                 className="border-green-300 text-green-700 hover:bg-green-50 ml-2 mt-2"
+                 className="border-green-300 text-green-700 hover:bg-green-50"
                  disabled={reoptimizing}
-                 >
+               >
                  {reoptimizing ? (
                    <>
                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -552,33 +393,7 @@ export default function Settings() {
                      Re-optimize Images
                    </>
                  )}
-                 </Button>
-
-                 {debugData && (
-                  <div className="mt-4 relative">
-                    <div className="p-4 bg-slate-900 text-slate-50 rounded-lg overflow-auto max-h-[500px] font-mono text-xs whitespace-pre-wrap">
-                      {debugData}
-                    </div>
-                    <Button 
-                      size="sm" 
-                      className="absolute top-2 right-2 bg-slate-700 hover:bg-slate-600"
-                      onClick={() => {
-                        navigator.clipboard.writeText(debugData);
-                        toast.success("Copied to clipboard");
-                      }}
-                    >
-                      <Copy className="w-3 h-3 mr-2" /> Copy
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="absolute top-2 right-24 text-slate-400 hover:text-white hover:bg-slate-800"
-                      onClick={() => setDebugData(null)}
-                    >
-                      Close
-                    </Button>
-                  </div>
-               )}
+               </Button>
             </div>
             </CardContent>
             </Card>
