@@ -40,18 +40,18 @@ export default function AddWatch() {
         setUploadProgress({ current, total, stage: 'Optimizing' });
       });
       
-      // Step 2: Upload all variants
+      // Step 2: Upload all variants (except original)
       console.log("Uploading optimized photos...");
       const photoObjects = [];
-      const totalUploads = optimizedPhotos.length * 4; // 4 variants per photo
+      const totalUploads = optimizedPhotos.length * 3; // 3 variants per photo (no original)
       let uploadCount = 0;
       
       for (let i = 0; i < optimizedPhotos.length; i++) {
         const variants = optimizedPhotos[i];
         const photoObj = {};
         
-        // Upload each variant
-        for (const variant of ['original', 'thumbnail', 'medium', 'full']) {
+        // Upload each variant (skip original)
+        for (const variant of ['thumbnail', 'medium', 'full']) {
           uploadCount++;
           setUploadProgress({ 
             current: uploadCount, 
