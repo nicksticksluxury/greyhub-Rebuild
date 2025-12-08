@@ -179,7 +179,7 @@ export default function WatchSourceDetail() {
 
           {/* Stats & Orders */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-4">
                   <p className="text-xs text-slate-500 font-medium uppercase">Total Orders</p>
@@ -190,6 +190,12 @@ export default function WatchSourceDetail() {
                 <CardContent className="p-4">
                   <p className="text-xs text-slate-500 font-medium uppercase">Total Watches</p>
                   <p className="text-2xl font-bold text-blue-600 mt-1">{source.total_watches_sourced || 0}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-xs text-slate-500 font-medium uppercase">Active Watches</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">{source.active_watches_count || 0}</p>
                 </CardContent>
               </Card>
               <Card>
