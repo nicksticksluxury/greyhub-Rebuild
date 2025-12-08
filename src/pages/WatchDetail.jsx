@@ -935,6 +935,13 @@ export default function WatchDetail() {
         comparable_listings_links: listings 
       });
       toast.success("Comparable listings imported!");
+    } else if (field === "market_research") {
+      const updates = { market_research: value };
+      if (editedData.ai_analysis?.confidence_level) {
+        updates.ai_confidence_level = editedData.ai_analysis.confidence_level;
+      }
+      setEditedData({ ...editedData, ...updates });
+      toast.success("Market research imported!");
     } else {
       setEditedData({ ...editedData, [field]: value });
       toast.success("Data imported from AI analysis");
