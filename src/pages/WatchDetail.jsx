@@ -196,9 +196,9 @@ export default function WatchDetail() {
       setAnalysisStep("🔍 Step 1/3: Examining your watch photos...");
       console.log("=== STEP 1: IDENTIFICATION ===");
       
-      // Get full resolution photos for AI analysis
+      // Get optimized full resolution photos for AI analysis
       const photosToAnalyze = editedData.photos.slice(0, 2).map(photo => 
-        photo.original || photo.full || photo
+        photo.full || photo.medium || photo.original || photo
       );
       console.log("Photos:", photosToAnalyze);
       

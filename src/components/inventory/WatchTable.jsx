@@ -259,7 +259,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                             src={watch.photos[0].thumbnail}
                             alt={watch.brand}
                             className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-75 transition-opacity"
-                            onClick={(e) => handleImageClick(e, watch.photos[0].full || watch.photos[0].original)}
+                            onClick={(e) => handleImageClick(e, watch.photos[0].full || watch.photos[0].medium || watch.photos[0].original)}
                           />
                         ) : (
                           <div className="w-16 h-16 bg-amber-100 rounded-lg flex items-center justify-center border border-amber-300">
