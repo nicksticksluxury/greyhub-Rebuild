@@ -615,26 +615,30 @@ export default function WatchDetail() {
       setAnalysisStep("💰 Step 1/2: Finding manufacturer MSRP...");
       console.log("=== STEP 1: MSRP SEARCH ===");
 
-      const msrpPrompt = `Find the MANUFACTURER'S SUGGESTED RETAIL PRICE (MSRP) for a NEW version of this watch:
+      const msrpPrompt = `Find the MANUFACTURER'S SUGGESTED RETAIL PRICE (MSRP) for a NEW version with EXACT reference match:
 
-  Watch Details:
-  - Brand: ${editedData.brand}
-  - Model: ${editedData.model || 'Unknown'}
-  - Reference Number: ${editedData.reference_number || 'Unknown'}
-  ${editedData.msrp_link ? `- Manufacturer Link Provided: ${editedData.msrp_link}` : ''}
-  ${editedData.identical_listing_link ? `- Identical Listing Link: ${editedData.identical_listing_link}` : ''}
+      Watch Details (EXACT MATCH REQUIRED):
+      - Brand: ${editedData.brand}
+      - Model: ${editedData.model || 'Unknown'}
+      - Reference/Model Number: ${editedData.reference_number || 'Unknown'} ← MUST MATCH EXACTLY
+      ${editedData.msrp_link ? `- Manufacturer Link Provided: ${editedData.msrp_link}` : ''}
+      ${editedData.identical_listing_link ? `- Identical Listing Link: ${editedData.identical_listing_link}` : ''}
 
-  CRITICAL MSRP SEARCH PRIORITY:
-  1. FIRST: Check the manufacturer's official website (e.g., Nixon.com, Seiko.com, Citizen.com, Rolex.com)
-  2. If not found: Check large department stores - Amazon, Walmart, Kay Jewelers
-  3. If not found on ANY of those: Leave MSRP as null
+      CRITICAL MSRP SEARCH PRIORITY (verify reference number on EVERY site):
+      1. Jomashop.com - Search exact model/reference number "${editedData.reference_number || editedData.model}"
+      2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number || editedData.model}"
+      3. Manufacturer's website (e.g., Nixon.com, Seiko.com, Citizen.com, Rolex.com)
+      4. Kay Jewelers, Walmart
+      5. If not found on ANY: Leave MSRP as null
 
-  IMPORTANT: 
-  - This MUST be the original retail price for a NEW watch
-  - Do NOT use used prices, discounted prices, or sale prices
-  - Save the exact URL where you found the MSRP
+      VERIFICATION CRITICAL: 
+      - MUST verify the reference/model number MATCHES before using any price
+      - Different reference number = different watch = WRONG PRICE
+      - This MUST be the original retail price for a NEW watch with EXACT reference
+      - Do NOT use used, discounted, or sale prices
+      - Save the exact URL where you found the MSRP
 
-  Return the original MSRP and source URL, or null if you cannot find it on manufacturer/department store sites.`;
+      Return the original MSRP and source URL, or null if exact match not found.`;
 
       const msrpResult = await base44.integrations.Core.InvokeLLM({
         prompt: msrpPrompt,
@@ -656,45 +660,62 @@ export default function WatchDetail() {
       setAnalysisStep("🌐 Step 2/2: Researching comparable listings and pricing...");
       console.log("=== STEP 2: PRICING RESEARCH ===");
 
-      const pricingPrompt = `Now find comparable listings and calculate recommended pricing for this watch:
+      const pricingPrompt = `Find comparable listings with EXACT reference number match and calculate pricing:
 
-  Watch Details:
-  - Brand: ${editedData.brand}
-  - Model: ${editedData.model || 'Unknown'}
-  - Reference Number: ${editedData.reference_number || 'Unknown'}
-  - Year: ${editedData.year || 'Unknown'}
-  - Condition: ${conditionContext}
-  - Case Material: ${editedData.case_material || 'Unknown'}
-  - Case Size: ${editedData.case_size || 'Unknown'}
-  - Movement: ${editedData.movement_type || 'Unknown'}
-  ${editedData.identical_listing_link ? `\n\nIMPORTANT: The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}\nThis is GUARANTEED to be the exact watch. Use this as a key reference point.` : ''}
+      Watch Details (EXACT MATCH REQUIRED):
+      - Brand: ${editedData.brand}
+      - Model: ${editedData.model || 'Unknown'}
+      - Reference/Model Number: ${editedData.reference_number || 'Unknown'} ← THIS IS CRITICAL
+      - Year: ${editedData.year || 'Unknown'}
+      - Condition: ${conditionContext}
+      - Case Material: ${editedData.case_material || 'Unknown'}
+      - Case Size: ${editedData.case_size || 'Unknown'}
+      - Movement: ${editedData.movement_type || 'Unknown'}
+      ${editedData.identical_listing_link ? `\n\nIMPORTANT: The user provided this IDENTICAL watch listing: ${editedData.identical_listing_link}\nThis is GUARANTEED to be the exact watch. Use this as a key reference point.` : ''}
 
-  COMPREHENSIVE PRICING RESEARCH:
+      REFERENCE NUMBER VERIFICATION MANDATORY:
+      ${editedData.reference_number ? 
+      `Every comparable listing MUST show reference number "${editedData.reference_number}". Different reference = different watch = EXCLUDE.` :
+      'Find the exact reference number first, then ONLY use listings with that exact number.'}
+
+      COMPREHENSIVE PRICING RESEARCH WITH EXACT MATCH:
 
   ${isNewCondition ? 
-  `This is a NEW watch. Search for NEW watch listings ONLY:
-   - Joma Shop (new watches)
-   - Amazon (new watches)
-   - Watchbox (new watches)
-   - eBay listings marked as "New In Box" or "Brand New"
-   - Authorized dealers
+  `This is a NEW watch. Search for NEW watch listings with EXACT reference match ONLY:
 
-   Find 10-15 NEW listings of this exact model.` :
-  `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED comparable sales:
+   MANDATORY STEPS:
+   1. Jomashop.com - Search "${editedData.reference_number || editedData.model}" (best new prices)
+   2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number || editedData.model}"
+   3. eBay NEW - Filter "New In Box", verify reference number
+   4. Watchbox NEW section
+   5. Authorized dealers
 
-   Search EXCLUSIVELY in these PRE-OWNED sections:
-   - eBay: Filter for SOLD listings (completed auctions) + condition "Pre-owned" or "Used"
-   - Watchbox: Pre-owned section ONLY
-   - Watch forums: Pre-owned/used sales listings
+   VERIFICATION: MUST show reference "${editedData.reference_number || '[model]'}" on every listing
+
+   Find 10-15 NEW listings with VERIFIED reference match.` :
+  `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED sales with EXACT reference match:
+
+   MANDATORY STEPS WITH VERIFICATION:
+   1. eBay SOLD listings:
+      - Search: "${editedData.brand} ${editedData.reference_number || editedData.model}"
+      - Filter: SOLD items + Pre-owned/Used condition ONLY
+      - VERIFY: Each listing shows exact reference "${editedData.reference_number || '[model]'}"
+   2. Watchbox Pre-owned: Exact reference match only
+   3. Watch forums: Verify reference in each listing
+
+   REFERENCE VERIFICATION CRITICAL:
+   - Every listing MUST show reference "${editedData.reference_number || '[model]'}"
+   - Different reference = different watch = EXCLUDE
+   - No reference shown = EXCLUDE
 
    ABSOLUTELY EXCLUDE:
-   - Any "new" watches (even if discounted)
+   - Any "new" watches (even discounted)
    - "Unworn" or "Brand new" listings
+   - Similar models with different references
    - Broken/parts/repair watches
-   - Any listing advertising as "new with box" or "new without box"
 
-   Find 10-15 PRE-OWNED/USED listings of this exact model in similar used condition.
-   The average market value MUST be based on pre-owned comps only.`}
+   Find 10-15 PRE-OWNED listings with VERIFIED reference match.
+   Average market value MUST be from exact reference comps only.`}
 
   PRICING CALCULATION:
   1. List all comparable listings with URLs and prices
@@ -800,13 +821,20 @@ export default function WatchDetail() {
   const importAIData = (field, value) => {
     if (field === "batch_update") {
       const updates = { ...value };
-      
+
       // Merge platform_prices if present
       if (updates.platform_prices) {
         updates.platform_prices = {
           ...(editedData.platform_prices || {}),
           ...updates.platform_prices
         };
+      }
+
+      // Save confidence level if market research or pricing data is being imported
+      if (updates.market_research || updates.platform_prices || updates.retail_price || updates.msrp) {
+        if (editedData.ai_analysis?.confidence_level) {
+          updates.ai_confidence_level = editedData.ai_analysis.confidence_level;
+        }
       }
 
       setEditedData({
