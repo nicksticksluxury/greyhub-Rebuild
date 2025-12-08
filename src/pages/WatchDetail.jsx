@@ -526,9 +526,12 @@ export default function WatchDetail() {
   const generateDescription = async () => {
     setGeneratingDescription(true);
     try {
+      const aiCondition = editedData.ai_analysis?.condition_assessment || "";
+      const conditionContext = aiCondition ? `\n\nAI Analysis of Condition:\n${aiCondition}` : "";
+
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Create a compelling, professional product description for this watch:
-        
+
         Brand: ${editedData.brand}
         Model: ${editedData.model}
         Reference: ${editedData.reference_number || "N/A"}
@@ -536,10 +539,17 @@ export default function WatchDetail() {
         Condition: ${editedData.condition || "N/A"}
         Movement: ${editedData.movement_type || "N/A"}
         Case Material: ${editedData.case_material || "N/A"}
-        Case Size: ${editedData.case_size || "N/A"}
-        
-        Create an engaging, accurate description that will attract buyers. 
-        Be honest about condition but emphasize the watch's strengths and unique features.
+        Case Size: ${editedData.case_size || "N/A"}${conditionContext}
+
+        Create an engaging, accurate description that will attract buyers while being completely honest about condition.
+
+        CRITICAL CONDITION REQUIREMENTS:
+        - If there are scratches, wear, tears, damage, or any cosmetic issues, clearly state them
+        - Be specific about the location and severity of any condition issues
+        - Use clear, honest language about wear (e.g., "light scratches on bezel", "moderate wear on bracelet")
+        - Don't hide or minimize flaws - transparency builds trust
+        - After noting any issues, you can emphasize strengths and features
+
         Keep it concise but informative (150-300 words).
         Format it in a clear, professional way that can be used on any sales platform.`
       });
