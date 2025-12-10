@@ -142,19 +142,22 @@ Deno.serve(async (req) => {
         // STEP 2: Sync TO eBay (end/remove listings for watches marked sold in app, or update quantity)
         let endedCount = 0;
         const endedItems = [];
+        let updatedCount = 0;
+        const updatedItems = [];
         
         try {
-            // Get all watches that are sold OR have quantity 0 and have an eBay listing
-            const soldWatches = await base44.entities.Watch.filter({ sold: true });
+            // Get all watches with eBay listings (to sync quantity or end listing)
+            const allWatches = await base44.entities.Watch.list();
             
-            for (const watch of soldWatches) {
+            for (const watch of allWatches) {
                 const ebayItemId = watch.platform_ids?.ebay;
                 if (!ebayItemId) continue;
                 
-                // Only end listing if quantity is 0 or undefined (fully sold)
-                if ((watch.quantity || 0) === 0) {
+                const currentQty = watch.quantity || 0;
+                
+                // If fully sold (quantity 0), end the listing
+                if (currentQty === 0 && watch.sold) {
                     try {
-                        // End the listing on eBay
                         const endResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${ebayItemId}`, {
                             method: 'DELETE',
                             headers: {
@@ -164,8 +167,6 @@ Deno.serve(async (req) => {
                         });
                         
                         if (endResponse.ok || endResponse.status === 404) {
-                            // Successfully ended or already gone
-                            // Clear the eBay platform data to avoid future sync attempts
                             await base44.entities.Watch.update(watch.id, {
                                 platform_ids: {
                                     ...(watch.platform_ids || {}),
@@ -183,6 +184,31 @@ Deno.serve(async (req) => {
                     } catch (endErr) {
                         console.error(`Failed to end eBay listing for watch ${watch.id}:`, endErr);
                     }
+                } else if (currentQty > 0) {
+                    // Update quantity on eBay listing
+                    try {
+                        const updateResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${ebayItemId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${ebayToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                availability: {
+                                    shipToLocationAvailability: {
+                                        quantity: currentQty
+                                    }
+                                }
+                            })
+                        });
+                        
+                        if (updateResponse.ok) {
+                            updatedCount++;
+                            updatedItems.push(`${watch.brand} ${watch.model} (${currentQty} remaining)`);
+                        }
+                    } catch (updateErr) {
+                        console.error(`Failed to update eBay quantity for watch ${watch.id}:`, updateErr);
+                    }
                 }
             }
         } catch (syncToErr) {
@@ -194,7 +220,9 @@ Deno.serve(async (req) => {
             syncedCount,
             syncedItems,
             endedCount,
-            endedItems
+            endedItems,
+            updatedCount,
+            updatedItems
         });
 
     } catch (error) {

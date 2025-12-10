@@ -106,10 +106,13 @@ export default function Inventory() {
       if (result.data.success) {
         const messages = [];
         if (result.data.syncedCount > 0) {
-          messages.push(`Imported ${result.data.syncedCount} sales from eBay: ${result.data.syncedItems.join(", ")}`);
+          messages.push(`Imported ${result.data.syncedCount} sales: ${result.data.syncedItems.join(", ")}`);
+        }
+        if (result.data.updatedCount > 0) {
+          messages.push(`Updated ${result.data.updatedCount} quantities on eBay`);
         }
         if (result.data.endedCount > 0) {
-          messages.push(`Ended ${result.data.endedCount} eBay listings: ${result.data.endedItems.join(", ")}`);
+          messages.push(`Ended ${result.data.endedCount} listings`);
         }
         
         if (messages.length > 0) {
