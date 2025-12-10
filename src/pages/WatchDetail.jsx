@@ -35,6 +35,8 @@ export default function WatchDetail() {
     const mode = localStorage.getItem('watchvault_mode') || 'working';
     return mode === 'live' ? 'summary' : 'details';
   });
+  const [showSoldQuantityDialog, setShowSoldQuantityDialog] = useState(false);
+  const [soldQuantity, setSoldQuantity] = useState(1);
 
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
@@ -154,6 +156,14 @@ export default function WatchDetail() {
   };
 
   const handleSave = () => {
+    // Check if marking as sold and quantity > 1
+    if (editedData.sold && !originalData.sold && editedData.quantity > 1) {
+      // Show dialog to ask how many units sold
+      setSoldQuantity(1);
+      setShowSoldQuantityDialog(true);
+      return;
+    }
+    
     const calculatedMinPrice = calculateMinimumPrice(editedData.cost);
     const dataToSave = {
       ...editedData,
@@ -163,6 +173,68 @@ export default function WatchDetail() {
     // Mark as needing eBay update if already listed
     if (editedData.exported_to?.ebay) {
       setNeedsEbayUpdate(true);
+    }
+  };
+
+  const handleConfirmSoldQuantity = async () => {
+    setShowSoldQuantityDialog(false);
+    
+    const remainingQuantity = editedData.quantity - soldQuantity;
+    
+    // Create new sold watch record
+    const soldWatchData = {
+      ...editedData,
+      quantity: soldQuantity,
+      sold: true,
+      sold_price: editedData.sold_price,
+      sold_date: editedData.sold_date,
+      sold_platform: editedData.sold_platform,
+      sold_net_proceeds: editedData.sold_net_proceeds,
+      zero_price_reason: editedData.zero_price_reason
+    };
+    
+    // Remove id and timestamps so new record is created
+    delete soldWatchData.id;
+    delete soldWatchData.created_date;
+    delete soldWatchData.updated_date;
+    delete soldWatchData.created_by;
+    
+    try {
+      // Create the sold watch record
+      await base44.entities.Watch.create(soldWatchData);
+      
+      // Update original watch
+      const calculatedMinPrice = calculateMinimumPrice(editedData.cost);
+      const updatedOriginal = {
+        quantity: remainingQuantity,
+        minimum_price: calculatedMinPrice,
+        sold: remainingQuantity === 0 ? true : false
+      };
+      
+      // If remaining is 0, also mark original as sold with same info
+      if (remainingQuantity === 0) {
+        updatedOriginal.sold_price = editedData.sold_price;
+        updatedOriginal.sold_date = editedData.sold_date;
+        updatedOriginal.sold_platform = editedData.sold_platform;
+        updatedOriginal.sold_net_proceeds = editedData.sold_net_proceeds;
+        updatedOriginal.zero_price_reason = editedData.zero_price_reason;
+      }
+      
+      await base44.entities.Watch.update(watchId, updatedOriginal);
+      
+      queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
+      queryClient.invalidateQueries({ queryKey: ['watches'] });
+      
+      // Reset edited data sold status to false since we're keeping the original
+      const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
+      setEditedData(refreshedWatch);
+      setOriginalData(refreshedWatch);
+      setHasUnsavedChanges(false);
+      
+      toast.success(`Sold ${soldQuantity} unit${soldQuantity > 1 ? 's' : ''}. ${remainingQuantity} remaining.`);
+    } catch (error) {
+      console.error('Error handling sold quantity:', error);
+      toast.error('Failed to process sale');
     }
   };
 
@@ -1463,8 +1535,38 @@ Every comparable MUST show model number "${editedData.reference_number}".
               <AuctionSummaryTab watch={editedData} />
             </div>
           </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-}
+          </Tabs>
+          </div>
+
+          {/* Sold Quantity Dialog */}
+          <Dialog open={showSoldQuantityDialog} onOpenChange={setShowSoldQuantityDialog}>
+          <DialogContent>
+          <DialogHeader>
+            <DialogTitle>How many units did you sell?</DialogTitle>
+            <DialogDescription>
+              This watch has a quantity of {editedData.quantity}. Enter how many units were sold.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label className="mb-2 block">Units Sold</Label>
+            <Input 
+              type="number"
+              min="1"
+              max={editedData.quantity}
+              value={soldQuantity} 
+              onChange={(e) => setSoldQuantity(Math.min(parseInt(e.target.value) || 1, editedData.quantity))} 
+              className="text-lg font-semibold"
+            />
+            <p className="text-sm text-slate-500 mt-2">
+              Remaining units: {editedData.quantity - soldQuantity}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSoldQuantityDialog(false)}>Cancel</Button>
+            <Button onClick={handleConfirmSoldQuantity}>Confirm Sale</Button>
+          </DialogFooter>
+          </DialogContent>
+          </Dialog>
+          </div>
+          );
+          }
