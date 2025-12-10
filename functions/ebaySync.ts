@@ -64,51 +64,74 @@ Deno.serve(async (req) => {
                 const sku = item.sku; // We use Watch ID as SKU
                 if (!sku) continue;
 
+                // Get quantity sold from eBay order
+                const quantitySold = item.quantity || 1;
+
                 // Find watch by ID (SKU)
                 try {
-                    // We assume SKU is the ID. If you use custom SKUs, we'd need to search by platform_ids.ebay
-                    // or check if the SKU matches a valid UUID format of our IDs
-                    
-                    // Check if watch exists and isn't already marked as sold
-                    // We can't easily "get" by ID and check existence without list or get throwing?
-                    // .get() usually throws if not found in some SDKs, or returns null. 
-                    // Base44 .get() throws 404 usually.
-                    
-                    // Let's try to list filtering by ID to be safe
                     const watches = await base44.entities.Watch.filter({ id: sku });
                     if (watches.length === 0) continue;
                     
                     const watch = watches[0];
 
-                    if (watch.sold) continue; // Already processed
+                    if (watch.sold && watch.quantity === 0) continue; // Already fully processed
 
-                    // Mark as sold
                     const soldDate = new Date(order.creationDate).toISOString().split('T')[0];
                     const soldPrice = parseFloat(item.total.value);
+                    const pricePerUnit = soldPrice / quantitySold;
 
-                    await base44.entities.Watch.update(watch.id, {
+                    const currentQuantity = watch.quantity || 1;
+                    const remainingQuantity = Math.max(0, currentQuantity - quantitySold);
+
+                    // Create sold watch record(s)
+                    const soldWatchData = {
+                        ...watch,
+                        quantity: quantitySold,
                         sold: true,
                         sold_date: soldDate,
                         sold_price: soldPrice,
                         sold_platform: 'ebay'
-                    });
+                    };
+                    
+                    // Remove id and timestamps so new record is created
+                    delete soldWatchData.id;
+                    delete soldWatchData.created_date;
+                    delete soldWatchData.updated_date;
+                    delete soldWatchData.created_by;
+                    
+                    await base44.entities.Watch.create(soldWatchData);
+
+                    // Update original watch
+                    const updateData = {
+                        quantity: remainingQuantity,
+                        sold: remainingQuantity === 0 ? true : false
+                    };
+                    
+                    // If fully sold, mark the original as sold too
+                    if (remainingQuantity === 0) {
+                        updateData.sold_date = soldDate;
+                        updateData.sold_price = soldPrice;
+                        updateData.sold_platform = 'ebay';
+                    }
+                    
+                    await base44.entities.Watch.update(watch.id, updateData);
 
                     // Create Alert
                     try {
                         await base44.asServiceRole.entities.Alert.create({
                             type: "success",
                             title: "Item Sold on eBay",
-                            message: `Sold: ${watch.brand} ${watch.model} for $${soldPrice}`,
+                            message: `Sold ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice} ($${pricePerUnit.toFixed(2)} each)${remainingQuantity > 0 ? `. ${remainingQuantity} remaining.` : ''}`,
                             link: `WatchDetail?id=${watch.id}`,
                             read: false,
-                            metadata: { watch_id: watch.id, platform: 'ebay', price: soldPrice }
+                            metadata: { watch_id: watch.id, platform: 'ebay', price: soldPrice, quantity: quantitySold }
                         });
                     } catch (alertErr) {
                         console.error("Failed to create alert", alertErr);
                     }
 
                     syncedCount++;
-                    syncedItems.push(`${watch.brand} ${watch.model}`);
+                    syncedItems.push(`${quantitySold}x ${watch.brand} ${watch.model}`);
 
                 } catch (e) {
                     console.error(`Error syncing item SKU ${sku}:`, e);
@@ -116,48 +139,50 @@ Deno.serve(async (req) => {
             }
         }
 
-        // STEP 2: Sync TO eBay (end/remove listings for watches marked sold in app)
+        // STEP 2: Sync TO eBay (end/remove listings for watches marked sold in app, or update quantity)
         let endedCount = 0;
         const endedItems = [];
         
         try {
-            // Get all watches that are sold and have an eBay listing
+            // Get all watches that are sold OR have quantity 0 and have an eBay listing
             const soldWatches = await base44.entities.Watch.filter({ sold: true });
             
             for (const watch of soldWatches) {
                 const ebayItemId = watch.platform_ids?.ebay;
                 if (!ebayItemId) continue;
                 
-                // Check if listing still exists on eBay (to avoid errors)
-                try {
-                    // End the listing on eBay
-                    const endResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${ebayItemId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${ebayToken}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    if (endResponse.ok || endResponse.status === 404) {
-                        // Successfully ended or already gone
-                        // Clear the eBay platform data to avoid future sync attempts
-                        await base44.entities.Watch.update(watch.id, {
-                            platform_ids: {
-                                ...(watch.platform_ids || {}),
-                                ebay: null
-                            },
-                            listing_urls: {
-                                ...(watch.listing_urls || {}),
-                                ebay: null
+                // Only end listing if quantity is 0 or undefined (fully sold)
+                if ((watch.quantity || 0) === 0) {
+                    try {
+                        // End the listing on eBay
+                        const endResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${ebayItemId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${ebayToken}`,
+                                'Content-Type': 'application/json'
                             }
                         });
                         
-                        endedCount++;
-                        endedItems.push(`${watch.brand} ${watch.model}`);
+                        if (endResponse.ok || endResponse.status === 404) {
+                            // Successfully ended or already gone
+                            // Clear the eBay platform data to avoid future sync attempts
+                            await base44.entities.Watch.update(watch.id, {
+                                platform_ids: {
+                                    ...(watch.platform_ids || {}),
+                                    ebay: null
+                                },
+                                listing_urls: {
+                                    ...(watch.listing_urls || {}),
+                                    ebay: null
+                                }
+                            });
+                            
+                            endedCount++;
+                            endedItems.push(`${watch.brand} ${watch.model}`);
+                        }
+                    } catch (endErr) {
+                        console.error(`Failed to end eBay listing for watch ${watch.id}:`, endErr);
                     }
-                } catch (endErr) {
-                    console.error(`Failed to end eBay listing for watch ${watch.id}:`, endErr);
                 }
             }
         } catch (syncToErr) {
