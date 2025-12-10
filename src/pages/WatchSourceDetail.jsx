@@ -131,9 +131,27 @@ export default function WatchSourceDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Source Info Card */}
           <Card className="lg:col-span-1 h-fit">
-            <CardHeader>
-              <CardTitle className="text-2xl">{source.name}</CardTitle>
-              <CardDescription>Supplier Details</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+              <div>
+                <CardTitle className="text-2xl">{source.name}</CardTitle>
+                <CardDescription>Supplier Details</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  // Open edit dialog with source data
+                  const sourceData = {
+                    id: source.id,
+                    ...source
+                  };
+                  // For now, navigate to sources page - we can improve this later
+                  navigate(createPageUrl("WatchSources"));
+                }}
+                className="shrink-0"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {source.website && (
