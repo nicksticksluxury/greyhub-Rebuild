@@ -104,12 +104,20 @@ export default function Inventory() {
     try {
       const result = await base44.functions.invoke("ebaySync");
       if (result.data.success) {
+        const messages = [];
         if (result.data.syncedCount > 0) {
-          toast.success(`Synced ${result.data.syncedCount} sales: ${result.data.syncedItems.join(", ")}`);
+          messages.push(`Imported ${result.data.syncedCount} sales from eBay: ${result.data.syncedItems.join(", ")}`);
+        }
+        if (result.data.endedCount > 0) {
+          messages.push(`Ended ${result.data.endedCount} eBay listings: ${result.data.endedItems.join(", ")}`);
+        }
+        
+        if (messages.length > 0) {
+          toast.success(messages.join(" | "));
           queryClient.invalidateQueries({ queryKey: ['watches'] });
           queryClient.invalidateQueries({ queryKey: ['alerts'] });
         } else {
-          toast.info("Sync complete. No new sales found.");
+          toast.info("Sync complete. No changes needed.");
         }
       } else {
         toast.error("Sync failed: " + (result.data.error || "Unknown error"));

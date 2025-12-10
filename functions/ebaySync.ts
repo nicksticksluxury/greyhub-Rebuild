@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
         let syncedCount = 0;
         const syncedItems = [];
 
+        // STEP 1: Sync FROM eBay (mark watches as sold based on eBay orders)
         // Process orders
         for (const order of orders) {
             if (!order.lineItems) continue;
@@ -115,10 +116,60 @@ Deno.serve(async (req) => {
             }
         }
 
+        // STEP 2: Sync TO eBay (end/remove listings for watches marked sold in app)
+        let endedCount = 0;
+        const endedItems = [];
+        
+        try {
+            // Get all watches that are sold and have an eBay listing
+            const soldWatches = await base44.entities.Watch.filter({ sold: true });
+            
+            for (const watch of soldWatches) {
+                const ebayItemId = watch.platform_ids?.ebay;
+                if (!ebayItemId) continue;
+                
+                // Check if listing still exists on eBay (to avoid errors)
+                try {
+                    // End the listing on eBay
+                    const endResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${ebayItemId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${ebayToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (endResponse.ok || endResponse.status === 404) {
+                        // Successfully ended or already gone
+                        // Clear the eBay platform data to avoid future sync attempts
+                        await base44.entities.Watch.update(watch.id, {
+                            platform_ids: {
+                                ...(watch.platform_ids || {}),
+                                ebay: null
+                            },
+                            listing_urls: {
+                                ...(watch.listing_urls || {}),
+                                ebay: null
+                            }
+                        });
+                        
+                        endedCount++;
+                        endedItems.push(`${watch.brand} ${watch.model}`);
+                    }
+                } catch (endErr) {
+                    console.error(`Failed to end eBay listing for watch ${watch.id}:`, endErr);
+                }
+            }
+        } catch (syncToErr) {
+            console.error("Error syncing TO eBay:", syncToErr);
+        }
+
         return Response.json({
             success: true,
             syncedCount,
-            syncedItems
+            syncedItems,
+            endedCount,
+            endedItems
         });
 
     } catch (error) {
