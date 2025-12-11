@@ -35,15 +35,18 @@ export default function Inventory() {
   const [syncing, setSyncing] = useState(false);
   const [listing, setListing] = useState(false);
   const location = useLocation();
-  const [filters, setFilters] = useState({
-    auction: "all",
-    source: "all",
-    condition: "all",
-    movement_type: "all",
-    gender: "all",
-    case_material: "",
-    manufacturer: "",
-    tested: "all"
+  const [filters, setFilters] = useState(() => {
+    const savedAuction = localStorage.getItem('inventory_auction_filter');
+    return {
+      auction: savedAuction || "all",
+      source: "all",
+      condition: "all",
+      movement_type: "all",
+      gender: "all",
+      case_material: "",
+      manufacturer: "",
+      tested: "all"
+    };
   });
 
   // Sync filters with URL query params
@@ -57,8 +60,18 @@ export default function Inventory() {
     }
     if (auctionId && filters.auction !== auctionId) {
       setFilters(prev => ({ ...prev, auction: auctionId }));
+      localStorage.setItem('inventory_auction_filter', auctionId);
     }
   }, [location.search, filters.source, filters.auction]);
+
+  // Persist auction filter changes
+  useEffect(() => {
+    if (filters.auction && filters.auction !== "all") {
+      localStorage.setItem('inventory_auction_filter', filters.auction);
+    } else {
+      localStorage.removeItem('inventory_auction_filter');
+    }
+  }, [filters.auction]);
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   
@@ -362,6 +375,7 @@ export default function Inventory() {
                     <button 
                       onClick={() => {
                         setFilters(prev => ({ ...prev, auction: "all" }));
+                        localStorage.removeItem('inventory_auction_filter');
                         const params = new URLSearchParams(location.search);
                         params.delete('auction');
                         const newUrl = params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname;
