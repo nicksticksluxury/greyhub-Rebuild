@@ -1,8 +1,10 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Calendar, DollarSign, Package } from "lucide-react";
+import { Pencil, Trash2, Calendar, DollarSign, Package, Eye } from "lucide-react";
 import { format } from "date-fns";
 
 export default function AuctionCard({ auction, stats, onEdit, onDelete }) {
@@ -83,6 +85,13 @@ export default function AuctionCard({ auction, stats, onEdit, onDelete }) {
           <p className="text-sm text-slate-600 line-clamp-2">{auction.notes}</p>
         </div>
       )}
+
+      <Link to={createPageUrl(`Inventory?auction=${auction.id}`)}>
+        <Button variant="outline" className="w-full mt-4">
+          <Eye className="w-4 h-4 mr-2" />
+          View Watches
+        </Button>
+      </Link>
     </Card>
   );
 }

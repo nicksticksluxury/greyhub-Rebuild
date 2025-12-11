@@ -50,11 +50,15 @@ export default function Inventory() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const sourceId = params.get("sourceId");
+    const auctionId = params.get("auction");
     
     if (sourceId && filters.source !== sourceId) {
       setFilters(prev => ({ ...prev, source: sourceId }));
     }
-  }, [location.search, filters.source]);
+    if (auctionId && filters.auction !== auctionId) {
+      setFilters(prev => ({ ...prev, auction: auctionId }));
+    }
+  }, [location.search, filters.source, filters.auction]);
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   
@@ -341,10 +345,29 @@ export default function Inventory() {
                       onClick={() => {
                         setFilters(prev => ({ ...prev, source: "all" }));
                         // Remove query param
-                        const newUrl = window.location.pathname;
+                        const params = new URLSearchParams(location.search);
+                        params.delete('sourceId');
+                        const newUrl = params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname;
                         window.history.pushState({}, '', newUrl);
                       }}
                       className="ml-1 hover:text-blue-900"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+                {filters.auction !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    Auction: {auctions.find(a => a.id === filters.auction)?.name || "Unknown"}
+                    <button 
+                      onClick={() => {
+                        setFilters(prev => ({ ...prev, auction: "all" }));
+                        const params = new URLSearchParams(location.search);
+                        params.delete('auction');
+                        const newUrl = params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname;
+                        window.history.pushState({}, '', newUrl);
+                      }}
+                      className="ml-1 hover:text-purple-900"
                     >
                       <X className="w-3 h-3" />
                     </button>
