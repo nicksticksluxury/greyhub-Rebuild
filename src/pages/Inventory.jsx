@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag, Bell, FileText, Loader2, User } from "lucide-react";
+import { Plus, Search, Filter, Download, CheckSquare, X, RefreshCw, ShoppingBag, Bell, FileText, Loader2, User, Gavel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -447,8 +447,41 @@ export default function Inventory() {
                       )}
                       {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Gavel className="w-4 h-4 mr-2" />
+                        Add to Auction
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        {auctions.length === 0 ? (
+                          <DropdownMenuItem disabled>No auctions available</DropdownMenuItem>
+                        ) : (
+                          auctions.map(auction => (
+                            <DropdownMenuItem 
+                              key={auction.id}
+                              onClick={async () => {
+                                const toastId = toast.loading("Adding to auction...");
+                                try {
+                                  await Promise.all(selectedWatchIds.map(id => 
+                                    base44.entities.Watch.update(id, { auction_id: auction.id })
+                                  ));
+                                  toast.success(`Added ${selectedWatchIds.length} watches to ${auction.name}`, { id: toastId });
+                                  queryClient.invalidateQueries({ queryKey: ['watches'] });
+                                  setSelectedWatchIds([]);
+                                } catch (error) {
+                                  toast.error("Failed to add watches to auction", { id: toastId });
+                                }
+                              }}
+                            >
+                              {auction.name}
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    </DropdownMenuContent>
+                    </DropdownMenu>
               ) : (
                 <>
 
