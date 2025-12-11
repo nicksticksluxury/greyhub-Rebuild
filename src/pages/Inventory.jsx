@@ -393,7 +393,7 @@ export default function Inventory() {
               <div className="grid grid-cols-4 gap-3 mt-4">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
                   <p className="text-xs text-blue-600 font-semibold uppercase mb-1">Total Watches</p>
-                  <p className="text-2xl font-bold text-blue-900">{filteredWatches.length}</p>
+                  <p className="text-2xl font-bold text-blue-900">{filteredWatches.reduce((sum, w) => sum + (w.quantity || 1), 0)}</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
                   <p className="text-xs text-green-600 font-semibold uppercase mb-1">Total Cost</p>
@@ -401,20 +401,20 @@ export default function Inventory() {
                     ${filteredWatches.reduce((sum, w) => {
                       const cost = (w.cost || 0);
                       const repairCost = (w.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
-                      return sum + cost + repairCost;
+                      return sum + (cost + repairCost) * (w.quantity || 1);
                     }, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
                   <p className="text-xs text-purple-600 font-semibold uppercase mb-1">Retail Value</p>
                   <p className="text-2xl font-bold text-purple-900">
-                    ${filteredWatches.reduce((sum, w) => sum + (w.retail_price || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    ${filteredWatches.reduce((sum, w) => sum + (w.retail_price || 0) * (w.quantity || 1), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                 </div>
                 <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg p-3 border border-amber-200">
                   <p className="text-xs text-amber-600 font-semibold uppercase mb-1">{selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} Total</p>
                   <p className="text-2xl font-bold text-amber-900">
-                    ${filteredWatches.reduce((sum, w) => sum + (w.platform_prices?.[selectedPlatform] || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    ${filteredWatches.reduce((sum, w) => sum + (w.platform_prices?.[selectedPlatform] || 0) * (w.quantity || 1), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                 </div>
               </div>
