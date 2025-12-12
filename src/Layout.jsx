@@ -201,6 +201,9 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-slate-200 p-4">
+            <div className="text-center mb-3">
+              <p className="text-xs text-slate-400 font-mono">v1.0.0</p>
+            </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                 <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center shadow-md shrink-0">
