@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut, Wrench, CreditCard } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut, Wrench } from "lucide-react";
 import AlertsBell from "./components/layout/AlertsBell";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -61,11 +61,6 @@ const navigationItems = [
     title: "Settings",
     url: createPageUrl("Settings"),
     icon: Settings,
-  },
-  {
-    title: "Subscription",
-    url: createPageUrl("Subscription"),
-    icon: CreditCard,
   },
 ];
 
@@ -207,7 +202,7 @@ export default function Layout({ children, currentPageName }) {
 
           <SidebarFooter className="border-t border-slate-200 p-4">
             <div className="text-center mb-3">
-              <p className="text-xs text-slate-400 font-mono">v1.1.0</p>
+              <p className="text-xs text-slate-400 font-mono">v1.0.0</p>
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0 overflow-hidden">
