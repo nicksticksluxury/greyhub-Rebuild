@@ -202,7 +202,7 @@ export default function Layout({ children, currentPageName }) {
 
           <SidebarFooter className="border-t border-slate-200 p-4">
             <div className="text-center mb-3">
-              <p className="text-xs text-slate-400 font-mono">v1.0.0</p>
+              <p className="text-xs text-slate-400 font-mono">v1.1.0</p>
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0 overflow-hidden">
