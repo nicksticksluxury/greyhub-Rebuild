@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink, Sparkles } from "lucide-react";
+import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink, Sparkles, FileText, Trash2 } from "lucide-react";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -21,6 +21,11 @@ export default function Settings() {
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
     queryFn: () => base44.entities.Setting.list(),
+  });
+
+  const { data: ebayLogs = [] } = useQuery({
+    queryKey: ['ebayLogs'],
+    queryFn: () => base44.entities.EbayLog.list("-timestamp", 100),
   });
 
   const tokenSetting = settings?.find(s => s.key === 'ebay_verification_token');
@@ -346,6 +351,88 @@ export default function Settings() {
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>eBay Sync Logs</CardTitle>
+                <CardDescription>View recent eBay synchronization activity</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (confirm("Clear all eBay logs?")) {
+                    try {
+                      await Promise.all(ebayLogs.map(log => base44.entities.EbayLog.delete(log.id)));
+                      queryClient.invalidateQueries({ queryKey: ['ebayLogs'] });
+                      toast.success("Logs cleared");
+                    } catch (error) {
+                      toast.error("Failed to clear logs");
+                    }
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear Logs
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {ebayLogs.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                <p>No logs yet. Sync with eBay to see activity here.</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {ebayLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className={`p-3 rounded-lg border text-sm ${
+                      log.level === 'error' 
+                        ? 'bg-red-50 border-red-200' 
+                        : log.level === 'success'
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            log.level === 'error'
+                              ? 'bg-red-100 text-red-800'
+                              : log.level === 'success'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-slate-100 text-slate-800'
+                          }`}>
+                            {log.operation}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-slate-900">{log.message}</p>
+                        {log.details && Object.keys(log.details).length > 0 && (
+                          <details className="mt-1">
+                            <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-700">
+                              View details
+                            </summary>
+                            <pre className="mt-1 text-xs text-slate-600 bg-white p-2 rounded border border-slate-200 overflow-x-auto">
+                              {JSON.stringify(log.details, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -52,6 +52,15 @@ Deno.serve(async (req) => {
         const data = await response.json();
         const orders = data.orders || [];
         
+        // Log sync start
+        await base44.asServiceRole.entities.EbayLog.create({
+            timestamp: new Date().toISOString(),
+            level: "info",
+            operation: "sync",
+            message: `Starting eBay sync - found ${orders.length} orders to process`,
+            details: { orderCount: orders.length }
+        });
+        
         let syncedCount = 0;
         const syncedItems = [];
 
@@ -132,9 +141,25 @@ Deno.serve(async (req) => {
 
                     syncedCount++;
                     syncedItems.push(`${quantitySold}x ${watch.brand} ${watch.model}`);
+                    
+                    // Log successful sync
+                    await base44.asServiceRole.entities.EbayLog.create({
+                        timestamp: new Date().toISOString(),
+                        level: "success",
+                        operation: "sync",
+                        message: `Synced sale: ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice}`,
+                        details: { watch_id: watch.id, quantity: quantitySold, price: soldPrice, remaining: remainingQuantity }
+                    });
 
                 } catch (e) {
                     console.error(`Error syncing item SKU ${sku}:`, e);
+                    await base44.asServiceRole.entities.EbayLog.create({
+                        timestamp: new Date().toISOString(),
+                        level: "error",
+                        operation: "sync",
+                        message: `Failed to sync item SKU ${sku}: ${e.message}`,
+                        details: { sku, error: e.message }
+                    });
                 }
             }
         }
@@ -180,9 +205,24 @@ Deno.serve(async (req) => {
                             
                             endedCount++;
                             endedItems.push(`${watch.brand} ${watch.model}`);
+                            
+                            await base44.asServiceRole.entities.EbayLog.create({
+                                timestamp: new Date().toISOString(),
+                                level: "success",
+                                operation: "end",
+                                message: `Ended eBay listing: ${watch.brand} ${watch.model}`,
+                                details: { watch_id: watch.id, ebay_item_id: ebayItemId }
+                            });
                         }
                     } catch (endErr) {
                         console.error(`Failed to end eBay listing for watch ${watch.id}:`, endErr);
+                        await base44.asServiceRole.entities.EbayLog.create({
+                            timestamp: new Date().toISOString(),
+                            level: "error",
+                            operation: "end",
+                            message: `Failed to end eBay listing for ${watch.brand} ${watch.model}: ${endErr.message}`,
+                            details: { watch_id: watch.id, ebay_item_id: ebayItemId, error: endErr.message }
+                        });
                     }
                 } else if (currentQty > 0) {
                     // Update quantity on eBay listing
@@ -205,9 +245,24 @@ Deno.serve(async (req) => {
                         if (updateResponse.ok) {
                             updatedCount++;
                             updatedItems.push(`${watch.brand} ${watch.model} (${currentQty} remaining)`);
+                            
+                            await base44.asServiceRole.entities.EbayLog.create({
+                                timestamp: new Date().toISOString(),
+                                level: "success",
+                                operation: "update",
+                                message: `Updated eBay quantity: ${watch.brand} ${watch.model} to ${currentQty}`,
+                                details: { watch_id: watch.id, ebay_item_id: ebayItemId, new_quantity: currentQty }
+                            });
                         }
                     } catch (updateErr) {
                         console.error(`Failed to update eBay quantity for watch ${watch.id}:`, updateErr);
+                        await base44.asServiceRole.entities.EbayLog.create({
+                            timestamp: new Date().toISOString(),
+                            level: "error",
+                            operation: "update",
+                            message: `Failed to update eBay quantity for ${watch.brand} ${watch.model}: ${updateErr.message}`,
+                            details: { watch_id: watch.id, ebay_item_id: ebayItemId, error: updateErr.message }
+                        });
                     }
                 }
             }
