@@ -174,7 +174,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
   const hasBasicInfo = aiAnalysis.identified_brand || aiAnalysis.identified_model;
 
   const selectAllBasicInfo = () => {
-    const basicInfoKeys = ['brand', 'model', 'reference_number', 'serial_number', 'year', 'gender', 'movement_type', 'case_material', 'case_size', 'dial_color', 'bracelet_material'];
+    const basicInfoKeys = ['listing_title', 'brand', 'model', 'reference_number', 'serial_number', 'year', 'gender', 'movement_type', 'case_material', 'case_size', 'dial_color', 'bracelet_material'];
     const newSet = new Set(selectedKeys);
     basicInfoKeys.forEach(key => {
       if (aiAnalysis[key] || aiAnalysis[`identified_${key}`]) {
