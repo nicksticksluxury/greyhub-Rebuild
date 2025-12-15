@@ -485,6 +485,38 @@ export default function Inventory() {
                       {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
                     </DropdownMenuItem>
 
+                    <DropdownMenuItem onClick={() => {
+                      const selectedWatches = filteredWatches.filter(w => selectedWatchIds.includes(w.id));
+                      const imageLinks = [];
+                      selectedWatches.forEach(watch => {
+                        (watch.photos || []).forEach(photo => {
+                          if (photo.medium) {
+                            imageLinks.push(photo.medium);
+                          }
+                        });
+                      });
+
+                      if (imageLinks.length === 0) {
+                        toast.error("No medium images found for selected watches");
+                        return;
+                      }
+
+                      const blob = new Blob([imageLinks.join('\n')], { type: 'text/plain' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `watch-images-${new Date().toISOString().split('T')[0]}.txt`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      a.remove();
+
+                      toast.success(`Exported ${imageLinks.length} image links`);
+                    }}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Image Links
+                    </DropdownMenuItem>
+
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
                         <Gavel className="w-4 h-4 mr-2" />
