@@ -108,8 +108,6 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
          updates.market_research = aiAnalysis.market_research_summary;
       } else if (key === 'description') {
          updates.description = aiAnalysis.condition_assessment;
-      } else if (key === 'listing_title') {
-         if (aiAnalysis.listing_title) updates.listing_title = aiAnalysis.listing_title;
       } else if (key === 'brand') {
          updates.brand = aiAnalysis.identified_brand;
       } else if (key === 'model') {
