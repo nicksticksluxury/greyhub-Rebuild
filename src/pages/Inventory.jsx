@@ -74,6 +74,8 @@ export default function Inventory() {
   }, [filters.auction]);
   const [selectedWatchIds, setSelectedWatchIds] = useState([]);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
+  const [showImageExportDialog, setShowImageExportDialog] = useState(false);
+  const [imageExportSizes, setImageExportSizes] = useState({ thumbnail: false, medium: true, full: false });
   
   const queryClient = useQueryClient();
 
@@ -485,34 +487,7 @@ export default function Inventory() {
                       {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem onClick={() => {
-                      const selectedWatches = filteredWatches.filter(w => selectedWatchIds.includes(w.id));
-                      const imageLinks = [];
-                      selectedWatches.forEach(watch => {
-                        (watch.photos || []).forEach(photo => {
-                          if (photo.medium) {
-                            imageLinks.push(photo.medium);
-                          }
-                        });
-                      });
-
-                      if (imageLinks.length === 0) {
-                        toast.error("No medium images found for selected watches");
-                        return;
-                      }
-
-                      const blob = new Blob([imageLinks.join('\n')], { type: 'text/plain' });
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `watch-images-${new Date().toISOString().split('T')[0]}.txt`;
-                      document.body.appendChild(a);
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                      a.remove();
-
-                      toast.success(`Exported ${imageLinks.length} image links`);
-                    }}>
+                    <DropdownMenuItem onClick={() => setShowImageExportDialog(true)}>
                       <Download className="w-4 h-4 mr-2" />
                       Export Image Links
                     </DropdownMenuItem>
@@ -665,6 +640,85 @@ export default function Inventory() {
           onClose={() => setSelectedWatch(null)}
         />
       )}
+
+      <Dialog open={showImageExportDialog} onOpenChange={setShowImageExportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Image Links</DialogTitle>
+            <DialogDescription>
+              Select which image sizes to export for the {selectedWatchIds.length} selected watch{selectedWatchIds.length !== 1 ? 'es' : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="thumbnail"
+                checked={imageExportSizes.thumbnail}
+                onChange={(e) => setImageExportSizes({...imageExportSizes, thumbnail: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="thumbnail" className="cursor-pointer">Thumbnail (300x300)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="medium"
+                checked={imageExportSizes.medium}
+                onChange={(e) => setImageExportSizes({...imageExportSizes, medium: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="medium" className="cursor-pointer">Medium (1200px)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="full"
+                checked={imageExportSizes.full}
+                onChange={(e) => setImageExportSizes({...imageExportSizes, full: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="full" className="cursor-pointer">Full (2400px)</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowImageExportDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+              const selectedWatches = filteredWatches.filter(w => selectedWatchIds.includes(w.id));
+              const imageLinks = [];
+              
+              selectedWatches.forEach(watch => {
+                (watch.photos || []).forEach(photo => {
+                  if (imageExportSizes.thumbnail && photo.thumbnail) imageLinks.push(photo.thumbnail);
+                  if (imageExportSizes.medium && photo.medium) imageLinks.push(photo.medium);
+                  if (imageExportSizes.full && photo.full) imageLinks.push(photo.full);
+                });
+              });
+              
+              if (imageLinks.length === 0) {
+                toast.error("No images found for selected sizes");
+                return;
+              }
+              
+              const blob = new Blob([imageLinks.join('\n')], { type: 'text/plain' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `watch-images-${new Date().toISOString().split('T')[0]}.txt`;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              a.remove();
+              
+              setShowImageExportDialog(false);
+              toast.success(`Exported ${imageLinks.length} image links`);
+            }}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
