@@ -82,8 +82,10 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
         // Round whatnot prices
         if (platform === 'whatnot' && price) price = Math.round(price);
         if (price) prices[platform] = price;
+      } else if (key === 'listing_title') {
+        if (aiAnalysis.listing_title) updates.listing_title = aiAnalysis.listing_title;
       } else if (key.startsWith('listing_')) {
-        // Individual listing selected
+        // Individual listing selected (listing_0, listing_1, etc)
         const idx = parseInt(key.replace('listing_', ''));
         const text = aiAnalysis.comparable_listings;
         const urlRegex = /(https?:\/\/[^\s\)]+)/g;
