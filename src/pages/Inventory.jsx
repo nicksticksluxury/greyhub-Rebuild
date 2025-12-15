@@ -683,7 +683,7 @@ export default function Inventory() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowImageExportDialog(false)}>Cancel</Button>
-            <Button onClick={() => {
+            <Button className="bg-slate-800 hover:bg-slate-900" onClick={() => {
               const selectedWatches = filteredWatches.filter(w => selectedWatchIds.includes(w.id));
               const imageLinks = [];
               
