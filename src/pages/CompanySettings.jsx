@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Building2, Save, Users, Mail, Phone, Globe, MapPin, UserPlus, Clock } from "lucide-react";
+import { Building2, Save, Users, Mail, Phone, Globe, MapPin, UserPlus, Clock, Database, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CompanySettings() {
@@ -99,6 +99,29 @@ export default function CompanySettings() {
     }
   };
 
+  const [isMigrating, setIsMigrating] = useState(false);
+  const handleMigrateData = async () => {
+    if (!confirm('This will migrate all existing data to this company. Continue?')) return;
+    
+    setIsMigrating(true);
+    try {
+      const result = await base44.functions.invoke('migrateDataToCompany', {
+        company_id: company.id
+      });
+
+      if (result.data.success) {
+        toast.success('Data migration completed successfully!');
+        queryClient.invalidateQueries();
+      } else {
+        toast.error('Migration failed: ' + result.data.error);
+      }
+    } catch (error) {
+      toast.error('Migration failed: ' + error.message);
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -116,10 +139,42 @@ export default function CompanySettings() {
             <h2 className="text-xl font-semibold text-slate-900 mb-2">No Company Found</h2>
             <p className="text-slate-500">Please contact support to set up your company.</p>
           </Card>
-        </div>
-      </div>
-    );
-  }
+
+          {/* Data Migration */}
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center">
+                <Database className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Data Migration</h2>
+                <p className="text-sm text-slate-500">Migrate existing data to this company</p>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleMigrateData}
+              disabled={isMigrating}
+              variant="outline"
+              className="border-slate-300"
+            >
+              {isMigrating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Migrating...
+                </>
+              ) : (
+                <>
+                  <Database className="w-4 h-4 mr-2" />
+                  Migrate Data to Company
+                </>
+              )}
+            </Button>
+          </Card>
+          </div>
+          </div>
+          );
+          }
 
   return (
     <div className="min-h-screen bg-slate-50">
