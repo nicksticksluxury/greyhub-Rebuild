@@ -12,6 +12,7 @@ import SourceWatches from './pages/SourceWatches';
 import SalesView from './pages/SalesView';
 import index from './pages/index';
 import OutForRepair from './pages/OutForRepair';
+import CompanySettings from './pages/CompanySettings';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "SalesView": SalesView,
     "index": index,
     "OutForRepair": OutForRepair,
+    "CompanySettings": CompanySettings,
 }
 
 export const pagesConfig = {

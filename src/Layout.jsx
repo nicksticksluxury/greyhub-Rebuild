@@ -58,6 +58,11 @@ const navigationItems = [
     icon: Gavel,
   },
   {
+    title: "Company",
+    url: createPageUrl("CompanySettings"),
+    icon: Watch,
+  },
+  {
     title: "Settings",
     url: createPageUrl("Settings"),
     icon: Settings,
