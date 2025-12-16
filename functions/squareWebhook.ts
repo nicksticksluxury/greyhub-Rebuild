@@ -496,6 +496,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Square webhook error:', error);
     
+    // Try to log error even if processing failed
     try {
       const base44 = createClientFromRequest(req);
       await base44.asServiceRole.entities.Log.create({
@@ -504,14 +505,22 @@ Deno.serve(async (req) => {
         level: 'error',
         category: 'square_integration',
         message: 'Square webhook processing failed',
-        details: { error: error.message, stack: error.stack },
+        details: { 
+          error: error.message, 
+          stack: error.stack,
+          url: req.url,
+          method: req.method
+        },
       });
     } catch (logError) {
       console.error('Failed to log webhook error:', logError);
     }
 
+    // Return 500 for actual errors, but Square will retry
+    // Note: For non-retryable errors, consider returning 200 to prevent retry storms
     return Response.json({
-      error: error.message || 'Webhook processing failed',
+      error: 'Internal server error',
+      message: 'Webhook processing failed'
     }, { status: 500 });
   }
 });
