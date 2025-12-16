@@ -491,26 +491,70 @@ export default function CompanySettings() {
             </div>
           </div>
 
-          <Button 
-            onClick={handleMigrateData}
-            disabled={isMigrating}
-            variant="outline"
-            className="border-slate-300"
-          >
-            {isMigrating ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Migrating...
-              </>
-            ) : (
-              <>
-                <Database className="w-4 h-4 mr-2" />
-                Migrate Data to Company
-              </>
-            )}
-          </Button>
+          <div className="flex gap-3 mb-4">
+            <Button 
+              onClick={handleCheckDatabase}
+              disabled={isChecking}
+              variant="outline"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              {isChecking ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <Database className="w-4 h-4 mr-2" />
+                  Check Database State
+                </>
+              )}
+            </Button>
+
+            <Button 
+              onClick={handleMigrateData}
+              disabled={isMigrating}
+              variant="outline"
+              className="border-slate-300"
+            >
+              {isMigrating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Migrating...
+                </>
+              ) : (
+                <>
+                  <Database className="w-4 h-4 mr-2" />
+                  Migrate Data to Company
+                </>
+              )}
+            </Button>
+          </div>
+
+          {dbState && (
+            <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-2">Database State Report</h3>
+              <p className="text-sm text-slate-600 mb-2">
+                User: {dbState.user?.email} (Role: {dbState.user?.role}, Company: {dbState.user?.company_id || 'none'})
+              </p>
+              <div className="space-y-2 text-sm">
+                {Object.entries(dbState.report || {}).map(([entity, data]) => (
+                  <div key={entity} className="p-2 bg-white rounded border border-slate-200">
+                    <div className="font-medium text-slate-900">{entity}</div>
+                    {data.error ? (
+                      <div className="text-red-600">Error: {data.error}</div>
+                    ) : (
+                      <div className="text-slate-600">
+                        Total: {data.total} | With company_id: {data.withCompanyId} | Without: {data.withoutCompanyId}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
-      </div>
-    </div>
+        </div>
+        </div>
   );
 }
