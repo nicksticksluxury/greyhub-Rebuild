@@ -188,8 +188,18 @@ Deno.serve(async (req) => {
       }
 
       case 'subscription.canceled': {
+        if (!event.data?.object?.subscription) {
+          console.error('Invalid subscription.canceled event structure');
+          break;
+        }
+
         const subscription = event.data.object.subscription;
         
+        if (!subscription.id) {
+          console.error('Missing subscription ID in cancellation event');
+          break;
+        }
+
         const companies = await base44.asServiceRole.entities.Company.filter({
           square_subscription_id: subscription.id
         });
@@ -203,6 +213,15 @@ Deno.serve(async (req) => {
 
           console.log(`Cancelled subscription for company ${company.id}`);
 
+          // Create alert for the company
+          await base44.asServiceRole.entities.Alert.create({
+            company_id: company.id,
+            type: 'warning',
+            title: 'Subscription Cancelled',
+            message: 'Your subscription has been cancelled. Please renew to continue using the service.',
+            metadata: { subscription_id: subscription.id, source: 'square' },
+          });
+
           await base44.asServiceRole.entities.Log.create({
             company_id: company.id,
             timestamp: new Date().toISOString(),
@@ -211,6 +230,8 @@ Deno.serve(async (req) => {
             message: 'Subscription cancelled via webhook',
             details: { subscription_id: subscription.id },
           });
+        } else {
+          console.warn(`No company found with subscription ID: ${subscription.id}`);
         }
         break;
       }
