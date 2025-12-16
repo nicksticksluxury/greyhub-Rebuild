@@ -39,6 +39,10 @@ Deno.serve(async (req) => {
 
     console.log('Square webhook received:', event.type);
 
+    // Get Square environment setting (for any API calls if needed)
+    const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment' });
+    const squareEnv = envSettings[0]?.value === 'sandbox' ? Environment.Sandbox : Environment.Production;
+
     // Handle different event types
     switch (event.type) {
       case 'subscription.created':

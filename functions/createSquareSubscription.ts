@@ -16,10 +16,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Payment token is required' }, { status: 400 });
     }
 
+    // Get Square environment setting
+    const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment' });
+    const squareEnv = envSettings[0]?.value === 'sandbox' ? Environment.Sandbox : Environment.Production;
+
     // Initialize Square client
     const client = new Client({
       accessToken: Deno.env.get('SQUARE_ACCESS_TOKEN'),
-      environment: Environment.Production,
+      environment: squareEnv,
     });
 
     // Get company details
