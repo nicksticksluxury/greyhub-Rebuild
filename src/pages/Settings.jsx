@@ -495,49 +495,51 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Technical Support Access</CardTitle>
-            <CardDescription>Allow system administrators to access your account for troubleshooting</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 border border-slate-200 rounded-xl bg-white">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-medium text-slate-900 mb-2">Allow Technical Support</h3>
-                  <p className="text-sm text-slate-500 mb-4">
-                    When enabled, system administrators can temporarily access your account to help troubleshoot issues. You can disable this at any time.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm font-medium ${company.allow_support_access ? 'text-green-700' : 'text-slate-500'}`}>
-                    {company.allow_support_access ? 'Enabled' : 'Disabled'}
-                  </span>
-                  <Button
-                    variant={company.allow_support_access ? "destructive" : "default"}
-                    onClick={async () => {
-                      try {
-                        await base44.entities.Company.update(company.id, {
-                          allow_support_access: !company.allow_support_access
-                        });
-                        queryClient.invalidateQueries({ queryKey: ['company'] });
-                        toast.success(
-                          company.allow_support_access 
-                            ? "Support access disabled" 
-                            : "Support access enabled"
-                        );
-                      } catch (error) {
-                        toast.error("Failed to update setting");
-                      }
-                    }}
-                  >
-                    {company.allow_support_access ? 'Disable' : 'Enable'}
-                  </Button>
+        {company && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Technical Support Access</CardTitle>
+              <CardDescription>Allow system administrators to access your account for troubleshooting</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 border border-slate-200 rounded-xl bg-white">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-medium text-slate-900 mb-2">Allow Technical Support</h3>
+                    <p className="text-sm text-slate-500 mb-4">
+                      When enabled, system administrators can temporarily access your account to help troubleshoot issues. You can disable this at any time.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm font-medium ${company.allow_support_access ? 'text-green-700' : 'text-slate-500'}`}>
+                      {company.allow_support_access ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <Button
+                      variant={company.allow_support_access ? "destructive" : "default"}
+                      onClick={async () => {
+                        try {
+                          await base44.entities.Company.update(company.id, {
+                            allow_support_access: !company.allow_support_access
+                          });
+                          queryClient.invalidateQueries({ queryKey: ['company'] });
+                          toast.success(
+                            company.allow_support_access 
+                              ? "Support access disabled" 
+                              : "Support access enabled"
+                          );
+                        } catch (error) {
+                          toast.error("Failed to update setting");
+                        }
+                      }}
+                    >
+                      {company.allow_support_access ? 'Disable' : 'Enable'}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="mt-6">
           <CardHeader>
