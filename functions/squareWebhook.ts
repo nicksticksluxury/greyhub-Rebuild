@@ -120,7 +120,18 @@ Deno.serve(async (req) => {
     switch (event.type) {
       case 'subscription.created':
       case 'subscription.updated': {
+        // Validate event data structure
+        if (!event.data?.object?.subscription) {
+          console.error('Invalid subscription event structure');
+          break;
+        }
+
         const subscription = event.data.object.subscription;
+        
+        if (!subscription.id) {
+          console.error('Missing subscription ID in event');
+          break;
+        }
         
         // Find company by subscription ID
         const companies = await base44.asServiceRole.entities.Company.filter({
@@ -130,12 +141,23 @@ Deno.serve(async (req) => {
         if (companies.length > 0) {
           const company = companies[0];
           
+          // Map Square subscription statuses to our internal statuses
+          const statusMap = {
+            'ACTIVE': 'active',
+            'CANCELED': 'cancelled',
+            'DEACTIVATED': 'inactive',
+            'PAUSED': 'inactive',
+            'PENDING': 'trial'
+          };
+          
+          const mappedStatus = statusMap[subscription.status] || subscription.status.toLowerCase();
+          
           await base44.asServiceRole.entities.Company.update(company.id, {
-            subscription_status: subscription.status.toLowerCase(),
-            next_billing_date: subscription.charged_through_date,
+            subscription_status: mappedStatus,
+            next_billing_date: subscription.charged_through_date || null,
           });
 
-          console.log(`Updated company ${company.id} subscription status to ${subscription.status}`);
+          console.log(`Updated company ${company.id} subscription status to ${mappedStatus}`);
 
           await base44.asServiceRole.entities.Log.create({
             company_id: company.id,
@@ -146,8 +168,20 @@ Deno.serve(async (req) => {
             details: { 
               subscription_id: subscription.id,
               status: subscription.status,
+              mapped_status: mappedStatus,
               charged_through_date: subscription.charged_through_date,
             },
+          });
+        } else {
+          console.warn(`No company found with subscription ID: ${subscription.id}`);
+          
+          await base44.asServiceRole.entities.Log.create({
+            company_id: 'system',
+            timestamp: new Date().toISOString(),
+            level: 'warning',
+            category: 'square_integration',
+            message: `Received webhook for unknown subscription: ${subscription.id}`,
+            details: { event_type: event.type, subscription_id: subscription.id },
           });
         }
         break;
