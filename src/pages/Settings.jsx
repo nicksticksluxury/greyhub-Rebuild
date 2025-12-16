@@ -102,7 +102,12 @@ export default function Settings() {
       if (accessTokenSetting) {
         await base44.entities.Setting.update(accessTokenSetting.id, { value: manualAccessToken });
       } else {
+        if (!user?.company_id) {
+          toast.error("Company information not available. Cannot save setting.");
+          return;
+        }
         await base44.entities.Setting.create({
+          company_id: user.company_id,
           key: 'ebay_user_access_token',
           value: manualAccessToken,
           description: 'eBay User Access Token'
@@ -186,7 +191,12 @@ export default function Settings() {
       if (tokenSetting) {
         return base44.entities.Setting.update(tokenSetting.id, { value: newValue });
       } else {
+        const user = await base44.auth.me();
+        if (!user?.company_id) {
+          throw new Error("Company information not available");
+        }
         return base44.entities.Setting.create({
+          company_id: user.company_id,
           key: 'ebay_verification_token',
           value: newValue,
           description: 'Token used to verify eBay webhooks and account deletion notifications'
@@ -485,7 +495,12 @@ export default function Settings() {
                         if (squareEnvSetting) {
                           await base44.entities.Setting.update(squareEnvSetting.id, { value: newValue });
                         } else {
+                          if (!user?.company_id) {
+                            toast.error("Company information not available. Cannot save setting.");
+                            return;
+                          }
                           await base44.entities.Setting.create({
+                            company_id: user.company_id,
                             key: 'square_environment',
                             value: newValue,
                             description: 'Square API environment (sandbox or production)'
