@@ -109,13 +109,20 @@ export default function CompanySettings() {
         company_id: company.id
       });
 
+      console.log('Migration result:', result.data);
+
       if (result.data.success) {
-        toast.success('Data migration completed successfully!');
+        const summary = Object.entries(result.data.results || {})
+          .map(([entity, data]) => `${entity}: ${data.updated || 0} updated`)
+          .join(', ');
+        toast.success(`Migration complete! ${summary}`);
         queryClient.invalidateQueries();
       } else {
-        toast.error('Migration failed: ' + result.data.error);
+        console.error('Migration error:', result.data);
+        toast.error('Migration failed: ' + (result.data.error || 'Unknown error'));
       }
     } catch (error) {
+      console.error('Migration exception:', error);
       toast.error('Migration failed: ' + error.message);
     } finally {
       setIsMigrating(false);

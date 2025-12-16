@@ -56,7 +56,9 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Migration error:', error);
     return Response.json({
-      error: error.message || 'Failed to migrate data'
+      success: false,
+      error: error.message || 'Failed to migrate data',
+      stack: error.stack
     }, { status: 500 });
   }
 });
