@@ -39,6 +39,16 @@ Deno.serve(async (req) => {
 
     console.log('Square webhook received:', event.type);
 
+    // Log webhook receipt
+    await base44.asServiceRole.entities.Log.create({
+      company_id: event.merchant_id || 'system',
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      category: 'square_integration',
+      message: `Square webhook received: ${event.type}`,
+      details: { event_type: event.type, event_id: event.event_id },
+    });
+
     // Get Square environment setting (for any API calls if needed)
     const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment' });
     const squareEnv = envSettings[0]?.value === 'sandbox' ? Environment.Sandbox : Environment.Production;
@@ -63,6 +73,19 @@ Deno.serve(async (req) => {
           });
 
           console.log(`Updated company ${company.id} subscription status to ${subscription.status}`);
+
+          await base44.asServiceRole.entities.Log.create({
+            company_id: company.id,
+            timestamp: new Date().toISOString(),
+            level: 'success',
+            category: 'square_integration',
+            message: `Subscription ${event.type === 'subscription.created' ? 'created' : 'updated'}`,
+            details: { 
+              subscription_id: subscription.id,
+              status: subscription.status,
+              charged_through_date: subscription.charged_through_date,
+            },
+          });
         }
         break;
       }
@@ -82,6 +105,15 @@ Deno.serve(async (req) => {
           });
 
           console.log(`Cancelled subscription for company ${company.id}`);
+
+          await base44.asServiceRole.entities.Log.create({
+            company_id: company.id,
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            category: 'square_integration',
+            message: 'Subscription cancelled via webhook',
+            details: { subscription_id: subscription.id },
+          });
         }
         break;
       }
@@ -114,6 +146,15 @@ Deno.serve(async (req) => {
           });
 
           console.log(`Payment received for company ${company.id}`);
+
+          await base44.asServiceRole.entities.Log.create({
+            company_id: company.id,
+            timestamp: new Date().toISOString(),
+            level: 'success',
+            category: 'square_integration',
+            message: 'Payment received',
+            details: { invoice_id: invoice.id },
+          });
         }
         break;
       }
@@ -154,6 +195,21 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Square webhook error:', error);
+    
+    try {
+      const base44 = createClientFromRequest(req);
+      await base44.asServiceRole.entities.Log.create({
+        company_id: 'system',
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        category: 'square_integration',
+        message: 'Square webhook processing failed',
+        details: { error: error.message, stack: error.stack },
+      });
+    } catch (logError) {
+      console.error('Failed to log webhook error:', logError);
+    }
+
     return Response.json({
       error: error.message || 'Webhook processing failed',
     }, { status: 500 });

@@ -10,6 +10,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - No company' }, { status: 401 });
     }
 
+    await base44.asServiceRole.entities.Log.create({
+      company_id: user.company_id,
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      category: 'square_integration',
+      message: 'Canceling Square subscription',
+      details: { user_id: user.id },
+      user_id: user.id,
+    });
+
     // Get company details
     const companies = await base44.asServiceRole.entities.Company.filter({ id: user.company_id });
     const company = companies[0];
@@ -40,6 +50,16 @@ Deno.serve(async (req) => {
       subscription_status: 'cancelled',
     });
 
+    await base44.asServiceRole.entities.Log.create({
+      company_id: user.company_id,
+      timestamp: new Date().toISOString(),
+      level: 'success',
+      category: 'square_integration',
+      message: 'Square subscription cancelled successfully',
+      details: { subscription_id: company.square_subscription_id },
+      user_id: user.id,
+    });
+
     return Response.json({
       success: true,
       message: 'Subscription cancelled successfully',
@@ -47,6 +67,29 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Cancel subscription error:', error);
+    
+    try {
+      const base44 = createClientFromRequest(req);
+      const user = await base44.auth.me();
+      if (user?.company_id) {
+        await base44.asServiceRole.entities.Log.create({
+          company_id: user.company_id,
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          category: 'square_integration',
+          message: 'Failed to cancel Square subscription',
+          details: { 
+            error: error.message,
+            errors: error.errors,
+            stack: error.stack,
+          },
+          user_id: user.id,
+        });
+      }
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
+
     return Response.json({
       error: error.message || 'Failed to cancel subscription',
       details: error.errors || error,

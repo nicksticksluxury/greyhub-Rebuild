@@ -33,6 +33,11 @@ export default function SquareTest() {
     queryFn: () => base44.entities.Alert.list("-created_date", 50),
   });
 
+  const { data: squareLogs = [] } = useQuery({
+    queryKey: ['squareLogs'],
+    queryFn: () => base44.entities.Log.filter({ category: 'square_integration' }, "-timestamp", 100),
+  });
+
   const handleCreateSubscription = async () => {
     if (!paymentToken) {
       toast.error("Please enter a payment token");
@@ -224,21 +229,24 @@ export default function SquareTest() {
           </Card>
         )}
 
-        {/* Webhook Events */}
+        {/* Square Integration Logs */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Webhook className="w-5 h-5" />
-                  Webhook Events
+                  Square Integration Logs
                 </CardTitle>
-                <CardDescription>Recent Square webhook alerts</CardDescription>
+                <CardDescription>All Square API activity and webhook events</CardDescription>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => queryClient.invalidateQueries({ queryKey: ['squareAlerts'] })}
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['squareAlerts'] });
+                  queryClient.invalidateQueries({ queryKey: ['squareLogs'] });
+                }}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
@@ -246,13 +254,59 @@ export default function SquareTest() {
             </div>
           </CardHeader>
           <CardContent>
-            {squareAlerts.length === 0 ? (
+            {squareLogs.length === 0 && squareAlerts.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <Webhook className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                <p>No webhook events received yet</p>
+                <p>No Square activity logged yet</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
+                {squareLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className={`p-3 rounded-lg border text-sm ${
+                      log.level === 'error' 
+                        ? 'bg-red-50 border-red-200' 
+                        : log.level === 'success'
+                        ? 'bg-green-50 border-green-200'
+                        : log.level === 'warning'
+                        ? 'bg-amber-50 border-amber-200'
+                        : 'bg-blue-50 border-blue-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            log.level === 'error'
+                              ? 'bg-red-100 text-red-800'
+                              : log.level === 'success'
+                              ? 'bg-green-100 text-green-800'
+                              : log.level === 'warning'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {log.level}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="font-semibold text-slate-900">{log.message}</p>
+                        {log.details && Object.keys(log.details).length > 0 && (
+                          <details className="mt-2">
+                            <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-700">
+                              View details
+                            </summary>
+                            <pre className="mt-1 text-xs text-slate-600 bg-white p-2 rounded border border-slate-200 overflow-x-auto">
+                              {JSON.stringify(log.details, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
                 {squareAlerts.map((alert) => (
                   <div
                     key={alert.id}

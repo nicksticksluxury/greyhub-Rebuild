@@ -12,6 +12,17 @@ Deno.serve(async (req) => {
 
     const { payment_token, plan_id } = await req.json();
 
+    // Log function invocation
+    await base44.asServiceRole.entities.Log.create({
+      company_id: user.company_id,
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      category: 'square_integration',
+      message: 'Creating Square subscription',
+      details: { payment_token: payment_token?.substring(0, 10) + '...', plan_id, user_id: user.id },
+      user_id: user.id,
+    });
+
     if (!payment_token) {
       return Response.json({ error: 'Payment token is required' }, { status: 400 });
     }
@@ -50,6 +61,16 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Company.update(company.id, {
         square_customer_id: customerId,
       });
+
+      await base44.asServiceRole.entities.Log.create({
+        company_id: user.company_id,
+        timestamp: new Date().toISOString(),
+        level: 'success',
+        category: 'square_integration',
+        message: 'Square customer created',
+        details: { customer_id: customerId, company_name: company.name },
+        user_id: user.id,
+      });
     }
 
     // Create payment method
@@ -62,6 +83,16 @@ Deno.serve(async (req) => {
     });
 
     const cardId = cardResponse.result.card.id;
+
+    await base44.asServiceRole.entities.Log.create({
+      company_id: user.company_id,
+      timestamp: new Date().toISOString(),
+      level: 'success',
+      category: 'square_integration',
+      message: 'Payment card created',
+      details: { card_id: cardId, customer_id: customerId },
+      user_id: user.id,
+    });
 
     // Determine subscription plan details
     const planDetails = plan_id === 'custom' 
@@ -97,6 +128,21 @@ Deno.serve(async (req) => {
       next_billing_date: subscription.chargedThroughDate,
     });
 
+    await base44.asServiceRole.entities.Log.create({
+      company_id: user.company_id,
+      timestamp: new Date().toISOString(),
+      level: 'success',
+      category: 'square_integration',
+      message: 'Square subscription created successfully',
+      details: { 
+        subscription_id: subscription.id, 
+        status: subscription.status,
+        charged_through_date: subscription.chargedThroughDate,
+        plan_id: plan_id || 'standard',
+      },
+      user_id: user.id,
+    });
+
     return Response.json({
       success: true,
       subscription_id: subscription.id,
@@ -105,6 +151,29 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Square subscription error:', error);
+    
+    try {
+      const base44 = createClientFromRequest(req);
+      const user = await base44.auth.me();
+      if (user?.company_id) {
+        await base44.asServiceRole.entities.Log.create({
+          company_id: user.company_id,
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          category: 'square_integration',
+          message: 'Failed to create Square subscription',
+          details: { 
+            error: error.message,
+            errors: error.errors,
+            stack: error.stack,
+          },
+          user_id: user.id,
+        });
+      }
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
+
     return Response.json({
       error: error.message || 'Failed to create subscription',
       details: error.errors || error,
