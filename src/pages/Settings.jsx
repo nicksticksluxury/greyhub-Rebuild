@@ -18,6 +18,18 @@ export default function Settings() {
   const [manualUrl, setManualUrl] = useState("");
   const [reoptimizing, setReoptimizing] = useState(false);
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: company } = useQuery({
+    queryKey: ['company', user?.company_id],
+    queryFn: () => base44.entities.Company.filter({ id: user.company_id }),
+    enabled: !!user?.company_id,
+    select: (data) => data[0],
+  });
+
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['settings'],
     queryFn: () => base44.entities.Setting.list(),
