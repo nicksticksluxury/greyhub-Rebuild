@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
             type: 'error',
             title: 'Payment Failed',
             message: 'Your subscription payment has failed. Please update your payment method.',
-            metadata: { invoice_id: invoice.id },
+            metadata: { invoice_id: invoice.id, source: 'square' },
           });
 
           console.log(`Payment failed for company ${company.id}`);
