@@ -76,6 +76,7 @@ export default function Inventory() {
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   const [showImageExportDialog, setShowImageExportDialog] = useState(false);
   const [imageExportSizes, setImageExportSizes] = useState({ thumbnail: false, medium: true, full: false });
+  const [syncingSquare, setSyncingSquare] = useState(false);
   
   const queryClient = useQueryClient();
 
@@ -231,6 +232,33 @@ export default function Inventory() {
     } catch (error) {
       console.error(error);
       toast.error("Failed to update watches", { id: toastId });
+    }
+  };
+
+  const handleSyncSquare = async () => {
+    if (selectedWatchIds.length === 0) return;
+    
+    setSyncingSquare(true);
+    const toastId = toast.loading(`Syncing ${selectedWatchIds.length} watches to Square...`);
+    try {
+      const result = await base44.functions.invoke("syncWatchesToSquare", { watch_ids: selectedWatchIds });
+      if (result.data.success) {
+        const { success, failed } = result.data.results;
+        if (failed > 0) {
+          toast.error(`Synced ${success}, failed ${failed}`, { id: toastId });
+        } else {
+          toast.success(`Successfully synced ${success} watches to Square!`, { id: toastId });
+        }
+        queryClient.invalidateQueries({ queryKey: ['watches'] });
+        setSelectedWatchIds([]);
+      } else {
+        toast.error("Sync failed: " + (result.data.error || "Unknown error"), { id: toastId });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sync with Square", { id: toastId });
+    } finally {
+      setSyncingSquare(false);
     }
   };
 
@@ -478,6 +506,14 @@ export default function Inventory() {
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Updating..." : "Update eBay"}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSyncSquare} disabled={syncingSquare}>
+                      {syncingSquare ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <ShoppingBag className="w-4 h-4 mr-2" />
+                      )}
+                      {syncingSquare ? "Syncing..." : "Sync to Square"}
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
                       {generatingDescriptions ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -582,6 +618,7 @@ export default function Inventory() {
                     <SelectItem value="mercari">Mercari Pricing</SelectItem>
                     <SelectItem value="whatnot">Whatnot Pricing</SelectItem>
                     <SelectItem value="shopify">Shopify Pricing</SelectItem>
+                    <SelectItem value="square">Square Pricing</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

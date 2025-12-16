@@ -161,14 +161,14 @@ Deno.serve(async (req) => {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object.invoice;
-        
+
         const companies = await base44.asServiceRole.entities.Company.filter({
           square_customer_id: invoice.primary_recipient.customer_id
         });
 
         if (companies.length > 0) {
           const company = companies[0];
-          
+
           await base44.asServiceRole.entities.Company.update(company.id, {
             subscription_status: 'inactive',
           });
@@ -187,9 +187,95 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case 'inventory.count.updated': {
+        const counts = event.data.object.inventory_counts;
+
+        for (const count of counts) {
+          const catalogObjectId = count.catalog_object_id;
+          const state = count.state;
+          const quantity = parseInt(count.quantity);
+
+          // If quantity is 0 or state indicates sold, find and mark the watch as sold
+          if ((quantity === 0 || state === 'SOLD') && catalogObjectId) {
+            const watches = await base44.asServiceRole.entities.Watch.filter({
+              'platform_ids.square_item_variation_id': catalogObjectId
+            });
+
+            if (watches.length > 0) {
+              const watch = watches[0];
+
+              if (!watch.sold) {
+                await base44.asServiceRole.entities.Watch.update(watch.id, {
+                  sold: true,
+                  sold_platform: 'square',
+                  sold_date: new Date().toISOString().split('T')[0],
+                  sold_price: watch.platform_prices?.square || watch.retail_price,
+                });
+
+                await base44.asServiceRole.entities.Log.create({
+                  company_id: watch.company_id,
+                  timestamp: new Date().toISOString(),
+                  level: 'success',
+                  category: 'square_integration',
+                  message: `Watch sold on Square: ${watch.brand} ${watch.model}`,
+                  details: { watch_id: watch.id, catalog_object_id: catalogObjectId },
+                });
+              }
+            }
+          }
+        }
+        break;
+      }
+
+      case 'order.updated': {
+        const order = event.data.object.order;
+
+        // Check if order is completed/paid
+        if (order.state === 'COMPLETED' && order.line_items) {
+          for (const lineItem of order.line_items) {
+            const catalogObjectId = lineItem.catalog_object_id;
+
+            if (catalogObjectId) {
+              const watches = await base44.asServiceRole.entities.Watch.filter({
+                'platform_ids.square_catalog_object_id': catalogObjectId
+              });
+
+              if (watches.length > 0) {
+                const watch = watches[0];
+
+                if (!watch.sold) {
+                  const soldPrice = parseInt(lineItem.total_money.amount) / 100;
+
+                  await base44.asServiceRole.entities.Watch.update(watch.id, {
+                    sold: true,
+                    sold_platform: 'square',
+                    sold_date: new Date().toISOString().split('T')[0],
+                    sold_price: soldPrice,
+                  });
+
+                  await base44.asServiceRole.entities.Log.create({
+                    company_id: watch.company_id,
+                    timestamp: new Date().toISOString(),
+                    level: 'success',
+                    category: 'square_integration',
+                    message: `Watch sold on Square: ${watch.brand} ${watch.model} for $${soldPrice}`,
+                    details: { 
+                      watch_id: watch.id, 
+                      order_id: order.id,
+                      sold_price: soldPrice 
+                    },
+                  });
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+
       default:
         console.log('Unhandled event type:', event.type);
-    }
+      }
 
     return Response.json({ success: true });
 
