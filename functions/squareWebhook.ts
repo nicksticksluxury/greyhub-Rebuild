@@ -355,12 +355,21 @@ Deno.serve(async (req) => {
       }
 
       case 'inventory.count.updated': {
+        if (!event.data?.object?.inventory_counts || !Array.isArray(event.data.object.inventory_counts)) {
+          console.error('Invalid inventory.count.updated event structure');
+          break;
+        }
+
         const counts = event.data.object.inventory_counts;
 
         for (const count of counts) {
+          if (!count.catalog_object_id) {
+            continue; // Skip entries without catalog object ID
+          }
+
           const catalogObjectId = count.catalog_object_id;
           const state = count.state;
-          const quantity = parseInt(count.quantity);
+          const quantity = count.quantity ? parseInt(count.quantity) : 0;
 
           // If quantity is 0 or state indicates sold, find and mark the watch as sold
           if ((quantity === 0 || state === 'SOLD') && catalogObjectId) {
@@ -377,6 +386,7 @@ Deno.serve(async (req) => {
                   sold_platform: 'square',
                   sold_date: new Date().toISOString().split('T')[0],
                   sold_price: watch.platform_prices?.square || watch.retail_price,
+                  quantity: 0,
                 });
 
                 await base44.asServiceRole.entities.Log.create({
@@ -385,7 +395,12 @@ Deno.serve(async (req) => {
                   level: 'success',
                   category: 'square_integration',
                   message: `Watch sold on Square: ${watch.brand} ${watch.model}`,
-                  details: { watch_id: watch.id, catalog_object_id: catalogObjectId },
+                  details: { 
+                    watch_id: watch.id, 
+                    catalog_object_id: catalogObjectId,
+                    state: state,
+                    quantity: quantity
+                  },
                 });
               }
             }
