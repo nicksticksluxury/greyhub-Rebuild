@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     // Get Square environment setting
     const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment', company_id: user.company_id });
-    const squareEnv = envSettings[0]?.value === 'sandbox' ? 'sandbox' : 'production';
+    const squareEnv = envSettings[0]?.value === 'sandbox' ? Square.Environment.Sandbox : Square.Environment.Production;
 
     // Initialize Square client
     const client = new Square.Client({

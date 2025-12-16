@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
 
     // Get Square environment setting (for any API calls if needed)
     const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment' });
-    const squareEnv = envSettings[0]?.value === 'sandbox' ? 'sandbox' : 'production';
+    const squareEnv = envSettings[0]?.value === 'sandbox' ? Square.Environment.Sandbox : Square.Environment.Production;
 
     // Handle different event types
     switch (event.type) {
