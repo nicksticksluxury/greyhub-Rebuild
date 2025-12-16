@@ -410,44 +410,62 @@ Deno.serve(async (req) => {
       }
 
       case 'order.updated': {
+        if (!event.data?.object?.order) {
+          console.error('Invalid order.updated event structure');
+          break;
+        }
+
         const order = event.data.object.order;
 
         // Check if order is completed/paid
-        if (order.state === 'COMPLETED' && order.line_items) {
+        if (order.state === 'COMPLETED' && order.line_items && Array.isArray(order.line_items)) {
           for (const lineItem of order.line_items) {
             const catalogObjectId = lineItem.catalog_object_id;
 
-            if (catalogObjectId) {
-              const watches = await base44.asServiceRole.entities.Watch.filter({
-                'platform_ids.square_catalog_object_id': catalogObjectId
-              });
+            if (!catalogObjectId || !lineItem.total_money?.amount) {
+              continue; // Skip if missing required data
+            }
 
-              if (watches.length > 0) {
-                const watch = watches[0];
+            const watches = await base44.asServiceRole.entities.Watch.filter({
+              'platform_ids.square_catalog_object_id': catalogObjectId
+            });
 
-                if (!watch.sold) {
-                  const soldPrice = parseInt(lineItem.total_money.amount) / 100;
+            if (watches.length > 0) {
+              const watch = watches[0];
 
-                  await base44.asServiceRole.entities.Watch.update(watch.id, {
-                    sold: true,
-                    sold_platform: 'square',
-                    sold_date: new Date().toISOString().split('T')[0],
+              if (!watch.sold) {
+                const soldPrice = parseInt(lineItem.total_money.amount) / 100;
+
+                await base44.asServiceRole.entities.Watch.update(watch.id, {
+                  sold: true,
+                  sold_platform: 'square',
+                  sold_date: new Date().toISOString().split('T')[0],
+                  sold_price: soldPrice,
+                  quantity: 0,
+                });
+
+                // Create alert for the company
+                await base44.asServiceRole.entities.Alert.create({
+                  company_id: watch.company_id,
+                  type: 'success',
+                  title: 'Watch Sold on Square',
+                  message: `${watch.brand} ${watch.model} sold for $${soldPrice}`,
+                  metadata: { watch_id: watch.id, order_id: order.id, source: 'square' },
+                });
+
+                await base44.asServiceRole.entities.Log.create({
+                  company_id: watch.company_id,
+                  timestamp: new Date().toISOString(),
+                  level: 'success',
+                  category: 'square_integration',
+                  message: `Watch sold on Square: ${watch.brand} ${watch.model} for $${soldPrice}`,
+                  details: { 
+                    watch_id: watch.id, 
+                    order_id: order.id,
                     sold_price: soldPrice,
-                  });
-
-                  await base44.asServiceRole.entities.Log.create({
-                    company_id: watch.company_id,
-                    timestamp: new Date().toISOString(),
-                    level: 'success',
-                    category: 'square_integration',
-                    message: `Watch sold on Square: ${watch.brand} ${watch.model} for $${soldPrice}`,
-                    details: { 
-                      watch_id: watch.id, 
-                      order_id: order.id,
-                      sold_price: soldPrice 
-                    },
-                  });
-                }
+                    catalog_object_id: catalogObjectId
+                  },
+                });
               }
             }
           }
@@ -457,9 +475,23 @@ Deno.serve(async (req) => {
 
       default:
         console.log('Unhandled event type:', event.type);
-      }
+        
+        // Log unhandled events for monitoring
+        await base44.asServiceRole.entities.Log.create({
+          company_id: event.merchant_id || 'system',
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          category: 'square_integration',
+          message: `Unhandled Square webhook event: ${event.type}`,
+          details: { event_type: event.type, event_id: event.event_id },
+        });
+    }
 
-    return Response.json({ success: true });
+    // Mark event as processed for idempotency
+    markEventProcessed(event.event_id);
+
+    // Return 200 OK to acknowledge receipt
+    return Response.json({ success: true, event_id: event.event_id }, { status: 200 });
 
   } catch (error) {
     console.error('Square webhook error:', error);
