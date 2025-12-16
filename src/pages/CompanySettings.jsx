@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Building2, Save, Users, Mail, Phone, Globe, MapPin } from "lucide-react";
+import { Building2, Save, Users, Mail, Phone, Globe, MapPin, UserPlus, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CompanySettings() {
   const queryClient = useQueryClient();
@@ -31,6 +32,16 @@ export default function CompanySettings() {
     queryFn: () => base44.entities.User.filter({ company_id: user.company_id }),
     enabled: !!user?.company_id,
   });
+
+  const { data: pendingInvitations = [] } = useQuery({
+    queryKey: ['pendingInvitations', user?.company_id],
+    queryFn: () => base44.entities.Invitation.filter({ company_id: user.company_id, status: 'pending' }),
+    enabled: !!user?.company_id,
+  });
+
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('user');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   useEffect(() => {
     if (company) {
@@ -57,6 +68,35 @@ export default function CompanySettings() {
 
   const handleSave = () => {
     updateMutation.mutate(editedCompany);
+  };
+
+  const handleSendInvite = async () => {
+    if (!inviteEmail) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    setIsSendingInvite(true);
+    try {
+      const result = await base44.functions.invoke('inviteUser', {
+        email: inviteEmail,
+        role: inviteRole
+      });
+
+      if (result.data.success) {
+        toast.success('Invitation sent successfully!');
+        setInviteEmail('');
+        setInviteRole('user');
+        queryClient.invalidateQueries({ queryKey: ['pendingInvitations'] });
+      } else {
+        toast.error(result.data.error || 'Failed to send invitation');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to send invitation');
+    } finally {
+      setIsSendingInvite(false);
+    }
   };
 
   if (isLoading) {
@@ -244,10 +284,70 @@ export default function CompanySettings() {
             ))}
           </div>
 
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              To invite new team members, please use the user management feature in the Base44 dashboard.
-            </p>
+          {pendingInvitations.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Pending Invitations
+              </h3>
+              <div className="space-y-2">
+                {pendingInvitations.map((invite) => (
+                  <div key={invite.id} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <div>
+                      <p className="font-medium text-slate-900">{invite.email}</p>
+                      <p className="text-xs text-slate-500">
+                        Invited by {invite.invited_by} • Expires {new Date(invite.expires_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-xs text-amber-700 font-medium capitalize">
+                      {invite.role}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <UserPlus className="w-4 h-4" />
+              Invite New Team Member
+            </h3>
+            <div className="flex gap-3">
+              <Input
+                type="email"
+                placeholder="email@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="flex-1"
+              />
+              <Select value={inviteRole} onValueChange={setInviteRole}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleSendInvite}
+                disabled={isSendingInvite || !inviteEmail}
+                className="bg-slate-800 hover:bg-slate-900"
+              >
+                {isSendingInvite ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Send Invite
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </Card>
       </div>

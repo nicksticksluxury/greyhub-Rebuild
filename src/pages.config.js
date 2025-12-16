@@ -13,6 +13,7 @@ import SalesView from './pages/SalesView';
 import index from './pages/index';
 import OutForRepair from './pages/OutForRepair';
 import CompanySettings from './pages/CompanySettings';
+import AcceptInvitation from './pages/AcceptInvitation';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "index": index,
     "OutForRepair": OutForRepair,
     "CompanySettings": CompanySettings,
+    "AcceptInvitation": AcceptInvitation,
 }
 
 export const pagesConfig = {
