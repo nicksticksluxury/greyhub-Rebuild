@@ -2,15 +2,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import * as Square from 'npm:square';
 
 Deno.serve(async (req) => {
+  const base44 = createClientFromRequest(req);
+  
   try {
-    const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
     if (!user || !user.company_id) {
       return Response.json({ error: 'Unauthorized - No company' }, { status: 401 });
     }
 
-    const { watch_ids } = await req.json();
+    const body = await req.json();
+    const { watch_ids } = body;
 
     await base44.asServiceRole.entities.Log.create({
       company_id: user.company_id,
