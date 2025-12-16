@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { Client, Environment } from 'npm:square';
+import * as Square from 'npm:square';
 
 // Verify Square webhook signature
 function verifySignature(body, signature, signatureKey, url) {
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
     // Get Square environment setting (for any API calls if needed)
     const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment' });
-    const squareEnv = envSettings[0]?.value === 'sandbox' ? Environment.Sandbox : Environment.Production;
+    const squareEnv = envSettings[0]?.value === 'sandbox' ? Square.Environment.Sandbox : Square.Environment.Production;
 
     // Handle different event types
     switch (event.type) {

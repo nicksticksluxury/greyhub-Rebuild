@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { Client, Environment } from 'npm:square';
+import * as Square from 'npm:square';
 
 Deno.serve(async (req) => {
   try {
@@ -27,10 +27,10 @@ Deno.serve(async (req) => {
       key: 'square_environment', 
       company_id: user.company_id 
     });
-    const squareEnv = envSettings[0]?.value === 'sandbox' ? Environment.Sandbox : Environment.Production;
+    const squareEnv = envSettings[0]?.value === 'sandbox' ? Square.Environment.Sandbox : Square.Environment.Production;
 
     // Initialize Square client
-    const client = new Client({
+    const client = new Square.Client({
       accessToken: Deno.env.get('SQUARE_ACCESS_TOKEN'),
       environment: squareEnv,
     });
