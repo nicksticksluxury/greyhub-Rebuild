@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut, Wrench } from "lucide-react";
 import AlertsBell from "./components/layout/AlertsBell";
+import ToastHistoryBell from "./components/layout/ToastHistoryBell";
 
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -220,6 +221,7 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                  <ToastHistoryBell />
                   <AlertsBell />
                   <button
                   onClick={handleLogout}
@@ -240,7 +242,10 @@ export default function Layout({ children, currentPageName }) {
                     <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors duration-200" />
                     <h1 className="text-xl font-bold text-slate-900">WatchVault</h1>
                 </div>
-                <AlertsBell />
+                <div className="flex items-center gap-1">
+                  <ToastHistoryBell />
+                  <AlertsBell />
+                </div>
             </div>
           </header>
 
