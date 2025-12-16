@@ -303,7 +303,17 @@ Deno.serve(async (req) => {
       }
 
       case 'invoice.payment_failed': {
+        if (!event.data?.object?.invoice) {
+          console.error('Invalid invoice.payment_failed event structure');
+          break;
+        }
+
         const invoice = event.data.object.invoice;
+
+        if (!invoice.primary_recipient?.customer_id) {
+          console.error('Missing customer ID in invoice payment failed event');
+          break;
+        }
 
         const companies = await base44.asServiceRole.entities.Company.filter({
           square_customer_id: invoice.primary_recipient.customer_id
@@ -321,11 +331,25 @@ Deno.serve(async (req) => {
             company_id: company.id,
             type: 'error',
             title: 'Payment Failed',
-            message: 'Your subscription payment has failed. Please update your payment method.',
+            message: 'Your subscription payment has failed. Please update your payment method to avoid service interruption.',
             metadata: { invoice_id: invoice.id, source: 'square' },
           });
 
           console.log(`Payment failed for company ${company.id}`);
+
+          await base44.asServiceRole.entities.Log.create({
+            company_id: company.id,
+            timestamp: new Date().toISOString(),
+            level: 'error',
+            category: 'square_integration',
+            message: 'Payment failed',
+            details: { 
+              invoice_id: invoice.id,
+              customer_id: invoice.primary_recipient.customer_id
+            },
+          });
+        } else {
+          console.warn(`No company found with customer ID: ${invoice.primary_recipient.customer_id}`);
         }
         break;
       }
