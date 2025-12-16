@@ -14,6 +14,7 @@ import index from './pages/index';
 import OutForRepair from './pages/OutForRepair';
 import CompanySettings from './pages/CompanySettings';
 import AcceptInvitation from './pages/AcceptInvitation';
+import SystemAdmin from './pages/SystemAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -34,6 +35,7 @@ export const PAGES = {
     "OutForRepair": OutForRepair,
     "CompanySettings": CompanySettings,
     "AcceptInvitation": AcceptInvitation,
+    "SystemAdmin": SystemAdmin,
 }
 
 export const pagesConfig = {

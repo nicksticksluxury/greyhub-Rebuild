@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut, Wrench } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut, Wrench, Shield } from "lucide-react";
 import AlertsBell from "./components/layout/AlertsBell";
 import ToastHistoryBell from "./components/layout/ToastHistoryBell";
 
@@ -75,6 +75,8 @@ export default function Layout({ children, currentPageName }) {
   const [mode, setMode] = useState(() => {
     return localStorage.getItem('watchvault_mode') || 'working';
   });
+  const [user, setUser] = useState(null);
+  const [isImpersonating, setIsImpersonating] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -82,10 +84,13 @@ export default function Layout({ children, currentPageName }) {
       // If page is not public, check if user is logged in
       if (!publicPages.includes(currentPageName)) {
         try {
-          const user = await base44.auth.me();
-          if (!user) {
+          const currentUser = await base44.auth.me();
+          if (!currentUser) {
             base44.auth.redirectToLogin();
           }
+          setUser(currentUser);
+          // Check if user is system admin with a company (impersonating)
+          setIsImpersonating(currentUser.role === 'admin' && !currentUser.company_id && currentPageName !== 'SystemAdmin');
         } catch (error) {
           // If auth check fails (likely 401), redirect
           base44.auth.redirectToLogin();
@@ -105,6 +110,26 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = () => {
     base44.auth.logout("/");
   };
+
+  const handleStopImpersonation = async () => {
+    try {
+      const result = await base44.functions.invoke('stopImpersonation');
+      if (result.data.success) {
+        window.location.href = '/SystemAdmin';
+      }
+    } catch (error) {
+      console.error('Failed to stop impersonation:', error);
+    }
+  };
+
+  // System admin navigation (no company)
+  const systemAdminNav = [
+    {
+      title: "System Admin",
+      url: createPageUrl("SystemAdmin"),
+      icon: Shield,
+    },
+  ];
 
   // Render simplified layout for public pages
   if (currentPageName === 'index' || currentPageName === 'SalesView') {
@@ -140,53 +165,61 @@ export default function Layout({ children, currentPageName }) {
           <SidebarHeader className="border-b border-slate-200 p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-                <Watch className="w-6 h-6 text-amber-400" />
+                {user && !user.company_id ? (
+                  <Shield className="w-6 h-6 text-purple-400" />
+                ) : (
+                  <Watch className="w-6 h-6 text-amber-400" />
+                )}
               </div>
               <div>
                 <h2 className="font-bold text-slate-900 text-lg">WatchVault</h2>
-                <p className="text-xs text-slate-500 font-medium">Professional Inventory</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  {user && !user.company_id ? 'System Admin' : 'Professional Inventory'}
+                </p>
               </div>
             </div>
           </SidebarHeader>
           
           <SidebarContent className="p-3">
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
-                Mode
-              </SidebarGroupLabel>
-              <div className="px-3 pb-4">
-                <button
-                  onClick={toggleMode}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
-                    mode === 'live' 
-                      ? 'bg-red-600 text-white shadow-lg' 
-                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Radio className="w-4 h-4" />
-                    <span className="font-semibold text-sm">
-                      {mode === 'live' ? 'Live Auction' : 'Working'}
-                    </span>
-                  </div>
-                  <div className={`w-10 h-6 rounded-full transition-colors ${
-                    mode === 'live' ? 'bg-red-800' : 'bg-slate-400'
-                  } relative`}>
-                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                      mode === 'live' ? 'right-1' : 'left-1'
-                    }`} />
-                  </div>
-                </button>
-              </div>
-            </SidebarGroup>
-            
+            {user && user.company_id && (
+              <SidebarGroup>
+                <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
+                  Mode
+                </SidebarGroupLabel>
+                <div className="px-3 pb-4">
+                  <button
+                    onClick={toggleMode}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
+                      mode === 'live' 
+                        ? 'bg-red-600 text-white shadow-lg' 
+                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Radio className="w-4 h-4" />
+                      <span className="font-semibold text-sm">
+                        {mode === 'live' ? 'Live Auction' : 'Working'}
+                      </span>
+                    </div>
+                    <div className={`w-10 h-6 rounded-full transition-colors ${
+                      mode === 'live' ? 'bg-red-800' : 'bg-slate-400'
+                    } relative`}>
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                        mode === 'live' ? 'right-1' : 'left-1'
+                      }`} />
+                    </div>
+                  </button>
+                </div>
+              </SidebarGroup>
+            )}
+
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
                 Navigation
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navigationItems.map((item) => (
+                  {(user && !user.company_id ? systemAdminNav : navigationItems).map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
@@ -207,22 +240,39 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-slate-200 p-4">
+            {isImpersonating && (
+              <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                <p className="text-xs font-semibold text-purple-800 mb-2">Impersonating Tenant</p>
+                <button
+                  onClick={handleStopImpersonation}
+                  className="w-full px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors"
+                >
+                  Exit Impersonation
+                </button>
+              </div>
+            )}
             <div className="text-center mb-3">
               <p className="text-xs text-slate-400 font-mono">v1.0.1</p>
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                 <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center shadow-md shrink-0">
-                  <span className="text-slate-900 font-bold text-sm">W</span>
+                  <span className="text-slate-900 font-bold text-sm">
+                    {user && !user.company_id ? 'S' : 'W'}
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-900 text-sm truncate">Watch Dealer</p>
-                  <p className="text-xs text-slate-500 truncate">Inventory Manager</p>
+                  <p className="font-semibold text-slate-900 text-sm truncate">
+                    {user && !user.company_id ? 'System Admin' : 'Watch Dealer'}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">
+                    {user && !user.company_id ? 'Full Access' : 'Inventory Manager'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                  <ToastHistoryBell />
-                  <AlertsBell />
+                  {user && user.company_id && <ToastHistoryBell />}
+                  {user && user.company_id && <AlertsBell />}
                   <button
                   onClick={handleLogout}
                   className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
