@@ -28,6 +28,11 @@ export default function Settings() {
     queryFn: () => base44.entities.EbayLog.list("-timestamp", 100),
   });
 
+  const { data: debugLogs = [] } = useQuery({
+    queryKey: ['debugLogs'],
+    queryFn: () => base44.entities.Log.list("-timestamp", 200),
+  });
+
   const tokenSetting = settings?.find(s => s.key === 'ebay_verification_token');
   const accessTokenSetting = settings?.find(s => s.key === 'ebay_user_access_token');
   const tokenExpirySetting = settings?.find(s => s.key === 'ebay_token_expiry');
@@ -482,9 +487,98 @@ export default function Settings() {
                  )}
                </Button>
             </div>
-            </CardContent>
-            </Card>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Debug Logs</CardTitle>
+                <CardDescription>View all system logs including migrations, exports, and errors</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (confirm("Clear all debug logs?")) {
+                    try {
+                      await Promise.all(debugLogs.map(log => base44.entities.Log.delete(log.id)));
+                      queryClient.invalidateQueries({ queryKey: ['debugLogs'] });
+                      toast.success("Logs cleared");
+                    } catch (error) {
+                      toast.error("Failed to clear logs");
+                    }
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear Logs
+              </Button>
             </div>
-            </div>
-            );
-            }
+          </CardHeader>
+          <CardContent>
+            {debugLogs.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                <p>No logs yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {debugLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className={`p-3 rounded-lg border text-sm ${
+                      log.level === 'error' 
+                        ? 'bg-red-50 border-red-200' 
+                        : log.level === 'success'
+                        ? 'bg-green-50 border-green-200'
+                        : log.level === 'warning'
+                        ? 'bg-amber-50 border-amber-200'
+                        : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            log.level === 'error'
+                              ? 'bg-red-100 text-red-800'
+                              : log.level === 'success'
+                              ? 'bg-green-100 text-green-800'
+                              : log.level === 'warning'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-slate-100 text-slate-800'
+                          }`}>
+                            {log.level}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800`}>
+                            {log.category}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-slate-900 font-medium">{log.message}</p>
+                        {log.details && Object.keys(log.details).length > 0 && (
+                          <details className="mt-2">
+                            <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-700 font-medium">
+                              View details
+                            </summary>
+                            <pre className="mt-2 text-xs text-slate-600 bg-white p-3 rounded border border-slate-200 overflow-x-auto max-h-96">
+                              {JSON.stringify(log.details, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
