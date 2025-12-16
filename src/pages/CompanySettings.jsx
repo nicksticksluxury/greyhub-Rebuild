@@ -13,8 +13,6 @@ export default function CompanySettings() {
   const queryClient = useQueryClient();
   const [editedCompany, setEditedCompany] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
-  const [newCompanyName, setNewCompanyName] = useState("");
-  const [creating, setCreating] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -61,33 +59,6 @@ export default function CompanySettings() {
     updateMutation.mutate(editedCompany);
   };
 
-  const handleCreateCompany = async () => {
-    if (!newCompanyName.trim()) {
-      toast.error("Please enter a company name");
-      return;
-    }
-
-    setCreating(true);
-    try {
-      const response = await base44.functions.invoke('initializeCompany', { 
-        companyName: newCompanyName 
-      });
-      
-      if (response.data.success) {
-        toast.success("Company created successfully!");
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        queryClient.invalidateQueries({ queryKey: ['company'] });
-        window.location.reload();
-      } else {
-        toast.error(response.data.error || "Failed to create company");
-      }
-    } catch (error) {
-      toast.error("Failed to create company: " + error.message);
-    } finally {
-      setCreating(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -99,40 +70,11 @@ export default function CompanySettings() {
   if (!company) {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
-        <div className="max-w-2xl mx-auto">
-          <Card className="p-8">
-            <div className="text-center mb-6">
-              <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-              <h2 className="text-2xl font-semibold text-slate-900 mb-2">Create Your Company</h2>
-              <p className="text-slate-500">Let's set up your Watch Vault company profile</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="companyName">Company Name *</Label>
-                <Input
-                  id="companyName"
-                  value={newCompanyName}
-                  onChange={(e) => setNewCompanyName(e.target.value)}
-                  placeholder="Enter your company name"
-                  className="text-lg"
-                />
-              </div>
-
-              <Button 
-                onClick={handleCreateCompany}
-                disabled={creating || !newCompanyName.trim()}
-                className="w-full bg-slate-800 hover:bg-slate-900 h-12"
-              >
-                {creating ? "Creating..." : "Create Company"}
-              </Button>
-
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  You'll start with a free trial. You can add more details and manage your subscription after creating your company.
-                </p>
-              </div>
-            </div>
+        <div className="max-w-4xl mx-auto">
+          <Card className="p-8 text-center">
+            <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">No Company Found</h2>
+            <p className="text-slate-500">Please contact support to set up your company.</p>
           </Card>
         </div>
       </div>
