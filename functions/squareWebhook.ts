@@ -248,7 +248,17 @@ Deno.serve(async (req) => {
       }
 
       case 'invoice.payment_made': {
+        if (!event.data?.object?.invoice) {
+          console.error('Invalid invoice.payment_made event structure');
+          break;
+        }
+
         const invoice = event.data.object.invoice;
+        
+        if (!invoice.primary_recipient?.customer_id) {
+          console.error('Missing customer ID in invoice payment event');
+          break;
+        }
         
         // Find company by customer ID
         const companies = await base44.asServiceRole.entities.Company.filter({
@@ -258,12 +268,21 @@ Deno.serve(async (req) => {
         if (companies.length > 0) {
           const company = companies[0];
           
-          // Update next billing date
+          // Update subscription status to active
           await base44.asServiceRole.entities.Company.update(company.id, {
             subscription_status: 'active',
           });
 
           console.log(`Payment received for company ${company.id}`);
+
+          // Create success alert
+          await base44.asServiceRole.entities.Alert.create({
+            company_id: company.id,
+            type: 'success',
+            title: 'Payment Received',
+            message: 'Your payment has been successfully processed. Thank you!',
+            metadata: { invoice_id: invoice.id, source: 'square' },
+          });
 
           await base44.asServiceRole.entities.Log.create({
             company_id: company.id,
@@ -271,8 +290,14 @@ Deno.serve(async (req) => {
             level: 'success',
             category: 'square_integration',
             message: 'Payment received',
-            details: { invoice_id: invoice.id },
+            details: { 
+              invoice_id: invoice.id,
+              customer_id: invoice.primary_recipient.customer_id,
+              amount: invoice.payment_requests?.[0]?.computed_amount_money?.amount
+            },
           });
+        } else {
+          console.warn(`No company found with customer ID: ${invoice.primary_recipient.customer_id}`);
         }
         break;
       }
