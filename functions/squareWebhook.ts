@@ -20,11 +20,54 @@ function verifySignature(body, signature, signatureKey, url) {
   });
 }
 
+// Track processed webhook event IDs for idempotency (in-memory cache, consider Redis for production)
+const processedEvents = new Map();
+const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+
+function isEventProcessed(eventId) {
+  if (!eventId) return false;
+  
+  const processed = processedEvents.get(eventId);
+  if (processed && Date.now() - processed < CACHE_EXPIRY) {
+    return true;
+  }
+  
+  // Clean up expired entries
+  if (processed && Date.now() - processed >= CACHE_EXPIRY) {
+    processedEvents.delete(eventId);
+  }
+  
+  return false;
+}
+
+function markEventProcessed(eventId) {
+  if (eventId) {
+    processedEvents.set(eventId, Date.now());
+  }
+}
+
 Deno.serve(async (req) => {
+  // Only accept POST requests
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const body = await req.text();
+    
+    // Validate required headers
     const signature = req.headers.get('x-square-hmacsha256-signature');
+    if (!signature) {
+      console.error('Missing webhook signature');
+      return Response.json({ error: 'Missing signature' }, { status: 401 });
+    }
+
     const signatureKey = Deno.env.get('SQUARE_WEBHOOK_SIGNATURE_KEY');
+    if (!signatureKey) {
+      console.error('SQUARE_WEBHOOK_SIGNATURE_KEY not configured');
+      return Response.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     const url = req.url;
 
     // Verify webhook signature
@@ -34,7 +77,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
-    const event = JSON.parse(body);
+    // Parse and validate event payload
+    let event;
+    try {
+      event = JSON.parse(body);
+    } catch (parseError) {
+      console.error('Invalid JSON payload:', parseError);
+      return Response.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+
+    // Validate event structure
+    if (!event.type || !event.event_id) {
+      console.error('Invalid event structure:', event);
+      return Response.json({ error: 'Invalid event structure' }, { status: 400 });
+    }
+
+    // Check for duplicate webhook delivery (idempotency)
+    if (isEventProcessed(event.event_id)) {
+      console.log(`Duplicate webhook event ignored: ${event.event_id}`);
+      return Response.json({ success: true, message: 'Event already processed' }, { status: 200 });
+    }
+
     const base44 = createClientFromRequest(req);
 
     console.log('Square webhook received:', event.type);
