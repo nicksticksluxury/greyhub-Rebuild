@@ -369,6 +369,79 @@ export default function Settings() {
 
         <Card className="mt-6">
           <CardHeader>
+            <CardTitle>Pending Invitations</CardTitle>
+            <CardDescription>View and manage all system invitations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {invitations.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <UserPlus className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                <p>No invitations yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {invitations.map((invite) => (
+                  <div
+                    key={invite.id}
+                    className={`p-4 rounded-lg border ${
+                      invite.status === 'accepted' 
+                        ? 'bg-green-50 border-green-200' 
+                        : invite.status === 'expired'
+                        ? 'bg-slate-50 border-slate-200 opacity-60'
+                        : 'bg-white border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-slate-900">{invite.email}</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            invite.status === 'accepted'
+                              ? 'bg-green-100 text-green-800'
+                              : invite.status === 'expired'
+                              ? 'bg-slate-100 text-slate-600'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {invite.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-500">
+                          Invited by {invite.invited_by} • {new Date(invite.created_date).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Expires: {new Date(invite.expires_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {invite.status === 'pending' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyInviteLink(invite.token, invite.email, "Company")}
+                            className="text-slate-900"
+                          >
+                            <LinkIcon className="w-4 h-4 mr-1" />
+                            Copy Link
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteInvite(invite.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+          <CardHeader>
             <CardTitle>Companies</CardTitle>
             <CardDescription>View and manage all tenant companies</CardDescription>
           </CardHeader>
@@ -441,82 +514,9 @@ export default function Settings() {
               </div>
             )}
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Pending Invitations</CardTitle>
-            <CardDescription>View and manage all system invitations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {invitations.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <UserPlus className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                <p>No invitations yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {invitations.map((invite) => (
-                  <div
-                    key={invite.id}
-                    className={`p-4 rounded-lg border ${
-                      invite.status === 'accepted' 
-                        ? 'bg-green-50 border-green-200' 
-                        : invite.status === 'expired'
-                        ? 'bg-slate-50 border-slate-200 opacity-60'
-                        : 'bg-white border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-slate-900">{invite.email}</span>
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            invite.status === 'accepted'
-                              ? 'bg-green-100 text-green-800'
-                              : invite.status === 'expired'
-                              ? 'bg-slate-100 text-slate-600'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {invite.status}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-500">
-                          Invited by {invite.invited_by} • {new Date(invite.created_date).toLocaleDateString()}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-1">
-                          Expires: {new Date(invite.expires_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {invite.status === 'pending' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyInviteLink(invite.token, invite.email, "Company")}
-                            className="text-slate-900"
-                          >
-                            <LinkIcon className="w-4 h-4 mr-1" />
-                            Copy Link
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteInvite(invite.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="mt-6">
+          <Card className="mt-6">
           <CardHeader>
             <CardTitle>eBay Webhook Verification Token</CardTitle>
             <CardDescription>Use this token in the eBay Developer Portal when setting up Marketplace Account Deletion notifications</CardDescription>
