@@ -23,9 +23,9 @@ export default function Settings() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Restrict to system admins only (no company_id)
+  // Restrict to admins only
   useEffect(() => {
-    if (user && (user.role !== 'admin' || user.company_id)) {
+    if (user && user.role !== 'admin') {
       window.location.href = "/";
     }
   }, [user]);
