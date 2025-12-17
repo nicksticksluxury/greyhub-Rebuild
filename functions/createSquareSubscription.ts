@@ -136,9 +136,12 @@ Deno.serve(async (req) => {
                   uid: `phase-${company.id}`,
                   cadence: 'MONTHLY',
                   periods: 1,
-                  recurring_price_money: {
-                    amount: 5000, // $50.00
-                    currency: 'USD',
+                  pricing: {
+                    type: 'STATIC',
+                    price_money: {
+                      amount: 5000, // $50.00
+                      currency: 'USD',
+                    },
                   },
                 }],
               },
@@ -153,9 +156,12 @@ Deno.serve(async (req) => {
                   uid: `phase-${company.id}`,
                   cadence: 'MONTHLY',
                   periods: 1,
-                  recurring_price_money: {
-                    amount: 5000,
-                    currency: 'USD',
+                  pricing: {
+                    type: 'STATIC',
+                    price_money: {
+                      amount: 5000,
+                      currency: 'USD',
+                    },
                   },
                 }],
               },
