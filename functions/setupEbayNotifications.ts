@@ -9,9 +9,19 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const ebayToken = Deno.env.get("EBAY_API_KEY");
+        if (!user.company_id) {
+            return Response.json({ error: 'User not linked to company' }, { status: 403 });
+        }
+
+        // Fetch OAuth token from Setting entity (company-scoped)
+        const settings = await base44.entities.Setting.filter({ 
+            company_id: user.company_id,
+            key: 'ebay_oauth_token' 
+        });
+        
+        const ebayToken = settings[0]?.value;
         if (!ebayToken) {
-            return Response.json({ error: 'EBAY_API_KEY not configured' }, { status: 500 });
+            return Response.json({ error: 'eBay OAuth token not configured' }, { status: 500 });
         }
 
         // Set Notification Preferences via Trading API
