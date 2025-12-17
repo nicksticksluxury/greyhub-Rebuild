@@ -137,6 +137,7 @@ Deno.serve(async (req) => {
                 name: 'Monthly',
                 phases: [{
                   cadence: 'MONTHLY',
+                  pricing_type: 'STATIC',
                   recurring_price_money: {
                     amount: 5000, // $50.00
                     currency: 'USD',
