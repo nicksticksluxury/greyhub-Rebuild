@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
       user_id: user.id,
     });
 
-    // Create a subscription plan in the catalog
-    const catalogResponse = await fetch(`${apiBaseUrl}/v2/catalog/object`, {
+    // Create subscription plan with variation using batch upsert
+    const catalogResponse = await fetch(`${apiBaseUrl}/v2/catalog/batch-upsert`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -125,20 +125,43 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         idempotency_key: `plan-${company.id}-${Date.now()}`,
-        object: {
-          type: 'SUBSCRIPTION_PLAN',
-          id: `#plan-${company.id}`,
-          subscription_plan_data: {
-            name: `WatchVault Monthly - ${company.name}`,
-            phases: [{
-              cadence: 'MONTHLY',
-              recurring_price_money: {
-                amount: 5000, // $50.00
-                currency: 'USD',
+        batches: [{
+          objects: [
+            {
+              type: 'SUBSCRIPTION_PLAN',
+              id: `#plan-${company.id}`,
+              subscription_plan_data: {
+                name: `WatchVault Monthly - ${company.name}`,
+                phases: [{
+                  uid: `phase-${company.id}`,
+                  cadence: 'MONTHLY',
+                  periods: 1,
+                  recurring_price_money: {
+                    amount: 5000, // $50.00
+                    currency: 'USD',
+                  },
+                }],
               },
-            }],
-          },
-        },
+            },
+            {
+              type: 'SUBSCRIPTION_PLAN_VARIATION',
+              id: `#variation-${company.id}`,
+              subscription_plan_variation_data: {
+                name: 'Monthly',
+                subscription_plan_id: `#plan-${company.id}`,
+                phases: [{
+                  uid: `phase-${company.id}`,
+                  cadence: 'MONTHLY',
+                  periods: 1,
+                  recurring_price_money: {
+                    amount: 5000,
+                    currency: 'USD',
+                  },
+                }],
+              },
+            }
+          ]
+        }]
       }),
     });
 
@@ -148,42 +171,14 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to create subscription plan: ${JSON.stringify(catalogData.errors || catalogData)}`);
     }
 
-    const catalogObjectId = catalogData.catalog_object.id;
-
-    // Search for the variation using catalog search
-    const searchResponse = await fetch(`${apiBaseUrl}/v2/catalog/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        object_types: ['SUBSCRIPTION_PLAN_VARIATION'],
-        query: {
-          prefix_query: {
-            attribute_name: 'subscription_plan_id',
-            attribute_prefix: catalogObjectId,
-          }
-        }
-      }),
-    });
-
-    const searchData = await searchResponse.json();
-
-    if (!searchResponse.ok) {
-      throw new Error(`Failed to search for subscription plan variation: ${JSON.stringify(searchData.errors || searchData)}`);
+    // Find the variation ID from the response
+    const planVariation = catalogData.objects?.find(obj => obj.type === 'SUBSCRIPTION_PLAN_VARIATION');
+    
+    if (!planVariation) {
+      throw new Error(`No subscription plan variation in response: ${JSON.stringify(catalogData)}`);
     }
 
-    // Find the variation for our plan
-    let planVariationId = null;
-    if (searchData.objects && searchData.objects.length > 0) {
-      // Take the first variation found
-      planVariationId = searchData.objects[0].id;
-    }
-
-    if (!planVariationId) {
-      throw new Error(`No subscription plan variation found for plan ${catalogObjectId}. Search response: ${JSON.stringify(searchData)}`);
-    }
+    const planVariationId = planVariation.id;
 
     await base44.asServiceRole.entities.Log.create({
       company_id: user.company_id,
