@@ -34,12 +34,12 @@ Deno.serve(async (req) => {
     });
 
     // Step 2: Register user with company_id
-    await base44.auth.register({
+    await base44.asServiceRole.auth.register({
       email: email,
       password: password,
       full_name: full_name,
       company_id: company.id,
-      role: "admin",
+      role: "user",
     });
 
     // Step 3: Mark invitation as accepted
