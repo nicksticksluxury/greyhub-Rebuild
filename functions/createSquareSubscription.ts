@@ -150,32 +150,39 @@ Deno.serve(async (req) => {
 
     const catalogObjectId = catalogData.catalog_object.id;
 
-    // Retrieve the plan with related objects to get the variation
-    const retrieveResponse = await fetch(`${apiBaseUrl}/v2/catalog/object/${catalogObjectId}?include_related_objects=true`, {
-      method: 'GET',
+    // Search for the variation using catalog search
+    const searchResponse = await fetch(`${apiBaseUrl}/v2/catalog/search`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
+      body: JSON.stringify({
+        object_types: ['SUBSCRIPTION_PLAN_VARIATION'],
+        query: {
+          prefix_query: {
+            attribute_name: 'subscription_plan_id',
+            attribute_prefix: catalogObjectId,
+          }
+        }
+      }),
     });
 
-    const retrieveData = await retrieveResponse.json();
+    const searchData = await searchResponse.json();
 
-    if (!retrieveResponse.ok) {
-      throw new Error(`Failed to retrieve subscription plan: ${JSON.stringify(retrieveData.errors || retrieveData)}`);
+    if (!searchResponse.ok) {
+      throw new Error(`Failed to search for subscription plan variation: ${JSON.stringify(searchData.errors || searchData)}`);
     }
 
-    // Find the variation in related objects
+    // Find the variation for our plan
     let planVariationId = null;
-    if (retrieveData.related_objects && retrieveData.related_objects.length > 0) {
-      const variation = retrieveData.related_objects.find(obj => obj.type === 'SUBSCRIPTION_PLAN_VARIATION');
-      if (variation) {
-        planVariationId = variation.id;
-      }
+    if (searchData.objects && searchData.objects.length > 0) {
+      // Take the first variation found
+      planVariationId = searchData.objects[0].id;
     }
 
     if (!planVariationId) {
-      throw new Error(`No subscription plan variation found. Retrieve response: ${JSON.stringify(retrieveData)}`);
+      throw new Error(`No subscription plan variation found for plan ${catalogObjectId}. Search response: ${JSON.stringify(searchData)}`);
     }
 
     await base44.asServiceRole.entities.Log.create({
