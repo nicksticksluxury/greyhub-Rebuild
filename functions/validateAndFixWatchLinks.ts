@@ -6,6 +6,11 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+        // Ensure user has company_id or is admin
+        if (!user.company_id && user.role !== 'admin') {
+            return Response.json({ error: 'Access denied' }, { status: 403 });
+        }
+
         // Helper to fetch all records
         const fetchAll = async (entity) => {
             let all = [];
@@ -20,12 +25,13 @@ Deno.serve(async (req) => {
             return all;
         };
 
-        // 1. Load all data
+        // 1. Load all data - use user-scoped if user has company, service role if admin
+        const entityBase = user.company_id ? base44.entities : base44.asServiceRole.entities;
         const [watches, newSources, newOrders, oldSources] = await Promise.all([
-            fetchAll(base44.entities.Watch),
-            fetchAll(base44.entities.WatchSource),
-            fetchAll(base44.entities.SourceOrder),
-            fetchAll(base44.entities.Source)
+            fetchAll(entityBase.Watch),
+            fetchAll(entityBase.WatchSource),
+            fetchAll(entityBase.SourceOrder),
+            fetchAll(entityBase.Source)
         ]);
 
         const newSourceMap = new Map(newSources.map(s => [s.id, s]));

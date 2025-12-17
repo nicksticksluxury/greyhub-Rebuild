@@ -12,6 +12,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Restrict to system admins only
+    if (user.role !== 'admin' || user.company_id) {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
     const entities = ['Watch', 'WatchSource', 'SourceOrder', 'Auction', 'Setting', 'Alert', 'EbayLog', 'Log', 'ToastNotification', 'Company'];
     const report = {};
 

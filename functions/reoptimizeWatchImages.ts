@@ -5,17 +5,19 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         
         // Authenticate user
-        try {
-            const isAuth = await base44.auth.isAuthenticated();
-            if (!isAuth) {
-                return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-        } catch (authError) {
-            return Response.json({ error: 'Authentication failed', details: authError.message }, { status: 401 });
+        const user = await base44.auth.me();
+        if (!user) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get all watches
-        const watches = await base44.asServiceRole.entities.Watch.list();
+        // Ensure user has company_id or is admin
+        if (!user.company_id && user.role !== 'admin') {
+            return Response.json({ error: 'Access denied' }, { status: 403 });
+        }
+
+        // Get all watches - use user-scoped if user has company, service role if admin
+        const entityBase = user.company_id ? base44.entities : base44.asServiceRole.entities;
+        const watches = await entityBase.Watch.list();
         
         // Find watches with original URLs that need optimization
         const watchesToOptimize = watches.filter(watch => 
@@ -80,7 +82,7 @@ Deno.serve(async (req) => {
                 }
                 
                 // Update watch with optimized photos
-                await base44.asServiceRole.entities.Watch.update(watch.id, {
+                await entityBase.Watch.update(watch.id, {
                     photos: updatedPhotos,
                     images_optimized: true
                 });

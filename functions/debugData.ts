@@ -6,18 +6,23 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+        // Restrict to system admins only
+        if (user.role !== 'admin' || user.company_id) {
+            return Response.json({ error: 'Admin access required' }, { status: 403 });
+        }
+
         // 1. Count totals
-        const sources = await base44.entities.WatchSource.list(null, 10);
-        const orders = await base44.entities.SourceOrder.list(null, 10);
-        const allOrders = await base44.entities.SourceOrder.list(null, 1000);
+        const sources = await base44.asServiceRole.entities.WatchSource.list(null, 10);
+        const orders = await base44.asServiceRole.entities.SourceOrder.list(null, 10);
+        const allOrders = await base44.asServiceRole.entities.SourceOrder.list(null, 1000);
         
-        const totalSources = await base44.entities.WatchSource.list();
-        const totalOrders = await base44.entities.SourceOrder.list();
+        const totalSources = await base44.asServiceRole.entities.WatchSource.list();
+        const totalOrders = await base44.asServiceRole.entities.SourceOrder.list();
 
         // 2. Check relationships
         const relationships = [];
         for (const source of sources) {
-            const relatedOrders = await base44.entities.SourceOrder.filter({ source_id: source.id });
+            const relatedOrders = await base44.asServiceRole.entities.SourceOrder.filter({ source_id: source.id });
             relationships.push({
                 source_id: source.id,
                 source_name: source.name,

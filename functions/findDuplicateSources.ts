@@ -6,8 +6,11 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+        // Use user-scoped queries if user has company_id
+        const entityBase = user.company_id ? base44.entities : base44.asServiceRole.entities;
+        
         // Fetch all sources
-        const sources = await base44.entities.WatchSource.list(null, 1000); // Assuming < 1000 for now, need pagination if more
+        const sources = await entityBase.WatchSource.list(null, 1000); // Assuming < 1000 for now, need pagination if more
 
         const normalized = {};
         

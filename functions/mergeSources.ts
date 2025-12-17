@@ -5,6 +5,11 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+        // Ensure user has company_id or is admin
+        if (!user.company_id && user.role !== 'admin') {
+            return Response.json({ error: 'Access denied' }, { status: 403 });
+        }
         
         const { primaryId, duplicateIds, mode: requestMode } = await req.json();
         const mode = requestMode || 'merge_all';

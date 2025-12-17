@@ -6,8 +6,12 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
 
         if (!user) {
-            // Using service role for background tasks usually, but let's check user for now
-            // actually this is an admin function
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Restrict to authenticated users with company_id
+        if (!user.company_id && user.role !== 'admin') {
+            return Response.json({ error: 'Access denied' }, { status: 403 });
         }
 
         // Helper to fetch all records
@@ -24,11 +28,12 @@ Deno.serve(async (req) => {
             return all;
         };
 
-        // Load data
+        // Load data - use user-scoped queries if user has company, service role if admin
+        const entityBase = user.company_id ? base44.entities : base44.asServiceRole.entities;
         const [sources, orders, watches] = await Promise.all([
-            fetchAll(base44.asServiceRole.entities.WatchSource),
-            fetchAll(base44.asServiceRole.entities.SourceOrder),
-            fetchAll(base44.asServiceRole.entities.Watch)
+            fetchAll(entityBase.WatchSource),
+            fetchAll(entityBase.SourceOrder),
+            fetchAll(entityBase.Watch)
         ]);
 
         // Group orders by source
