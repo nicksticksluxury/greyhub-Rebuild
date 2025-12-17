@@ -116,12 +116,7 @@ Deno.serve(async (req) => {
       user_id: user.id,
     });
 
-    // Determine subscription plan details
-    const planDetails = plan_id === 'custom' 
-      ? { price: company.subscription_price || 50 }
-      : { price: 50 };
-
-    // First, create a subscription plan in the catalog
+    // Create a subscription plan in the catalog with variation
     const catalogResponse = await fetch(`${apiBaseUrl}/v2/catalog/object`, {
       method: 'POST',
       headers: {
@@ -134,13 +129,19 @@ Deno.serve(async (req) => {
           type: 'SUBSCRIPTION_PLAN',
           id: `#plan-${company.id}`,
           subscription_plan_data: {
-            name: `${company.name} - Monthly Subscription`,
-            phases: [{
-              cadence: 'MONTHLY',
-              periods: 1,
-              recurring_price_money: {
-                amount: planDetails.price * 100,
-                currency: 'USD',
+            name: `WatchVault Monthly - ${company.name}`,
+            subscription_plan_variations: [{
+              id: `#variation-${company.id}`,
+              type: 'SUBSCRIPTION_PLAN_VARIATION',
+              subscription_plan_variation_data: {
+                name: 'Monthly',
+                phases: [{
+                  cadence: 'MONTHLY',
+                  recurring_price_money: {
+                    amount: 5000, // $50.00
+                    currency: 'USD',
+                  },
+                }],
               },
             }],
           },
@@ -154,35 +155,8 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to create subscription plan: ${JSON.stringify(catalogData.errors || catalogData)}`);
     }
 
-    const catalogObjectId = catalogData.catalog_object.id;
-    
-    // Fetch the full catalog object to get variation IDs
-    const retrieveResponse = await fetch(`${apiBaseUrl}/v2/catalog/object/${catalogObjectId}?include_related_objects=true`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    const retrieveData = await retrieveResponse.json();
-
-    if (!retrieveResponse.ok) {
-      throw new Error(`Failed to retrieve subscription plan: ${JSON.stringify(retrieveData.errors || retrieveData)}`);
-    }
-
-    // Find the variation in related objects
-    let planVariationId = null;
-    if (retrieveData.related_objects && retrieveData.related_objects.length > 0) {
-      const variation = retrieveData.related_objects.find(obj => obj.type === 'SUBSCRIPTION_PLAN_VARIATION');
-      if (variation) {
-        planVariationId = variation.id;
-      }
-    }
-
-    if (!planVariationId) {
-      throw new Error('No subscription plan variation found in catalog response');
-    }
+    // Get the variation ID from the response
+    const planVariationId = catalogData.catalog_object.subscription_plan_data.subscription_plan_variations[0].id;
 
     await base44.asServiceRole.entities.Log.create({
       company_id: user.company_id,
@@ -190,7 +164,10 @@ Deno.serve(async (req) => {
       level: 'info',
       category: 'square_integration',
       message: 'Subscription plan created in catalog',
-      details: { catalog_object_id: catalogObjectId, plan_variation_id: planVariationId },
+      details: { 
+        catalog_object_id: catalogData.catalog_object.id, 
+        plan_variation_id: planVariationId 
+      },
       user_id: user.id,
     });
 
