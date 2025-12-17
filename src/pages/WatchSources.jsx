@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Search, Package, TrendingUp, DollarSign, Users, RefreshCw } from "lucide-react";
+import { Plus, Search, Package, TrendingUp, DollarSign, Users, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -60,6 +60,15 @@ export default function WatchSources() {
       toast.success("Source created successfully");
     },
     onError: (err) => toast.error("Failed to create source: " + err.message)
+  });
+
+  const deleteSourceMutation = useMutation({
+    mutationFn: (id) => base44.entities.WatchSource.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchSources'] });
+      toast.success("Source deleted successfully");
+    },
+    onError: (err) => toast.error("Failed to delete source: " + err.message)
   });
 
   const handleCreateSource = (e) => {
@@ -282,11 +291,25 @@ export default function WatchSources() {
                           </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link to={`${createPageUrl("WatchSourceDetail")}?id=${source.id}`}>
-                          <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8 w-8 p-0">
-                            <TrendingUp className="w-4 h-4" />
+                        <div className="flex items-center justify-end gap-1">
+                          <Link to={`${createPageUrl("WatchSourceDetail")}?id=${source.id}`}>
+                            <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 h-8 w-8 p-0">
+                              <TrendingUp className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                            onClick={() => {
+                              if (confirm(`Delete source "${source.name}"? This will not delete associated watches.`)) {
+                                deleteSourceMutation.mutate(source.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
-                        </Link>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
