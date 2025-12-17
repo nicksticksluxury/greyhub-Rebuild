@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import * as Square from 'npm:square';
 
 // Verify Square webhook signature
 function verifySignature(body, signature, signatureKey, url) {
