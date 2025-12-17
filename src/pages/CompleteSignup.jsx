@@ -136,8 +136,8 @@ export default function CompleteSignup() {
       // Clear localStorage
       localStorage.removeItem('signup_token');
 
-      // Force a complete page reload to refresh session with new company_id
-      window.location.href = "/";
+      // Force logout to clear old session token, then redirect to Inventory (which will trigger fresh login)
+      base44.auth.logout("/Inventory");
 
     } catch (err) {
       console.error(err);
