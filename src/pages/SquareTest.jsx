@@ -15,6 +15,7 @@ export default function SquareTest() {
   const [planId, setPlanId] = useState("standard");
   const [isCreating, setIsCreating] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -36,6 +37,11 @@ export default function SquareTest() {
   const { data: squareLogs = [] } = useQuery({
     queryKey: ['squareLogs'],
     queryFn: () => base44.entities.Log.filter({ category: 'square_integration' }, "-timestamp", 100),
+  });
+
+  const { data: watches = [] } = useQuery({
+    queryKey: ['watches'],
+    queryFn: () => base44.entities.Watch.filter({ sold: false }),
   });
 
   const handleCreateSubscription = async () => {
@@ -82,6 +88,37 @@ export default function SquareTest() {
       toast.error("Error: " + error.message);
     } finally {
       setIsCanceling(false);
+    }
+  };
+
+  const handleSyncAllWatches = async () => {
+    if (!watches.length) {
+      toast.error("No watches to sync");
+      return;
+    }
+
+    if (!confirm(`Sync all ${watches.length} unsold watches to Square?`)) return;
+
+    setIsSyncingAll(true);
+    const toastId = toast.loading(`Syncing ${watches.length} watches to Square...`);
+    try {
+      const watchIds = watches.map(w => w.id);
+      const result = await base44.functions.invoke("syncWatchesToSquare", { watch_ids: watchIds });
+      
+      if (result.data.success) {
+        const { success, failed } = result.data.results;
+        if (failed > 0) {
+          toast.error(`Synced ${success}, failed ${failed}`, { id: toastId });
+        } else {
+          toast.success(`Successfully synced ${success} watches to Square!`, { id: toastId });
+        }
+      } else {
+        toast.error("Sync failed: " + (result.data.error || "Unknown error"), { id: toastId });
+      }
+    } catch (error) {
+      toast.error("Error: " + error.message, { id: toastId });
+    } finally {
+      setIsSyncingAll(false);
     }
   };
 
@@ -189,6 +226,44 @@ export default function SquareTest() {
                 <>
                   <CreditCard className="w-4 h-4 mr-2" />
                   Create Subscription
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Sync All Watches */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="w-5 h-5" />
+              Sync Inventory to Square
+            </CardTitle>
+            <CardDescription>
+              Import all unsold watches to Square catalog
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium text-slate-900">{watches.length} unsold watches</p>
+                <p className="text-sm text-slate-500">Ready to sync to Square</p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleSyncAllWatches} 
+              disabled={isSyncingAll || watches.length === 0}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isSyncingAll ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Sync All Watches
                 </>
               )}
             </Button>
