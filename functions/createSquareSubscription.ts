@@ -150,8 +150,8 @@ Deno.serve(async (req) => {
 
     const catalogObjectId = catalogData.catalog_object.id;
 
-    // List catalog objects to find the variation
-    const listResponse = await fetch(`${apiBaseUrl}/v2/catalog/list?types=SUBSCRIPTION_PLAN_VARIATION`, {
+    // Retrieve the plan with related objects to get the variation
+    const retrieveResponse = await fetch(`${apiBaseUrl}/v2/catalog/object/${catalogObjectId}?include_related_objects=true`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -159,26 +159,23 @@ Deno.serve(async (req) => {
       },
     });
 
-    const listData = await listResponse.json();
+    const retrieveData = await retrieveResponse.json();
 
-    if (!listResponse.ok) {
-      throw new Error(`Failed to list catalog objects: ${JSON.stringify(listData.errors || listData)}`);
+    if (!retrieveResponse.ok) {
+      throw new Error(`Failed to retrieve subscription plan: ${JSON.stringify(retrieveData.errors || retrieveData)}`);
     }
 
-    // Find the variation that belongs to our plan
+    // Find the variation in related objects
     let planVariationId = null;
-    if (listData.objects) {
-      const variation = listData.objects.find(obj => 
-        obj.type === 'SUBSCRIPTION_PLAN_VARIATION' && 
-        obj.subscription_plan_variation_data?.subscription_plan_id === catalogObjectId
-      );
+    if (retrieveData.related_objects && retrieveData.related_objects.length > 0) {
+      const variation = retrieveData.related_objects.find(obj => obj.type === 'SUBSCRIPTION_PLAN_VARIATION');
       if (variation) {
         planVariationId = variation.id;
       }
     }
 
     if (!planVariationId) {
-      throw new Error(`No subscription plan variation found for plan ${catalogObjectId}. List response: ${JSON.stringify(listData)}`);
+      throw new Error(`No subscription plan variation found. Retrieve response: ${JSON.stringify(retrieveData)}`);
     }
 
     await base44.asServiceRole.entities.Log.create({
