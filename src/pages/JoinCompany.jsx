@@ -44,11 +44,13 @@ export default function JoinCompany() {
   };
 
   const handleContinue = () => {
-    // Store token for CompleteSignup page
+    // Store token and invitation email for CompleteSignup page
     localStorage.setItem('signup_token', token);
+    localStorage.setItem('signup_email', invitation.email);
     
-    // Use Base44's auth redirect which handles the app context correctly
-    base44.auth.redirectToLogin(`${window.location.origin}/CompleteSignup`);
+    // Redirect to app's signup page with return URL
+    const returnUrl = encodeURIComponent(`${window.location.origin}/CompleteSignup`);
+    window.location.href = `${window.location.origin}/signup?next=${returnUrl}`;
   };
 
   if (loading) {
