@@ -66,10 +66,10 @@ export default function JoinCompany() {
       localStorage.setItem('signup_payment_token', paymentToken);
       localStorage.setItem('signup_plan', 'standard');
 
-      // Redirect to Base44's signup page
-      // After signup, user will be redirected to CompleteSignup page
-      const signupUrl = `https://base44.app/signup?app_id=${Deno.env.get('BASE44_APP_ID')}&redirect_url=${encodeURIComponent(window.location.origin + '/CompleteSignup')}`;
-      window.location.href = signupUrl;
+      // Redirect to Base44's login page (which handles signup)
+      // After signup/login, user will be redirected to CompleteSignup page
+      const callbackUrl = `${window.location.origin}/CompleteSignup`;
+      base44.auth.redirectToLogin(callbackUrl);
 
     } catch (err) {
       console.error(err);
