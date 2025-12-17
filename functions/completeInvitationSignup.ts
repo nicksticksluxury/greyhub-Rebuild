@@ -50,25 +50,45 @@ Deno.serve(async (req) => {
     // Step 2: Register user with company_id
     console.log("Registering user:", email);
     const appId = Deno.env.get("BASE44_APP_ID");
-    
-    const authResponse = await fetch(`https://api.base44.com/v1/apps/${appId}/users`, {
+    console.log("DEBUG - App ID:", appId);
+
+    const url = `https://api.base44.com/v1/apps/${appId}/users`;
+    console.log("DEBUG - Registration URL:", url);
+
+    const requestBody = {
+      email: email,
+      password: password,
+      full_name: full_name,
+      company_id: companyId,
+      role: invitation.role || "user"
+    };
+    console.log("DEBUG - Request body:", JSON.stringify(requestBody, null, 2));
+
+    const authResponse = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Service-Role-Key': 'true'
       },
-      body: JSON.stringify({
-        email: email,
-        password: password,
-        full_name: full_name,
-        company_id: companyId,
-        role: invitation.role || "user"
-      })
+      body: JSON.stringify(requestBody)
     });
 
-    const authResult = await authResponse.json();
+    console.log("DEBUG - Response status:", authResponse.status);
+    console.log("DEBUG - Response headers:", Object.fromEntries(authResponse.headers.entries()));
+
+    const responseText = await authResponse.text();
+    console.log("DEBUG - Raw response text:", responseText.substring(0, 500));
+
+    let authResult;
+    try {
+      authResult = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse response as JSON:", parseError.message);
+      throw new Error(`API returned non-JSON response: ${responseText.substring(0, 200)}`);
+    }
+
     console.log("User registration result:", { status: authResponse.status, ok: authResponse.ok });
-    
+
     if (!authResponse.ok) {
       console.error("Registration failed:", authResult);
       throw new Error(authResult.error || authResult.message || 'User registration failed');
