@@ -209,14 +209,20 @@ Deno.serve(async (req) => {
 
           console.log(`Cancelled subscription for company ${company.id}`);
 
-          // Create alert for the company
-          await base44.asServiceRole.entities.Alert.create({
-            company_id: company.id,
-            type: 'warning',
-            title: 'Subscription Cancelled',
-            message: 'Your subscription has been cancelled. Please renew to continue using the service.',
-            metadata: { subscription_id: subscription.id, source: 'square' },
-          });
+          // Get all users in the company to create alerts
+          const companyUsers = await base44.asServiceRole.entities.User.filter({ company_id: company.id });
+          
+          // Create alert for each user in the company
+          for (const companyUser of companyUsers) {
+            await base44.asServiceRole.entities.Alert.create({
+              company_id: company.id,
+              user_id: companyUser.id,
+              type: 'warning',
+              title: 'Subscription Cancelled',
+              message: 'Your subscription has been cancelled. Please renew to continue using the service.',
+              metadata: { subscription_id: subscription.id, source: 'square' },
+            });
+          }
 
           await base44.asServiceRole.entities.Log.create({
             company_id: company.id,
@@ -271,14 +277,20 @@ Deno.serve(async (req) => {
 
           console.log(`Payment received for company ${company.id}`);
 
-          // Create success alert
-          await base44.asServiceRole.entities.Alert.create({
-            company_id: company.id,
-            type: 'success',
-            title: 'Payment Received',
-            message: 'Your payment has been successfully processed. Thank you!',
-            metadata: { invoice_id: invoice.id, source: 'square' },
-          });
+          // Get all users in the company to create alerts
+          const companyUsers = await base44.asServiceRole.entities.User.filter({ company_id: company.id });
+          
+          // Create success alert for each user
+          for (const companyUser of companyUsers) {
+            await base44.asServiceRole.entities.Alert.create({
+              company_id: company.id,
+              user_id: companyUser.id,
+              type: 'success',
+              title: 'Payment Received',
+              message: 'Your payment has been successfully processed. Thank you!',
+              metadata: { invoice_id: invoice.id, source: 'square' },
+            });
+          }
 
           await base44.asServiceRole.entities.Log.create({
             company_id: company.id,
@@ -322,14 +334,20 @@ Deno.serve(async (req) => {
             subscription_status: 'inactive',
           });
 
-          // Create an alert
-          await base44.asServiceRole.entities.Alert.create({
-            company_id: company.id,
-            type: 'error',
-            title: 'Payment Failed',
-            message: 'Your subscription payment has failed. Please update your payment method to avoid service interruption.',
-            metadata: { invoice_id: invoice.id, source: 'square' },
-          });
+          // Get all users in the company to create alerts
+          const companyUsers = await base44.asServiceRole.entities.User.filter({ company_id: company.id });
+          
+          // Create alert for each user
+          for (const companyUser of companyUsers) {
+            await base44.asServiceRole.entities.Alert.create({
+              company_id: company.id,
+              user_id: companyUser.id,
+              type: 'error',
+              title: 'Payment Failed',
+              message: 'Your subscription payment has failed. Please update your payment method to avoid service interruption.',
+              metadata: { invoice_id: invoice.id, source: 'square' },
+            });
+          }
 
           console.log(`Payment failed for company ${company.id}`);
 
@@ -440,14 +458,20 @@ Deno.serve(async (req) => {
                   quantity: 0,
                 });
 
-                // Create alert for the company
-                await base44.asServiceRole.entities.Alert.create({
-                  company_id: watch.company_id,
-                  type: 'success',
-                  title: 'Watch Sold on Square',
-                  message: `${watch.brand} ${watch.model} sold for $${soldPrice}`,
-                  metadata: { watch_id: watch.id, order_id: order.id, source: 'square' },
-                });
+                // Get all users in the company to create alerts
+                const companyUsers = await base44.asServiceRole.entities.User.filter({ company_id: watch.company_id });
+                
+                // Create alert for each user
+                for (const companyUser of companyUsers) {
+                  await base44.asServiceRole.entities.Alert.create({
+                    company_id: watch.company_id,
+                    user_id: companyUser.id,
+                    type: 'success',
+                    title: 'Watch Sold on Square',
+                    message: `${watch.brand} ${watch.model} sold for $${soldPrice}`,
+                    metadata: { watch_id: watch.id, order_id: order.id, source: 'square' },
+                  });
+                }
 
                 await base44.asServiceRole.entities.Log.create({
                   company_id: watch.company_id,
