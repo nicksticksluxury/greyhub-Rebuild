@@ -136,8 +136,13 @@ export default function CompleteSignup() {
       // Clear localStorage
       localStorage.removeItem('signup_token');
 
-      // Force a complete page reload to refresh session with new company_id
-      window.location.href = "/";
+      // CRITICAL: Force logout to clear old JWT token, then login again to get new token with company_id
+      // This is necessary because the user's JWT was created before company_id was assigned
+      await base44.auth.logout();
+      
+      // After logout, redirect to login with return URL to Inventory
+      const returnUrl = `${window.location.origin}/Inventory`;
+      window.location.href = `https://accounts.base44.app/login?redirect_uri=${encodeURIComponent(returnUrl)}`;
 
     } catch (err) {
       console.error(err);
