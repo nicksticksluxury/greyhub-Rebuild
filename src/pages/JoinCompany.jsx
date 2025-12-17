@@ -37,11 +37,11 @@ export default function JoinCompany() {
     try {
       const user = await base44.auth.me();
       setCurrentUser(user);
-      await validateInvitation(inviteToken);
     } catch (err) {
-      // User not logged in - show login message
-      setLoading(false);
+      // User not logged in - that's ok
     }
+    // Validate invitation regardless of auth status
+    await validateInvitation(inviteToken);
   };
 
   const validateInvitation = async (inviteToken) => {
