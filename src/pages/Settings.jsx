@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink, Sparkles, FileText, Trash2, Loader2 } from "lucide-react";
+import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink, Sparkles, FileText, Trash2, Loader2, UserPlus, Link as LinkIcon } from "lucide-react";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -17,6 +17,9 @@ export default function Settings() {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualUrl, setManualUrl] = useState("");
   const [reoptimizing, setReoptimizing] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteCompanyName, setInviteCompanyName] = useState("");
+  const [creatingInvite, setCreatingInvite] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -45,6 +48,15 @@ export default function Settings() {
   const { data: ebayLogs = [] } = useQuery({
     queryKey: ['ebayLogs'],
     queryFn: () => base44.entities.EbayLog.list("-timestamp", 100),
+  });
+
+  const { data: invitations = [] } = useQuery({
+    queryKey: ['allInvitations'],
+    queryFn: async () => {
+      // System admin can see all invitations
+      const invites = await base44.asServiceRole.entities.Invitation.list("-created_date", 100);
+      return invites;
+    },
   });
 
   const { data: debugLogs = [] } = useQuery({
@@ -232,6 +244,60 @@ export default function Settings() {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(tokenValue);
     toast.success("Token copied to clipboard");
+  };
+
+  const handleCreateInvite = async () => {
+    if (!inviteEmail || !inviteCompanyName) {
+      toast.error("Please enter both email and company name");
+      return;
+    }
+
+    setCreatingInvite(true);
+    try {
+      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+
+      await base44.asServiceRole.entities.Invitation.create({
+        company_id: "system", // Placeholder for system-generated invites
+        email: inviteEmail,
+        token: token,
+        status: "pending",
+        role: "admin",
+        invited_by: user?.email || "System Admin",
+        expires_at: expiresAt,
+      });
+
+      const inviteUrl = `${window.location.origin}/JoinCompany?token=${token}&email=${encodeURIComponent(inviteEmail)}&company=${encodeURIComponent(inviteCompanyName)}`;
+      
+      navigator.clipboard.writeText(inviteUrl);
+      toast.success("Invite created and link copied to clipboard!");
+      
+      setInviteEmail("");
+      setInviteCompanyName("");
+      queryClient.invalidateQueries({ queryKey: ['allInvitations'] });
+    } catch (error) {
+      toast.error("Failed to create invite: " + error.message);
+    } finally {
+      setCreatingInvite(false);
+    }
+  };
+
+  const copyInviteLink = (token, email, companyName) => {
+    const inviteUrl = `${window.location.origin}/JoinCompany?token=${token}&email=${encodeURIComponent(email)}&company=${encodeURIComponent(companyName || 'Company')}`;
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success("Invite link copied to clipboard!");
+  };
+
+  const deleteInvite = async (inviteId) => {
+    if (!confirm("Delete this invitation?")) return;
+    
+    try {
+      await base44.asServiceRole.entities.Invitation.delete(inviteId);
+      toast.success("Invitation deleted");
+      queryClient.invalidateQueries({ queryKey: ['allInvitations'] });
+    } catch (error) {
+      toast.error("Failed to delete invitation");
+    }
   };
 
   const handleSave = () => {
