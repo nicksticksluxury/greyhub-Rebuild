@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
       category: 'square_integration',
       message: 'Subscription plan created in catalog',
       details: { 
-        catalog_object_id: catalogData.catalog_object.id, 
+        plan_id: plan?.id, 
         plan_variation_id: planVariationId 
       },
       user_id: user.id,
