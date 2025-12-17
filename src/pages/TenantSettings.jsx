@@ -35,11 +35,6 @@ export default function TenantSettings() {
     queryFn: () => base44.entities.Setting.list(),
   });
 
-  const { data: ebayLogs = [] } = useQuery({
-    queryKey: ['ebayLogs'],
-    queryFn: () => base44.entities.EbayLog.list("-timestamp", 100),
-  });
-
   const tokenSetting = settings?.find(s => s.key === 'ebay_verification_token');
   const accessTokenSetting = settings?.find(s => s.key === 'ebay_user_access_token');
   const tokenExpirySetting = settings?.find(s => s.key === 'ebay_token_expiry');
