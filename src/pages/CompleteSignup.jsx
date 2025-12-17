@@ -38,19 +38,21 @@ export default function CompleteSignup() {
         return;
       }
 
-      // Check authentication
+      // Check authentication - redirect to login/signup if not authenticated
       let currentUser;
       try {
         currentUser = await base44.auth.me();
       } catch (err) {
-        setError("Please complete Base44 signup first");
-        setLoading(false);
+        // User not authenticated - redirect to Base44 login with return URL
+        const returnUrl = `${window.location.origin}/CompleteSignup`;
+        base44.auth.redirectToLogin(returnUrl);
         return;
       }
       
       if (!currentUser) {
-        setError("Please complete Base44 signup first");
-        setLoading(false);
+        // User not authenticated - redirect to Base44 login with return URL
+        const returnUrl = `${window.location.origin}/CompleteSignup`;
+        base44.auth.redirectToLogin(returnUrl);
         return;
       }
 
@@ -91,12 +93,17 @@ export default function CompleteSignup() {
     setError("");
 
     try {
-      // Update company with details
-      await base44.asServiceRole.entities.Company.update(company.id, {
+      // Update company with details via backend function
+      const updateResult = await base44.functions.invoke('updateCompanyDetails', {
+        company_id: company.id,
         name: companyDetails.company_name,
         address: companyDetails.address,
         phone: companyDetails.phone,
       });
+
+      if (!updateResult.data.success) {
+        throw new Error(updateResult.data.error || "Failed to update company");
+      }
 
       setStep(2);
       setSubmitting(false);
