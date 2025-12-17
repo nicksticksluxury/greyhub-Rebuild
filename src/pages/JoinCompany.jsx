@@ -13,13 +13,11 @@ export default function JoinCompany() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    full_name: "",
     company_name: "",
   });
   const [paymentToken, setPaymentToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -32,8 +30,19 @@ export default function JoinCompany() {
     }
 
     setToken(inviteToken);
-    validateInvitation(inviteToken);
+    checkAuthAndValidate(inviteToken);
   }, []);
+
+  const checkAuthAndValidate = async (inviteToken) => {
+    try {
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+      await validateInvitation(inviteToken);
+    } catch (err) {
+      // User not logged in - show login message
+      setLoading(false);
+    }
+  };
 
   const validateInvitation = async (inviteToken) => {
     try {
@@ -46,7 +55,6 @@ export default function JoinCompany() {
       }
 
       setInvitation(result.data.invitation);
-      setFormData(prev => ({ ...prev, email: result.data.invitation.email }));
       setLoading(false);
     } catch (err) {
       setError("Failed to validate invitation");
@@ -54,24 +62,35 @@ export default function JoinCompany() {
     }
   };
 
+  const handleLogin = () => {
+    localStorage.setItem('pending_invitation_token', token);
+    base44.auth.redirectToLogin(window.location.href);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setSubmitting(true);
     setError("");
 
     try {
-      // Store data for after signup
-      localStorage.setItem('signup_token', token);
-      localStorage.setItem('signup_payment_token', paymentToken);
-      localStorage.setItem('signup_plan', 'standard');
+      // Call backend to complete signup
+      const result = await base44.functions.invoke('completeInvitationSignup', {
+        token,
+        payment_token: paymentToken,
+        plan_id: 'standard',
+        company_name: formData.company_name
+      });
 
-      // Redirect to CompleteSignup - user needs to sign up via Base44's system first
-      window.location.href = '/CompleteSignup';
+      if (!result.data.success) {
+        throw new Error(result.data.error || "Failed to complete signup");
+      }
+
+      // Redirect to home
+      window.location.href = "/";
 
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to initiate signup");
+      setError(err.message || "Failed to complete signup");
       setSubmitting(false);
     }
   };
@@ -105,6 +124,40 @@ export default function JoinCompany() {
     );
   }
 
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <div className="flex items-center gap-2 text-green-600 mb-2">
+              <CheckCircle className="w-6 h-6" />
+              <span className="text-sm font-medium">Valid Invitation</span>
+            </div>
+            <CardTitle>Login Required</CardTitle>
+            <CardDescription>
+              You've been invited to join WatchVault. Please log in or sign up to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-100 rounded-lg">
+                <p className="text-sm text-slate-600">
+                  <strong>Email:</strong> {invitation?.email}
+                </p>
+              </div>
+              <Button 
+                onClick={handleLogin}
+                className="w-full bg-slate-800 hover:bg-slate-900"
+              >
+                Login / Sign Up
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <Card className="max-w-2xl w-full">
@@ -113,9 +166,9 @@ export default function JoinCompany() {
             <CheckCircle className="w-6 h-6" />
             <span className="text-sm font-medium">Valid Invitation</span>
           </div>
-          <CardTitle>Create Your WatchVault Account</CardTitle>
+          <CardTitle>Complete Your WatchVault Setup</CardTitle>
           <CardDescription>
-            You've been invited to join WatchVault. Complete the form below to get started with your 30-day trial.
+            Welcome {currentUser.full_name || currentUser.email}! Complete the form below to start your 30-day trial.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -136,28 +189,6 @@ export default function JoinCompany() {
                   required
                 />
               </div>
-
-              <div>
-                <Label>Full Name</Label>
-                <Input
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                  placeholder="John Doe"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  disabled
-                  className="bg-slate-100"
-                />
-              </div>
-
-
 
               <div className="border-t pt-4">
                 <h3 className="font-semibold mb-2">Payment Information</h3>
@@ -190,7 +221,7 @@ export default function JoinCompany() {
                   Creating Account...
                 </>
               ) : (
-                "Complete Signup"
+                "Complete Setup"
               )}
             </Button>
           </form>

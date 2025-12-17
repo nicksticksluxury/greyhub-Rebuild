@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     
-    const { token, plan_id, payment_token } = body;
+    const { token, plan_id, payment_token, company_name } = body;
 
     // Get authenticated user
     const user = await base44.auth.me();
@@ -25,13 +25,31 @@ Deno.serve(async (req) => {
 
     const invitation = invitations[0];
 
-    if (!invitation.company_id) {
-      return Response.json({ success: false, error: 'Invalid invitation - no company assigned' });
+    // Create company if needed (invitation might not have company_id yet)
+    let companyId = invitation.company_id;
+    
+    if (!companyId && company_name) {
+      const company = await base44.asServiceRole.entities.Company.create({
+        name: company_name,
+        email: user.email,
+        subscription_status: 'trial',
+        trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      });
+      companyId = company.id;
+
+      // Update invitation with company_id
+      await base44.asServiceRole.entities.Invitation.update(invitation.id, {
+        company_id: companyId
+      });
+    }
+
+    if (!companyId) {
+      return Response.json({ success: false, error: 'Failed to create or find company' });
     }
 
     // Update user with company_id and role
     await base44.asServiceRole.auth.updateUser(user.id, {
-      company_id: invitation.company_id,
+      company_id: companyId,
       role: invitation.role || 'user'
     });
 
@@ -41,7 +59,7 @@ Deno.serve(async (req) => {
         const subscriptionResult = await base44.asServiceRole.functions.invoke('createSquareSubscription', {
           payment_token,
           plan_id: plan_id || 'standard',
-          company_id: invitation.company_id
+          company_id: companyId
         });
 
         if (!subscriptionResult.data.success) {
@@ -60,7 +78,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ 
       success: true, 
-      company_id: invitation.company_id
+      company_id: companyId
     });
 
   } catch (error) {
