@@ -48,9 +48,9 @@ export default function JoinCompany() {
     localStorage.setItem('signup_token', token);
     localStorage.setItem('signup_email', invitation.email);
     
-    // Redirect to app's signup page with return URL
+    // Redirect to Base44's signup page with return URL
     const returnUrl = encodeURIComponent(`${window.location.origin}/CompleteSignup`);
-    window.location.href = `${window.location.origin}/signup?next=${returnUrl}`;
+    window.location.href = `https://base44.app/signup?next=${returnUrl}`;
   };
 
   if (loading) {
