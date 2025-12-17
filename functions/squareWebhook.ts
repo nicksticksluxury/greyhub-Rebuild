@@ -112,10 +112,6 @@ Deno.serve(async (req) => {
       details: { event_type: event.type, event_id: event.event_id },
     });
 
-    // Get Square environment setting (for any API calls if needed)
-    const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment' });
-    const squareEnv = envSettings[0]?.value === 'sandbox' ? Square.Environment.Sandbox : Square.Environment.Production;
-
     // Handle different event types
     switch (event.type) {
       case 'subscription.created':
