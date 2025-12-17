@@ -16,6 +16,7 @@ import CompanySettings from './pages/CompanySettings';
 import AcceptInvitation from './pages/AcceptInvitation';
 import SystemAdmin from './pages/SystemAdmin';
 import SquareTest from './pages/SquareTest';
+import JoinCompany from './pages/JoinCompany';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "AcceptInvitation": AcceptInvitation,
     "SystemAdmin": SystemAdmin,
     "SquareTest": SquareTest,
+    "JoinCompany": JoinCompany,
 }
 
 export const pagesConfig = {
