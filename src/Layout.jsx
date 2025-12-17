@@ -68,11 +68,6 @@ const navigationItems = [
     url: createPageUrl("Settings"),
     icon: Settings,
   },
-  {
-    title: "Square Test",
-    url: createPageUrl("SquareTest"),
-    icon: Settings,
-  },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -133,6 +128,11 @@ export default function Layout({ children, currentPageName }) {
       title: "System Admin",
       url: createPageUrl("SystemAdmin"),
       icon: Shield,
+    },
+    {
+      title: "System Settings",
+      url: createPageUrl("Settings"),
+      icon: Settings,
     },
   ];
 
