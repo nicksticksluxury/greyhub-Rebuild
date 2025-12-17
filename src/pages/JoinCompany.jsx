@@ -82,8 +82,8 @@ export default function JoinCompany() {
       // Login with the newly created account
       await base44.auth.login(formData.email, formData.password);
 
-      // Redirect to dashboard
-      window.location.href = "/";
+      // Redirect to inventory
+      window.location.href = "/Inventory";
 
     } catch (err) {
       console.error(err);
