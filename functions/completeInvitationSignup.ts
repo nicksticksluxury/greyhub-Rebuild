@@ -27,17 +27,25 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: 'This invitation has expired' });
     }
 
-    // Step 1: Create company
-    console.log("Creating company:", company_name);
-    const company = await base44.asServiceRole.entities.Company.create({
-      name: company_name,
-      email: email,
-      subscription_status: "trial",
-      subscription_plan: "standard",
-      subscription_price: 50,
-      trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    });
-    console.log("Company created:", company.id);
+    // Check if invitation has company_id that's not "system"
+    let companyId = invitation.company_id;
+    
+    if (!companyId || companyId === "system") {
+      // Step 1: Create new company for system admin invitations
+      console.log("Creating new company:", company_name);
+      const company = await base44.asServiceRole.entities.Company.create({
+        name: company_name,
+        email: email,
+        subscription_status: "trial",
+        subscription_plan: "standard",
+        subscription_price: 50,
+        trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+      console.log("Company created:", company.id);
+      companyId = company.id;
+    } else {
+      console.log("Using existing company:", companyId);
+    }
 
     // Step 2: Register user with company_id
     console.log("Registering user:", email);
@@ -45,8 +53,8 @@ Deno.serve(async (req) => {
       email: email,
       password: password,
       full_name: full_name,
-      company_id: company.id,
-      role: "user",
+      company_id: companyId,
+      role: invitation.role || "user",
     });
     console.log("User registration result:", registerResult.data);
 
@@ -57,7 +65,7 @@ Deno.serve(async (req) => {
     });
     console.log("Signup completed successfully");
 
-    return Response.json({ success: true, company_id: company.id });
+    return Response.json({ success: true, company_id: companyId });
 
   } catch (error) {
     console.error("Signup error details:", {
