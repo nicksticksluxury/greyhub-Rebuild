@@ -237,13 +237,67 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case 'card.created': {
+        if (!event.data?.object?.card) {
+          console.error('Invalid card.created event structure');
+          break;
+        }
+
+        const card = event.data.object.card;
+
+        if (!card.customer_id) {
+          console.error('Missing customer ID in card.created event');
+          break;
+        }
+
+        const companies = await base44.asServiceRole.entities.Company.filter({
+          square_customer_id: card.customer_id
+        });
+
+        if (companies.length > 0) {
+          const company = companies[0];
+
+          // Get all users in the company to create alerts
+          const companyUsers = await base44.asServiceRole.entities.User.filter({ company_id: company.id });
+
+          // Create success alert for each user
+          for (const companyUser of companyUsers) {
+            await base44.asServiceRole.entities.Alert.create({
+              company_id: company.id,
+              user_id: companyUser.id,
+              type: 'success',
+              title: 'Payment Method Added',
+              message: `Payment card ending in ${card.last_4} has been successfully added to your account.`,
+              metadata: { card_id: card.id, source: 'square' },
+            });
+          }
+
+          await base44.asServiceRole.entities.Log.create({
+            company_id: company.id,
+            timestamp: new Date().toISOString(),
+            level: 'success',
+            category: 'square_integration',
+            message: 'Payment card added',
+            details: { 
+              card_id: card.id,
+              customer_id: card.customer_id,
+              last_4: card.last_4,
+              card_brand: card.card_brand,
+            },
+          });
+        } else {
+          console.warn(`No company found with customer ID: ${card.customer_id}`);
+        }
+        break;
+      }
+
       case 'payment.created':
       case 'payment.updated': {
         const payment = event.data.object.payment;
-        
+
         // Log payment for record-keeping
         console.log('Payment event:', payment.id, payment.status);
-        
+
         // You could create a Payment entity to track these
         break;
       }
