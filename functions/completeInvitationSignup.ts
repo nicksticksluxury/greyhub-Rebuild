@@ -49,14 +49,23 @@ Deno.serve(async (req) => {
 
     // Step 2: Register user with company_id
     console.log("Registering user:", email);
-    const registerResult = await base44.asServiceRole.functions.invoke('registerUser', {
-      email: email,
-      password: password,
-      full_name: full_name,
-      company_id: companyId,
-      role: invitation.role || "user",
-    });
-    console.log("User registration result:", registerResult.data);
+    try {
+      const registerResult = await base44.asServiceRole.functions.invoke('registerUser', {
+        email: email,
+        password: password,
+        full_name: full_name,
+        company_id: companyId,
+        role: invitation.role || "user",
+      });
+      console.log("User registration result:", registerResult.data);
+      
+      if (!registerResult.data.success) {
+        throw new Error(registerResult.data.error || "User registration failed");
+      }
+    } catch (registerError) {
+      console.error("Registration failed:", registerError);
+      throw new Error("Failed to register user: " + registerError.message);
+    }
 
     // Step 3: Mark invitation as accepted
     console.log("Marking invitation as accepted");
