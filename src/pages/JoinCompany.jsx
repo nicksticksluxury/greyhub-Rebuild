@@ -62,10 +62,7 @@ export default function JoinCompany() {
     }
   };
 
-  const handleLogin = () => {
-    localStorage.setItem('pending_invitation_token', token);
-    base44.auth.redirectToLogin(window.location.href);
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,6 +70,13 @@ export default function JoinCompany() {
     setError("");
 
     try {
+      // Check if user is authenticated
+      if (!currentUser) {
+        setError("Please log in through Base44 first to complete signup");
+        setSubmitting(false);
+        return;
+      }
+
       // Call backend to complete signup
       const result = await base44.functions.invoke('completeInvitationSignup', {
         token,
@@ -124,39 +128,7 @@ export default function JoinCompany() {
     );
   }
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <div className="flex items-center gap-2 text-green-600 mb-2">
-              <CheckCircle className="w-6 h-6" />
-              <span className="text-sm font-medium">Valid Invitation</span>
-            </div>
-            <CardTitle>Login Required</CardTitle>
-            <CardDescription>
-              You've been invited to join WatchVault. Please log in or sign up to continue.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-100 rounded-lg">
-                <p className="text-sm text-slate-600">
-                  <strong>Email:</strong> {invitation?.email}
-                </p>
-              </div>
-              <Button 
-                onClick={handleLogin}
-                className="w-full bg-slate-800 hover:bg-slate-900"
-              >
-                Login / Sign Up
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
@@ -168,7 +140,11 @@ export default function JoinCompany() {
           </div>
           <CardTitle>Complete Your WatchVault Setup</CardTitle>
           <CardDescription>
-            Welcome {currentUser.full_name || currentUser.email}! Complete the form below to start your 30-day trial.
+            {currentUser ? (
+              <>Welcome {currentUser.full_name || currentUser.email}! Complete the form below to start your 30-day trial.</>
+            ) : (
+              <>You've been invited to join WatchVault for {invitation?.email}. Fill out the form below to get started.</>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
