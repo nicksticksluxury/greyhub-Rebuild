@@ -3,9 +3,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { token, company_name, full_name, email, password, payment_token } = await req.json();
+    const body = await req.json();
+    console.log("Signup request received:", { email: body.email, company_name: body.company_name });
+    
+    const { token, company_name, full_name, email, password, payment_token } = body;
 
     // Validate invitation first
+    console.log("Validating invitation token...");
     const invitations = await base44.asServiceRole.entities.Invitation.filter({ token });
     
     if (invitations.length === 0) {
@@ -24,6 +28,7 @@ Deno.serve(async (req) => {
     }
 
     // Step 1: Create company
+    console.log("Creating company:", company_name);
     const company = await base44.asServiceRole.entities.Company.create({
       name: company_name,
       email: email,
@@ -32,25 +37,34 @@ Deno.serve(async (req) => {
       subscription_price: 50,
       trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
+    console.log("Company created:", company.id);
 
     // Step 2: Register user with company_id
-    const registerResult = await base44.functions.invoke('registerUser', {
+    console.log("Registering user:", email);
+    const registerResult = await base44.asServiceRole.functions.invoke('registerUser', {
       email: email,
       password: password,
       full_name: full_name,
       company_id: company.id,
       role: "user",
     });
+    console.log("User registration result:", registerResult.data);
 
     // Step 3: Mark invitation as accepted
+    console.log("Marking invitation as accepted");
     await base44.asServiceRole.entities.Invitation.update(invitation.id, {
       status: "accepted"
     });
+    console.log("Signup completed successfully");
 
     return Response.json({ success: true, company_id: company.id });
 
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("Signup error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 });
