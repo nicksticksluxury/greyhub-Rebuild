@@ -49,22 +49,29 @@ Deno.serve(async (req) => {
 
     // Step 2: Register user with company_id
     console.log("Registering user:", email);
-    try {
-      const registerResult = await base44.asServiceRole.functions.invoke('registerUser', {
+    const appId = Deno.env.get("BASE44_APP_ID");
+    
+    const authResponse = await fetch(`https://api.base44.com/v1/apps/${appId}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Service-Role-Key': 'true'
+      },
+      body: JSON.stringify({
         email: email,
         password: password,
         full_name: full_name,
         company_id: companyId,
-        role: invitation.role || "user",
-      });
-      console.log("User registration result:", registerResult.data);
-      
-      if (!registerResult.data.success) {
-        throw new Error(registerResult.data.error || "User registration failed");
-      }
-    } catch (registerError) {
-      console.error("Registration failed:", registerError);
-      throw new Error("Failed to register user: " + registerError.message);
+        role: invitation.role || "user"
+      })
+    });
+
+    const authResult = await authResponse.json();
+    console.log("User registration result:", { status: authResponse.status, ok: authResponse.ok });
+    
+    if (!authResponse.ok) {
+      console.error("Registration failed:", authResult);
+      throw new Error(authResult.error || authResult.message || 'User registration failed');
     }
 
     // Step 3: Mark invitation as accepted
