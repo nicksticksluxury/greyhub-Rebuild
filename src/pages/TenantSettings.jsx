@@ -262,7 +262,7 @@ export default function TenantSettings() {
               <Button 
                 onClick={handleConnectEbay} 
                 disabled={isConnecting}
-                className={isConnected ? "bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200" : "bg-[#0064D2] hover:bg-[#0051a8] text-white"}
+                className={isConnected ? "bg-slate-800 hover:bg-slate-900 text-white" : "bg-[#0064D2] hover:bg-[#0051a8] text-white"}
               >
                 {isConnecting ? (
                   <>

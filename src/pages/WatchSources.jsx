@@ -50,7 +50,10 @@ export default function WatchSources() {
   };
 
   const createSourceMutation = useMutation({
-    mutationFn: (data) => base44.entities.WatchSource.create(data),
+    mutationFn: async (data) => {
+      const user = await base44.auth.me();
+      return base44.entities.WatchSource.create({ ...data, company_id: user.company_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['watchSources'] });
       setIsAddSourceOpen(false);
@@ -99,7 +102,7 @@ export default function WatchSources() {
              <Button 
                onClick={() => setShowMergeDialog(true)}
                variant="outline" 
-               className="bg-white border-slate-300 hover:bg-slate-50"
+               className="bg-white border-slate-300 hover:bg-slate-50 text-slate-900"
              >
                <GitMerge className="w-4 h-4 mr-2" />
                Check Duplicates
@@ -108,7 +111,7 @@ export default function WatchSources() {
                onClick={handleRecalculate} 
                disabled={recalculating}
                variant="outline" 
-               className="bg-white border-slate-300"
+               className="bg-white border-slate-300 text-slate-900"
              >
                <RefreshCw className={`w-4 h-4 mr-2 ${recalculating ? 'animate-spin' : ''}`} />
                Refresh Stats
@@ -339,8 +342,8 @@ export default function WatchSources() {
                         <Textarea name="notes" placeholder="Additional notes..." />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setIsAddSourceOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={createSourceMutation.isPending}>Create Source</Button>
+                        <Button type="button" variant="outline" onClick={() => setIsAddSourceOpen(false)} className="text-slate-900">Cancel</Button>
+                        <Button type="submit" disabled={createSourceMutation.isPending} className="bg-slate-800 hover:bg-slate-900 text-white">Create Source</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

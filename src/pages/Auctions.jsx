@@ -25,7 +25,10 @@ export default function Auctions() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Auction.create(data),
+    mutationFn: async (data) => {
+      const user = await base44.auth.me();
+      return base44.entities.Auction.create({ ...data, company_id: user.company_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auctions'] });
       setShowForm(false);
