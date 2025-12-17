@@ -121,7 +121,42 @@ Deno.serve(async (req) => {
       ? { price: company.subscription_price || 50 }
       : { price: 50 };
 
-    // Create subscription
+    // First, create a subscription plan in the catalog
+    const catalogResponse = await fetch(`${apiBaseUrl}/v2/catalog/object`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        idempotency_key: `plan-${company.id}-${Date.now()}`,
+        object: {
+          type: 'SUBSCRIPTION_PLAN',
+          id: `#plan-${company.id}`,
+          subscription_plan_data: {
+            name: `${company.name} - Monthly Subscription`,
+            phases: [{
+              cadence: 'MONTHLY',
+              periods: 1,
+              recurring_price_money: {
+                amount: planDetails.price * 100,
+                currency: 'USD',
+              },
+            }],
+          },
+        },
+      }),
+    });
+
+    const catalogData = await catalogResponse.json();
+
+    if (!catalogResponse.ok) {
+      throw new Error(`Failed to create subscription plan: ${JSON.stringify(catalogData.errors || catalogData)}`);
+    }
+
+    const planVariationId = catalogData.catalog_object.subscription_plan_data.subscription_plan_variations[0].id;
+
+    // Now create the subscription using the plan
     const subscriptionResponse = await fetch(`${apiBaseUrl}/v2/subscriptions`, {
       method: 'POST',
       headers: {
@@ -133,17 +168,7 @@ Deno.serve(async (req) => {
         location_id: locationId,
         customer_id: customerId,
         card_id: cardId,
-        plan_variation_data: {
-          name: `${company.name} - Monthly Subscription`,
-          phases: [{
-            cadence: 'MONTHLY',
-            periods: 1,
-            recurring_price_money: {
-              amount: planDetails.price * 100,
-              currency: 'USD',
-            },
-          }],
-        },
+        plan_variation_id: planVariationId,
       }),
     });
 
