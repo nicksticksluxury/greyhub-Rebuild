@@ -94,6 +94,68 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
 
+  // Build navigation based on user role
+  const navigationItems = React.useMemo(() => {
+    const items = [
+      {
+        title: "Dashboard",
+        url: createPageUrl("index"),
+        icon: LayoutList,
+      },
+      {
+        title: "Inventory",
+        url: createPageUrl("Inventory"),
+        icon: LayoutList,
+      },
+      {
+        title: "Out for Repair",
+        url: createPageUrl("OutForRepair"),
+        icon: Wrench,
+      },
+      {
+        title: "Sold",
+        url: createPageUrl("SoldInventory"),
+        icon: DollarSign,
+      },
+      {
+        title: "Add Watch",
+        url: createPageUrl("AddWatch"),
+        icon: Upload,
+      },
+      {
+        title: "Watch Sources",
+        url: createPageUrl("WatchSources"),
+        icon: Package,
+      },
+      {
+        title: "Auctions",
+        url: createPageUrl("Auctions"),
+        icon: Gavel,
+      },
+      {
+        title: "Company",
+        url: createPageUrl("CompanySettings"),
+        icon: Watch,
+      },
+      {
+        title: "Settings",
+        url: createPageUrl("TenantSettings"),
+        icon: Settings,
+      },
+    ];
+
+    // Add System Settings for admins
+    if (user?.role === 'admin') {
+      items.push({
+        title: "System Settings",
+        url: createPageUrl("Settings"),
+        icon: Shield,
+      });
+    }
+
+    return items;
+  }, [user]);
+
   useEffect(() => {
     const checkAuth = async () => {
       const publicPages = ['index', 'SalesView'];
