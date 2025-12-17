@@ -39,6 +39,19 @@ Deno.serve(async (req) => {
     }
 
     // Cancel subscription
+    await base44.asServiceRole.entities.Log.create({
+      company_id: user.company_id,
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      category: 'square_integration',
+      message: 'Attempting to cancel subscription',
+      details: { 
+        subscription_id: company.square_subscription_id,
+        url: `${apiBaseUrl}/v2/subscriptions/${company.square_subscription_id}/cancel`
+      },
+      user_id: user.id,
+    });
+
     const cancelResponse = await fetch(`${apiBaseUrl}/v2/subscriptions/${company.square_subscription_id}/cancel`, {
       method: 'POST',
       headers: {
@@ -48,6 +61,19 @@ Deno.serve(async (req) => {
     });
 
     const cancelData = await cancelResponse.json();
+
+    await base44.asServiceRole.entities.Log.create({
+      company_id: user.company_id,
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      category: 'square_integration',
+      message: 'Square cancellation API response',
+      details: { 
+        status: cancelResponse.status,
+        response: cancelData
+      },
+      user_id: user.id,
+    });
 
     if (!cancelResponse.ok) {
       throw new Error(`Failed to cancel subscription: ${JSON.stringify(cancelData.errors || cancelData)}`);
