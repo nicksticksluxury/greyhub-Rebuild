@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink, Sparkles, FileText, Trash2, Loader2, UserPlus, Link as LinkIcon } from "lucide-react";
+import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink, Sparkles, FileText, Trash2, Loader2, UserPlus, Link as LinkIcon, Building2, Users } from "lucide-react";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -56,6 +56,11 @@ export default function Settings() {
   const { data: debugLogs = [] } = useQuery({
     queryKey: ['debugLogs'],
     queryFn: () => base44.entities.Log.list("-timestamp", 200),
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['allCompanies'],
+    queryFn: () => base44.asServiceRole.entities.Company.list(),
   });
 
   const tokenSetting = settings?.find(s => s.key === 'ebay_verification_token');
@@ -358,6 +363,82 @@ export default function Settings() {
                 </>
               )}
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Companies</CardTitle>
+            <CardDescription>View and manage all tenant companies</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {companies.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <Building2 className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                <p>No companies yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {companies.map((company) => (
+                  <div
+                    key={company.id}
+                    className="p-4 rounded-lg border bg-white border-slate-200"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-slate-900">{company.name}</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            company.subscription_status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : company.subscription_status === 'trial'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {company.subscription_status}
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            {company.subscription_plan}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-500">
+                          {company.email || 'No email'}
+                        </p>
+                        {company.trial_ends_at && (
+                          <p className="text-xs text-slate-400 mt-1">
+                            Trial ends: {new Date(company.trial_ends_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {company.allow_support_access && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const result = await base44.functions.invoke('impersonateTenant', {
+                                  companyId: company.id
+                                });
+                                if (result.data.success) {
+                                  window.location.href = '/Inventory';
+                                }
+                              } catch (error) {
+                                toast.error('Failed to impersonate tenant');
+                              }
+                            }}
+                            className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                          >
+                            <Users className="w-4 h-4 mr-1" />
+                            Impersonate
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
