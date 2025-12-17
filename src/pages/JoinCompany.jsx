@@ -66,25 +66,23 @@ export default function JoinCompany() {
     setError("");
 
     try {
+      // Step 1: Create company and subscription
       const result = await base44.functions.invoke('completeInvitationSignup', {
         token: token,
         company_name: formData.company_name,
-        full_name: formData.full_name,
-        email: formData.email,
-        password: formData.password,
         payment_token: paymentToken
       });
 
       if (!result.data.success) {
-        throw new Error(result.data.error || "Failed to complete signup");
+        throw new Error(result.data.error || "Failed to create company");
       }
 
-      // Show success and redirect to the app's main URL (not preview)
-      alert("Account created successfully! Please log in with your credentials.");
+      // Step 2: Store token in localStorage for after login
+      localStorage.setItem('signup_token', token);
 
-      // Redirect to the main app URL for login
-      const mainAppUrl = window.location.origin.replace(/preview-sandbox-[^.]+\./, '');
-      window.location.href = mainAppUrl;
+      // Step 3: Redirect to Base44's login page
+      const callbackUrl = `${window.location.origin}/CompleteSignup?token=${token}`;
+      base44.auth.redirectToLogin(callbackUrl);
 
     } catch (err) {
       console.error(err);
@@ -174,17 +172,7 @@ export default function JoinCompany() {
                 />
               </div>
 
-              <div>
-                <Label>Password</Label>
-                <Input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  placeholder="Create a strong password"
-                  required
-                  minLength={8}
-                />
-              </div>
+
 
               <div className="border-t pt-4">
                 <h3 className="font-semibold mb-2">Payment Information</h3>
