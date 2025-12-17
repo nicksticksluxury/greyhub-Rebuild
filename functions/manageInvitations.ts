@@ -9,7 +9,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { action, email, companyName, inviteId, token } = await req.json();
+    const body = await req.json();
+    const { action, email, companyName, inviteId } = body;
 
     if (action === 'create') {
       const inviteToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
