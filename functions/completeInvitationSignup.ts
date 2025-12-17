@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     }
 
     // Update user with company_id and role
-    await base44.asServiceRole.auth.updateUser(user.id, {
+    await base44.asServiceRole.entities.User.update(user.id, {
       company_id: companyId,
       role: invitation.role || 'user'
     });
