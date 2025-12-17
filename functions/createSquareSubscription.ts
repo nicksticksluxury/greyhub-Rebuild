@@ -3,23 +3,32 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const { payment_token, plan_id, company_id } = await req.json();
 
-    if (!user || !user.company_id) {
-      return Response.json({ error: 'Unauthorized - No company' }, { status: 401 });
+    // Allow either authenticated user OR explicit company_id for service role calls
+    let targetCompanyId = company_id;
+    let userId = null;
+
+    if (!targetCompanyId) {
+      const user = await base44.auth.me();
+      if (!user || !user.company_id) {
+        return Response.json({ error: 'Unauthorized - No company' }, { status: 401 });
+      }
+      targetCompanyId = user.company_id;
+      userId = user.id;
     }
 
-    const { payment_token, plan_id } = await req.json();
-
-    await base44.asServiceRole.entities.Log.create({
-      company_id: user.company_id,
-      timestamp: new Date().toISOString(),
-      level: 'info',
-      category: 'square_integration',
-      message: 'Creating Square subscription',
-      details: { payment_token: payment_token?.substring(0, 10) + '...', plan_id, user_id: user.id },
-      user_id: user.id,
-    });
+    if (targetCompanyId) {
+      await base44.asServiceRole.entities.Log.create({
+        company_id: targetCompanyId,
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        category: 'square_integration',
+        message: 'Creating Square subscription',
+        details: { payment_token: payment_token?.substring(0, 10) + '...', plan_id, user_id: userId },
+        user_id: userId,
+      });
+    }
 
     if (!payment_token) {
       return Response.json({ error: 'Payment token is required' }, { status: 400 });
@@ -34,7 +43,7 @@ Deno.serve(async (req) => {
     }
 
     // Get company details
-    const companies = await base44.asServiceRole.entities.Company.filter({ id: user.company_id });
+    const companies = await base44.asServiceRole.entities.Company.filter({ id: targetCompanyId });
     const company = companies[0];
 
     if (!company) {
@@ -71,15 +80,17 @@ Deno.serve(async (req) => {
         square_customer_id: customerId,
       });
 
-      await base44.asServiceRole.entities.Log.create({
-        company_id: user.company_id,
-        timestamp: new Date().toISOString(),
-        level: 'success',
-        category: 'square_integration',
-        message: 'Square customer created',
-        details: { customer_id: customerId, company_name: company.name },
-        user_id: user.id,
-      });
+      if (targetCompanyId) {
+        await base44.asServiceRole.entities.Log.create({
+          company_id: targetCompanyId,
+          timestamp: new Date().toISOString(),
+          level: 'success',
+          category: 'square_integration',
+          message: 'Square customer created',
+          details: { customer_id: customerId, company_name: company.name },
+          user_id: userId,
+        });
+      }
     }
 
     // Create payment method (card)
@@ -106,15 +117,17 @@ Deno.serve(async (req) => {
 
     const cardId = cardData.card.id;
 
-    await base44.asServiceRole.entities.Log.create({
-      company_id: user.company_id,
-      timestamp: new Date().toISOString(),
-      level: 'success',
-      category: 'square_integration',
-      message: 'Payment card created',
-      details: { card_id: cardId, customer_id: customerId },
-      user_id: user.id,
-    });
+    if (targetCompanyId) {
+      await base44.asServiceRole.entities.Log.create({
+        company_id: targetCompanyId,
+        timestamp: new Date().toISOString(),
+        level: 'success',
+        category: 'square_integration',
+        message: 'Payment card created',
+        details: { card_id: cardId, customer_id: customerId },
+        user_id: userId,
+      });
+    }
 
     // Create subscription plan with variation using batch upsert
     const catalogResponse = await fetch(`${apiBaseUrl}/v2/catalog/batch-upsert`, {
@@ -187,18 +200,20 @@ Deno.serve(async (req) => {
 
     const planVariationId = planVariation.id;
 
-    await base44.asServiceRole.entities.Log.create({
-      company_id: user.company_id,
-      timestamp: new Date().toISOString(),
-      level: 'info',
-      category: 'square_integration',
-      message: 'Subscription plan created in catalog',
-      details: { 
-        plan_id: plan?.id, 
-        plan_variation_id: planVariationId 
-      },
-      user_id: user.id,
-    });
+    if (targetCompanyId) {
+      await base44.asServiceRole.entities.Log.create({
+        company_id: targetCompanyId,
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        category: 'square_integration',
+        message: 'Subscription plan created in catalog',
+        details: { 
+          plan_id: plan?.id, 
+          plan_variation_id: planVariationId 
+        },
+        user_id: userId,
+      });
+    }
 
     // Now create the subscription using the plan
     const subscriptionResponse = await fetch(`${apiBaseUrl}/v2/subscriptions`, {
@@ -232,20 +247,22 @@ Deno.serve(async (req) => {
       next_billing_date: subscription.charged_through_date,
     });
 
-    await base44.asServiceRole.entities.Log.create({
-      company_id: user.company_id,
-      timestamp: new Date().toISOString(),
-      level: 'success',
-      category: 'square_integration',
-      message: 'Square subscription created successfully',
-      details: { 
-        subscription_id: subscription.id, 
-        status: subscription.status,
-        charged_through_date: subscription.charged_through_date,
-        plan_id: plan_id || 'standard',
-      },
-      user_id: user.id,
-    });
+    if (targetCompanyId) {
+      await base44.asServiceRole.entities.Log.create({
+        company_id: targetCompanyId,
+        timestamp: new Date().toISOString(),
+        level: 'success',
+        category: 'square_integration',
+        message: 'Square subscription created successfully',
+        details: { 
+          subscription_id: subscription.id, 
+          status: subscription.status,
+          charged_through_date: subscription.charged_through_date,
+          plan_id: plan_id || 'standard',
+        },
+        user_id: userId,
+      });
+    }
 
     return Response.json({
       success: true,
@@ -256,12 +273,13 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Square subscription error:', error);
     
+    // Log error if possible (best effort)
     try {
       const base44 = createClientFromRequest(req);
-      const user = await base44.auth.me();
-      if (user?.company_id) {
+      const { company_id } = await req.json();
+      if (company_id) {
         await base44.asServiceRole.entities.Log.create({
-          company_id: user.company_id,
+          company_id: company_id,
           timestamp: new Date().toISOString(),
           level: 'error',
           category: 'square_integration',
@@ -270,7 +288,7 @@ Deno.serve(async (req) => {
             error: error.message,
             stack: error.stack,
           },
-          user_id: user.id,
+          user_id: null,
         });
       }
     } catch (logError) {
