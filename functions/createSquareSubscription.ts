@@ -155,7 +155,22 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to create subscription plan: ${JSON.stringify(catalogData.errors || catalogData)}`);
     }
 
+    // Log the full response for debugging
+    await base44.asServiceRole.entities.Log.create({
+      company_id: user.company_id,
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      category: 'square_integration',
+      message: 'Catalog response received',
+      details: { catalog_data: catalogData },
+      user_id: user.id,
+    });
+
     // Get the variation ID from the response
+    if (!catalogData.catalog_object?.subscription_plan_data?.subscription_plan_variations?.[0]?.id) {
+      throw new Error(`No subscription plan variation found in catalog response. Response: ${JSON.stringify(catalogData)}`);
+    }
+    
     const planVariationId = catalogData.catalog_object.subscription_plan_data.subscription_plan_variations[0].id;
 
     await base44.asServiceRole.entities.Log.create({
