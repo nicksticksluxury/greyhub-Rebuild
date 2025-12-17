@@ -22,53 +22,69 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-const navigationItems = [
-  {
-    title: "Dashboard",
-    url: createPageUrl("index"),
-    icon: LayoutList,
-  },
-  {
-    title: "Inventory",
-    url: createPageUrl("Inventory"),
-    icon: LayoutList,
-  },
-  {
-    title: "Out for Repair",
-    url: createPageUrl("OutForRepair"),
-    icon: Wrench,
-  },
-  {
-    title: "Sold",
-    url: createPageUrl("SoldInventory"),
-    icon: DollarSign,
-  },
-  {
-    title: "Add Watch",
-    url: createPageUrl("AddWatch"),
-    icon: Upload,
-  },
-  {
-    title: "Watch Sources",
-    url: createPageUrl("WatchSources"),
-    icon: Package,
+// Build navigation based on user role
+const getNavigationItems = () => {
+  const items = [
+    {
+      title: "Dashboard",
+      url: createPageUrl("index"),
+      icon: LayoutList,
     },
-  {
-    title: "Auctions",
-    url: createPageUrl("Auctions"),
-    icon: Gavel,
-  },
-  {
-    title: "Company",
-    url: createPageUrl("CompanySettings"),
-    icon: Watch,
-  },
-  {
-    title: "Settings",
-    url: createPageUrl("TenantSettings"),
-    icon: Settings,
-  },
-];
+    {
+      title: "Inventory",
+      url: createPageUrl("Inventory"),
+      icon: LayoutList,
+    },
+    {
+      title: "Out for Repair",
+      url: createPageUrl("OutForRepair"),
+      icon: Wrench,
+    },
+    {
+      title: "Sold",
+      url: createPageUrl("SoldInventory"),
+      icon: DollarSign,
+    },
+    {
+      title: "Add Watch",
+      url: createPageUrl("AddWatch"),
+      icon: Upload,
+    },
+    {
+      title: "Watch Sources",
+      url: createPageUrl("WatchSources"),
+      icon: Package,
+    },
+    {
+      title: "Auctions",
+      url: createPageUrl("Auctions"),
+      icon: Gavel,
+    },
+    {
+      title: "Company",
+      url: createPageUrl("CompanySettings"),
+      icon: Watch,
+    },
+    {
+      title: "Settings",
+      url: createPageUrl("TenantSettings"),
+      icon: Settings,
+    },
+  ];
+
+  // Add System Settings for admins
+  if (user?.role === 'admin') {
+    items.push({
+      title: "System Settings",
+      url: createPageUrl("Settings"),
+      icon: Shield,
+    });
+  }
+
+  return items;
+};
+
+const navigationItems = getNavigationItems();
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
