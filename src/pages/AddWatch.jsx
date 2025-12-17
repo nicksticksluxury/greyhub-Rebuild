@@ -72,6 +72,11 @@ export default function AddWatch() {
       // Step 3: Create watch with pre-optimized photos
       console.log("Creating watch with optimized photos...");
       const user = await base44.auth.me();
+      
+      if (!user || !user.company_id) {
+        throw new Error("User not properly authenticated. Please log out and log back in.");
+      }
+      
       const watchData = {
         company_id: user.company_id,
         photos: photoObjects,
