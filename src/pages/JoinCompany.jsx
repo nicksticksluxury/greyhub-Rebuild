@@ -37,31 +37,16 @@ export default function JoinCompany() {
 
   const validateInvitation = async (inviteToken) => {
     try {
-      const invitations = await base44.asServiceRole.entities.Invitation.filter({ token: inviteToken });
+      const result = await base44.functions.invoke('validateInvitation', { token: inviteToken });
       
-      if (invitations.length === 0) {
-        setError("Invitation not found");
+      if (!result.data.success) {
+        setError(result.data.error || "Invitation not found");
         setLoading(false);
         return;
       }
 
-      const invite = invitations[0];
-      
-      if (invite.status !== "pending") {
-        setError("This invitation has already been used or has expired");
-        setLoading(false);
-        return;
-      }
-
-      const expiresAt = new Date(invite.expires_at);
-      if (expiresAt < new Date()) {
-        setError("This invitation has expired");
-        setLoading(false);
-        return;
-      }
-
-      setInvitation(invite);
-      setFormData(prev => ({ ...prev, email: invite.email }));
+      setInvitation(result.data.invitation);
+      setFormData(prev => ({ ...prev, email: result.data.invitation.email }));
       setLoading(false);
     } catch (err) {
       setError("Failed to validate invitation");
@@ -81,41 +66,21 @@ export default function JoinCompany() {
     setError("");
 
     try {
-      // Step 1: Create company
-      const company = await base44.asServiceRole.entities.Company.create({
-        name: formData.company_name,
-        email: formData.email,
-        subscription_status: "trial",
-        subscription_plan: "standard",
-        subscription_price: 50,
-      });
-
-      // Step 2: Register user with company_id
-      await base44.auth.register({
+      const result = await base44.functions.invoke('completeInvitationSignup', {
+        token: token,
+        company_name: formData.company_name,
+        full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
-        full_name: formData.full_name,
-        company_id: company.id,
-        role: "admin",
+        payment_token: paymentToken
       });
 
-      // Step 3: Login to get auth token
-      await base44.auth.login(formData.email, formData.password);
-
-      // Step 4: Create Square subscription
-      const subResult = await base44.functions.invoke('createSquareSubscription', {
-        payment_token: paymentToken,
-        plan_id: "standard"
-      });
-
-      if (!subResult.data.success) {
-        throw new Error(subResult.data.error || "Failed to create subscription");
+      if (!result.data.success) {
+        throw new Error(result.data.error || "Failed to complete signup");
       }
 
-      // Step 5: Mark invitation as accepted
-      await base44.asServiceRole.entities.Invitation.update(invitation.id, {
-        status: "accepted"
-      });
+      // Login with the newly created account
+      await base44.auth.login(formData.email, formData.password);
 
       // Redirect to dashboard
       window.location.href = "/";
