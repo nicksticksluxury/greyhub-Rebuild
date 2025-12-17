@@ -177,8 +177,9 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to create subscription plan: ${JSON.stringify(catalogData.errors || catalogData)}`);
     }
 
-    // Find the variation ID from the response
-    const planVariation = catalogData.objects?.find(obj => obj.type === 'SUBSCRIPTION_PLAN_VARIATION');
+    // Find the variation ID from the nested response
+    const plan = catalogData.objects?.find(obj => obj.type === 'SUBSCRIPTION_PLAN');
+    const planVariation = plan?.subscription_plan_data?.subscription_plan_variations?.[0];
     
     if (!planVariation) {
       throw new Error(`No subscription plan variation in response: ${JSON.stringify(catalogData)}`);
