@@ -56,37 +56,24 @@ export default function JoinCompany() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!paymentToken) {
-      setError("Please enter a payment token");
-      return;
-    }
 
     setSubmitting(true);
     setError("");
 
     try {
-      // Step 1: Create company and subscription
-      const result = await base44.functions.invoke('completeInvitationSignup', {
-        token: token,
-        company_name: formData.company_name,
-        payment_token: paymentToken
-      });
-
-      if (!result.data.success) {
-        throw new Error(result.data.error || "Failed to create company");
-      }
-
-      // Step 2: Store token in localStorage for after login
+      // Store data for after signup
       localStorage.setItem('signup_token', token);
+      localStorage.setItem('signup_payment_token', paymentToken);
+      localStorage.setItem('signup_plan', 'standard');
 
-      // Step 3: Redirect to Base44's login page
-      const callbackUrl = `${window.location.origin}/CompleteSignup?token=${token}`;
-      base44.auth.redirectToLogin(callbackUrl);
+      // Redirect to Base44's signup page
+      // After signup, user will be redirected to CompleteSignup page
+      const signupUrl = `https://base44.app/signup?app_id=${Deno.env.get('BASE44_APP_ID')}&redirect_url=${encodeURIComponent(window.location.origin + '/CompleteSignup')}`;
+      window.location.href = signupUrl;
 
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to complete signup");
+      setError(err.message || "Failed to initiate signup");
       setSubmitting(false);
     }
   };

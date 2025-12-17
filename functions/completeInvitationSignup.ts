@@ -5,74 +5,66 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     
-    const { token, company_name, payment_token } = body;
+    const { token, plan_id, payment_token } = body;
+
+    // Get authenticated user
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ success: false, error: 'User not authenticated' }, { status: 401 });
+    }
 
     // Validate invitation
-    const invitations = await base44.asServiceRole.entities.Invitation.filter({ token });
+    const invitations = await base44.asServiceRole.entities.Invitation.filter({ 
+      token,
+      email: user.email 
+    });
     
     if (invitations.length === 0) {
-      return Response.json({ success: false, error: 'Invitation not found' });
+      return Response.json({ success: false, error: 'Invitation not found for this user' });
     }
 
     const invitation = invitations[0];
-    
-    if (invitation.status !== "pending") {
-      return Response.json({ success: false, error: 'This invitation has already been used' });
+
+    if (!invitation.company_id) {
+      return Response.json({ success: false, error: 'Invalid invitation - no company assigned' });
     }
 
-    const expiresAt = new Date(invitation.expires_at);
-    if (expiresAt < new Date()) {
-      return Response.json({ success: false, error: 'This invitation has expired' });
-    }
+    // Update user with company_id and role
+    await base44.asServiceRole.auth.updateUser(user.id, {
+      company_id: invitation.company_id,
+      role: invitation.role || 'user'
+    });
 
-    // Check if invitation has company_id that's not "system"
-    let companyId = invitation.company_id;
-    
-    if (!companyId || companyId === "system") {
-      // Create new company for system admin invitations
-      const company = await base44.asServiceRole.entities.Company.create({
-        name: company_name,
-        email: invitation.email,
-        subscription_status: "trial",
-        subscription_plan: "standard",
-        subscription_price: 50,
-        trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      });
-      companyId = company.id;
+    // Create Square subscription if payment token provided
+    if (payment_token) {
+      try {
+        const subscriptionResult = await base44.asServiceRole.functions.invoke('createSquareSubscription', {
+          payment_token,
+          plan_id: plan_id || 'standard',
+          company_id: invitation.company_id
+        });
 
-      // Create Square subscription
-      if (payment_token) {
-        try {
-          const subscriptionResult = await base44.asServiceRole.functions.invoke('createSquareSubscription', {
-            payment_token,
-            plan_id: 'standard',
-            company_id: companyId
-          });
-
-          if (!subscriptionResult.data.success) {
-            throw new Error(subscriptionResult.data.error || 'Failed to create subscription');
-          }
-        } catch (subError) {
-          // Log but don't fail - company is created, subscription can be added later
-          console.error("Subscription creation failed:", subError);
+        if (!subscriptionResult.data.success) {
+          throw new Error(subscriptionResult.data.error || 'Failed to create subscription');
         }
+      } catch (subError) {
+        console.error("Subscription creation failed:", subError);
+        return Response.json({ success: false, error: subError.message });
       }
     }
 
-    // Update invitation with company_id and mark as ready for user signup
+    // Mark invitation as accepted
     await base44.asServiceRole.entities.Invitation.update(invitation.id, {
-      company_id: companyId,
-      status: "pending" // Keep as pending until user creates account
+      status: "accepted"
     });
 
     return Response.json({ 
       success: true, 
-      company_id: companyId,
-      email: invitation.email
+      company_id: invitation.company_id
     });
 
   } catch (error) {
-    console.error("Company creation error:", error);
+    console.error("Signup completion error:", error);
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 });

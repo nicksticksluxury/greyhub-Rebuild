@@ -11,13 +11,10 @@ export default function CompleteSignup() {
   useEffect(() => {
     const completeSignup = async () => {
       try {
-        // Get token from URL or localStorage
-        const params = new URLSearchParams(window.location.search);
-        let token = params.get("token");
-        
-        if (!token) {
-          token = localStorage.getItem('signup_token');
-        }
+        // Get data from localStorage
+        const token = localStorage.getItem('signup_token');
+        const paymentToken = localStorage.getItem('signup_payment_token');
+        const planId = localStorage.getItem('signup_plan');
 
         if (!token) {
           setError("No invitation token found");
@@ -29,20 +26,26 @@ export default function CompleteSignup() {
         const user = await base44.auth.me();
         
         if (!user) {
-          setError("Please log in to complete signup");
+          setError("Please sign up to continue");
           setStatus("error");
           return;
         }
 
-        // Complete the signup by linking user to company
-        const result = await base44.functions.invoke('completeUserSignup', { token });
+        // Complete signup: link user to company and create subscription
+        const result = await base44.functions.invoke('completeInvitationSignup', { 
+          token,
+          payment_token: paymentToken,
+          plan_id: planId
+        });
 
         if (!result.data.success) {
           throw new Error(result.data.error || "Failed to complete signup");
         }
 
-        // Clear token from localStorage
+        // Clear localStorage
         localStorage.removeItem('signup_token');
+        localStorage.removeItem('signup_payment_token');
+        localStorage.removeItem('signup_plan');
 
         setStatus("success");
 
