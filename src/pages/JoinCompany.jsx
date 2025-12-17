@@ -47,9 +47,8 @@ export default function JoinCompany() {
     // Store token for CompleteSignup page
     localStorage.setItem('signup_token', token);
     
-    // Redirect to Base44 signup
-    const returnUrl = encodeURIComponent(`${window.location.origin}/CompleteSignup`);
-    window.location.href = `https://base44.app/signup?next=${returnUrl}`;
+    // Use Base44's auth redirect which handles the app context correctly
+    base44.auth.redirectToLogin(`${window.location.origin}/CompleteSignup`);
   };
 
   if (loading) {
