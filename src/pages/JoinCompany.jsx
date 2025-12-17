@@ -70,31 +70,46 @@ export default function JoinCompany() {
     setError("");
 
     try {
-      // Check if user is authenticated
-      if (!currentUser) {
-        setError("Please log in through Base44 first to complete signup");
-        setSubmitting(false);
+      // If user is already logged in, complete signup directly
+      if (currentUser) {
+        const result = await base44.functions.invoke('completeInvitationSignup', {
+          token,
+          payment_token: paymentToken,
+          plan_id: 'standard',
+          company_name: formData.company_name
+        });
+
+        if (!result.data.success) {
+          throw new Error(result.data.error || "Failed to complete signup");
+        }
+
+        window.location.href = "/";
         return;
       }
 
-      // Call backend to complete signup
-      const result = await base44.functions.invoke('completeInvitationSignup', {
+      // Create company first
+      const createResult = await base44.functions.invoke('createCompanyForInvite', {
         token,
-        payment_token: paymentToken,
-        plan_id: 'standard',
-        company_name: formData.company_name
+        company_name: formData.company_name,
+        email: invitation.email
       });
 
-      if (!result.data.success) {
-        throw new Error(result.data.error || "Failed to complete signup");
+      if (!createResult.data.success) {
+        throw new Error(createResult.data.error || "Failed to create company");
       }
 
-      // Redirect to home
-      window.location.href = "/";
+      // Store payment info for after signup
+      localStorage.setItem('signup_token', token);
+      localStorage.setItem('signup_payment_token', paymentToken);
+      localStorage.setItem('signup_plan', 'standard');
+
+      // Redirect to Base44's external signup
+      const returnUrl = encodeURIComponent(`${window.location.origin}/CompleteSignup`);
+      window.location.href = `https://base44.app/signup?next=${returnUrl}`;
 
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to complete signup");
+      setError(err.message || "Failed to process signup");
       setSubmitting(false);
     }
   };
