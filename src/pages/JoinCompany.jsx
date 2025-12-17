@@ -79,13 +79,12 @@ export default function JoinCompany() {
         throw new Error(result.data.error || "Failed to complete signup");
       }
 
-      // Show success message and redirect to home
-      toast.success("Account created! Redirecting to login...");
+      // Show success and redirect to the app's main URL (not preview)
+      alert("Account created successfully! Please log in with your credentials.");
 
-      // Redirect to home page which will trigger login
-      setTimeout(() => {
-        window.location.href = "/Inventory";
-      }, 1500);
+      // Redirect to the main app URL for login
+      const mainAppUrl = window.location.origin.replace(/preview-sandbox-[^.]+\./, '');
+      window.location.href = mainAppUrl;
 
     } catch (err) {
       console.error(err);
