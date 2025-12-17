@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import * as Square from 'npm:square';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -24,20 +23,13 @@ Deno.serve(async (req) => {
       user_id: user.id,
     });
 
-    // Get Square environment setting
-    const envSettings = await base44.asServiceRole.entities.Setting.filter({ 
-      key: 'square_environment', 
-      company_id: user.company_id 
-    });
-    const squareEnv = envSettings[0]?.value === 'sandbox' ? 'sandbox' : 'production';
-
-    // Initialize Square client
-    const client = new Square.Client({
-      accessToken: Deno.env.get('SQUARE_ACCESS_TOKEN'),
-      environment: squareEnv,
-    });
-
+    const apiBaseUrl = Deno.env.get('SQUARE_API_BASE_URL');
+    const accessToken = Deno.env.get('SQUARE_ACCESS_TOKEN');
     const locationId = Deno.env.get('SQUARE_LOCATION_ID');
+
+    if (!apiBaseUrl || !accessToken || !locationId) {
+      return Response.json({ error: 'Square API credentials not configured' }, { status: 500 });
+    }
 
     // Fetch watches to sync
     let watches;
@@ -82,32 +74,29 @@ Deno.serve(async (req) => {
         const catalogObject = {
           type: 'ITEM',
           id: watch.platform_ids?.square_catalog_object_id || `#${watch.id}`,
-          itemData: {
-            name: title.substring(0, 255), // Square has a 255 char limit
+          item_data: {
+            name: title.substring(0, 255),
             description: description.substring(0, 4096),
             variations: [{
               type: 'ITEM_VARIATION',
               id: watch.platform_ids?.square_item_variation_id || `#${watch.id}-variation`,
-              itemVariationData: {
+              item_variation_data: {
                 name: 'Regular',
-                pricingType: 'FIXED_PRICING',
-                priceMoney: {
-                  amount: BigInt(Math.round(price * 100)),
+                pricing_type: 'FIXED_PRICING',
+                price_money: {
+                  amount: Math.round(price * 100),
                   currency: 'USD'
                 },
-                trackInventory: true,
-                inventoryAlertType: 'LOW_QUANTITY',
-                inventoryAlertThreshold: BigInt(1),
+                track_inventory: true,
+                inventory_alert_type: 'LOW_QUANTITY',
+                inventory_alert_threshold: 1,
               }
             }]
           }
         };
 
-        // Add images if available
+        // Upload image if available
         if (watch.photos && watch.photos.length > 0) {
-          catalogObject.itemData.imageIds = [];
-          
-          // Upload first photo as the main image
           const primaryPhoto = watch.photos[0];
           const imageUrl = primaryPhoto.medium || primaryPhoto.original;
           
@@ -117,24 +106,57 @@ Deno.serve(async (req) => {
               const imageBlob = await imageResponse.blob();
               const imageBuffer = await imageBlob.arrayBuffer();
               
-              const createImageRequest = {
-                idempotencyKey: `${watch.id}-image-${Date.now()}`,
+              // Create multipart form data for image upload
+              const boundary = `----WebKitFormBoundary${Date.now()}`;
+              const formDataParts = [];
+              
+              // Add JSON request part
+              const imageRequest = {
+                idempotency_key: `${watch.id}-image-${Date.now()}`,
+                object_id: catalogObject.id,
                 image: {
                   type: 'IMAGE',
                   id: `#${watch.id}-image`,
-                  imageData: {
+                  image_data: {
                     name: `${watch.brand}-${watch.id}`,
                   }
                 }
               };
+              
+              formDataParts.push(`--${boundary}\r\n`);
+              formDataParts.push(`Content-Disposition: form-data; name="request"\r\n`);
+              formDataParts.push(`Content-Type: application/json\r\n\r\n`);
+              formDataParts.push(`${JSON.stringify(imageRequest)}\r\n`);
+              
+              // Add image file part
+              formDataParts.push(`--${boundary}\r\n`);
+              formDataParts.push(`Content-Disposition: form-data; name="image_file"; filename="image.jpg"\r\n`);
+              formDataParts.push(`Content-Type: image/jpeg\r\n\r\n`);
+              
+              const formDataString = formDataParts.join('');
+              const encoder = new TextEncoder();
+              const formDataBytes = encoder.encode(formDataString);
+              const imageBytes = new Uint8Array(imageBuffer);
+              const endBoundaryBytes = encoder.encode(`\r\n--${boundary}--\r\n`);
+              
+              const fullBody = new Uint8Array(formDataBytes.length + imageBytes.length + endBoundaryBytes.length);
+              fullBody.set(formDataBytes, 0);
+              fullBody.set(imageBytes, formDataBytes.length);
+              fullBody.set(endBoundaryBytes, formDataBytes.length + imageBytes.length);
 
-              const imageResult = await client.catalogApi.createCatalogImage(
-                createImageRequest,
-                new Uint8Array(imageBuffer)
-              );
+              const imageUploadResponse = await fetch(`${apiBaseUrl}/v2/catalog/images`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                },
+                body: fullBody,
+              });
 
-              if (imageResult.result.image) {
-                catalogObject.itemData.imageIds = [imageResult.result.image.id];
+              const imageResult = await imageUploadResponse.json();
+
+              if (imageUploadResponse.ok && imageResult.image) {
+                catalogObject.item_data.image_ids = [imageResult.image.id];
               }
             } catch (imageError) {
               console.error('Image upload error:', imageError);
@@ -144,28 +166,54 @@ Deno.serve(async (req) => {
         }
 
         // Upsert catalog object
-        const catalogResponse = await client.catalogApi.upsertCatalogObject({
-          idempotencyKey: `${watch.id}-${Date.now()}`,
-          object: catalogObject
+        const catalogResponse = await fetch(`${apiBaseUrl}/v2/catalog/object`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            idempotency_key: `${watch.id}-${Date.now()}`,
+            object: catalogObject
+          }),
         });
 
-        const catalogObjectId = catalogResponse.result.catalogObject.id;
-        const variationId = catalogResponse.result.catalogObject.itemData.variations[0].id;
+        const catalogData = await catalogResponse.json();
+
+        if (!catalogResponse.ok) {
+          throw new Error(`Failed to upsert catalog: ${JSON.stringify(catalogData.errors || catalogData)}`);
+        }
+
+        const catalogObjectId = catalogData.catalog_object.id;
+        const variationId = catalogData.catalog_object.item_data.variations[0].id;
 
         // Update inventory quantity
-        await client.inventoryApi.batchChangeInventory({
-          idempotencyKey: `${watch.id}-inv-${Date.now()}`,
-          changes: [{
-            type: 'PHYSICAL_COUNT',
-            physicalCount: {
-              catalogObjectId: variationId,
-              state: 'IN_STOCK',
-              locationId: locationId,
-              quantity: String(watch.quantity || 1),
-              occurredAt: new Date().toISOString()
-            }
-          }]
+        const inventoryResponse = await fetch(`${apiBaseUrl}/v2/inventory/batch-change`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            idempotency_key: `${watch.id}-inv-${Date.now()}`,
+            changes: [{
+              type: 'PHYSICAL_COUNT',
+              physical_count: {
+                catalog_object_id: variationId,
+                state: 'IN_STOCK',
+                location_id: locationId,
+                quantity: String(watch.quantity || 1),
+                occurred_at: new Date().toISOString()
+              }
+            }]
+          }),
         });
+
+        const inventoryData = await inventoryResponse.json();
+
+        if (!inventoryResponse.ok) {
+          throw new Error(`Failed to update inventory: ${JSON.stringify(inventoryData.errors || inventoryData)}`);
+        }
 
         // Update watch with Square IDs
         await base44.asServiceRole.entities.Watch.update(watch.id, {
@@ -202,7 +250,6 @@ Deno.serve(async (req) => {
         results.errors.push({ 
           watch_id: watch.id, 
           error: watchError.message,
-          details: watchError.errors 
         });
 
         await base44.asServiceRole.entities.Log.create({
@@ -262,7 +309,6 @@ Deno.serve(async (req) => {
 
     return Response.json({
       error: error.message || 'Failed to sync to Square',
-      details: error.errors || error,
     }, { status: 500 });
   }
 });

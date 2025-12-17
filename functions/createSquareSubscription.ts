@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import * as Square from 'npm:square';
 
 Deno.serve(async (req) => {
   try {
@@ -12,7 +11,6 @@ Deno.serve(async (req) => {
 
     const { payment_token, plan_id } = await req.json();
 
-    // Log function invocation
     await base44.asServiceRole.entities.Log.create({
       company_id: user.company_id,
       timestamp: new Date().toISOString(),
@@ -27,15 +25,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Payment token is required' }, { status: 400 });
     }
 
-    // Get Square environment setting
-    const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment', company_id: user.company_id });
-    const squareEnv = envSettings[0]?.value === 'sandbox' ? 'sandbox' : 'production';
+    const apiBaseUrl = Deno.env.get('SQUARE_API_BASE_URL');
+    const accessToken = Deno.env.get('SQUARE_ACCESS_TOKEN');
+    const locationId = Deno.env.get('SQUARE_LOCATION_ID');
 
-    // Initialize Square client
-    const client = new Square.Client({
-      accessToken: Deno.env.get('SQUARE_ACCESS_TOKEN'),
-      environment: squareEnv,
-    });
+    if (!apiBaseUrl || !accessToken || !locationId) {
+      return Response.json({ error: 'Square API credentials not configured' }, { status: 500 });
+    }
 
     // Get company details
     const companies = await base44.asServiceRole.entities.Company.filter({ id: user.company_id });
@@ -49,15 +45,28 @@ Deno.serve(async (req) => {
     let customerId = company.square_customer_id;
 
     if (!customerId) {
-      const customerResponse = await client.customersApi.createCustomer({
-        givenName: company.name,
-        emailAddress: company.email || user.email,
-        referenceId: company.id,
+      const customerResponse = await fetch(`${apiBaseUrl}/v2/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          idempotency_key: `customer-${company.id}-${Date.now()}`,
+          given_name: company.name,
+          email_address: company.email || user.email,
+          reference_id: company.id,
+        }),
       });
 
-      customerId = customerResponse.result.customer.id;
+      const customerData = await customerResponse.json();
 
-      // Update company with customer ID
+      if (!customerResponse.ok) {
+        throw new Error(`Failed to create customer: ${JSON.stringify(customerData.errors || customerData)}`);
+      }
+
+      customerId = customerData.customer.id;
+
       await base44.asServiceRole.entities.Company.update(company.id, {
         square_customer_id: customerId,
       });
@@ -73,16 +82,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create payment method
-    const cardResponse = await client.cardsApi.createCard({
-      idempotencyKey: `${company.id}-${Date.now()}`,
-      sourceId: payment_token,
-      card: {
-        customerId: customerId,
+    // Create payment method (card)
+    const cardResponse = await fetch(`${apiBaseUrl}/v2/cards`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
       },
+      body: JSON.stringify({
+        idempotency_key: `card-${company.id}-${Date.now()}`,
+        source_id: payment_token,
+        card: {
+          customer_id: customerId,
+        },
+      }),
     });
 
-    const cardId = cardResponse.result.card.id;
+    const cardData = await cardResponse.json();
+
+    if (!cardResponse.ok) {
+      throw new Error(`Failed to create card: ${JSON.stringify(cardData.errors || cardData)}`);
+    }
+
+    const cardId = cardData.card.id;
 
     await base44.asServiceRole.entities.Log.create({
       company_id: user.company_id,
@@ -100,32 +122,45 @@ Deno.serve(async (req) => {
       : { price: 50 };
 
     // Create subscription
-    const subscriptionResponse = await client.subscriptionsApi.createSubscription({
-      idempotencyKey: `sub-${company.id}-${Date.now()}`,
-      locationId: Deno.env.get('SQUARE_LOCATION_ID'),
-      customerId: customerId,
-      cardId: cardId,
-      planVariationData: {
-        name: `${company.name} - Monthly Subscription`,
-        phases: [{
-          cadence: 'MONTHLY',
-          periods: 1,
-          recurringPriceMoney: {
-            amount: BigInt(planDetails.price * 100),
-            currency: 'USD',
-          },
-        }],
+    const subscriptionResponse = await fetch(`${apiBaseUrl}/v2/subscriptions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
       },
+      body: JSON.stringify({
+        idempotency_key: `sub-${company.id}-${Date.now()}`,
+        location_id: locationId,
+        customer_id: customerId,
+        card_id: cardId,
+        plan_variation_data: {
+          name: `${company.name} - Monthly Subscription`,
+          phases: [{
+            cadence: 'MONTHLY',
+            periods: 1,
+            recurring_price_money: {
+              amount: planDetails.price * 100,
+              currency: 'USD',
+            },
+          }],
+        },
+      }),
     });
 
-    const subscription = subscriptionResponse.result.subscription;
+    const subscriptionData = await subscriptionResponse.json();
+
+    if (!subscriptionResponse.ok) {
+      throw new Error(`Failed to create subscription: ${JSON.stringify(subscriptionData.errors || subscriptionData)}`);
+    }
+
+    const subscription = subscriptionData.subscription;
 
     // Update company with subscription details
     await base44.asServiceRole.entities.Company.update(company.id, {
       square_subscription_id: subscription.id,
       subscription_status: 'active',
       subscription_plan: plan_id || 'standard',
-      next_billing_date: subscription.chargedThroughDate,
+      next_billing_date: subscription.charged_through_date,
     });
 
     await base44.asServiceRole.entities.Log.create({
@@ -137,7 +172,7 @@ Deno.serve(async (req) => {
       details: { 
         subscription_id: subscription.id, 
         status: subscription.status,
-        charged_through_date: subscription.chargedThroughDate,
+        charged_through_date: subscription.charged_through_date,
         plan_id: plan_id || 'standard',
       },
       user_id: user.id,
@@ -164,7 +199,6 @@ Deno.serve(async (req) => {
           message: 'Failed to create Square subscription',
           details: { 
             error: error.message,
-            errors: error.errors,
             stack: error.stack,
           },
           user_id: user.id,
@@ -176,7 +210,6 @@ Deno.serve(async (req) => {
 
     return Response.json({
       error: error.message || 'Failed to create subscription',
-      details: error.errors || error,
     }, { status: 500 });
   }
 });

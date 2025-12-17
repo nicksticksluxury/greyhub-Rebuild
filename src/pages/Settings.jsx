@@ -463,64 +463,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Square Payment Settings</CardTitle>
-            <CardDescription>Configure Square payment integration environment</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 border border-slate-200 rounded-xl bg-white">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-medium text-slate-900 mb-2">Square Environment</h3>
-                  <p className="text-sm text-slate-500 mb-4">
-                    Choose whether to use Square's Sandbox (for testing) or Production environment.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm font-medium ${
-                    settings?.find(s => s.key === 'square_environment')?.value === 'sandbox' 
-                      ? 'text-amber-700' 
-                      : 'text-green-700'
-                  }`}>
-                    {settings?.find(s => s.key === 'square_environment')?.value === 'sandbox' ? 'Sandbox' : 'Production'}
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        const squareEnvSetting = settings?.find(s => s.key === 'square_environment');
-                        const newValue = squareEnvSetting?.value === 'sandbox' ? 'production' : 'sandbox';
 
-                        if (squareEnvSetting) {
-                          await base44.entities.Setting.update(squareEnvSetting.id, { value: newValue });
-                        } else {
-                          if (!user?.company_id) {
-                            toast.error("Company information not available. Cannot save setting.");
-                            return;
-                          }
-                          await base44.entities.Setting.create({
-                            company_id: user.company_id,
-                            key: 'square_environment',
-                            value: newValue,
-                            description: 'Square API environment (sandbox or production)'
-                          });
-                        }
-
-                        queryClient.invalidateQueries({ queryKey: ['settings'] });
-                        toast.success(`Switched to ${newValue} environment`);
-                      } catch (error) {
-                        toast.error("Failed to update environment");
-                      }
-                    }}
-                  >
-                    Switch to {settings?.find(s => s.key === 'square_environment')?.value === 'sandbox' ? 'Production' : 'Sandbox'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {company && (
           <Card className="mt-6">

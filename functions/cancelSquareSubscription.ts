@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import * as Square from 'npm:square';
 
 Deno.serve(async (req) => {
   try {
@@ -32,18 +31,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No active subscription found' }, { status: 404 });
     }
 
-    // Get Square environment setting
-    const envSettings = await base44.asServiceRole.entities.Setting.filter({ key: 'square_environment', company_id: user.company_id });
-    const squareEnv = envSettings[0]?.value === 'sandbox' ? 'sandbox' : 'production';
+    const apiBaseUrl = Deno.env.get('SQUARE_API_BASE_URL');
+    const accessToken = Deno.env.get('SQUARE_ACCESS_TOKEN');
 
-    // Initialize Square client
-    const client = new Square.Client({
-      accessToken: Deno.env.get('SQUARE_ACCESS_TOKEN'),
-      environment: squareEnv,
-    });
+    if (!apiBaseUrl || !accessToken) {
+      return Response.json({ error: 'Square API credentials not configured' }, { status: 500 });
+    }
 
     // Cancel subscription
-    await client.subscriptionsApi.cancelSubscription(company.square_subscription_id);
+    const cancelResponse = await fetch(`${apiBaseUrl}/v2/subscriptions/${company.square_subscription_id}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    const cancelData = await cancelResponse.json();
+
+    if (!cancelResponse.ok) {
+      throw new Error(`Failed to cancel subscription: ${JSON.stringify(cancelData.errors || cancelData)}`);
+    }
 
     // Update company status
     await base44.asServiceRole.entities.Company.update(company.id, {
@@ -80,7 +88,6 @@ Deno.serve(async (req) => {
           message: 'Failed to cancel Square subscription',
           details: { 
             error: error.message,
-            errors: error.errors,
             stack: error.stack,
           },
           user_id: user.id,
@@ -92,7 +99,6 @@ Deno.serve(async (req) => {
 
     return Response.json({
       error: error.message || 'Failed to cancel subscription',
-      details: error.errors || error,
     }, { status: 500 });
   }
 });
