@@ -23,6 +23,13 @@ export default function Settings() {
     queryFn: () => base44.auth.me(),
   });
 
+  // Restrict to system admins only (no company_id)
+  useEffect(() => {
+    if (user && (user.role !== 'admin' || user.company_id)) {
+      window.location.href = "/";
+    }
+  }, [user]);
+
   const { data: company } = useQuery({
     queryKey: ['company', user?.company_id],
     queryFn: () => base44.entities.Company.filter({ id: user.company_id }),
@@ -231,11 +238,19 @@ export default function Settings() {
     saveMutation.mutate(tokenValue);
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Settings</h1>
-        <p className="text-slate-500 mb-8">Manage your application configuration</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">System Settings</h1>
+        <p className="text-slate-500 mb-8">Manage system-wide configuration (System Admin Only)</p>
 
         <Card>
           <CardHeader>
