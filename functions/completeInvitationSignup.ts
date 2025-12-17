@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     });
 
     // Step 2: Register user with company_id
-    await base44.asServiceRole.auth.register({
+    const registerResult = await base44.functions.invoke('registerUser', {
       email: email,
       password: password,
       full_name: full_name,
