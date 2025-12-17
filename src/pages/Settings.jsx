@@ -412,6 +412,7 @@ export default function Settings() {
                             variant="outline"
                             size="sm"
                             onClick={() => copyInviteLink(invite.token, invite.email, "Company")}
+                            className="text-slate-900"
                           >
                             <LinkIcon className="w-4 h-4 mr-1" />
                             Copy Link
@@ -456,13 +457,13 @@ export default function Settings() {
                   {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <Button variant="outline" onClick={copyToClipboard} title="Copy to clipboard">
+              <Button variant="outline" onClick={copyToClipboard} title="Copy to clipboard" className="text-slate-900">
                 <Copy className="w-4 h-4" />
               </Button>
-              <Button variant="outline" onClick={generateToken} title="Generate new random token">
+              <Button variant="outline" onClick={generateToken} title="Generate new random token" className="text-slate-900">
                 <RefreshCw className="w-4 h-4" />
               </Button>
-              <Button onClick={handleSave} disabled={saveMutation.isPending}>
+              <Button onClick={handleSave} disabled={saveMutation.isPending} className="bg-slate-800 hover:bg-slate-900 text-white">
                 <Save className="w-4 h-4 mr-2" />
                 Save
               </Button>
@@ -540,6 +541,7 @@ export default function Settings() {
                     }
                   }
                 }}
+                className="text-slate-900"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear Logs
