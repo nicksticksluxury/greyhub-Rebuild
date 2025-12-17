@@ -17,6 +17,7 @@ import AcceptInvitation from './pages/AcceptInvitation';
 import SystemAdmin from './pages/SystemAdmin';
 import SquareTest from './pages/SquareTest';
 import JoinCompany from './pages/JoinCompany';
+import TenantSettings from './pages/TenantSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +41,7 @@ export const PAGES = {
     "SystemAdmin": SystemAdmin,
     "SquareTest": SquareTest,
     "JoinCompany": JoinCompany,
+    "TenantSettings": TenantSettings,
 }
 
 export const pagesConfig = {
