@@ -16,8 +16,18 @@ Deno.serve(async (req) => {
       const inviteToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
+      // Create company immediately with pending status
+      const company = await base44.asServiceRole.entities.Company.create({
+        name: companyName,
+        email: email,
+        subscription_status: "pending_invite",
+        subscription_plan: "standard",
+        subscription_price: 50,
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+
       const invitation = await base44.asServiceRole.entities.Invitation.create({
-        company_id: "system",
+        company_id: company.id,
         email: email,
         token: inviteToken,
         status: "pending",
@@ -26,11 +36,12 @@ Deno.serve(async (req) => {
         expires_at: expiresAt,
       });
 
-      const inviteUrl = `${new URL(req.url).origin}/JoinCompany?token=${inviteToken}&email=${encodeURIComponent(email)}&company=${encodeURIComponent(companyName)}`;
+      const inviteUrl = `${new URL(req.url).origin}/JoinCompany?token=${inviteToken}`;
 
       return Response.json({ 
         success: true, 
         invitation,
+        company,
         inviteUrl 
       });
     }

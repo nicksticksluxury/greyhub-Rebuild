@@ -14,37 +14,17 @@ Deno.serve(async (req) => {
     }
 
     // Validate invitation
-    const invitations = await base44.asServiceRole.entities.Invitation.filter({ 
-      token,
-      email: user.email 
-    });
-    
+    const invitations = await base44.asServiceRole.entities.Invitation.filter({ token });
+
     if (invitations.length === 0) {
-      return Response.json({ success: false, error: 'Invitation not found for this user' });
+      return Response.json({ success: false, error: 'Invitation not found' });
     }
 
     const invitation = invitations[0];
-
-    // Create company if needed (invitation might not have company_id yet)
-    let companyId = invitation.company_id;
-    
-    if (!companyId && company_name) {
-      const company = await base44.asServiceRole.entities.Company.create({
-        name: company_name,
-        email: user.email,
-        subscription_status: 'trial',
-        trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      });
-      companyId = company.id;
-
-      // Update invitation with company_id
-      await base44.asServiceRole.entities.Invitation.update(invitation.id, {
-        company_id: companyId
-      });
-    }
+    const companyId = invitation.company_id;
 
     if (!companyId) {
-      return Response.json({ success: false, error: 'Failed to create or find company' });
+      return Response.json({ success: false, error: 'No company associated with invitation' });
     }
 
     // Update user with company_id and role

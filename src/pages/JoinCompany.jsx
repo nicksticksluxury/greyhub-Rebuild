@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
@@ -12,12 +10,6 @@ export default function JoinCompany() {
   const [invitation, setInvitation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    company_name: "",
-  });
-  const [paymentToken, setPaymentToken] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -30,19 +22,8 @@ export default function JoinCompany() {
     }
 
     setToken(inviteToken);
-    checkAuthAndValidate(inviteToken);
+    validateInvitation(inviteToken);
   }, []);
-
-  const checkAuthAndValidate = async (inviteToken) => {
-    try {
-      const user = await base44.auth.me();
-      setCurrentUser(user);
-    } catch (err) {
-      // User not logged in - that's ok
-    }
-    // Validate invitation regardless of auth status
-    await validateInvitation(inviteToken);
-  };
 
   const validateInvitation = async (inviteToken) => {
     try {
@@ -62,56 +43,13 @@ export default function JoinCompany() {
     }
   };
 
-
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-
-    try {
-      // If user is already logged in, complete signup directly
-      if (currentUser) {
-        const result = await base44.functions.invoke('completeInvitationSignup', {
-          token,
-          payment_token: paymentToken,
-          plan_id: 'standard',
-          company_name: formData.company_name
-        });
-
-        if (!result.data.success) {
-          throw new Error(result.data.error || "Failed to complete signup");
-        }
-
-        window.location.href = "/";
-        return;
-      }
-
-      // Create company first
-      const createResult = await base44.functions.invoke('createCompanyForInvite', {
-        token,
-        company_name: formData.company_name,
-        email: invitation.email
-      });
-
-      if (!createResult.data.success) {
-        throw new Error(createResult.data.error || "Failed to create company");
-      }
-
-      // Store payment info for after signup
-      localStorage.setItem('signup_token', token);
-      localStorage.setItem('signup_payment_token', paymentToken);
-      localStorage.setItem('signup_plan', 'standard');
-
-      // Redirect to Base44's external signup
-      const returnUrl = encodeURIComponent(`${window.location.origin}/CompleteSignup`);
-      window.location.href = `https://base44.app/signup?next=${returnUrl}`;
-
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to process signup");
-      setSubmitting(false);
-    }
+  const handleContinue = () => {
+    // Store token for CompleteSignup page
+    localStorage.setItem('signup_token', token);
+    
+    // Redirect to Base44 signup
+    const returnUrl = encodeURIComponent(`${window.location.origin}/CompleteSignup`);
+    window.location.href = `https://base44.app/signup?next=${returnUrl}`;
   };
 
   if (loading) {
@@ -143,79 +81,47 @@ export default function JoinCompany() {
     );
   }
 
-
-
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <Card className="max-w-2xl w-full">
+      <Card className="max-w-md w-full">
         <CardHeader>
           <div className="flex items-center gap-2 text-green-600 mb-2">
             <CheckCircle className="w-6 h-6" />
             <span className="text-sm font-medium">Valid Invitation</span>
           </div>
-          <CardTitle>Complete Your WatchVault Setup</CardTitle>
+          <CardTitle>Welcome to WatchVault</CardTitle>
           <CardDescription>
-            {currentUser ? (
-              <>Welcome {currentUser.full_name || currentUser.email}! Complete the form below to start your 30-day trial.</>
-            ) : (
-              <>You've been invited to join WatchVault for {invitation?.email}. Fill out the form below to get started.</>
-            )}
+            You've been invited to join WatchVault. Please verify your email address below.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-            <div className="space-y-4">
-              <div>
-                <Label>Company Name</Label>
-                <Input
-                  value={formData.company_name}
-                  onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                  placeholder="Your Company Name"
-                  required
-                />
-              </div>
-
-              <div className="border-t pt-4">
-                <h3 className="font-semibold mb-2">Payment Information</h3>
-                <p className="text-sm text-slate-600 mb-4">
-                  Enter your payment details to start your subscription. You'll be charged $50/month after your 30-day trial.
-                </p>
-                <div>
-                  <Label>Payment Token (Sandbox)</Label>
-                  <Input
-                    value={paymentToken}
-                    onChange={(e) => setPaymentToken(e.target.value)}
-                    placeholder="cnon:card-nonce-ok"
-                    required
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    For testing, use: cnon:card-nonce-ok
-                  </p>
-                </div>
-              </div>
+          <div className="space-y-4">
+            <div className="p-4 bg-slate-100 rounded-lg">
+              <p className="text-sm text-slate-600 mb-1">
+                <strong>Invited Email:</strong>
+              </p>
+              <p className="text-lg font-semibold text-slate-900">
+                {invitation?.email}
+              </p>
             </div>
 
+            <p className="text-sm text-slate-600">
+              Please confirm this is your email address. You'll be redirected to create your account.
+            </p>
+
             <Button 
-              type="submit" 
-              disabled={submitting}
+              onClick={handleContinue}
               className="w-full bg-slate-800 hover:bg-slate-900"
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating Account...
-                </>
-              ) : (
-                "Complete Setup"
-              )}
+              Continue to Sign Up
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
     </div>
