@@ -27,10 +27,9 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: 'No company associated with invitation' });
     }
 
-    // Update user with company_id and role
+    // Update user with company_id only (role is managed by platform)
     await base44.asServiceRole.entities.User.update(user.id, {
-      company_id: companyId,
-      role: invitation.role || 'user'
+      company_id: companyId
     });
 
     // Create Square subscription if payment token provided
