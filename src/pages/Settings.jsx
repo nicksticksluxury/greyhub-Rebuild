@@ -48,9 +48,8 @@ export default function Settings() {
   const { data: invitations = [] } = useQuery({
     queryKey: ['allInvitations'],
     queryFn: async () => {
-      // System admin can see all invitations
-      const invites = await base44.asServiceRole.entities.Invitation.list("-created_date", 100);
-      return invites;
+      const result = await base44.functions.invoke('manageInvitations', { action: 'list' });
+      return result.data.invitations || [];
     },
   });
 
@@ -249,27 +248,22 @@ export default function Settings() {
 
     setCreatingInvite(true);
     try {
-      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
-
-      await base44.asServiceRole.entities.Invitation.create({
-        company_id: "system", // Placeholder for system-generated invites
+      const result = await base44.functions.invoke('manageInvitations', {
+        action: 'create',
         email: inviteEmail,
-        token: token,
-        status: "pending",
-        role: "admin",
-        invited_by: user?.email || "System Admin",
-        expires_at: expiresAt,
+        companyName: inviteCompanyName
       });
 
-      const inviteUrl = `${window.location.origin}/JoinCompany?token=${token}&email=${encodeURIComponent(inviteEmail)}&company=${encodeURIComponent(inviteCompanyName)}`;
-      
-      navigator.clipboard.writeText(inviteUrl);
-      toast.success("Invite created and link copied to clipboard!");
-      
-      setInviteEmail("");
-      setInviteCompanyName("");
-      queryClient.invalidateQueries({ queryKey: ['allInvitations'] });
+      if (result.data.success) {
+        navigator.clipboard.writeText(result.data.inviteUrl);
+        toast.success("Invite created and link copied to clipboard!");
+        
+        setInviteEmail("");
+        setInviteCompanyName("");
+        queryClient.invalidateQueries({ queryKey: ['allInvitations'] });
+      } else {
+        toast.error("Failed to create invite");
+      }
     } catch (error) {
       toast.error("Failed to create invite: " + error.message);
     } finally {
@@ -287,9 +281,15 @@ export default function Settings() {
     if (!confirm("Delete this invitation?")) return;
     
     try {
-      await base44.asServiceRole.entities.Invitation.delete(inviteId);
-      toast.success("Invitation deleted");
-      queryClient.invalidateQueries({ queryKey: ['allInvitations'] });
+      const result = await base44.functions.invoke('manageInvitations', {
+        action: 'delete',
+        inviteId: inviteId
+      });
+      
+      if (result.data.success) {
+        toast.success("Invitation deleted");
+        queryClient.invalidateQueries({ queryKey: ['allInvitations'] });
+      }
     } catch (error) {
       toast.error("Failed to delete invitation");
     }
