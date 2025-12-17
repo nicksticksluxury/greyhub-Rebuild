@@ -76,6 +76,36 @@ Deno.serve(async (req) => {
     });
 
     if (!cancelResponse.ok) {
+      // Check if subscription is already pending cancellation
+      const alreadyCancelled = cancelData.errors?.some(e => 
+        e.code === 'BAD_REQUEST' && e.detail?.includes('already has a pending cancel date')
+      );
+      
+      if (alreadyCancelled) {
+        // Extract cancel date from error message
+        const cancelDateMatch = cancelData.errors[0].detail.match(/pending cancel date of `([^`]+)`/);
+        const cancelDate = cancelDateMatch ? cancelDateMatch[1] : null;
+        
+        await base44.asServiceRole.entities.Log.create({
+          company_id: user.company_id,
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          category: 'square_integration',
+          message: 'Subscription already pending cancellation',
+          details: { 
+            subscription_id: company.square_subscription_id,
+            cancel_date: cancelDate
+          },
+          user_id: user.id,
+        });
+        
+        return Response.json({
+          success: true,
+          message: `Subscription is already scheduled to cancel on ${cancelDate}`,
+          cancel_date: cancelDate
+        });
+      }
+      
       throw new Error(`Failed to cancel subscription: ${JSON.stringify(cancelData.errors || cancelData)}`);
     }
 
