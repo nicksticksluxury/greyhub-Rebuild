@@ -320,6 +320,126 @@ export default function Settings() {
 
         <Card>
           <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              Create New Invitations
+            </CardTitle>
+            <CardDescription>Generate invitation links for new users to sign up</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Email Address</Label>
+                <Input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div>
+                <Label>Company Name</Label>
+                <Input
+                  value={inviteCompanyName}
+                  onChange={(e) => setInviteCompanyName(e.target.value)}
+                  placeholder="Acme Watch Co."
+                />
+              </div>
+            </div>
+            <Button 
+              onClick={handleCreateInvite}
+              disabled={creatingInvite || !inviteEmail || !inviteCompanyName}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {creatingInvite ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Create Invitation
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Pending Invitations</CardTitle>
+            <CardDescription>View and manage all system invitations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {invitations.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <UserPlus className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                <p>No invitations yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {invitations.map((invite) => (
+                  <div
+                    key={invite.id}
+                    className={`p-4 rounded-lg border ${
+                      invite.status === 'accepted' 
+                        ? 'bg-green-50 border-green-200' 
+                        : invite.status === 'expired'
+                        ? 'bg-slate-50 border-slate-200 opacity-60'
+                        : 'bg-white border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-slate-900">{invite.email}</span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            invite.status === 'accepted'
+                              ? 'bg-green-100 text-green-800'
+                              : invite.status === 'expired'
+                              ? 'bg-slate-100 text-slate-600'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {invite.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-500">
+                          Invited by {invite.invited_by} • {new Date(invite.created_date).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Expires: {new Date(invite.expires_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {invite.status === 'pending' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyInviteLink(invite.token, invite.email, "Company")}
+                          >
+                            <LinkIcon className="w-4 h-4 mr-1" />
+                            Copy Link
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteInvite(invite.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
             <CardTitle>eBay Webhook Verification Token</CardTitle>
             <CardDescription>Use this token in the eBay Developer Portal when setting up Marketplace Account Deletion notifications</CardDescription>
           </CardHeader>
