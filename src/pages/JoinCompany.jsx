@@ -66,9 +66,8 @@ export default function JoinCompany() {
       localStorage.setItem('signup_payment_token', paymentToken);
       localStorage.setItem('signup_plan', 'standard');
 
-      // Use Base44's built-in redirect which handles app context
-      const callbackUrl = window.location.origin + '/CompleteSignup';
-      base44.auth.redirectToLogin(callbackUrl);
+      // Redirect to CompleteSignup - user needs to sign up via Base44's system first
+      window.location.href = '/CompleteSignup';
 
     } catch (err) {
       console.error(err);

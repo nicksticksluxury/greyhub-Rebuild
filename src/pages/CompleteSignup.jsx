@@ -23,11 +23,20 @@ export default function CompleteSignup() {
         }
 
         // Check if user is authenticated
-        const user = await base44.auth.me();
+        let user;
+        try {
+          user = await base44.auth.me();
+        } catch (err) {
+          // User not logged in - redirect to Base44 signup
+          const returnUrl = encodeURIComponent(window.location.href);
+          window.location.href = `https://base44.app/login?next=${returnUrl}`;
+          return;
+        }
         
         if (!user) {
-          setError("Please sign up to continue");
-          setStatus("error");
+          // Redirect to Base44's authentication
+          const returnUrl = encodeURIComponent(window.location.href);
+          window.location.href = `https://base44.app/login?next=${returnUrl}`;
           return;
         }
 
