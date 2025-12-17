@@ -2,26 +2,35 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
     const body = await req.json();
     console.log("Registration request:", { email: body.email, company_id: body.company_id, role: body.role });
     
     const { email, password, full_name, company_id, role } = body;
 
-    console.log("Attempting to register user...");
+    const appId = Deno.env.get("BASE44_APP_ID");
     
-    // Use the SDK's auth.register method with service role
-    const result = await base44.asServiceRole.auth.register({
-      email,
-      password,
-      user_metadata: {
+    console.log("Making registration API call to Base44...");
+    const authResponse = await fetch(`https://api.base44.com/v1/apps/${appId}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Service-Role-Key': 'true'
+      },
+      body: JSON.stringify({
+        email,
+        password,
         full_name,
         company_id,
         role
-      }
+      })
     });
 
-    console.log("Registration successful:", { user_id: result.id });
+    const result = await authResponse.json();
+    console.log("Registration API response:", { status: authResponse.status, success: authResponse.ok });
+    
+    if (!authResponse.ok) {
+      throw new Error(result.error || result.message || 'Registration failed');
+    }
 
     return Response.json({ success: true, user: result });
   } catch (error) {
