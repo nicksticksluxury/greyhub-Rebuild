@@ -56,8 +56,8 @@ export default function CompleteSignup() {
 
       setUser(currentUser);
 
-      // Get invitation details
-      const inviteResult = await base44.functions.invoke('validateInvitation', { token });
+      // Get invitation and company details
+      const inviteResult = await base44.functions.invoke('getInvitationCompany', { token });
       
       if (!inviteResult.data.success) {
         setError(inviteResult.data.error || "Invalid invitation");
@@ -66,20 +66,16 @@ export default function CompleteSignup() {
       }
 
       const inviteData = inviteResult.data.invitation;
-      setInvitation(inviteData);
-
-      // Get company details
-      const companies = await base44.asServiceRole.entities.Company.filter({ id: inviteData.company_id });
-      const companyData = companies[0];
+      const companyData = inviteResult.data.company;
       
-      if (companyData) {
-        setCompany(companyData);
-        setCompanyDetails({
-          company_name: companyData.name || "",
-          address: companyData.address || "",
-          phone: companyData.phone || "",
-        });
-      }
+      setInvitation(inviteData);
+      setCompany(companyData);
+      
+      setCompanyDetails({
+        company_name: companyData.name || "",
+        address: companyData.address || "",
+        phone: companyData.phone || "",
+      });
 
       setLoading(false);
     } catch (err) {
