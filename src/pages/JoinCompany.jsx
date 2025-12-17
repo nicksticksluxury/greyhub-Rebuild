@@ -79,12 +79,12 @@ export default function JoinCompany() {
         throw new Error(result.data.error || "Failed to complete signup");
       }
 
-      // Show success message and redirect to login
-      toast.success("Account created! Please log in with your credentials.");
-      
-      // Redirect to login page
+      // Show success message and redirect to home
+      toast.success("Account created! Redirecting to login...");
+
+      // Redirect to home page which will trigger login
       setTimeout(() => {
-        base44.auth.redirectToLogin("/Inventory");
+        window.location.href = "/Inventory";
       }, 1500);
 
     } catch (err) {
