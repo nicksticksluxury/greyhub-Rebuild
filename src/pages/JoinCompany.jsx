@@ -79,11 +79,13 @@ export default function JoinCompany() {
         throw new Error(result.data.error || "Failed to complete signup");
       }
 
-      // Login with the newly created account
-      await base44.auth.login(formData.email, formData.password);
-
-      // Redirect to inventory
-      window.location.href = "/Inventory";
+      // Show success message and redirect to login
+      toast.success("Account created! Please log in with your credentials.");
+      
+      // Redirect to login page
+      setTimeout(() => {
+        base44.auth.redirectToLogin("/Inventory");
+      }, 1500);
 
     } catch (err) {
       console.error(err);
