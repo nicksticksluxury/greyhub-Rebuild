@@ -336,125 +336,11 @@ export default function TenantSettings() {
               </div>
             </div>
 
-            <div className="space-y-2 pt-4 border-t border-slate-100">
-              <Label>Webhook Verification Token</Label>
-              <p className="text-sm text-slate-500 mb-2">
-                Use this token in the eBay Developer Portal when setting up Marketplace Account Deletion notifications.
-              </p>
-              
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Input
-                    type={showToken ? "text" : "password"}
-                    value={tokenValue}
-                    onChange={(e) => setTokenValue(e.target.value)}
-                    placeholder="No token generated yet"
-                    className="pr-10 font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowToken(!showToken)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <Button variant="outline" onClick={copyToClipboard} title="Copy to clipboard">
-                  <Copy className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" onClick={generateToken} title="Generate new random token">
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
-                <Button onClick={handleSave} disabled={saveMutation.isPending}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </Button>
-              </div>
-            </div>
+
           </CardContent>
         </Card>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>eBay Sync Logs</CardTitle>
-                <CardDescription>View recent eBay synchronization activity</CardDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  if (confirm("Clear all eBay logs?")) {
-                    try {
-                      await Promise.all(ebayLogs.map(log => base44.entities.EbayLog.delete(log.id)));
-                      queryClient.invalidateQueries({ queryKey: ['ebayLogs'] });
-                      toast.success("Logs cleared");
-                    } catch (error) {
-                      toast.error("Failed to clear logs");
-                    }
-                  }
-                }}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear Logs
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {ebayLogs.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                <p>No logs yet. Sync with eBay to see activity here.</p>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {ebayLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className={`p-3 rounded-lg border text-sm ${
-                      log.level === 'error' 
-                        ? 'bg-red-50 border-red-200' 
-                        : log.level === 'success'
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            log.level === 'error'
-                              ? 'bg-red-100 text-red-800'
-                              : log.level === 'success'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-slate-100 text-slate-800'
-                          }`}>
-                            {log.operation}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {new Date(log.timestamp).toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-slate-900">{log.message}</p>
-                        {log.details && Object.keys(log.details).length > 0 && (
-                          <details className="mt-1">
-                            <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-700">
-                              View details
-                            </summary>
-                            <pre className="mt-1 text-xs text-slate-600 bg-white p-2 rounded border border-slate-200 overflow-x-auto">
-                              {JSON.stringify(log.details, null, 2)}
-                            </pre>
-                          </details>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
 
         {company && (
           <Card className="mt-6">
@@ -502,54 +388,7 @@ export default function TenantSettings() {
           </Card>
         )}
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Image Optimization</CardTitle>
-            <CardDescription>Manage image optimization for your inventory</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 border border-slate-200 rounded-xl bg-white">
-               <h3 className="font-medium text-slate-900 mb-2">Re-optimize Unoptimized Images</h3>
-               <p className="text-sm text-slate-500 mb-4">
-                 Find and re-optimize all watches that still have original image URLs. This will create optimized variants and remove original URLs.
-               </p>
-               <Button 
-                 onClick={async () => {
-                   if (!confirm("This will re-optimize all watches that still have original image URLs. This may take several minutes. Continue?")) return;
-                   const toastId = toast.loading("Starting image re-optimization...");
-                   setReoptimizing(true);
-                   try {
-                      const res = await base44.functions.invoke("reoptimizeWatchImages");
-                      if (res.data.success) {
-                          toast.success(`Optimized ${res.data.successCount} watches. Failed: ${res.data.failedCount}`, { id: toastId });
-                      } else {
-                          toast.error("Failed: " + res.data.error, { id: toastId });
-                      }
-                   } catch (e) {
-                      toast.error("Failed to re-optimize: " + e.message, { id: toastId });
-                   } finally {
-                      setReoptimizing(false);
-                   }
-                 }} 
-                 variant="outline"
-                 className="border-green-300 text-green-700 hover:bg-green-50"
-                 disabled={reoptimizing}
-               >
-                 {reoptimizing ? (
-                   <>
-                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                     Re-optimizing...
-                   </>
-                 ) : (
-                   <>
-                     <Sparkles className="w-4 h-4 mr-2" />
-                     Re-optimize Images
-                   </>
-                 )}
-               </Button>
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
     </div>
   );
