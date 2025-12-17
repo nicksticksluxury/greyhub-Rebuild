@@ -617,8 +617,7 @@ export default function Inventory() {
                     <SelectItem value="etsy">Etsy Pricing</SelectItem>
                     <SelectItem value="mercari">Mercari Pricing</SelectItem>
                     <SelectItem value="whatnot">Whatnot Pricing</SelectItem>
-                    <SelectItem value="shopify">Shopify Pricing</SelectItem>
-                    <SelectItem value="square">Square Pricing</SelectItem>
+                    <SelectItem value="square">Square / Store Pricing</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
