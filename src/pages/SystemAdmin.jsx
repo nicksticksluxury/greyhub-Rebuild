@@ -16,7 +16,7 @@ export default function SystemAdmin() {
     queryKey: ['allCompanies'],
     queryFn: async () => {
       const result = await base44.functions.invoke('listAllCompanies');
-      return result.data;
+      return result.data || { companies: [] };
     },
   });
 
