@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     }
 
     // Create invitation
-    const invitation = await base44.entities.Invitation.create({
+    const invitation = await base44.asServiceRole.entities.Invitation.create({
       company_id: companyId,
       email: email,
       token: token,
