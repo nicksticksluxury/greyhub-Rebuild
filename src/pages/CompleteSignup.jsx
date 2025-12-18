@@ -213,11 +213,15 @@ export default function CompleteSignup() {
           throw new Error('Payment form not initialized');
         }
 
+        console.log('Attempting to tokenize card...');
         const tokenResult = await cardRef.current.tokenize();
-        
+        console.log('Tokenize result:', tokenResult);
+
         if (tokenResult.status === 'OK') {
           cardToken = tokenResult.token;
+          console.log('Card tokenized successfully');
         } else {
+          console.error('Tokenization failed:', tokenResult);
           let errorMessage = 'Failed to process card. Please check your card details.';
           if (tokenResult.errors) {
             errorMessage = tokenResult.errors.map(e => e.message).join(', ');
@@ -227,6 +231,13 @@ export default function CompleteSignup() {
       }
 
       // Complete signup: link user to company and create subscription
+      console.log('Calling completeInvitationSignup with:', {
+        token,
+        has_payment_token: !!cardToken,
+        plan_id: 'standard',
+        coupon_code: couponData?.coupon?.code || null
+      });
+
       const result = await base44.functions.invoke('completeInvitationSignup', { 
         token,
         payment_token: cardToken,
@@ -234,7 +245,10 @@ export default function CompleteSignup() {
         coupon_code: couponData?.coupon?.code || null
       });
 
+      console.log('completeInvitationSignup result:', result);
+
       if (!result.data.success) {
+        console.error('Signup completion failed:', result.data);
         throw new Error(result.data.error || "Failed to complete signup");
       }
 

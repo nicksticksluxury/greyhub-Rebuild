@@ -310,10 +310,17 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Square subscription error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      cause: error.cause
+    });
     
     return Response.json({
       success: false,
       error: error.message || 'Failed to create subscription',
+      details: error.stack
     }, { status: 500 });
   }
 });
