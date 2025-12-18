@@ -18,8 +18,16 @@ export default function AlertsBell() {
   // Poll for alerts every minute
   const { data: alerts = [], isLoading } = useQuery({
     queryKey: ['alerts'],
-    queryFn: () => base44.entities.Alert.list("-created_date", 50),
-    refetchInterval: 60000, 
+    queryFn: async () => {
+      try {
+        return await base44.entities.Alert.list("-created_date", 50);
+      } catch (error) {
+        console.error("Failed to fetch alerts:", error);
+        return [];
+      }
+    },
+    refetchInterval: 60000,
+    retry: false,
   });
 
   const unreadCount = alerts.filter(a => !a.read).length;
@@ -54,8 +62,11 @@ export default function AlertsBell() {
   useEffect(() => {
     const checkHealth = async () => {
         try {
-            await base44.functions.invoke("checkSystemAlerts");
-            queryClient.invalidateQueries({ queryKey: ['alerts'] });
+            const user = await base44.auth.me();
+            if (user?.company_id || user?.data?.company_id) {
+              await base44.functions.invoke("checkSystemAlerts");
+              queryClient.invalidateQueries({ queryKey: ['alerts'] });
+            }
         } catch (e) {
             console.error("Failed to check alerts", e);
         }
