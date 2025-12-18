@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Watch, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 
 const ContactEmail = () => {
     const [revealed, setRevealed] = React.useState(false);
@@ -22,6 +27,43 @@ const ContactEmail = () => {
 };
 
 export default function Index() {
+    const [showInviteForm, setShowInviteForm] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [formData, setFormData] = useState({
+        fullName: "",
+        companyName: "",
+        email: "",
+        whatnotLink: ""
+    });
+
+    const handleSubmitInviteRequest = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        
+        try {
+            await base44.integrations.Core.SendEmail({
+                to: "1@nicksluxury.com",
+                subject: "New Dealer Invite Request",
+                body: `
+New dealer invite request:
+
+Full Name: ${formData.fullName}
+Company Name: ${formData.companyName || "N/A"}
+Email: ${formData.email}
+Whatnot Profile: ${formData.whatnotLink}
+                `.trim()
+            });
+            
+            toast.success("Request submitted! We'll be in touch soon.");
+            setShowInviteForm(false);
+            setFormData({ fullName: "", companyName: "", email: "", whatnotLink: "" });
+        } catch (error) {
+            toast.error("Failed to submit request. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-slate-950 to-slate-900 text-slate-200">
             <div className="max-w-3xl w-full space-y-12 text-center">
