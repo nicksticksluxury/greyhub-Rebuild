@@ -151,7 +151,22 @@ Whatnot Profile: ${formData.whatnotLink}
                         >
                             Request Invite <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
-                    </div>
+                        <a 
+                            href="https://youtu.be/qNMdD786wwo" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block mt-4 rounded-lg overflow-hidden border border-amber-500/30 hover:border-amber-500/60 transition-colors"
+                        >
+                            <iframe 
+                                className="w-full aspect-video pointer-events-none"
+                                src="https://www.youtube.com/embed/qNMdD786wwo"
+                                title="Watch Demo"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        </a>
+                        </div>
                 </div>
 
                 {/* Footer */}
