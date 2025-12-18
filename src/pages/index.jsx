@@ -191,6 +191,9 @@ Whatnot Profile: ${formData.whatnotLink}
                                 placeholder="https://www.whatnot.com/user/..."
                                 className="bg-slate-800 border-slate-700 text-white"
                             />
+                            <p className="text-xs text-slate-500 mt-1">
+                                Go to your profile, click share, then Copy Link and paste that here
+                            </p>
                         </div>
                         <Button 
                             type="submit" 
