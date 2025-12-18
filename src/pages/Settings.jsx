@@ -63,8 +63,14 @@ export default function Settings() {
   const { data: companies = [] } = useQuery({
     queryKey: ['allCompanies'],
     queryFn: async () => {
-      const result = await base44.asServiceRole.entities.Company.list();
-      return Array.isArray(result) ? result : [];
+      try {
+        const result = await base44.asServiceRole.entities.Company.list();
+        console.log('Company list result:', result);
+        return Array.isArray(result) ? result : [];
+      } catch (error) {
+        console.error('Failed to fetch companies:', error);
+        return [];
+      }
     },
   });
 
