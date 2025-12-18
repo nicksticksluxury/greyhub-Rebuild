@@ -25,6 +25,9 @@ export default function SystemAdmin() {
   const impersonateMutation = useMutation({
     mutationFn: async (companyId) => {
       const result = await base44.functions.invoke('impersonateTenant', { company_id: companyId });
+      if (!result.data.success) {
+        throw new Error(result.data.error || result.data.message || 'Impersonation failed');
+      }
       return result.data;
     },
     onSuccess: (data) => {
@@ -33,7 +36,7 @@ export default function SystemAdmin() {
       window.location.href = '/';
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to impersonate tenant');
+      toast.error(error.message || 'Failed to impersonate tenant');
     }
   });
 
