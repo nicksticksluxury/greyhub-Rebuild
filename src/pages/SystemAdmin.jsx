@@ -247,6 +247,7 @@ export default function SystemAdmin() {
                       <div>
                         <p className="font-semibold text-slate-900">{company.name}</p>
                         <p className="text-sm text-slate-500">{company.email}</p>
+                        <p className="text-xs text-slate-400 font-mono">{company.id}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
