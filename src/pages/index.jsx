@@ -140,6 +140,69 @@ Whatnot Profile: ${formData.whatnotLink}
                     &copy; {new Date().getFullYear()} Nick’s Ticks & Luxury. All rights reserved.
                 </div>
             </div>
+
+            {/* Invite Request Dialog */}
+            <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
+                <DialogContent className="bg-slate-900 border-slate-700 text-slate-200">
+                    <DialogHeader>
+                        <DialogTitle className="text-white">Request Dealer Invite</DialogTitle>
+                        <DialogDescription className="text-slate-400">
+                            Fill out the form below and we'll get back to you soon!
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmitInviteRequest} className="space-y-4">
+                        <div>
+                            <Label htmlFor="fullName" className="text-slate-300">Full Name *</Label>
+                            <Input
+                                id="fullName"
+                                value={formData.fullName}
+                                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                                required
+                                className="bg-slate-800 border-slate-700 text-white"
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="companyName" className="text-slate-300">Company Name (if you have one)</Label>
+                            <Input
+                                id="companyName"
+                                value={formData.companyName}
+                                onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                                className="bg-slate-800 border-slate-700 text-white"
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="email" className="text-slate-300">Email Address *</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                required
+                                className="bg-slate-800 border-slate-700 text-white"
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="whatnotLink" className="text-slate-300">Whatnot Profile Link *</Label>
+                            <Input
+                                id="whatnotLink"
+                                type="url"
+                                value={formData.whatnotLink}
+                                onChange={(e) => setFormData({...formData, whatnotLink: e.target.value})}
+                                required
+                                placeholder="https://www.whatnot.com/user/..."
+                                className="bg-slate-800 border-slate-700 text-white"
+                            />
+                        </div>
+                        <Button 
+                            type="submit" 
+                            disabled={submitting}
+                            className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold"
+                        >
+                            {submitting ? "Submitting..." : "Submit Request"}
+                        </Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
