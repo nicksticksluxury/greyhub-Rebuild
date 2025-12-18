@@ -115,14 +115,14 @@ export default function Subscriptions() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-slate-600" />
               </div>
-            ) : plans.length === 0 ? (
+            ) : (plans || []).length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <DollarSign className="w-12 h-12 mx-auto mb-2 opacity-30" />
                 <p>No subscription plans yet</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {plans.map((plan) => (
+                {(plans || []).map((plan) => (
                   <div key={plan.id} className="p-4 border border-slate-200 rounded-lg bg-white">
                     {editingPlan === plan.id ? (
                       <div className="space-y-4">
@@ -199,7 +199,7 @@ export default function Subscriptions() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-slate-600" />
               </div>
-            ) : companies.length === 0 ? (
+            ) : (companies || []).length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <Building2 className="w-12 h-12 mx-auto mb-2 opacity-30" />
                 <p>No companies yet</p>
@@ -216,7 +216,7 @@ export default function Subscriptions() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {companies.map((company) => (
+                  {(companies || []).map((company) => (
                     <TableRow key={company.id} className="hover:bg-slate-50">
                       <TableCell className="font-medium">{company.name}</TableCell>
                       <TableCell>
