@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     
-    const { token, plan_id, payment_token, company_name } = body;
+    const { token, plan_id, payment_token, company_name, coupon_code } = body;
 
     // Get authenticated user
     const user = await base44.auth.me();
@@ -32,22 +32,21 @@ Deno.serve(async (req) => {
       company_id: companyId
     });
 
-    // Create Square subscription if payment token provided
-    if (payment_token) {
-      try {
-        const subscriptionResult = await base44.asServiceRole.functions.invoke('createSquareSubscription', {
-          payment_token,
-          plan_id: plan_id || 'standard',
-          company_id: companyId
-        });
+    // Create Square subscription (payment_token optional for 100% off forever coupons)
+    try {
+      const subscriptionResult = await base44.asServiceRole.functions.invoke('createSquareSubscription', {
+        payment_token: payment_token || null,
+        plan_id: plan_id || 'standard',
+        company_id: companyId,
+        coupon_code: coupon_code || null
+      });
 
-        if (!subscriptionResult.data.success) {
-          throw new Error(subscriptionResult.data.error || 'Failed to create subscription');
-        }
-      } catch (subError) {
-        console.error("Subscription creation failed:", subError);
-        return Response.json({ success: false, error: subError.message });
+      if (!subscriptionResult.data.success) {
+        throw new Error(subscriptionResult.data.error || 'Failed to create subscription');
       }
+    } catch (subError) {
+      console.error("Subscription creation failed:", subError);
+      return Response.json({ success: false, error: subError.message });
     }
 
     // Mark invitation as accepted

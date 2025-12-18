@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { payment_token, plan_id, company_id } = await req.json();
+    const { payment_token, plan_id, company_id, coupon_code } = await req.json();
 
     // Allow either authenticated user OR explicit company_id for service role calls
     let targetCompanyId = company_id;
@@ -50,6 +50,25 @@ Deno.serve(async (req) => {
 
     if (!company) {
       return Response.json({ error: 'Company not found' }, { status: 404 });
+    }
+
+    // Calculate subscription price (handle coupons)
+    let subscriptionPrice = 5000; // Default $50.00
+    if (coupon_code) {
+      const coupons = await base44.asServiceRole.entities.Coupon.filter({ 
+        code: coupon_code.toUpperCase(),
+        status: 'active'
+      });
+      const coupon = coupons[0];
+      if (coupon && coupon.type === 'percentage' && coupon.value === 100 && !coupon.duration_in_months) {
+        subscriptionPrice = 0; // 100% off forever
+      }
+      // Increment usage count
+      if (coupon) {
+        await base44.asServiceRole.entities.Coupon.update(coupon.id, {
+          times_used: (coupon.times_used || 0) + 1
+        });
+      }
     }
 
     // Create or get Square customer
@@ -119,7 +138,7 @@ Deno.serve(async (req) => {
 
     const cardId = cardData.card.id;
 
-    if (targetCompanyId) {
+    if (targetCompanyId && payment_token) {
       await base44.asServiceRole.entities.Log.create({
         company_id: targetCompanyId,
         timestamp: new Date().toISOString(),
@@ -154,7 +173,7 @@ Deno.serve(async (req) => {
                   pricing: {
                     type: 'STATIC',
                     price_money: {
-                      amount: 5000, // $50.00
+                      amount: subscriptionPrice,
                       currency: 'USD',
                     },
                   },
@@ -174,7 +193,7 @@ Deno.serve(async (req) => {
                   pricing: {
                     type: 'STATIC',
                     price_money: {
-                      amount: 5000,
+                      amount: subscriptionPrice,
                       currency: 'USD',
                     },
                   },
@@ -218,19 +237,25 @@ Deno.serve(async (req) => {
     }
 
     // Now create the subscription using the plan
+    const subscriptionBody = {
+      idempotency_key: `sub-${company.id}-${Date.now()}`,
+      location_id: locationId,
+      customer_id: customerId,
+      plan_variation_id: planVariationId,
+    };
+
+    // Only add card_id if payment token was provided (not required for 100% off forever)
+    if (cardId) {
+      subscriptionBody.card_id = cardId;
+    }
+
     const subscriptionResponse = await fetch(`${apiBaseUrl}/v2/subscriptions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({
-        idempotency_key: `sub-${company.id}-${Date.now()}`,
-        location_id: locationId,
-        customer_id: customerId,
-        card_id: cardId,
-        plan_variation_id: planVariationId,
-      }),
+      body: JSON.stringify(subscriptionBody),
     });
 
     const subscriptionData = await subscriptionResponse.json();
