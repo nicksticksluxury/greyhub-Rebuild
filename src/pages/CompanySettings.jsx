@@ -163,7 +163,7 @@ export default function CompanySettings() {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <Card className="p-8 text-center">
+          <Card className="p-8 text-center mb-6">
             <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
             <h2 className="text-xl font-semibold text-slate-900 mb-2">No Company Found</h2>
             <p className="text-slate-500">Please contact support to set up your company.</p>

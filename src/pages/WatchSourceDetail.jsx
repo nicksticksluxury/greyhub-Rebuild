@@ -345,7 +345,7 @@ export default function WatchSourceDetail() {
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setIsOrderDialogOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={saveOrderMutation.isPending}>Save Order</Button>
+                        <Button type="submit" disabled={saveOrderMutation.isPending} className="bg-slate-800 hover:bg-slate-900 text-white">Save Order</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

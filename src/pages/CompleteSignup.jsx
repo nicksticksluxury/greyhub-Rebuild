@@ -171,7 +171,7 @@ export default function CompleteSignup() {
           </CardHeader>
           <CardContent>
             <p className="text-slate-600 mb-4">{error}</p>
-            <Button onClick={() => window.location.href = "/"} className="w-full">
+            <Button onClick={() => window.location.href = "/"} className="w-full bg-slate-800 hover:bg-slate-900 text-white">
               Go Home
             </Button>
           </CardContent>
