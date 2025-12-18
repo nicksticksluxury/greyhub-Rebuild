@@ -546,6 +546,93 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case 'catalog.version.updated': {
+        const catalogVersion = event.data?.object?.catalog_version;
+        
+        await base44.asServiceRole.entities.Log.create({
+          company_id: event.merchant_id || 'system',
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          category: 'square_integration',
+          message: 'Catalog version updated',
+          details: { 
+            event_type: event.type,
+            event_id: event.event_id,
+            catalog_version: catalogVersion,
+          },
+        });
+        
+        console.log('Catalog version updated:', catalogVersion?.version);
+        break;
+      }
+
+      case 'payout.sent': {
+        const payout = event.data?.object?.payout;
+        
+        await base44.asServiceRole.entities.Log.create({
+          company_id: event.merchant_id || 'system',
+          timestamp: new Date().toISOString(),
+          level: 'success',
+          category: 'square_integration',
+          message: 'Payout sent',
+          details: { 
+            event_type: event.type,
+            event_id: event.event_id,
+            payout_id: payout?.id,
+            amount: payout?.amount_money?.amount,
+            destination: payout?.destination?.type,
+          },
+        });
+        
+        console.log('Payout sent:', payout?.id, payout?.amount_money?.amount);
+        break;
+      }
+
+      case 'invoice.updated': {
+        const invoice = event.data?.object?.invoice;
+        
+        await base44.asServiceRole.entities.Log.create({
+          company_id: event.merchant_id || 'system',
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          category: 'square_integration',
+          message: 'Invoice updated',
+          details: { 
+            event_type: event.type,
+            event_id: event.event_id,
+            invoice_id: invoice?.id,
+            status: invoice?.status,
+            customer_id: invoice?.primary_recipient?.customer_id,
+          },
+        });
+        
+        console.log('Invoice updated:', invoice?.id, invoice?.status);
+        break;
+      }
+
+      case 'order.created': {
+        const order = event.data?.object?.order;
+        
+        await base44.asServiceRole.entities.Log.create({
+          company_id: event.merchant_id || 'system',
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          category: 'square_integration',
+          message: 'Order created',
+          details: { 
+            event_type: event.type,
+            event_id: event.event_id,
+            order_id: order?.id,
+            state: order?.state,
+            total_money: order?.total_money?.amount,
+            line_items_count: order?.line_items?.length,
+          },
+        });
+        
+        console.log('Order created:', order?.id, order?.state);
+        break;
+      }
+
       default:
         console.log('Unhandled event type:', event.type);
         
