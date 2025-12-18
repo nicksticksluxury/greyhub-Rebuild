@@ -546,7 +546,35 @@ export default function Settings() {
               <CardTitle>User Management</CardTitle>
               <CardDescription>Manage system admin user settings</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-4">
+              <div className="p-4 border border-slate-200 rounded-xl bg-white">
+                 <h3 className="font-medium text-slate-900 mb-2">Set Company ID</h3>
+                 <p className="text-sm text-slate-500 mb-4">
+                   Paste a company ID to associate your admin account with that company.
+                 </p>
+                 <div className="flex gap-2">
+                   <Input
+                     placeholder="Paste company ID here"
+                     onChange={(e) => {
+                       const companyId = e.target.value;
+                       if (companyId && confirm(`Set your company_id to ${companyId}?`)) {
+                         const toastId = toast.loading("Updating company ID...");
+                         base44.auth.updateMe({ company_id: companyId })
+                           .then(() => {
+                             toast.success("Company ID updated. Reloading...", { id: toastId });
+                             setTimeout(() => window.location.reload(), 1000);
+                           })
+                           .catch((e) => {
+                             toast.error("Failed: " + e.message, { id: toastId });
+                           });
+                       }
+                       e.target.value = '';
+                     }}
+                     className="font-mono"
+                   />
+                 </div>
+              </div>
+
               <div className="p-4 border border-slate-200 rounded-xl bg-white">
                  <h3 className="font-medium text-slate-900 mb-2">Clear Company Association</h3>
                  <p className="text-sm text-slate-500 mb-4">
