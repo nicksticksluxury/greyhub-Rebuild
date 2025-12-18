@@ -9,7 +9,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!user.company_id) {
+    const companyId = user.data?.company_id || user.company_id;
+    if (!companyId) {
       return Response.json({ error: 'User not associated with a company' }, { status: 400 });
     }
 
@@ -29,7 +30,7 @@ Deno.serve(async (req) => {
     // Check if user already exists in this company
     const existingUsers = await base44.asServiceRole.entities.User.filter({ 
       email: email,
-      company_id: user.company_id 
+      company_id: companyId 
     });
 
     if (existingUsers.length > 0) {
@@ -39,7 +40,7 @@ Deno.serve(async (req) => {
     // Check for pending invitation
     const pendingInvites = await base44.entities.Invitation.filter({
       email: email,
-      company_id: user.company_id,
+      company_id: companyId,
       status: 'pending'
     });
 
@@ -49,7 +50,7 @@ Deno.serve(async (req) => {
 
     // Create invitation
     const invitation = await base44.entities.Invitation.create({
-      company_id: user.company_id,
+      company_id: companyId,
       email: email,
       token: token,
       status: 'pending',
@@ -59,7 +60,7 @@ Deno.serve(async (req) => {
     });
 
     // Get company info for email
-    const companies = await base44.entities.Company.filter({ id: user.company_id });
+    const companies = await base44.entities.Company.filter({ id: companyId });
     const company = companies[0];
 
     // Send invitation email
