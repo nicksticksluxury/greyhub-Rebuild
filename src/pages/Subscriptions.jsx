@@ -16,17 +16,17 @@ export default function Subscriptions() {
   const [editingPlan, setEditingPlan] = useState(null);
   const [editedData, setEditedData] = useState({});
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: loadingUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  // Restrict to admins only
+  // Restrict to system admins (admin role without a company_id) only
   useEffect(() => {
-    if (user && user.role !== 'admin') {
+    if (!loadingUser && user && (user.role !== 'admin' || user.data?.company_id || user.company_id)) {
       window.location.href = "/";
     }
-  }, [user]);
+  }, [user, loadingUser]);
 
   const { data: plans = [], isLoading: loadingPlans } = useQuery({
     queryKey: ['subscriptionPlans'],
@@ -87,7 +87,7 @@ export default function Subscriptions() {
     }
   };
 
-  if (!user || user.role !== 'admin') {
+  if (loadingUser || !user || user.role !== 'admin' || user.data?.company_id || user.company_id) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-slate-600" />
