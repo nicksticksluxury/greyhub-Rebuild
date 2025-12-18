@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
 
     // Only system admins (users without company_id) can access this
-    if (!user || user.company_id) {
+    if (!user || user.role !== 'admin' || user.company_id || user.data?.company_id) {
       return Response.json({ error: 'Unauthorized - System admin only' }, { status: 401 });
     }
 
