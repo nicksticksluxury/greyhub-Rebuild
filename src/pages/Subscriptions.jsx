@@ -30,7 +30,10 @@ export default function Subscriptions() {
 
   const { data: plans = [], isLoading: loadingPlans } = useQuery({
     queryKey: ['subscriptionPlans'],
-    queryFn: () => base44.asServiceRole.entities.SubscriptionPlan.list(),
+    queryFn: async () => {
+      const result = await base44.asServiceRole.entities.SubscriptionPlan.list();
+      return Array.isArray(result) ? result : [];
+    },
   });
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
