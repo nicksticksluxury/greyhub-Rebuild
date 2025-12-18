@@ -32,9 +32,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!payment_token) {
-      return Response.json({ error: 'Payment token is required' }, { status: 400 });
-    }
+    // Payment token only required if subscription has a cost
+    // We'll check this after calculating the price with coupon
 
     const apiBaseUrl = Deno.env.get('SQUARE_API_BASE_URL');
     const accessToken = Deno.env.get('SQUARE_ACCESS_TOKEN');
@@ -53,22 +52,31 @@ Deno.serve(async (req) => {
     }
 
     // Calculate subscription price (handle coupons)
-    let subscriptionPrice = 5000; // Default $50.00
+    let subscriptionPrice = 5000; // Default $50.00 in cents
     if (coupon_code) {
       const coupons = await base44.asServiceRole.entities.Coupon.filter({ 
         code: coupon_code.toUpperCase(),
         status: 'active'
       });
       const coupon = coupons[0];
-      if (coupon && coupon.type === 'percentage' && coupon.value === 100 && !coupon.duration_in_months) {
-        subscriptionPrice = 0; // 100% off forever
-      }
-      // Increment usage count
       if (coupon) {
+        // Apply discount based on coupon type
+        if (coupon.type === 'percentage') {
+          subscriptionPrice = Math.round(5000 * (1 - coupon.value / 100));
+        } else if (coupon.type === 'fixed_amount') {
+          subscriptionPrice = Math.max(0, 5000 - Math.round(coupon.value * 100));
+        }
+        
+        // Increment usage count
         await base44.asServiceRole.entities.Coupon.update(coupon.id, {
           times_used: (coupon.times_used || 0) + 1
         });
       }
+    }
+
+    // Validate payment token is provided if subscription has a cost
+    if (subscriptionPrice > 0 && !payment_token) {
+      return Response.json({ error: 'Payment token is required' }, { status: 400 });
     }
 
     // Create or get Square customer
@@ -114,40 +122,43 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create payment method (card)
-    const cardResponse = await fetch(`${apiBaseUrl}/v2/cards`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        idempotency_key: `card-${company.id}-${Date.now()}`,
-        source_id: payment_token,
-        card: {
-          customer_id: customerId,
+    // Create payment method (card) - only if payment token provided
+    let cardId = null;
+    if (payment_token) {
+      const cardResponse = await fetch(`${apiBaseUrl}/v2/cards`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-      }),
-    });
-
-    const cardData = await cardResponse.json();
-
-    if (!cardResponse.ok) {
-      throw new Error(`Failed to create card: ${JSON.stringify(cardData.errors || cardData)}`);
-    }
-
-    const cardId = cardData.card.id;
-
-    if (targetCompanyId && payment_token) {
-      await base44.asServiceRole.entities.Log.create({
-        company_id: targetCompanyId,
-        timestamp: new Date().toISOString(),
-        level: 'success',
-        category: 'square_integration',
-        message: 'Payment card created',
-        details: { card_id: cardId, customer_id: customerId },
-        user_id: userId,
+        body: JSON.stringify({
+          idempotency_key: `card-${company.id}-${Date.now()}`,
+          source_id: payment_token,
+          card: {
+            customer_id: customerId,
+          },
+        }),
       });
+
+      const cardData = await cardResponse.json();
+
+      if (!cardResponse.ok) {
+        throw new Error(`Failed to create card: ${JSON.stringify(cardData.errors || cardData)}`);
+      }
+
+      cardId = cardData.card.id;
+
+      if (targetCompanyId) {
+        await base44.asServiceRole.entities.Log.create({
+          company_id: targetCompanyId,
+          timestamp: new Date().toISOString(),
+          level: 'success',
+          category: 'square_integration',
+          message: 'Payment card created',
+          details: { card_id: cardId, customer_id: customerId },
+          user_id: userId,
+        });
+      }
     }
 
     // Create subscription plan with variation using batch upsert
