@@ -59,6 +59,7 @@ export default function SystemAdmin() {
           toast.success(
             `Deleted ${data.company_name} (ID: ${data.company_id})\n` +
             `Total records: ${data.total_records_deleted}, Users cleared: ${data.users_cleared}\n` +
+            `Subscription cancelled: ${data.subscription_cancelled ? 'Yes' : 'No'}\n` +
             `${stats}`,
             { duration: 8000 }
           );

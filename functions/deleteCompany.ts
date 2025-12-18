@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { Client, Environment } from 'npm:square';
 
 Deno.serve(async (req) => {
   try {
@@ -16,9 +17,28 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Company ID required' }, { status: 400 });
     }
 
-    // Get company name before deletion
+    // Get company details before deletion
     const company = await base44.asServiceRole.entities.Company.filter({ id: company_id });
-    const companyName = company[0]?.name || 'Unknown';
+    const companyData = company[0];
+    const companyName = companyData?.name || 'Unknown';
+    const squareSubscriptionId = companyData?.square_subscription_id;
+
+    // Cancel Square subscription if exists
+    let subscriptionCancelled = false;
+    if (squareSubscriptionId) {
+      try {
+        const squareClient = new Client({
+          environment: Environment.Production,
+          accessToken: Deno.env.get('SQUARE_ACCESS_TOKEN'),
+        });
+
+        await squareClient.subscriptionsApi.cancelSubscription(squareSubscriptionId);
+        subscriptionCancelled = true;
+        console.log(`Cancelled Square subscription: ${squareSubscriptionId}`);
+      } catch (error) {
+        console.error('Failed to cancel Square subscription:', error);
+      }
+    }
 
     // Delete all data associated with this company
     const entities = [
@@ -82,7 +102,8 @@ Deno.serve(async (req) => {
       company_name: companyName,
       total_records_deleted: totalDeleted,
       users_cleared: usersCleared,
-      deletion_stats: deletionStats
+      deletion_stats: deletionStats,
+      subscription_cancelled: subscriptionCancelled
     });
 
   } catch (error) {
