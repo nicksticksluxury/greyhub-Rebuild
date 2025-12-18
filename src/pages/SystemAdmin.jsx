@@ -44,9 +44,27 @@ export default function SystemAdmin() {
       );
       return results;
     },
-    onSuccess: () => {
+    onSuccess: (results) => {
       queryClient.invalidateQueries({ queryKey: ['allCompanies'] });
-      toast.success(`Successfully deleted ${selectedCompanies.length} ${selectedCompanies.length === 1 ? 'company' : 'companies'}`);
+      
+      // Display detailed deletion info
+      results.forEach(result => {
+        const data = result.data;
+        if (data.success) {
+          const stats = Object.entries(data.deletion_stats)
+            .filter(([_, count]) => count > 0)
+            .map(([entity, count]) => `${entity}: ${count}`)
+            .join(', ');
+          
+          toast.success(
+            `Deleted ${data.company_name} (ID: ${data.company_id})\n` +
+            `Total records: ${data.total_records_deleted}, Users cleared: ${data.users_cleared}\n` +
+            `${stats}`,
+            { duration: 8000 }
+          );
+        }
+      });
+      
       setSelectedCompanies([]);
     },
     onError: (error) => {

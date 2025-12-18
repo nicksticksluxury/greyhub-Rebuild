@@ -16,6 +16,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Company ID required' }, { status: 400 });
     }
 
+    // Get company name before deletion
+    const company = await base44.asServiceRole.entities.Company.filter({ id: company_id });
+    const companyName = company[0]?.name || 'Unknown';
+
     // Delete all data associated with this company
     const entities = [
       'Auction',
@@ -31,20 +35,30 @@ Deno.serve(async (req) => {
       'Coupon'
     ];
 
+    const deletionStats = {};
+    let totalDeleted = 0;
+
     for (const entityName of entities) {
       try {
         const records = await base44.asServiceRole.entities[entityName].filter({ company_id });
+        const count = records.length;
+        deletionStats[entityName] = count;
+        totalDeleted += count;
+        
         await Promise.all(records.map(record => 
           base44.asServiceRole.entities[entityName].delete(record.id)
         ));
       } catch (error) {
         console.error(`Failed to delete ${entityName} records:`, error);
+        deletionStats[entityName] = 0;
       }
     }
 
     // Clear company_id from all users associated with this company
+    let usersCleared = 0;
     try {
       const users = await base44.asServiceRole.entities.User.filter({ company_id });
+      usersCleared = users.length;
       await Promise.all(users.map(u => 
         base44.asServiceRole.entities.User.update(u.id, { company_id: null })
       ));
@@ -55,9 +69,20 @@ Deno.serve(async (req) => {
     // Finally, delete the company itself
     await base44.asServiceRole.entities.Company.delete(company_id);
 
+    // Log the deletion
+    console.log(`Company deleted: ${companyName} (ID: ${company_id})`);
+    console.log(`Total records deleted: ${totalDeleted}`);
+    console.log(`Users disassociated: ${usersCleared}`);
+    console.log('Deletion breakdown:', deletionStats);
+
     return Response.json({
       success: true,
-      message: 'Company and all associated data deleted successfully'
+      message: 'Company and all associated data deleted successfully',
+      company_id,
+      company_name: companyName,
+      total_records_deleted: totalDeleted,
+      users_cleared: usersCleared,
+      deletion_stats: deletionStats
     });
 
   } catch (error) {
