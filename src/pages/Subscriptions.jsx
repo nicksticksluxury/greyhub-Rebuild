@@ -34,10 +34,8 @@ export default function Subscriptions() {
   const { data: plansData, isLoading: loadingPlans } = useQuery({
     queryKey: ['subscriptionPlans'],
     queryFn: async () => {
-      console.log('Fetching subscription plans...');
-      const result = await base44.asServiceRole.entities.SubscriptionPlan.list();
-      console.log('Plans result:', result);
-      return Array.isArray(result) ? result : [];
+      const result = await base44.functions.invoke('listSubscriptionPlans');
+      return result.data.plans || [];
     },
     enabled: isSystemAdmin,
   });
@@ -45,15 +43,8 @@ export default function Subscriptions() {
   const { data: companiesData, isLoading: loadingCompanies } = useQuery({
     queryKey: ['allCompanies'],
     queryFn: async () => {
-      try {
-        console.log('Fetching companies...');
-        const result = await base44.asServiceRole.entities.Company.list();
-        console.log('Companies result:', result, 'Type:', typeof result, 'IsArray:', Array.isArray(result));
-        return Array.isArray(result) ? result : [];
-      } catch (error) {
-        console.error('Failed to fetch companies:', error);
-        return [];
-      }
+      const result = await base44.functions.invoke('listAllCompanies');
+      return result.data.companies || [];
     },
     enabled: isSystemAdmin,
   });
@@ -62,10 +53,12 @@ export default function Subscriptions() {
   const plans = Array.isArray(plansData) ? plansData : [];
   const companies = Array.isArray(companiesData) ? companiesData : [];
 
-  console.log('Rendered with plans:', plans.length, 'companies:', companies.length);
-
   const updatePlanMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.asServiceRole.entities.SubscriptionPlan.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const result = await base44.functions.invoke('updateSubscriptionPlan', { id, data });
+      if (!result.data.success) throw new Error(result.data.error);
+      return result.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptionPlans'] });
       toast.success("Plan updated successfully");
