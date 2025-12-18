@@ -80,20 +80,6 @@ export default function Layout({ children, currentPageName }) {
       },
     ];
 
-    // Add System Settings for admins
-    if (user?.role === 'admin') {
-      items.push({
-        title: "Subscriptions",
-        url: createPageUrl("Subscriptions"),
-        icon: DollarSign,
-      });
-      items.push({
-        title: "System Settings",
-        url: createPageUrl("Settings"),
-        icon: Shield,
-      });
-    }
-
     return items;
   }, [user]);
 
@@ -110,7 +96,7 @@ export default function Layout({ children, currentPageName }) {
           setUser(currentUser);
           // Check if user is system admin with a company (impersonating)
           const companyId = currentUser.data?.company_id || currentUser.company_id;
-          setIsImpersonating(currentUser.role === 'admin' && !companyId && currentPageName !== 'SystemAdmin');
+          setIsImpersonating(currentUser.role === 'admin' && !!companyId);
         } catch (error) {
           // If auth check fails (likely 401), redirect
           base44.auth.redirectToLogin();
