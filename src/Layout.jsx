@@ -150,6 +150,11 @@ export default function Layout({ children, currentPageName }) {
       icon: Shield,
     },
     {
+      title: "Subscriptions",
+      url: createPageUrl("Subscriptions"),
+      icon: DollarSign,
+    },
+    {
       title: "System Settings",
       url: createPageUrl("Settings"),
       icon: Settings,
