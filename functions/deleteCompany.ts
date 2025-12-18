@@ -60,14 +60,18 @@ Deno.serve(async (req) => {
 
     for (const entityName of entities) {
       try {
-        const records = await base44.asServiceRole.entities[entityName].filter({ company_id });
+        // Fetch all records for this entity and filter by company_id
+        const allRecords = await base44.asServiceRole.entities[entityName].list('created_date', 10000);
+        const records = allRecords.filter(r => r.company_id === company_id);
         const count = records.length;
         deletionStats[entityName] = count;
         totalDeleted += count;
         
-        await Promise.all(records.map(record => 
-          base44.asServiceRole.entities[entityName].delete(record.id)
-        ));
+        if (count > 0) {
+          await Promise.all(records.map(record => 
+            base44.asServiceRole.entities[entityName].delete(record.id)
+          ));
+        }
       } catch (error) {
         console.error(`Failed to delete ${entityName} records:`, error);
         deletionStats[entityName] = 0;
@@ -77,11 +81,14 @@ Deno.serve(async (req) => {
     // Clear company_id from all users associated with this company
     let usersCleared = 0;
     try {
-      const users = await base44.asServiceRole.entities.User.filter({ company_id });
+      const allUsers = await base44.asServiceRole.entities.User.list('created_date', 10000);
+      const users = allUsers.filter(u => u.company_id === company_id);
       usersCleared = users.length;
-      await Promise.all(users.map(u => 
-        base44.asServiceRole.entities.User.update(u.id, { company_id: null })
-      ));
+      if (usersCleared > 0) {
+        await Promise.all(users.map(u => 
+          base44.asServiceRole.entities.User.update(u.id, { company_id: null })
+        ));
+      }
     } catch (error) {
       console.error('Failed to clear user company associations:', error);
     }
