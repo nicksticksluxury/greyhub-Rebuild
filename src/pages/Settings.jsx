@@ -61,7 +61,10 @@ export default function Settings() {
 
   const { data: companies = [] } = useQuery({
     queryKey: ['allCompanies'],
-    queryFn: () => base44.asServiceRole.entities.Company.list(),
+    queryFn: async () => {
+      const result = await base44.asServiceRole.entities.Company.list();
+      return Array.isArray(result) ? result : [];
+    },
   });
 
   const tokenSetting = settings?.find(s => s.key === 'ebay_verification_token');
