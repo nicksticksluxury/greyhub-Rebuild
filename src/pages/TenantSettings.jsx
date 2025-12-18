@@ -336,20 +336,7 @@ export default function TenantSettings() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Testing & Development</CardTitle>
-            <CardDescription>Tools for testing integrations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <a href={createPageUrl("SquareTest")} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="text-slate-900">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Square Integration Test Page
-              </Button>
-            </a>
-          </CardContent>
-        </Card>
+
 
         {company && (
           <Card className="mt-6">
