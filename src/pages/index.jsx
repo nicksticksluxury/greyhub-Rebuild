@@ -76,7 +76,7 @@ Whatnot Profile: ${formData.whatnotLink}
                     
                     <div>
                         <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-2">
-                            Nick’s Ticks <span className="text-amber-400">&</span> Luxury
+                            Nick's Ticks <span className="text-amber-400">&</span> Luxury
                         </h1>
                         <p className="text-xl md:text-2xl font-medium text-amber-500/90 uppercase tracking-widest">
                             The Store is Coming Soon!
@@ -87,13 +87,13 @@ Whatnot Profile: ${formData.whatnotLink}
                 {/* Main Copy */}
                 <div className="space-y-6 text-lg leading-relaxed text-slate-400 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150">
                     <p className="text-xl text-slate-300 font-serif italic">
-                        "Luxury meets chaos — and it’s almost ready for you."
+                        "Luxury meets chaos — and it's almost ready for you."
                     </p>
                     <p>
-                        We’re building something truly special for watch lovers, collectors, and dealers alike: a full online store powered by the same system that runs our private inventory and dealer tools.
+                        We're building something truly special for watch lovers, collectors, and dealers alike: a full online store powered by the same system that runs our private inventory and dealer tools.
                     </p>
                     <p>
-                        This isn’t just another watch site. It’s the front door to a curated world of vintage, modern, and hard-to-find timepieces — handpicked, verified, and sold by the same madness that built Nick’s Ticks & Luxury.
+                        This isn't just another watch site. It's the front door to a curated world of vintage, modern, and hard-to-find timepieces — handpicked, verified, and sold by the same madness that built Nick's Ticks & Luxury.
                     </p>
                 </div>
 
@@ -106,7 +106,7 @@ Whatnot Profile: ${formData.whatnotLink}
                             <h3 className="text-lg font-bold text-white uppercase tracking-wider">Dealer Login</h3>
                         </div>
                         <p className="text-slate-400 mb-6">
-                            Right now, most of our platform is private — it’s where the real work happens: managing inventory, analyzing markets, and connecting with other watch dealers.
+                            Right now, most of our platform is private — it's where the real work happens: managing inventory, analyzing markets, and connecting with other watch dealers.
                             But the storefront is almost ready to open its doors.
                         </p>
                         <Link to={createPageUrl("Inventory")}>
@@ -122,22 +122,21 @@ Whatnot Profile: ${formData.whatnotLink}
                             <Watch className="w-5 h-5 text-amber-400" />
                             <h3 className="text-lg font-bold text-white uppercase tracking-wider">For Dealers & Retailers</h3>
                         </div>
-                        <p className="text-slate-400 mb-4">
-                            Are you also a watch dealer or retailer? We’d love to connect.
+                        <p className="text-slate-400 mb-6">
+                            Are you a watch dealer or retailer that uses Whatnot? Request an invite and trial here!
                         </p>
-                        <div className="bg-black/20 p-4 rounded-lg border border-white/5 text-center">
-                            <p className="text-sm text-slate-500 mb-1">Contact Nick at</p>
-                            <ContactEmail />
-                        </div>
-                        <p className="text-sm text-slate-500 mt-4 text-center">
-                            to learn about integrations, partnerships, or getting early access to dealer tools.
-                        </p>
+                        <Button 
+                            onClick={() => setShowInviteForm(true)}
+                            className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold"
+                        >
+                            Request Invite <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
                     </div>
                 </div>
 
                 {/* Footer */}
                 <div className="pt-12 text-sm text-slate-600 animate-in fade-in duration-1000 delay-500">
-                    &copy; {new Date().getFullYear()} Nick’s Ticks & Luxury. All rights reserved.
+                    &copy; {new Date().getFullYear()} Nick's Ticks & Luxury. All rights reserved.
                 </div>
             </div>
 
