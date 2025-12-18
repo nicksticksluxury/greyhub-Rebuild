@@ -13,15 +13,15 @@ Deno.serve(async (req) => {
     // Fetch all companies
     const companies = await base44.asServiceRole.entities.Company.list('-created_date', 1000);
 
-    // Fetch all users
-    const allUsers = await base44.asServiceRole.entities.User.list('created_date', 5000);
+    // Fetch all users with filter to get around RLS
+    const allUsers = await base44.asServiceRole.entities.User.filter({}, 'created_date', 5000);
 
     // Fetch all watches for data count
     const allWatches = await base44.asServiceRole.entities.Watch.list('created_date', 10000);
 
     // Aggregate stats for each company
     const companiesWithStats = companies.map(company => {
-      const userCount = allUsers.filter(u => u.company_id === company.id).length;
+      const userCount = allUsers.filter(u => (u.company_id === company.id || u.data?.company_id === company.id)).length;
       const watchCount = allWatches.filter(w => w.company_id === company.id).length;
 
       return {
