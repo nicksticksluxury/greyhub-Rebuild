@@ -39,7 +39,7 @@ export default function CompleteSignup() {
     
     // Load Square SDK
     const script = document.createElement('script');
-    script.src = 'https://sandbox.web.squarecdn.com/v1/square.js';
+    script.src = 'https://web.squarecdn.com/v1/square.js';
     script.async = true;
     script.onload = () => setSquareLoaded(true);
     document.body.appendChild(script);
