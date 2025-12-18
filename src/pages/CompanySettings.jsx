@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Building2, Save, Users, Mail, Phone, Globe, MapPin, UserPlus, Clock, Database, Loader2 } from "lucide-react";
+import { Building2, Save, Users, Mail, Phone, Globe, MapPin, UserPlus, Clock, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CompanySettings() {
@@ -99,57 +99,7 @@ export default function CompanySettings() {
     }
   };
 
-  const [isMigrating, setIsMigrating] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
-  const [dbState, setDbState] = useState(null);
-  const handleCheckDatabase = async () => {
-    setIsChecking(true);
-    try {
-      const result = await base44.functions.invoke('checkDatabaseState');
-      console.log('Database state:', result.data);
-      setDbState(result.data);
-      
-      if (result.data.success) {
-        toast.success('Database state retrieved - check console and card below');
-      } else {
-        toast.error('Failed to check database: ' + result.data.error);
-      }
-    } catch (error) {
-      console.error('Check error:', error);
-      toast.error('Failed to check database: ' + error.message);
-    } finally {
-      setIsChecking(false);
-    }
-  };
 
-  const handleMigrateData = async () => {
-    if (!confirm('This will migrate all existing data to this company. Continue?')) return;
-    
-    setIsMigrating(true);
-    try {
-      const result = await base44.functions.invoke('migrateDataToCompany', {
-        company_id: company.id
-      });
-
-      console.log('Migration result:', result.data);
-
-      if (result.data.success) {
-        const summary = Object.entries(result.data.results || {})
-          .map(([entity, data]) => `${entity}: ${data.updated || 0} updated`)
-          .join(', ');
-        toast.success(`Migration complete! ${summary}`);
-        queryClient.invalidateQueries();
-      } else {
-        console.error('Migration error:', result.data);
-        toast.error('Migration failed: ' + (result.data.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Migration exception:', error);
-      toast.error('Migration failed: ' + error.message);
-    } finally {
-      setIsMigrating(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -163,91 +113,15 @@ export default function CompanySettings() {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <Card className="p-8 text-center mb-6">
+          <Card className="p-8 text-center">
             <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
             <h2 className="text-xl font-semibold text-slate-900 mb-2">No Company Found</h2>
-            <p className="text-slate-500">Please contact support to set up your company.</p>
+            <p className="text-slate-500">Unable to load company information. Please refresh the page or contact support if the issue persists.</p>
           </Card>
-
-          {/* Data Migration */}
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center">
-                <Database className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900">Data Migration</h2>
-                <p className="text-sm text-slate-500">Migrate existing data to this company</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mb-4">
-              <Button 
-                onClick={handleCheckDatabase}
-                disabled={isChecking}
-                variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              >
-                {isChecking ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  <>
-                    <Database className="w-4 h-4 mr-2" />
-                    Check Database State
-                  </>
-                )}
-              </Button>
-
-              <Button 
-                onClick={handleMigrateData}
-                disabled={isMigrating}
-                variant="outline"
-                className="border-slate-300"
-              >
-                {isMigrating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Migrating...
-                  </>
-                ) : (
-                  <>
-                    <Database className="w-4 h-4 mr-2" />
-                    Migrate Data to Company
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {dbState && (
-              <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <h3 className="font-semibold text-slate-900 mb-2">Database State Report</h3>
-                <p className="text-sm text-slate-600 mb-2">
-                  User: {dbState.user?.email} (Role: {dbState.user?.role}, Company: {dbState.user?.company_id || 'none'})
-                </p>
-                <div className="space-y-2 text-sm">
-                  {Object.entries(dbState.report || {}).map(([entity, data]) => (
-                    <div key={entity} className="p-2 bg-white rounded border border-slate-200">
-                      <div className="font-medium text-slate-900">{entity}</div>
-                      {data.error ? (
-                        <div className="text-red-600">Error: {data.error}</div>
-                      ) : (
-                        <div className="text-slate-600">
-                          Total: {data.total} | With company_id: {data.withCompanyId} | Without: {data.withoutCompanyId}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
-          </div>
-          </div>
-          );
-          }
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -479,81 +353,7 @@ export default function CompanySettings() {
           </div>
         </Card>
 
-        {/* Data Migration */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center">
-              <Database className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900">Data Migration</h2>
-              <p className="text-sm text-slate-500">Migrate existing data to this company</p>
-            </div>
-          </div>
 
-          <div className="flex gap-3 mb-4">
-            <Button 
-              onClick={handleCheckDatabase}
-              disabled={isChecking}
-              variant="outline"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-            >
-              {isChecking ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Checking...
-                </>
-              ) : (
-                <>
-                  <Database className="w-4 h-4 mr-2" />
-                  Check Database State
-                </>
-              )}
-            </Button>
-
-            <Button 
-              onClick={handleMigrateData}
-              disabled={isMigrating}
-              variant="outline"
-              className="border-slate-300"
-            >
-              {isMigrating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Migrating...
-                </>
-              ) : (
-                <>
-                  <Database className="w-4 h-4 mr-2" />
-                  Migrate Data to Company
-                </>
-              )}
-            </Button>
-          </div>
-
-          {dbState && (
-            <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Database State Report</h3>
-              <p className="text-sm text-slate-600 mb-2">
-                User: {dbState.user?.email} (Role: {dbState.user?.role}, Company: {dbState.user?.company_id || 'none'})
-              </p>
-              <div className="space-y-2 text-sm">
-                {Object.entries(dbState.report || {}).map(([entity, data]) => (
-                  <div key={entity} className="p-2 bg-white rounded border border-slate-200">
-                    <div className="font-medium text-slate-900">{entity}</div>
-                    {data.error ? (
-                      <div className="text-red-600">Error: {data.error}</div>
-                    ) : (
-                      <div className="text-slate-600">
-                        Total: {data.total} | With company_id: {data.withCompanyId} | Without: {data.withoutCompanyId}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </Card>
         </div>
         </div>
   );
