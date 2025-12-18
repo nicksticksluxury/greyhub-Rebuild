@@ -38,8 +38,11 @@ export default function WatchSourceDetail() {
       if (data.id) {
         return base44.entities.SourceOrder.update(data.id, data);
       } else {
-        // Fallback if we ever want to create
-        return base44.entities.SourceOrder.create({ ...data, source_id: sourceId });
+        const user = await base44.auth.me();
+        if (!user || !user.company_id) {
+          throw new Error("User not authenticated or company_id missing.");
+        }
+        return base44.entities.SourceOrder.create({ ...data, source_id: sourceId, company_id: user.company_id });
       }
     },
     onSuccess: () => {
