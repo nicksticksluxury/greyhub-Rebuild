@@ -20,23 +20,25 @@ export default function CompanySettings() {
     queryFn: () => base44.auth.me(),
   });
 
+  const companyId = user?.data?.company_id || user?.company_id;
+
   const { data: company, isLoading } = useQuery({
-    queryKey: ['company', user?.data?.company_id],
-    queryFn: () => base44.entities.Company.filter({ id: user.data.company_id }),
-    enabled: !!user?.data?.company_id,
+    queryKey: ['company', companyId],
+    queryFn: () => base44.entities.Company.filter({ id: companyId }),
+    enabled: !!companyId,
     select: (data) => data[0],
   });
 
   const { data: companyUsers = [] } = useQuery({
-    queryKey: ['companyUsers', user?.data?.company_id],
-    queryFn: () => base44.entities.User.filter({ company_id: user.data.company_id }),
-    enabled: !!user?.data?.company_id,
+    queryKey: ['companyUsers', companyId],
+    queryFn: () => base44.entities.User.filter({ company_id: companyId }),
+    enabled: !!companyId,
   });
 
   const { data: pendingInvitations = [] } = useQuery({
-    queryKey: ['pendingInvitations', user?.data?.company_id],
-    queryFn: () => base44.entities.Invitation.filter({ company_id: user.data.company_id, status: 'pending' }),
-    enabled: !!user?.data?.company_id,
+    queryKey: ['pendingInvitations', companyId],
+    queryFn: () => base44.entities.Invitation.filter({ company_id: companyId, status: 'pending' }),
+    enabled: !!companyId,
   });
 
   const [inviteEmail, setInviteEmail] = useState('');

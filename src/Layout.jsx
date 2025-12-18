@@ -104,7 +104,8 @@ export default function Layout({ children, currentPageName }) {
           }
           setUser(currentUser);
           // Check if user is system admin with a company (impersonating)
-          setIsImpersonating(currentUser.role === 'admin' && !currentUser.data?.company_id && currentPageName !== 'SystemAdmin');
+          const companyId = currentUser.data?.company_id || currentUser.company_id;
+          setIsImpersonating(currentUser.role === 'admin' && !companyId && currentPageName !== 'SystemAdmin');
         } catch (error) {
           // If auth check fails (likely 401), redirect
           base44.auth.redirectToLogin();
@@ -184,7 +185,7 @@ export default function Layout({ children, currentPageName }) {
           <SidebarHeader className="border-b border-slate-200 p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center shadow-lg">
-                {user && !user.data?.company_id ? (
+                {user && !(user.data?.company_id || user.company_id) ? (
                   <Shield className="w-6 h-6 text-purple-400" />
                 ) : (
                   <Watch className="w-6 h-6 text-amber-400" />
@@ -193,14 +194,14 @@ export default function Layout({ children, currentPageName }) {
               <div>
                 <h2 className="font-bold text-slate-900 text-lg">WatchVault</h2>
                 <p className="text-xs text-slate-500 font-medium">
-                  {user && !user.data?.company_id ? 'System Admin' : 'Professional Inventory'}
+                  {user && !(user.data?.company_id || user.company_id) ? 'System Admin' : 'Professional Inventory'}
                 </p>
               </div>
             </div>
           </SidebarHeader>
           
           <SidebarContent className="p-3">
-            {user && user.data?.company_id && (
+            {user && (user.data?.company_id || user.company_id) && (
               <SidebarGroup>
                 <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
                   Mode
@@ -238,7 +239,7 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {(user && !user.data?.company_id ? systemAdminNav : navigationItems).map((item) => (
+                  {(user && !(user.data?.company_id || user.company_id) ? systemAdminNav : navigationItems).map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
@@ -277,21 +278,21 @@ export default function Layout({ children, currentPageName }) {
               <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                 <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center shadow-md shrink-0">
                   <span className="text-slate-900 font-bold text-sm">
-                    {user && !user.data?.company_id ? 'S' : 'W'}
+                    {user && !(user.data?.company_id || user.company_id) ? 'S' : 'W'}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 text-sm truncate">
-                    {user && !user.data?.company_id ? 'System Admin' : 'Watch Dealer'}
+                    {user && !(user.data?.company_id || user.company_id) ? 'System Admin' : 'Watch Dealer'}
                   </p>
                   <p className="text-xs text-slate-500 truncate">
-                    {user && !user.data?.company_id ? 'Full Access' : 'Inventory Manager'}
+                    {user && !(user.data?.company_id || user.company_id) ? 'Full Access' : 'Inventory Manager'}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                  {user && user.data?.company_id && <ToastHistoryBell />}
-                  {user && user.data?.company_id && <AlertsBell />}
+                  {user && (user.data?.company_id || user.company_id) && <ToastHistoryBell />}
+                  {user && (user.data?.company_id || user.company_id) && <AlertsBell />}
                   <button
                   onClick={handleLogout}
                   className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
