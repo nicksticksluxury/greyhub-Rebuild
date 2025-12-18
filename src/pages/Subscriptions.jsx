@@ -21,38 +21,48 @@ export default function Subscriptions() {
     queryFn: () => base44.auth.me(),
   });
 
+  // Check if user is a system admin (no company_id)
+  const isSystemAdmin = user?.role === 'admin' && !user?.data?.company_id && !user?.company_id;
+
   // Restrict to system admins (admin role without a company_id) only
   useEffect(() => {
-    if (!loadingUser && user && (user.role !== 'admin' || user.data?.company_id || user.company_id)) {
+    if (!loadingUser && user && !isSystemAdmin) {
       window.location.href = "/";
     }
-  }, [user, loadingUser]);
+  }, [user, loadingUser, isSystemAdmin]);
 
-  const { data: plansData = [], isLoading: loadingPlans } = useQuery({
+  const { data: plansData, isLoading: loadingPlans } = useQuery({
     queryKey: ['subscriptionPlans'],
     queryFn: async () => {
+      console.log('Fetching subscription plans...');
       const result = await base44.asServiceRole.entities.SubscriptionPlan.list();
+      console.log('Plans result:', result);
       return Array.isArray(result) ? result : [];
     },
+    enabled: isSystemAdmin,
   });
 
-  const { data: companiesData = [], isLoading: loadingCompanies } = useQuery({
+  const { data: companiesData, isLoading: loadingCompanies } = useQuery({
     queryKey: ['allCompanies'],
     queryFn: async () => {
       try {
+        console.log('Fetching companies...');
         const result = await base44.asServiceRole.entities.Company.list();
-        console.log('Company list result:', result);
+        console.log('Companies result:', result, 'Type:', typeof result, 'IsArray:', Array.isArray(result));
         return Array.isArray(result) ? result : [];
       } catch (error) {
         console.error('Failed to fetch companies:', error);
         return [];
       }
     },
+    enabled: isSystemAdmin,
   });
 
   // Ensure data is always an array
   const plans = Array.isArray(plansData) ? plansData : [];
   const companies = Array.isArray(companiesData) ? companiesData : [];
+
+  console.log('Rendered with plans:', plans.length, 'companies:', companies.length);
 
   const updatePlanMutation = useMutation({
     mutationFn: ({ id, data }) => base44.asServiceRole.entities.SubscriptionPlan.update(id, data),
@@ -91,7 +101,7 @@ export default function Subscriptions() {
     }
   };
 
-  if (loadingUser || !user || user.role !== 'admin' || user.data?.company_id || user.company_id) {
+  if (loadingUser || !isSystemAdmin) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-slate-600" />
