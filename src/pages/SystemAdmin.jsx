@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Shield, Users, Database, Search, UserCog, Package } from "lucide-react";
+import { Shield, Users, Database, Search, UserCog, Package, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SystemAdmin() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCompanies, setSelectedCompanies] = useState([]);
   const queryClient = useQueryClient();
 
   const { data: companiesData, isLoading } = useQuery({
@@ -34,6 +36,48 @@ export default function SystemAdmin() {
       toast.error(error.response?.data?.error || 'Failed to impersonate tenant');
     }
   });
+
+  const deleteCompaniesMutation = useMutation({
+    mutationFn: async (companyIds) => {
+      const results = await Promise.all(
+        companyIds.map(id => base44.functions.invoke('deleteCompany', { company_id: id }))
+      );
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCompanies'] });
+      toast.success(`Successfully deleted ${selectedCompanies.length} ${selectedCompanies.length === 1 ? 'company' : 'companies'}`);
+      setSelectedCompanies([]);
+    },
+    onError: (error) => {
+      toast.error('Failed to delete companies: ' + error.message);
+    }
+  });
+
+  const handleDeleteSelected = () => {
+    if (selectedCompanies.length === 0) return;
+    
+    const count = selectedCompanies.length;
+    if (confirm(`Are you sure you want to delete ${count} ${count === 1 ? 'company' : 'companies'}? This will permanently delete all associated data including watches, auctions, sources, and logs. This action cannot be undone.`)) {
+      deleteCompaniesMutation.mutate(selectedCompanies);
+    }
+  };
+
+  const handleToggleCompany = (companyId) => {
+    setSelectedCompanies(prev => 
+      prev.includes(companyId) 
+        ? prev.filter(id => id !== companyId)
+        : [...prev, companyId]
+    );
+  };
+
+  const handleToggleAll = () => {
+    if (selectedCompanies.length === filteredCompanies.length) {
+      setSelectedCompanies([]);
+    } else {
+      setSelectedCompanies(filteredCompanies.map(c => c.id));
+    }
+  };
 
   const companies = companiesData?.companies || [];
 
@@ -117,14 +161,26 @@ export default function SystemAdmin() {
             </Card>
           </div>
 
-          <div className="relative mt-6">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <Input
-              placeholder="Search tenants..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex items-center gap-4 mt-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Input
+                placeholder="Search tenants..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {selectedCompanies.length > 0 && (
+              <Button
+                variant="destructive"
+                onClick={handleDeleteSelected}
+                disabled={deleteCompaniesMutation.isPending}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete {selectedCompanies.length} {selectedCompanies.length === 1 ? 'Company' : 'Companies'}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -134,6 +190,12 @@ export default function SystemAdmin() {
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-slate-900">
+                  <Checkbox
+                    checked={filteredCompanies.length > 0 && selectedCompanies.length === filteredCompanies.length}
+                    onCheckedChange={handleToggleAll}
+                  />
+                </th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-slate-900">Company</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-slate-900">Status</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-slate-900">Plan</th>
@@ -146,13 +208,19 @@ export default function SystemAdmin() {
             <tbody className="divide-y divide-slate-200">
               {filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan="8" className="px-6 py-12 text-center text-slate-500">
                     No tenants found
                   </td>
                 </tr>
               ) : (
                 filteredCompanies.map((company) => (
                   <tr key={company.id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4">
+                      <Checkbox
+                        checked={selectedCompanies.includes(company.id)}
+                        onCheckedChange={() => handleToggleCompany(company.id)}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-semibold text-slate-900">{company.name}</p>
