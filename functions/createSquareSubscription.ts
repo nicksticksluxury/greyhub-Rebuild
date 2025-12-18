@@ -43,6 +43,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Square API credentials not configured' }, { status: 500 });
     }
 
+    // Log the API base URL for debugging (without sensitive data)
+    console.log('Square API Base URL:', apiBaseUrl);
+    console.log('Using location ID:', locationId);
+
     // Get company details
     const companies = await base44.asServiceRole.entities.Company.filter({ id: targetCompanyId });
     const company = companies[0];
