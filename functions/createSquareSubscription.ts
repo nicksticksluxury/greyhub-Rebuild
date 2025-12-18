@@ -8,14 +8,16 @@ Deno.serve(async (req) => {
     // Allow either authenticated user OR explicit company_id for service role calls
     let targetCompanyId = company_id;
     let userId = null;
+    let userEmail = null;
 
     if (!targetCompanyId) {
       const user = await base44.auth.me();
-      if (!user || !user.company_id) {
+      if (!user || !(user.company_id || user.data?.company_id)) {
         return Response.json({ error: 'Unauthorized - No company' }, { status: 401 });
       }
-      targetCompanyId = user.company_id;
+      targetCompanyId = user.company_id || user.data?.company_id;
       userId = user.id;
+      userEmail = user.email;
     }
 
     if (targetCompanyId) {
@@ -63,7 +65,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           idempotency_key: `customer-${company.id}-${Date.now()}`,
           given_name: company.name,
-          email_address: company.email || user.email,
+          email_address: company.email || userEmail,
           reference_id: company.id,
         }),
       });
@@ -273,29 +275,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Square subscription error:', error);
     
-    // Log error if possible (best effort)
-    try {
-      const base44 = createClientFromRequest(req);
-      const { company_id } = await req.json();
-      if (company_id) {
-        await base44.asServiceRole.entities.Log.create({
-          company_id: company_id,
-          timestamp: new Date().toISOString(),
-          level: 'error',
-          category: 'square_integration',
-          message: 'Failed to create Square subscription',
-          details: { 
-            error: error.message,
-            stack: error.stack,
-          },
-          user_id: null,
-        });
-      }
-    } catch (logError) {
-      console.error('Failed to log error:', logError);
-    }
-
     return Response.json({
+      success: false,
       error: error.message || 'Failed to create subscription',
     }, { status: 500 });
   }
