@@ -51,9 +51,12 @@ export default function CompleteSignup() {
 
   useEffect(() => {
     if (step === 2 && squareLoaded && (!couponData || couponData.requiresCard)) {
-      initializeSquarePayment();
+      // Only initialize if not already initialized
+      if (!cardRef.current) {
+        initializeSquarePayment();
+      }
     }
-  }, [step, squareLoaded, couponData]);
+  }, [step, squareLoaded]);
 
   const initializeSignup = async () => {
     try {
@@ -371,16 +374,51 @@ export default function CompleteSignup() {
                     <p className="text-sm text-slate-600">Full access to all features</p>
                   </div>
                   <div className="text-right">
-                    {couponData?.coupon?.type === 'percentage' && couponData?.coupon?.value === 100 && !couponData?.coupon?.duration_in_months ? (
-                      <>
-                        <p className="text-2xl font-bold text-green-600">$0<span className="text-base font-normal text-slate-600">/mo</span></p>
-                        <p className="text-xs text-slate-400 line-through">$50.00</p>
-                      </>
-                    ) : (
-                      <p className="text-2xl font-bold text-slate-900">$50<span className="text-base font-normal text-slate-600">/mo</span></p>
-                    )}
+                    {(() => {
+                      const basePrice = 50;
+                      let discountedPrice = basePrice;
+                      
+                      if (couponData?.coupon) {
+                        const { type, value } = couponData.coupon;
+                        if (type === 'percentage') {
+                          discountedPrice = basePrice * (1 - value / 100);
+                        } else if (type === 'fixed_amount') {
+                          discountedPrice = Math.max(0, basePrice - value);
+                        }
+                      }
+                      
+                      if (discountedPrice < basePrice) {
+                        return (
+                          <>
+                            <p className="text-2xl font-bold text-green-600">
+                              ${discountedPrice.toFixed(2)}
+                              <span className="text-base font-normal text-slate-600">/mo</span>
+                            </p>
+                            <p className="text-xs text-slate-400 line-through">${basePrice.toFixed(2)}/mo</p>
+                          </>
+                        );
+                      }
+                      
+                      return (
+                        <p className="text-2xl font-bold text-slate-900">
+                          ${basePrice}
+                          <span className="text-base font-normal text-slate-600">/mo</span>
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
+                {couponData?.coupon && (
+                  <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
+                    <p className="text-xs font-semibold text-green-800">
+                      {couponData.coupon.type === 'percentage' && `${couponData.coupon.value}% off`}
+                      {couponData.coupon.type === 'fixed_amount' && `$${couponData.coupon.value} off`}
+                      {couponData.coupon.duration_in_months 
+                        ? ` for ${couponData.coupon.duration_in_months} month${couponData.coupon.duration_in_months > 1 ? 's' : ''}`
+                        : ' forever'}
+                    </p>
+                  </div>
+                )}
                 <p className="text-xs text-slate-500 mt-2">
                   14-day free trial included. Cancel anytime.
                 </p>
