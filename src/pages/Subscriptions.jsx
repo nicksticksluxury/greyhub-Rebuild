@@ -35,7 +35,10 @@ export default function Subscriptions() {
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ['allCompanies'],
-    queryFn: () => base44.asServiceRole.entities.Company.list(),
+    queryFn: async () => {
+      const result = await base44.asServiceRole.entities.Company.list();
+      return Array.isArray(result) ? result : [];
+    },
   });
 
   const updatePlanMutation = useMutation({
