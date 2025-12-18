@@ -103,10 +103,10 @@ export default function AuctionForm({ auction, onSubmit, onCancel }) {
       </div>
 
       <div className="flex gap-3 justify-end pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} className="text-slate-900">
           Cancel
         </Button>
-        <Button type="submit" className="bg-slate-800 hover:bg-slate-900">
+        <Button type="submit" className="bg-slate-800 hover:bg-slate-900 text-white">
           {auction ? "Update" : "Create"} Auction
         </Button>
       </div>

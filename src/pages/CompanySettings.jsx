@@ -262,7 +262,7 @@ export default function CompanySettings() {
               <Button 
                 onClick={handleSave}
                 disabled={updateMutation.isPending}
-                className="bg-slate-800 hover:bg-slate-900"
+                className="bg-slate-800 hover:bg-slate-900 text-white"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Save Changes
@@ -461,7 +461,7 @@ export default function CompanySettings() {
               <Button 
                 onClick={handleSendInvite}
                 disabled={isSendingInvite || !inviteEmail}
-                className="bg-slate-800 hover:bg-slate-900"
+                className="bg-slate-800 hover:bg-slate-900 text-white"
               >
                 {isSendingInvite ? (
                   <>

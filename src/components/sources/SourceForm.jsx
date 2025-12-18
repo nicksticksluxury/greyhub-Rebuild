@@ -146,10 +146,10 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
       </div>
 
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} className="text-slate-900">
           Cancel
         </Button>
-        <Button type="submit" className="bg-slate-800 hover:bg-slate-900">
+        <Button type="submit" className="bg-slate-800 hover:bg-slate-900 text-white">
           {source ? "Update" : "Create"} Source
         </Button>
       </div>

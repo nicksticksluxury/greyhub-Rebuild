@@ -1123,11 +1123,11 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowZeroReasonDialog(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowZeroReasonDialog(false)} className="text-slate-900">Cancel</Button>
             <Button onClick={() => {
               updateField("zero_price_reason", tempReason);
               setShowZeroReasonDialog(false);
-            }}>Save Reason</Button>
+            }} className="bg-slate-800 hover:bg-slate-900 text-white">Save Reason</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

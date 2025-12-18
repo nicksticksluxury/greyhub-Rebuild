@@ -296,7 +296,7 @@ export default function TenantSettings() {
                           placeholder="Paste the full URL here (e.g. https://developer.ebay.com/...)"
                           className="font-mono text-xs h-9 bg-white"
                        />
-                       <Button size="sm" onClick={handleManualRedirect} disabled={isConnecting || !manualUrl}>
+                       <Button size="sm" onClick={handleManualRedirect} disabled={isConnecting || !manualUrl} className="bg-slate-800 hover:bg-slate-900 text-white">
                           Complete Connection
                        </Button>
                     </div>
@@ -322,7 +322,7 @@ export default function TenantSettings() {
                         className="font-mono text-xs h-9"
                         type="password"
                       />
-                      <Button size="sm" onClick={handleSaveManualToken}>Save</Button>
+                      <Button size="sm" onClick={handleSaveManualToken} className="bg-slate-800 hover:bg-slate-900 text-white">Save</Button>
                     </div>
                     <p className="text-[10px] text-slate-400 mt-1">
                       Note: Manually entered tokens expire after 2 hours.
@@ -372,6 +372,7 @@ export default function TenantSettings() {
                     </span>
                     <Button
                       variant={company.allow_support_access ? "destructive" : "default"}
+                      className={!company.allow_support_access ? "bg-slate-800 hover:bg-slate-900 text-white" : ""}
                       onClick={async () => {
                         try {
                           await base44.entities.Company.update(company.id, {
