@@ -103,7 +103,7 @@ Whatnot Profile: ${formData.whatnotLink}
                     <div className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
                         <div className="flex items-center gap-3 mb-4">
                             <Lock className="w-5 h-5 text-amber-400" />
-                            <h3 className="text-lg font-bold text-white uppercase tracking-wider">Behind the Scenes</h3>
+                            <h3 className="text-lg font-bold text-white uppercase tracking-wider">Dealer Login</h3>
                         </div>
                         <p className="text-slate-400 mb-6">
                             Right now, most of our platform is private — it’s where the real work happens: managing inventory, analyzing markets, and connecting with other watch dealers.
