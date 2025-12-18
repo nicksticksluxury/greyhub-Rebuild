@@ -35,9 +35,28 @@ export default function Index() {
         email: "",
         whatnotLink: ""
     });
+    
+    const [captcha, setCaptcha] = useState({ num1: 0, num2: 0 });
+    const [captchaAnswer, setCaptchaAnswer] = useState("");
+    
+    React.useEffect(() => {
+        if (showInviteForm) {
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            setCaptcha({ num1, num2 });
+            setCaptchaAnswer("");
+        }
+    }, [showInviteForm]);
 
     const handleSubmitInviteRequest = async (e) => {
         e.preventDefault();
+        
+        // Validate captcha
+        if (parseInt(captchaAnswer) !== captcha.num1 + captcha.num2) {
+            toast.error("Incorrect answer. Please try again.");
+            return;
+        }
+        
         setSubmitting(true);
         
         try {
@@ -57,6 +76,7 @@ Whatnot Profile: ${formData.whatnotLink}
             toast.success("Request submitted! We'll be in touch soon.");
             setShowInviteForm(false);
             setFormData({ fullName: "", companyName: "", email: "", whatnotLink: "" });
+            setCaptchaAnswer("");
         } catch (error) {
             toast.error("Failed to submit request. Please try again.");
         } finally {
@@ -123,7 +143,7 @@ Whatnot Profile: ${formData.whatnotLink}
                             <h3 className="text-lg font-bold text-white uppercase tracking-wider">For Dealers & Retailers</h3>
                         </div>
                         <p className="text-slate-400 mb-6">
-                            Are you a watch dealer or retailer that uses Whatnot? Request an invite and trial here!
+                            Request an invite and trial to our customized watch inventory, management and listing system!
                         </p>
                         <Button 
                             onClick={() => setShowInviteForm(true)}
@@ -194,6 +214,23 @@ Whatnot Profile: ${formData.whatnotLink}
                             <p className="text-xs text-slate-500 mt-1">
                                 Go to your profile, click share, then Copy Link and paste that here
                             </p>
+                        </div>
+                        <div>
+                            <Label htmlFor="captcha" className="text-slate-300">Security Check *</Label>
+                            <div className="flex items-center gap-3">
+                                <p className="text-white font-mono text-lg">
+                                    {captcha.num1} + {captcha.num2} =
+                                </p>
+                                <Input
+                                    id="captcha"
+                                    type="number"
+                                    value={captchaAnswer}
+                                    onChange={(e) => setCaptchaAnswer(e.target.value)}
+                                    required
+                                    className="bg-slate-800 border-slate-700 text-white w-24"
+                                    placeholder="?"
+                                />
+                            </div>
                         </div>
                         <Button 
                             type="submit" 
