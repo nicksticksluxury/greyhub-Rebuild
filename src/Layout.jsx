@@ -83,6 +83,11 @@ export default function Layout({ children, currentPageName }) {
     // Add System Settings for admins
     if (user?.role === 'admin') {
       items.push({
+        title: "Subscriptions",
+        url: createPageUrl("Subscriptions"),
+        icon: DollarSign,
+      });
+      items.push({
         title: "System Settings",
         url: createPageUrl("Settings"),
         icon: Shield,

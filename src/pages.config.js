@@ -19,6 +19,7 @@ import SquareTest from './pages/SquareTest';
 import JoinCompany from './pages/JoinCompany';
 import TenantSettings from './pages/TenantSettings';
 import CompleteSignup from './pages/CompleteSignup';
+import Subscriptions from './pages/Subscriptions';
 import __Layout from './Layout.jsx';
 
 
@@ -44,6 +45,7 @@ export const PAGES = {
     "JoinCompany": JoinCompany,
     "TenantSettings": TenantSettings,
     "CompleteSignup": CompleteSignup,
+    "Subscriptions": Subscriptions,
 }
 
 export const pagesConfig = {
