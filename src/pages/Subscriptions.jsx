@@ -59,7 +59,7 @@ export default function Subscriptions() {
     queryKey: ['allCompanies'],
     queryFn: async () => {
       const result = await base44.functions.invoke('listAllCompanies');
-      return result.data.companies || [];
+      return result.data?.companies || [];
     },
     enabled: isSystemAdmin,
   });
