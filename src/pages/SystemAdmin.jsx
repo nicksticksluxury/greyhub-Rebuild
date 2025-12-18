@@ -18,7 +18,7 @@ export default function SystemAdmin() {
     queryKey: ['allCompanies'],
     queryFn: async () => {
       const result = await base44.functions.invoke('listAllCompanies');
-      return result.data || { companies: [] };
+      return result.data?.companies || [];
     },
   });
 
@@ -98,7 +98,7 @@ export default function SystemAdmin() {
     }
   };
 
-  const companies = companiesData?.companies || [];
+  const companies = Array.isArray(companiesData) ? companiesData : [];
 
   const filteredCompanies = companies.filter(company => {
     if (!searchTerm) return true;
