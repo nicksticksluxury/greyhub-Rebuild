@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Building2, Save, Users, Mail, Phone, Globe, MapPin, UserPlus, Clock, Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 export default function CompanySettings() {
   const queryClient = useQueryClient();
@@ -42,7 +42,6 @@ export default function CompanySettings() {
   });
 
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('user');
   const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   useEffect(() => {
@@ -82,13 +81,12 @@ export default function CompanySettings() {
     try {
       const result = await base44.functions.invoke('inviteUser', {
         email: inviteEmail,
-        role: inviteRole
+        role: 'user'
       });
 
       if (result.data.success) {
         toast.success('Invitation sent successfully!');
         setInviteEmail('');
-        setInviteRole('user');
         queryClient.invalidateQueries({ queryKey: ['pendingInvitations'] });
       } else {
         toast.error(result.data.error || 'Failed to send invitation');
@@ -325,15 +323,6 @@ export default function CompanySettings() {
                 onChange={(e) => setInviteEmail(e.target.value)}
                 className="flex-1"
               />
-              <Select value={inviteRole} onValueChange={setInviteRole}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
               <Button 
                 onClick={handleSendInvite}
                 disabled={isSendingInvite || !inviteEmail}

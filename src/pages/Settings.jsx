@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Copy, RefreshCw, Save, Eye, EyeOff, CheckCircle, AlertCircle, ExternalLink, Sparkles, FileText, Trash2, Loader2, UserPlus, Link as LinkIcon, Building2, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -517,6 +518,21 @@ export default function Settings() {
               </div>
             )}
           </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Testing & Development</CardTitle>
+              <CardDescription>Tools for testing integrations</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="p-4 border border-slate-200 rounded-xl bg-white">
+                 <Link to={createPageUrl("SquareTest")} target="_blank" className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                   <ExternalLink className="w-4 h-4" />
+                   <span className="font-medium">Square Integration Test Page</span>
+                 </Link>
+              </div>
+            </CardContent>
           </Card>
 
           <Card className="mt-6">
