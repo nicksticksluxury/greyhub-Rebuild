@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CompleteSignup() {
@@ -28,10 +28,32 @@ export default function CompleteSignup() {
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  
+  // Square payment form refs
+  const cardRef = useRef(null);
+  const paymentsRef = useRef(null);
+  const [squareLoaded, setSquareLoaded] = useState(false);
 
   useEffect(() => {
     initializeSignup();
+    
+    // Load Square SDK
+    const script = document.createElement('script');
+    script.src = 'https://sandbox.web.squarecdn.com/v1/square.js';
+    script.async = true;
+    script.onload = () => setSquareLoaded(true);
+    document.body.appendChild(script);
+    
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
+
+  useEffect(() => {
+    if (step === 2 && squareLoaded && (!couponData || couponData.requiresCard)) {
+      initializeSquarePayment();
+    }
+  }, [step, squareLoaded, couponData]);
 
   const initializeSignup = async () => {
     try {
@@ -89,6 +111,32 @@ export default function CompleteSignup() {
       console.error(err);
       setError(err.message || "Failed to initialize signup");
       setLoading(false);
+    }
+  };
+
+  const initializeSquarePayment = async () => {
+    try {
+      if (!window.Square) {
+        throw new Error('Square.js failed to load');
+      }
+
+      // Get app ID from backend
+      const configResult = await base44.functions.invoke('getSquareConfig');
+      if (!configResult.data.success) {
+        throw new Error('Failed to get Square configuration');
+      }
+
+      const { application_id } = configResult.data;
+
+      const payments = window.Square.payments(application_id);
+      paymentsRef.current = payments;
+
+      const card = await payments.card();
+      await card.attach('#card-container');
+      cardRef.current = card;
+    } catch (err) {
+      console.error('Square payment initialization failed:', err);
+      setError('Failed to load payment form. Please refresh and try again.');
     }
   };
 
@@ -150,11 +198,35 @@ export default function CompleteSignup() {
 
     try {
       const token = localStorage.getItem('signup_token');
+      let cardToken = null;
+
+      // Tokenize card if required
+      if (couponData && !couponData.requiresCard) {
+        // No card required - 100% off forever
+        cardToken = null;
+      } else {
+        // Tokenize the card
+        if (!cardRef.current) {
+          throw new Error('Payment form not initialized');
+        }
+
+        const tokenResult = await cardRef.current.tokenize();
+        
+        if (tokenResult.status === 'OK') {
+          cardToken = tokenResult.token;
+        } else {
+          let errorMessage = 'Failed to process card. Please check your card details.';
+          if (tokenResult.errors) {
+            errorMessage = tokenResult.errors.map(e => e.message).join(', ');
+          }
+          throw new Error(errorMessage);
+        }
+      }
 
       // Complete signup: link user to company and create subscription
       const result = await base44.functions.invoke('completeInvitationSignup', { 
         token,
-        payment_token: paymentToken || null,
+        payment_token: cardToken,
         plan_id: 'standard',
         coupon_code: couponData?.coupon?.code || null
       });
@@ -342,17 +414,17 @@ export default function CompleteSignup() {
 
                 {(!couponData || couponData.requiresCard) ? (
                   <>
-                    <h3 className="font-semibold">Payment Information</h3>
-                    <div>
-                      <Label>Payment Token (Testing)</Label>
-                      <Input
-                        value={paymentToken}
-                        onChange={(e) => setPaymentToken(e.target.value)}
-                        placeholder="cnon:card-nonce-ok"
-                        required
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <CreditCard className="w-5 h-5" />
+                      Payment Information
+                    </h3>
+                    <div className="space-y-3">
+                      <div 
+                        id="card-container" 
+                        className="border rounded-lg p-4 bg-white min-h-[120px]"
                       />
-                      <p className="text-xs text-slate-500 mt-1">
-                        For testing, use: cnon:card-nonce-ok
+                      <p className="text-xs text-slate-500">
+                        Your payment information is securely processed by Square. We never store your card details.
                       </p>
                     </div>
                   </>
