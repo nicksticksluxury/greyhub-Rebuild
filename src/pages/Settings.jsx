@@ -520,10 +520,47 @@ export default function Settings() {
           </Card>
 
           <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>eBay Webhook Verification Token</CardTitle>
-            <CardDescription>Use this token in the eBay Developer Portal when setting up Marketplace Account Deletion notifications</CardDescription>
-          </CardHeader>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>Manage system admin user settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="p-4 border border-slate-200 rounded-xl bg-white">
+                 <h3 className="font-medium text-slate-900 mb-2">Clear Company Association</h3>
+                 <p className="text-sm text-slate-500 mb-4">
+                   Remove your company_id to operate as a pure system administrator without tenant restrictions.
+                 </p>
+                 <Button 
+                   onClick={async () => {
+                     if (!confirm("Clear your company association? You will need to impersonate a tenant to access company-specific data.")) return;
+                     const toastId = toast.loading("Clearing company association...");
+                     try {
+                        const res = await base44.functions.invoke("clearUserCompanyId", { userId: user.id });
+                        if (res.data.success) {
+                            toast.success("Company association cleared. Reloading...", { id: toastId });
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            toast.error("Failed: " + res.data.error, { id: toastId });
+                        }
+                     } catch (e) {
+                        toast.error("Failed: " + e.message, { id: toastId });
+                     }
+                   }} 
+                   variant="outline"
+                   className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                 >
+                   <Users className="w-4 h-4 mr-2" />
+                   Clear My Company ID
+                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>eBay Webhook Verification Token</CardTitle>
+              <CardDescription>Use this token in the eBay Developer Portal when setting up Marketplace Account Deletion notifications</CardDescription>
+            </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex gap-2">
               <div className="relative flex-1">
