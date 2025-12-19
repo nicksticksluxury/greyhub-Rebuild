@@ -324,18 +324,22 @@ CRITICAL - MODEL NUMBER IDENTIFICATION:
 
 ${msrpLinkContext}${contextStr}${aiInstructionsContext}
 
-STEP 2 - REPORT YOUR FINDINGS:
-List EVERYTHING you see:
-- Brand (e.g., "Rolex", "Seiko", "Nixon")
-- Model Name: The descriptive name (e.g., "Submariner", "Speedmaster", "Sentry", "Day Date Two Tone")
-  * This is usually words, NOT numbers
-  * Examples: "Submariner", "Tank", "Speedmaster", "Pilot", "Santos"
-  * If you only see a number/code and no descriptive name, leave this field as "Unknown"
-- Model Number/Reference: The alphanumeric code (e.g., "16610", "SKX007", "ZR15490", "AQ230")
+STEP 2 - REPORT YOUR FINDINGS AND CRITICAL JSON MAPPING:
+List EVERYTHING you see and map to the EXACT JSON fields specified below:
+
+- Brand → identified_brand (e.g., "Rolex", "Seiko", "Nixon")
+
+- Model Name → identified_model: The descriptive name like "Submariner", "Speedmaster", "Tank"
+  * Use WORDS, NOT numbers for this field
+  * Examples that go in identified_model: "Submariner", "Tank", "Speedmaster", "Pilot", "Santos"
+  * If you ONLY see alphanumeric codes with NO descriptive name, put "Unknown"
+
+- Model Number → reference_number: The alphanumeric code like "16610", "SKX007", "ZR15490"
   * This is THE CRITICAL IDENTIFIER - usually 4-8 digits/letters
   * This is stamped on the case back or between lugs
-  * Examples: "16610", "ZR15490", "SKX007", "126334"
-  * NEVER put the descriptive model name here - ONLY the number/code
+  * Examples that go in reference_number: "16610", "ZR15490", "SKX007", "126334"
+  * NEVER put words like "Submariner" here - ONLY the alphanumeric code
+
 - Serial Number (if visible and different from model number)
 - Year estimate (based on style, condition, serial if visible)
 - Gender (Mens, Womens, or Unisex)
