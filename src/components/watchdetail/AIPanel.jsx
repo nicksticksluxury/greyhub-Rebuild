@@ -111,9 +111,9 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
       } else if (key === 'brand') {
          updates.brand = aiAnalysis.identified_brand;
       } else if (key === 'model') {
-         updates.model = aiAnalysis.identified_model;
+         updates.model = aiAnalysis.reference_number;
       } else if (key === 'reference_number') {
-         updates.reference_number = aiAnalysis.reference_number;
+         updates.reference_number = aiAnalysis.identified_model;
       } else if (key === 'serial_number') {
          updates.serial_number = aiAnalysis.serial_number;
       } else if (key === 'year') {
