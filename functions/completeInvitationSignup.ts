@@ -46,6 +46,10 @@ Deno.serve(async (req) => {
       }
     } catch (subError) {
       console.error("Subscription creation failed:", subError);
+      // Extract detailed error from response if available
+      const errorDetails = subError.response?.data || subError.message;
+      console.error("Detailed error:", JSON.stringify(errorDetails, null, 2));
+      
       // Log the full error for debugging
       await base44.asServiceRole.entities.Log.create({
         company_id: companyId,
@@ -55,13 +59,18 @@ Deno.serve(async (req) => {
         message: 'Subscription creation failed during signup',
         details: { 
           error: subError.message,
+          error_details: errorDetails,
           stack: subError.stack,
           payment_token_provided: !!payment_token,
           coupon_code: coupon_code || null
         },
         user_id: user.id,
       });
-      return Response.json({ success: false, error: subError.message });
+      return Response.json({ 
+        success: false, 
+        error: typeof errorDetails === 'object' && errorDetails.error ? errorDetails.error : subError.message,
+        details: errorDetails
+      });
     }
 
     // Mark invitation as accepted
