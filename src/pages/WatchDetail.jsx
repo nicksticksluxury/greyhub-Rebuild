@@ -368,8 +368,8 @@ Rate your confidence in the model number identification:
           properties: {
             listing_title: { type: "string", description: "Optimized listing title (max 80 chars)" },
             identified_brand: { type: "string" },
-            identified_model: { type: "string", description: "The descriptive model name (e.g. 'Submariner', 'Tank', 'Pilot'). Use 'Unknown' if only a number is visible." },
-            reference_number: { type: "string", description: "The alphanumeric model/reference code (e.g. '16610', 'ZR15490', 'SKX007'). This is NOT the model name." },
+            identified_model: { type: "string", description: "CRITICAL: The descriptive model name using WORDS (e.g. 'Submariner', 'Tank', 'Pilot'). Use 'Unknown' if only an alphanumeric code is visible with no name." },
+            reference_number: { type: "string", description: "CRITICAL: The alphanumeric model/reference code (e.g. '16610', 'ZR15490', 'SKX007'). This must be NUMBERS/LETTERS, NOT words like 'Submariner'." },
             serial_number: { type: "string" },
             estimated_year: { type: "string" },
             identified_gender: { type: "string", enum: ["mens", "womens", "unisex"] },
