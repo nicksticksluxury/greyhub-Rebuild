@@ -83,6 +83,38 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Payment token is required' }, { status: 400 });
     }
 
+    // If subscription is $0 (100% off forever), skip Square and manage internally
+    if (subscriptionPrice === 0) {
+      await base44.asServiceRole.entities.Company.update(company.id, {
+        subscription_status: 'active',
+        subscription_plan: plan_id || 'standard',
+        subscription_price: 0,
+      });
+
+      if (targetCompanyId) {
+        await base44.asServiceRole.entities.Log.create({
+          company_id: targetCompanyId,
+          timestamp: new Date().toISOString(),
+          level: 'success',
+          category: 'square_integration',
+          message: 'Free subscription activated (no Square subscription needed)',
+          details: { 
+            plan_id: plan_id || 'standard',
+            coupon_code: coupon_code,
+            price: 0
+          },
+          user_id: userId,
+        });
+      }
+
+      return Response.json({
+        success: true,
+        subscription_id: null,
+        status: 'active',
+        free_subscription: true,
+      });
+    }
+
     // Create or get Square customer
     let customerId = company.square_customer_id;
 
