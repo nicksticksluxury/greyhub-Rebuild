@@ -329,16 +329,16 @@ List EVERYTHING you see and map to the EXACT JSON fields specified below:
 
 - Brand → identified_brand (e.g., "Rolex", "Seiko", "Nixon")
 
-- Model Number → identified_model: The alphanumeric code like "16610", "SKX007", "ZR15490"
+- Model Name → identified_model: The descriptive name like "Submariner", "Speedmaster", "Tank"
+  * Use WORDS, NOT numbers for this field
+  * Examples that go in identified_model: "Submariner", "Tank", "Speedmaster", "Pilot", "Santos"
+  * If you ONLY see alphanumeric codes with NO descriptive name, put "Unknown"
+
+- Model Number → reference_number: The alphanumeric code like "16610", "SKX007", "ZR15490"
   * This is THE CRITICAL IDENTIFIER - usually 4-8 digits/letters
   * This is stamped on the case back or between lugs
-  * Examples that go in identified_model: "16610", "ZR15490", "SKX007", "126334"
+  * Examples that go in reference_number: "16610", "ZR15490", "SKX007", "126334"
   * NEVER put words like "Submariner" here - ONLY the alphanumeric code
-
-- Model Name → reference_number: The descriptive name like "Submariner", "Speedmaster", "Tank"
-  * Use WORDS, NOT numbers for this field
-  * Examples that go in reference_number: "Submariner", "Tank", "Speedmaster", "Pilot", "Santos"
-  * If you ONLY see alphanumeric codes with NO descriptive name, put "Unknown"
 
 - Serial Number (if visible and different from model number)
 - Year estimate (based on style, condition, serial if visible)
@@ -368,8 +368,8 @@ Rate your confidence in the model number identification:
           properties: {
             listing_title: { type: "string", description: "Optimized listing title (max 80 chars)" },
             identified_brand: { type: "string" },
-            identified_model: { type: "string", description: "CRITICAL: The alphanumeric model/reference code (e.g. '16610', 'ZR15490', 'SKX007'). This must be NUMBERS/LETTERS, NOT words like 'Submariner'." },
-            reference_number: { type: "string", description: "CRITICAL: The descriptive model name using WORDS (e.g. 'Submariner', 'Tank', 'Pilot'). Use 'Unknown' if only an alphanumeric code is visible with no name." },
+            identified_model: { type: "string", description: "CRITICAL: The descriptive model name using WORDS (e.g. 'Submariner', 'Tank', 'Pilot'). Use 'Unknown' if only an alphanumeric code is visible with no name." },
+            reference_number: { type: "string", description: "CRITICAL: The alphanumeric model/reference code (e.g. '16610', 'ZR15490', 'SKX007'). This must be NUMBERS/LETTERS, NOT words like 'Submariner'." },
             serial_number: { type: "string" },
             estimated_year: { type: "string" },
             identified_gender: { type: "string", enum: ["mens", "womens", "unisex"] },
