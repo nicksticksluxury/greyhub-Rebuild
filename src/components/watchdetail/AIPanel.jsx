@@ -253,10 +253,10 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
                   <SelectableItem id="brand" label="Brand" value={aiAnalysis.identified_brand} />
                 )}
                 {aiAnalysis.identified_model && (
-                  <SelectableItem id="model" label="Model Number" value={aiAnalysis.identified_model} />
+                  <SelectableItem id="model" label="Model Name" value={aiAnalysis.identified_model} />
                 )}
                 {aiAnalysis.reference_number && (
-                  <SelectableItem id="reference_number" label="Model Name" value={aiAnalysis.reference_number} />
+                  <SelectableItem id="reference_number" label="Model Number" value={aiAnalysis.reference_number} />
                 )}
                 {aiAnalysis.serial_number && (
                   <SelectableItem id="serial_number" label="Serial" value={aiAnalysis.serial_number} />
