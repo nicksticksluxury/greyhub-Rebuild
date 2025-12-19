@@ -327,8 +327,15 @@ ${msrpLinkContext}${contextStr}${aiInstructionsContext}
 STEP 2 - REPORT YOUR FINDINGS:
 List EVERYTHING you see:
 - Brand (e.g., "Rolex", "Seiko", "Nixon")
-- Model Name (e.g., "Submariner", "Speedmaster", "Sentry")
-- Model Number/Reference (THE CRITICAL IDENTIFIER - e.g., "16610", "SKX007")
+- Model Name: The descriptive name (e.g., "Submariner", "Speedmaster", "Sentry", "Day Date Two Tone")
+  * This is usually words, NOT numbers
+  * Examples: "Submariner", "Tank", "Speedmaster", "Pilot", "Santos"
+  * If you only see a number/code and no descriptive name, leave this field as "Unknown"
+- Model Number/Reference: The alphanumeric code (e.g., "16610", "SKX007", "ZR15490", "AQ230")
+  * This is THE CRITICAL IDENTIFIER - usually 4-8 digits/letters
+  * This is stamped on the case back or between lugs
+  * Examples: "16610", "ZR15490", "SKX007", "126334"
+  * NEVER put the descriptive model name here - ONLY the number/code
 - Serial Number (if visible and different from model number)
 - Year estimate (based on style, condition, serial if visible)
 - Gender (Mens, Womens, or Unisex)
@@ -357,8 +364,8 @@ Rate your confidence in the model number identification:
           properties: {
             listing_title: { type: "string", description: "Optimized listing title (max 80 chars)" },
             identified_brand: { type: "string" },
-            identified_model: { type: "string" },
-            reference_number: { type: "string" },
+            identified_model: { type: "string", description: "The descriptive model name (e.g. 'Submariner', 'Tank', 'Pilot'). Use 'Unknown' if only a number is visible." },
+            reference_number: { type: "string", description: "The alphanumeric model/reference code (e.g. '16610', 'ZR15490', 'SKX007'). This is NOT the model name." },
             serial_number: { type: "string" },
             estimated_year: { type: "string" },
             identified_gender: { type: "string", enum: ["mens", "womens", "unisex"] },
