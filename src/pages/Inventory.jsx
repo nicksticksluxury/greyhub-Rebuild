@@ -372,7 +372,7 @@ export default function Inventory() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-slate-900">Inventory</h1>
@@ -645,7 +645,7 @@ export default function Inventory() {
         </div>
       </div>
 
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         <WatchTable 
           watches={filteredWatches}
           isLoading={isLoading || isLoadingSources || isLoadingOrders}

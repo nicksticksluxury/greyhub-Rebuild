@@ -1,51 +1,53 @@
-import Inventory from './pages/Inventory';
-import AddWatch from './pages/AddWatch';
-import WatchDetail from './pages/WatchDetail';
-import Auctions from './pages/Auctions';
-import SoldInventory from './pages/SoldInventory';
-import UpdateMinimumPrices from './pages/UpdateMinimumPrices';
-import WatchSummary from './pages/WatchSummary';
-import Settings from './pages/Settings';
-import WatchSources from './pages/WatchSources';
-import WatchSourceDetail from './pages/WatchSourceDetail';
-import SourceWatches from './pages/SourceWatches';
-import SalesView from './pages/SalesView';
-import index from './pages/index';
-import OutForRepair from './pages/OutForRepair';
-import CompanySettings from './pages/CompanySettings';
 import AcceptInvitation from './pages/AcceptInvitation';
-import SystemAdmin from './pages/SystemAdmin';
-import SquareTest from './pages/SquareTest';
-import JoinCompany from './pages/JoinCompany';
-import TenantSettings from './pages/TenantSettings';
+import AddWatch from './pages/AddWatch';
+import Auctions from './pages/Auctions';
+import CompanySettings from './pages/CompanySettings';
 import CompleteSignup from './pages/CompleteSignup';
+import Home from './pages/Home';
+import Inventory from './pages/Inventory';
+import JoinCompany from './pages/JoinCompany';
+import OutForRepair from './pages/OutForRepair';
+import SalesView from './pages/SalesView';
+import Settings from './pages/Settings';
+import SoldInventory from './pages/SoldInventory';
+import SourceWatches from './pages/SourceWatches';
+import SquareTest from './pages/SquareTest';
 import Subscriptions from './pages/Subscriptions';
+import SystemAdmin from './pages/SystemAdmin';
+import TenantSettings from './pages/TenantSettings';
+import UpdateMinimumPrices from './pages/UpdateMinimumPrices';
+import WatchDetail from './pages/WatchDetail';
+import WatchSourceDetail from './pages/WatchSourceDetail';
+import WatchSources from './pages/WatchSources';
+import WatchSummary from './pages/WatchSummary';
+import index from './pages/index';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Inventory": Inventory,
-    "AddWatch": AddWatch,
-    "WatchDetail": WatchDetail,
-    "Auctions": Auctions,
-    "SoldInventory": SoldInventory,
-    "UpdateMinimumPrices": UpdateMinimumPrices,
-    "WatchSummary": WatchSummary,
-    "Settings": Settings,
-    "WatchSources": WatchSources,
-    "WatchSourceDetail": WatchSourceDetail,
-    "SourceWatches": SourceWatches,
-    "SalesView": SalesView,
-    "index": index,
-    "OutForRepair": OutForRepair,
-    "CompanySettings": CompanySettings,
     "AcceptInvitation": AcceptInvitation,
-    "SystemAdmin": SystemAdmin,
-    "SquareTest": SquareTest,
-    "JoinCompany": JoinCompany,
-    "TenantSettings": TenantSettings,
+    "AddWatch": AddWatch,
+    "Auctions": Auctions,
+    "CompanySettings": CompanySettings,
     "CompleteSignup": CompleteSignup,
+    "Home": Home,
+    "Inventory": Inventory,
+    "JoinCompany": JoinCompany,
+    "OutForRepair": OutForRepair,
+    "SalesView": SalesView,
+    "Settings": Settings,
+    "SoldInventory": SoldInventory,
+    "SourceWatches": SourceWatches,
+    "SquareTest": SquareTest,
     "Subscriptions": Subscriptions,
+    "SystemAdmin": SystemAdmin,
+    "TenantSettings": TenantSettings,
+    "UpdateMinimumPrices": UpdateMinimumPrices,
+    "WatchDetail": WatchDetail,
+    "WatchSourceDetail": WatchSourceDetail,
+    "WatchSources": WatchSources,
+    "WatchSummary": WatchSummary,
+    "index": index,
 }
 
 export const pagesConfig = {

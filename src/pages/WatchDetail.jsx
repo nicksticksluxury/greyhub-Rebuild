@@ -1306,7 +1306,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button
@@ -1505,7 +1505,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
         </div>
       </div>
 
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="details">Edit Details</TabsTrigger>
@@ -1513,17 +1513,15 @@ Every comparable MUST show model number "${editedData.reference_number}".
           </TabsList>
 
           <TabsContent value="details">
-            <div className="grid lg:grid-cols-12 gap-4">
-              <div className="lg:col-span-3">
+            <div className="grid lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 space-y-4">
                 <ImageGallery 
                   photos={editedData.photos || []}
                   onPhotosChange={(photos) => setEditedData({...editedData, photos})}
                 />
-              </div>
-
-              <div className="lg:col-span-6">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-6">Watch Details</h2>
+                
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 md:mb-6">Watch Details</h2>
 
                   <WatchForm 
                     data={editedData}
@@ -1535,7 +1533,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
                 </div>
               </div>
 
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-1">
                 <AIPanel 
                   aiAnalysis={editedData.ai_analysis}
                   onImportData={importAIData}
