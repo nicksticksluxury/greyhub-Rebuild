@@ -270,7 +270,7 @@ export default function Layout({ children, currentPageName }) {
               </div>
             )}
             <div className="text-center mb-3">
-              <p className="text-xs text-slate-400 font-mono">v1.1.2</p>
+              <p className="text-xs text-slate-400 font-mono">v1.1.3</p>
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0 overflow-hidden">
