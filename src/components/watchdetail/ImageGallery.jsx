@@ -6,11 +6,14 @@ import { Upload, X, Loader2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { optimizeImages } from "../utils/imageOptimizer";
 
 export default function ImageGallery({ photos, onPhotosChange }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, stage: '' });
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files);
@@ -18,18 +21,46 @@ export default function ImageGallery({ photos, onPhotosChange }) {
 
     setUploading(true);
     try {
-      const optimizedPhotos = [];
-      for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        const { data } = await base44.functions.invoke('optimizeImage', { file_url });
-        optimizedPhotos.push(data);
+      // Step 1: Optimize images locally
+      const optimizedPhotos = await optimizeImages(files, (current, total) => {
+        setUploadProgress({ current, total, stage: 'Optimizing' });
+      });
+      
+      // Step 2: Upload all variants
+      const photoObjects = [];
+      const totalUploads = optimizedPhotos.length * 3;
+      let uploadCount = 0;
+      
+      for (let i = 0; i < optimizedPhotos.length; i++) {
+        const variants = optimizedPhotos[i];
+        const photoObj = {};
+        
+        for (const variant of ['thumbnail', 'medium', 'full']) {
+          uploadCount++;
+          setUploadProgress({ 
+            current: uploadCount, 
+            total: totalUploads, 
+            stage: `Uploading ${variant}` 
+          });
+          
+          const { file_url } = await base44.integrations.Core.UploadFile({ 
+            file: variants[variant] 
+          });
+          photoObj[variant] = file_url;
+        }
+        
+        photoObjects.push(photoObj);
       }
-      onPhotosChange([...photos, ...optimizedPhotos]);
+      
+      onPhotosChange([...photos, ...photoObjects]);
       toast.success("Photos uploaded and optimized!");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to upload photos");
+    } finally {
+      setUploading(false);
+      setUploadProgress({ current: 0, total: 0, stage: '' });
     }
-    setUploading(false);
   };
 
   const removePhoto = (index) => {
@@ -107,6 +138,16 @@ export default function ImageGallery({ photos, onPhotosChange }) {
         className="hidden"
       />
 
+      {uploading && (
+        <div className="space-y-2 mt-4 mb-2">
+          <div className="flex justify-between text-sm text-slate-600">
+            <span>{uploadProgress.stage || 'Processing'}...</span>
+            <span>{uploadProgress.current} of {uploadProgress.total}</span>
+          </div>
+          <Progress value={(uploadProgress.current / uploadProgress.total) * 100} />
+        </div>
+      )}
+
       <Button
         variant="outline"
         onClick={() => fileInputRef.current?.click()}
@@ -116,7 +157,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
         {uploading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Uploading...
+            {uploadProgress.stage} {uploadProgress.current}/{uploadProgress.total}
           </>
         ) : (
           <>
