@@ -497,6 +497,9 @@ export default function Settings() {
                         <p className="text-sm text-slate-500">
                           {company.email || 'No email'}
                         </p>
+                        <p className="text-xs text-slate-400 font-mono mt-1">
+                          ID: {company.id}
+                        </p>
                         {company.trial_ends_at && (
                           <p className="text-xs text-slate-400 mt-1">
                             Trial ends: {new Date(company.trial_ends_at).toLocaleDateString()}
