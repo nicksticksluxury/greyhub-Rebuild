@@ -57,14 +57,23 @@ export default function Settings() {
 
   const { data: debugLogs = [] } = useQuery({
     queryKey: ['debugLogs'],
-    queryFn: () => base44.entities.Log.list("-timestamp", 200),
+    queryFn: async () => {
+      try {
+        const result = await base44.asServiceRole.entities.Log.list("-timestamp", 200);
+        console.log('Debug logs result:', result);
+        return Array.isArray(result) ? result : [];
+      } catch (error) {
+        console.error('Failed to fetch debug logs:', error);
+        return [];
+      }
+    },
   });
 
   const { data: companies = [] } = useQuery({
     queryKey: ['allCompanies'],
     queryFn: async () => {
       try {
-        const result = await base44.asServiceRole.entities.Company.list();
+        const result = await base44.asServiceRole.entities.Company.list("name", 100);
         console.log('Company list result:', result);
         return Array.isArray(result) ? result : [];
       } catch (error) {
