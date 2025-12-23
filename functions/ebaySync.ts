@@ -13,13 +13,43 @@ Deno.serve(async (req) => {
         let ebayToken = null;
         let refreshToken = null;
         try {
-            const settings = await base44.asServiceRole.entities.Setting.list();
+            const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: user.company_id });
+            
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "debug",
+                category: "ebay",
+                message: `Found ${settings.length} settings for company ${user.company_id}`,
+                details: { settings: settings.map(s => ({ key: s.key, hasValue: !!s.value, company_id: s.company_id })) }
+            });
+            
             const tokenSetting = settings.find(s => s.key === 'ebay_user_access_token');
             const refreshSetting = settings.find(s => s.key === 'ebay_refresh_token');
             if (tokenSetting) ebayToken = tokenSetting.value;
             if (refreshSetting) refreshToken = refreshSetting.value;
+            
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "debug",
+                category: "ebay",
+                message: `Token retrieval: ${ebayToken ? 'Found access token (length: ' + ebayToken.length + ')' : 'No access token'}, ${refreshToken ? 'Found refresh token' : 'No refresh token'}`,
+                details: { hasAccessToken: !!ebayToken, hasRefreshToken: !!refreshToken, tokenPrefix: ebayToken ? ebayToken.substring(0, 10) + '...' : null }
+            });
         } catch (e) {
             console.error("Failed to read settings", e);
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "error",
+                category: "ebay",
+                message: `Failed to read settings: ${e.message}`,
+                details: { error: e.message }
+            });
         }
 
         if (!ebayToken) {
