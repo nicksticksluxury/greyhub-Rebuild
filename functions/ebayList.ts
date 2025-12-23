@@ -16,12 +16,16 @@ Deno.serve(async (req) => {
         }
 
         // --- TOKEN RETRIEVAL & REFRESH LOGIC ---
-        const settings = await base44.entities.Setting.list();
-        const getSetting = (key) => settings.find(s => s.key === key)?.value;
+        const companies = await base44.asServiceRole.entities.Company.filter({ id: user.company_id });
+        const company = companies[0];
 
-        let accessToken = getSetting("ebay_user_access_token");
-        const refreshToken = getSetting("ebay_user_refresh_token");
-        const tokenExpiry = getSetting("ebay_token_expiry");
+        if (!company) {
+            return Response.json({ error: 'Company not found' }, { status: 400 });
+        }
+
+        let accessToken = company.ebay_access_token;
+        const refreshToken = company.ebay_refresh_token;
+        const tokenExpiry = company.ebay_token_expiry;
 
         if (!accessToken) {
             return Response.json({ error: 'eBay not connected. Please connect your account in Settings.' }, { status: 400 });
@@ -64,11 +68,11 @@ Deno.serve(async (req) => {
             accessToken = refreshData.access_token;
             const newExpiry = new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString();
 
-            const tokenSettingId = settings.find(s => s.key === "ebay_user_access_token")?.id;
-            const expirySettingId = settings.find(s => s.key === "ebay_token_expiry")?.id;
-
-            if (tokenSettingId) await base44.entities.Setting.update(tokenSettingId, { value: accessToken });
-            if (expirySettingId) await base44.entities.Setting.update(expirySettingId, { value: newExpiry });
+            await base44.asServiceRole.entities.Company.update(user.company_id, {
+                ebay_access_token: accessToken,
+                ebay_refresh_token: refreshData.refresh_token || refreshToken,
+                ebay_token_expiry: newExpiry
+            });
         }
         // --- END TOKEN LOGIC ---
 

@@ -104,36 +104,32 @@ Deno.serve(async (req) => {
             throw new Error(data.error_description || "Failed to exchange authorization code for token");
         }
 
-        // Helper to update or create setting with company_id
-        const settings = await base44.entities.Setting.filter({ company_id: user.company_id });
-        
-        const saveSetting = async (key, value, description) => {
-            const existing = settings.find(s => s.key === key);
-            if (existing) {
-                await base44.entities.Setting.update(existing.id, { value });
-            } else {
-                await base44.entities.Setting.create({ 
-                    company_id: user.company_id,
-                    key, 
-                    value, 
-                    description 
-                });
-            }
-        };
-
-        // Save tokens to Settings entity
-        await saveSetting("ebay_user_access_token", data.access_token, "eBay User Access Token");
-        await saveSetting("ebay_refresh_token", data.refresh_token, "eBay User Refresh Token");
-        
-        // Calculate expiry time
+        // Save tokens to Company entity
         const expiryDate = new Date(Date.now() + (data.expires_in * 1000)).toISOString();
-        await saveSetting("ebay_token_expiry", expiryDate, "eBay Token Expiration Date");
+        const refreshExpiryDate = data.refresh_token_expires_in 
+            ? new Date(Date.now() + (data.refresh_token_expires_in * 1000)).toISOString()
+            : null;
+
+        await base44.asServiceRole.entities.Company.update(user.company_id, {
+            ebay_access_token: data.access_token,
+            ebay_refresh_token: data.refresh_token,
+            ebay_token_expiry: expiryDate,
+            ebay_refresh_token_expiry: refreshExpiryDate
+        });
         
-        // Save refresh token expiry if provided (usually much longer)
-        if (data.refresh_token_expires_in) {
-             const refreshExpiryDate = new Date(Date.now() + (data.refresh_token_expires_in * 1000)).toISOString();
-             await saveSetting("ebay_refresh_token_expiry", refreshExpiryDate, "eBay Refresh Token Expiration Date");
-        }
+        // Log token save
+        await base44.asServiceRole.entities.Log.create({
+            company_id: user.company_id,
+            user_id: user.id,
+            timestamp: new Date().toISOString(),
+            level: "success",
+            category: "ebay",
+            message: "eBay tokens saved to Company entity",
+            details: { 
+                token_expiry: expiryDate,
+                refresh_token_expiry: refreshExpiryDate
+            }
+        });
 
         return Response.json({ success: true });
 

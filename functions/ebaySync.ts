@@ -9,45 +9,36 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Try to get token from Settings first (OAuth flow), fall back to Env
+        // Get token from Company entity
         let ebayToken = null;
         let refreshToken = null;
         try {
-            const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: user.company_id });
-            
-            await base44.asServiceRole.entities.Log.create({
-                company_id: user.company_id,
-                user_id: user.id,
-                timestamp: new Date().toISOString(),
-                level: "debug",
-                category: "ebay",
-                message: `Found ${settings.length} settings for company ${user.company_id}`,
-                details: { settings: settings.map(s => ({ key: s.key, hasValue: !!s.value, company_id: s.company_id })) }
-            });
-            
-            const tokenSetting = settings.find(s => s.key === 'ebay_user_access_token');
-            const refreshSetting = settings.find(s => s.key === 'ebay_refresh_token');
-            if (tokenSetting) ebayToken = tokenSetting.value;
-            if (refreshSetting) refreshToken = refreshSetting.value;
-            
-            await base44.asServiceRole.entities.Log.create({
-                company_id: user.company_id,
-                user_id: user.id,
-                timestamp: new Date().toISOString(),
-                level: "debug",
-                category: "ebay",
-                message: `Token retrieval: ${ebayToken ? 'Found access token (length: ' + ebayToken.length + ')' : 'No access token'}, ${refreshToken ? 'Found refresh token' : 'No refresh token'}`,
-                details: { hasAccessToken: !!ebayToken, hasRefreshToken: !!refreshToken, tokenPrefix: ebayToken ? ebayToken.substring(0, 10) + '...' : null }
-            });
+            const companies = await base44.asServiceRole.entities.Company.filter({ id: user.company_id });
+            const company = companies[0];
+
+            if (company) {
+                ebayToken = company.ebay_access_token;
+                refreshToken = company.ebay_refresh_token;
+
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "debug",
+                    category: "ebay",
+                    message: `Token retrieval from Company: ${ebayToken ? 'Found access token (length: ' + ebayToken.length + ')' : 'No access token'}, ${refreshToken ? 'Found refresh token' : 'No refresh token'}`,
+                    details: { hasAccessToken: !!ebayToken, hasRefreshToken: !!refreshToken, tokenPrefix: ebayToken ? ebayToken.substring(0, 10) + '...' : null }
+                });
+            }
         } catch (e) {
-            console.error("Failed to read settings", e);
+            console.error("Failed to read company", e);
             await base44.asServiceRole.entities.Log.create({
                 company_id: user.company_id,
                 user_id: user.id,
                 timestamp: new Date().toISOString(),
                 level: "error",
                 category: "ebay",
-                message: `Failed to read settings: ${e.message}`,
+                message: `Failed to read company: ${e.message}`,
                 details: { error: e.message }
             });
         }
@@ -88,17 +79,13 @@ Deno.serve(async (req) => {
             const newAccessToken = tokenData.access_token;
             const newRefreshToken = tokenData.refresh_token;
 
-            // Save new tokens
-            const settings = await base44.asServiceRole.entities.Setting.list();
-            const accessTokenSetting = settings.find(s => s.key === 'ebay_user_access_token');
-            const refreshTokenSetting = settings.find(s => s.key === 'ebay_refresh_token');
-
-            if (accessTokenSetting) {
-                await base44.asServiceRole.entities.Setting.update(accessTokenSetting.id, { value: newAccessToken });
-            }
-            if (refreshTokenSetting && newRefreshToken) {
-                await base44.asServiceRole.entities.Setting.update(refreshTokenSetting.id, { value: newRefreshToken });
-            }
+            // Save new tokens to Company entity
+            const newExpiry = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
+            await base44.asServiceRole.entities.Company.update(user.company_id, {
+                ebay_access_token: newAccessToken,
+                ebay_refresh_token: newRefreshToken || refreshToken,
+                ebay_token_expiry: newExpiry
+            });
 
             await base44.asServiceRole.entities.Log.create({
                 company_id: user.company_id,
