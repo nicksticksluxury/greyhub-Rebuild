@@ -765,7 +765,7 @@ YOUR RESPONSE MUST INCLUDE:
               properties: {
                 whatnot: { type: "number" },
                 ebay: { type: "number" },
-                shopify: { type: "number" },
+                square: { type: "number" },
                 etsy: { type: "number" },
                 poshmark: { type: "number" },
                 mercari: { type: "number" }
@@ -776,7 +776,7 @@ YOUR RESPONSE MUST INCLUDE:
               properties: {
                 whatnot: { type: "string" },
                 ebay: { type: "string" },
-                shopify: { type: "string" },
+                square: { type: "string" },
                 etsy: { type: "string" },
                 poshmark: { type: "string" },
                 mercari: { type: "string" }
@@ -1121,7 +1121,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
               properties: {
                 whatnot: { type: "number" },
                 ebay: { type: "number" },
-                shopify: { type: "number" },
+                square: { type: "number" },
                 etsy: { type: "number" },
                 poshmark: { type: "number" },
                 mercari: { type: "number" }
@@ -1132,7 +1132,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
               properties: {
                 whatnot: { type: "string" },
                 ebay: { type: "string" },
-                shopify: { type: "string" },
+                square: { type: "string" },
                 etsy: { type: "string" },
                 poshmark: { type: "string" },
                 mercari: { type: "string" }
