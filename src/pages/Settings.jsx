@@ -59,9 +59,9 @@ export default function Settings() {
     queryKey: ['debugLogs'],
     queryFn: async () => {
       try {
-        const result = await base44.asServiceRole.entities.Log.list("-timestamp", 200);
-        console.log('Debug logs result:', result);
-        return Array.isArray(result) ? result : [];
+        const result = await base44.functions.invoke('getAllLogs');
+        console.log('Debug logs result:', result.data);
+        return Array.isArray(result.data.logs) ? result.data.logs : [];
       } catch (error) {
         console.error('Failed to fetch debug logs:', error);
         return [];
@@ -73,9 +73,9 @@ export default function Settings() {
     queryKey: ['allCompanies'],
     queryFn: async () => {
       try {
-        const result = await base44.asServiceRole.entities.Company.list("name", 100);
-        console.log('Company list result:', result);
-        return Array.isArray(result) ? result : [];
+        const result = await base44.functions.invoke('getAllCompanies');
+        console.log('Company list result:', result.data);
+        return Array.isArray(result.data.companies) ? result.data.companies : [];
       } catch (error) {
         console.error('Failed to fetch companies:', error);
         return [];
