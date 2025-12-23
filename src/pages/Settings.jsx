@@ -73,7 +73,7 @@ export default function Settings() {
     queryKey: ['allCompanies'],
     queryFn: async () => {
       try {
-        const result = await base44.functions.invoke('getAllCompanies');
+        const result = await base44.functions.invoke('listAllCompanies');
         console.log('Company list result:', result.data);
         return Array.isArray(result.data.companies) ? result.data.companies : [];
       } catch (error) {
