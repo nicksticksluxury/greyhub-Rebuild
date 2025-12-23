@@ -107,53 +107,34 @@ export default function SalesView() {
           </div>
         </div>
 
-        {/* Image Carousel */}
-        <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 border-2 border-white/10 shadow-2xl bg-black/40 shrink-0 group">
+        {/* Image Grid */}
+        <div className="mb-6 shrink-0">
           {data.images.length > 0 ? (
-            <>
-              <img 
-                src={data.images[currentImageIndex]} 
-                alt={`Watch image ${currentImageIndex + 1}`}
-                className="w-full h-full object-contain p-2 transition-opacity duration-300"
-              />
-              
-              {data.images.length > 1 && (
-                <>
-                  <button 
-                    onClick={prevImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-                  <button 
-                    onClick={nextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                  
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    {data.images.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentImageIndex(idx)}
-                        className={`w-2 h-2 rounded-full transition-all ${
-                          idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/40'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
+            <div className="grid grid-cols-2 gap-2">
+              {data.images.map((img, idx) => (
+                <div 
+                  key={idx}
+                  className="relative aspect-square rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/40 cursor-pointer hover:border-white/30 transition-all"
+                  onClick={() => setCurrentImageIndex(idx)}
+                >
+                  <img 
+                    src={img} 
+                    alt={`Watch image ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {idx === 0 && (
+                    <div className="absolute top-2 right-2">
+                      <span className="bg-white/90 text-black font-bold text-xs px-2 py-1 shadow-lg rounded-full uppercase">
+                        {data.condition.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-600">No Images</div>
+            <div className="w-full aspect-square flex items-center justify-center text-slate-600 border border-white/10 rounded-xl">No Images</div>
           )}
-          <div className="absolute top-4 right-4">
-             <span className="bg-white/90 text-black font-bold text-sm px-3 py-1 shadow-lg rounded-full uppercase">
-               {data.condition.replace(/_/g, ' ')}
-             </span>
-          </div>
         </div>
 
         {/* Details */}
