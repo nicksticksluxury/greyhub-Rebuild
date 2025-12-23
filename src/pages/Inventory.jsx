@@ -77,6 +77,9 @@ export default function Inventory() {
   const [showImageExportDialog, setShowImageExportDialog] = useState(false);
   const [imageExportSizes, setImageExportSizes] = useState({ thumbnail: false, medium: true, full: false });
   const [syncingSquare, setSyncingSquare] = useState(false);
+  const [showSetSourceDialog, setShowSetSourceDialog] = useState(false);
+  const [selectedSourceId, setSelectedSourceId] = useState("");
+  const [selectedOrderId, setSelectedOrderId] = useState("");
   
   const queryClient = useQueryClient();
 
@@ -559,9 +562,14 @@ export default function Inventory() {
                           ))
                         )}
                       </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    </DropdownMenuContent>
-                    </DropdownMenu>
+                      </DropdownMenuSub>
+
+                      <DropdownMenuItem onClick={() => setShowSetSourceDialog(true)}>
+                      <Package className="w-4 h-4 mr-2" />
+                      Set Source
+                      </DropdownMenuItem>
+                      </DropdownMenuContent>
+                      </DropdownMenu>
               ) : (
                 <>
 
@@ -751,6 +759,88 @@ export default function Inventory() {
             }}>
               <Download className="w-4 h-4 mr-2" />
               Export
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSetSourceDialog} onOpenChange={setShowSetSourceDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set Source & Shipment</DialogTitle>
+            <DialogDescription>
+              Set the source and shipment for {selectedWatchIds.length} selected watch{selectedWatchIds.length !== 1 ? 'es' : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="source">Source</Label>
+              <Select value={selectedSourceId} onValueChange={(value) => {
+                setSelectedSourceId(value);
+                setSelectedOrderId("");
+              }}>
+                <SelectTrigger id="source">
+                  <SelectValue placeholder="Select source" />
+                </SelectTrigger>
+                <SelectContent>
+                  {watchSources.map(source => (
+                    <SelectItem key={source.id} value={source.id}>{source.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="order">Shipment (Optional)</Label>
+              <Select value={selectedOrderId} onValueChange={setSelectedOrderId} disabled={!selectedSourceId}>
+                <SelectTrigger id="order">
+                  <SelectValue placeholder="Select shipment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  {sourceOrders
+                    .filter(order => order.source_id === selectedSourceId)
+                    .map(order => (
+                      <SelectItem key={order.id} value={order.id}>
+                        Order #{order.order_number} - {order.date_received ? new Date(order.date_received).toLocaleDateString() : 'No date'}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowSetSourceDialog(false);
+              setSelectedSourceId("");
+              setSelectedOrderId("");
+            }}>Cancel</Button>
+            <Button className="bg-slate-800 hover:bg-slate-900" onClick={async () => {
+              if (!selectedSourceId) {
+                toast.error("Please select a source");
+                return;
+              }
+              
+              const toastId = toast.loading(`Updating ${selectedWatchIds.length} watches...`);
+              try {
+                await Promise.all(selectedWatchIds.map(id => 
+                  base44.entities.Watch.update(id, { 
+                    source_id: selectedSourceId,
+                    source_order_id: selectedOrderId || null
+                  })
+                ));
+                
+                toast.success(`Updated ${selectedWatchIds.length} watches`, { id: toastId });
+                queryClient.invalidateQueries({ queryKey: ['watches'] });
+                setSelectedWatchIds([]);
+                setShowSetSourceDialog(false);
+                setSelectedSourceId("");
+                setSelectedOrderId("");
+              } catch (error) {
+                console.error(error);
+                toast.error("Failed to update watches", { id: toastId });
+              }
+            }}>
+              Update
             </Button>
           </DialogFooter>
         </DialogContent>
