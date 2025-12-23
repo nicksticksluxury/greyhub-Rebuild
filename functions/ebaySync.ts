@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
         
         // Log sync start
         await base44.asServiceRole.entities.EbayLog.create({
+            company_id: user.company_id,
             timestamp: new Date().toISOString(),
             level: "info",
             operation: "sync",
@@ -128,6 +129,8 @@ Deno.serve(async (req) => {
                     // Create Alert
                     try {
                         await base44.asServiceRole.entities.Alert.create({
+                            company_id: user.company_id,
+                            user_id: user.id,
                             type: "success",
                             title: "Item Sold on eBay",
                             message: `Sold ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice} ($${pricePerUnit.toFixed(2)} each)${remainingQuantity > 0 ? `. ${remainingQuantity} remaining.` : ''}`,
@@ -144,6 +147,7 @@ Deno.serve(async (req) => {
                     
                     // Log successful sync
                     await base44.asServiceRole.entities.EbayLog.create({
+                        company_id: user.company_id,
                         timestamp: new Date().toISOString(),
                         level: "success",
                         operation: "sync",
@@ -154,6 +158,7 @@ Deno.serve(async (req) => {
                 } catch (e) {
                     console.error(`Error syncing item SKU ${sku}:`, e);
                     await base44.asServiceRole.entities.EbayLog.create({
+                        company_id: user.company_id,
                         timestamp: new Date().toISOString(),
                         level: "error",
                         operation: "sync",
@@ -207,6 +212,7 @@ Deno.serve(async (req) => {
                             endedItems.push(`${watch.brand} ${watch.model}`);
                             
                             await base44.asServiceRole.entities.EbayLog.create({
+                                company_id: user.company_id,
                                 timestamp: new Date().toISOString(),
                                 level: "success",
                                 operation: "end",
@@ -217,6 +223,7 @@ Deno.serve(async (req) => {
                     } catch (endErr) {
                         console.error(`Failed to end eBay listing for watch ${watch.id}:`, endErr);
                         await base44.asServiceRole.entities.EbayLog.create({
+                            company_id: user.company_id,
                             timestamp: new Date().toISOString(),
                             level: "error",
                             operation: "end",
@@ -247,6 +254,7 @@ Deno.serve(async (req) => {
                             updatedItems.push(`${watch.brand} ${watch.model} (${currentQty} remaining)`);
                             
                             await base44.asServiceRole.entities.EbayLog.create({
+                                company_id: user.company_id,
                                 timestamp: new Date().toISOString(),
                                 level: "success",
                                 operation: "update",
@@ -257,6 +265,7 @@ Deno.serve(async (req) => {
                     } catch (updateErr) {
                         console.error(`Failed to update eBay quantity for watch ${watch.id}:`, updateErr);
                         await base44.asServiceRole.entities.EbayLog.create({
+                            company_id: user.company_id,
                             timestamp: new Date().toISOString(),
                             level: "error",
                             operation: "update",
