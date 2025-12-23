@@ -56,7 +56,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
             <div 
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="space-y-3"
+              className="grid grid-cols-2 md:grid-cols-1 gap-3"
             >
               {photos.map((photo, index) => (
                 <Draggable key={index} draggableId={`photo-${index}`} index={index}>
@@ -69,7 +69,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
                       <div className="flex gap-2">
                         <div
                           {...provided.dragHandleProps}
-                          className="flex items-center justify-center w-10 bg-slate-100 rounded-lg hover:bg-slate-200 cursor-grab active:cursor-grabbing"
+                          className="hidden md:flex items-center justify-center w-10 bg-slate-100 rounded-lg hover:bg-slate-200 cursor-grab active:cursor-grabbing"
                         >
                           <GripVertical className="w-5 h-5 text-slate-400" />
                         </div>
@@ -77,13 +77,13 @@ export default function ImageGallery({ photos, onPhotosChange }) {
                           <img
                             src={typeof photo === 'string' ? photo : (photo.thumbnail || photo.medium || photo.full)}
                             alt={`Watch ${index + 1}`}
-                            className="w-full h-48 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                            className="w-full aspect-square md:h-48 md:aspect-auto object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => setViewingPhoto(photo)}
                           />
                           <Button
                             size="icon"
                             variant="destructive"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-lg h-8 w-8"
                             onClick={() => removePhoto(index)}
                           >
                             <X className="w-4 h-4" />
