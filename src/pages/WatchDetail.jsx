@@ -456,7 +456,7 @@ ABSOLUTE REQUIREMENTS:
 Platform pricing:
 - whatnot: 70% of average (fast sales)
 - ebay: 85% of average
-- shopify: 100% of average
+- square: 100% of average (Shopify/direct sales)
 - etsy: 90%
 - poshmark: 80%
 - mercari: 75%
@@ -495,7 +495,7 @@ Return ALL comparable URLs with prices and complete pricing breakdown.`;
       Platform pricing strategy:
       - whatnot: 70% (fast sales)
       - ebay: 85% (competitive)
-      - shopify: 100% (direct)
+      - square: 100% (Shopify/direct sales)
       - etsy: 90%
       - poshmark: 80%
       - mercari: 75%
@@ -720,7 +720,7 @@ Once you have 8-12 comparables:
 Platform Pricing Formula:
 • Whatnot: 70% of market value (fast auction sales)
 • eBay: 85% of market value (competitive)
-• Shopify: 100% of market value (direct sales)
+• Square: 100% of market value (Shopify/direct sales)
 • Etsy: 90% of market value
 • Poshmark: 80% of market value
 • Mercari: 75% of market value
@@ -1094,7 +1094,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
   4. Apply platform-specific pricing:
    - whatnot: 70% of average (fast sales, auction format)
    - ebay: 85% of average (competitive marketplace)
-   - shopify: 100% of average (direct sales, full control)
+   - square: 100% of average (Shopify/direct sales, full control)
    - etsy: 90% of average
    - poshmark: 80% of average
    - mercari: 75% of average
