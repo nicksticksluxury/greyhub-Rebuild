@@ -840,6 +840,10 @@ YOUR RESPONSE MUST INCLUDE:
       const aiCondition = editedData.ai_analysis?.condition_assessment || "";
       const conditionContext = aiCondition ? `\n\nAI Analysis of Condition:\n${aiCondition}` : "";
 
+      const testedStatus = editedData.tested === "yes_working" ? "Tested and working" : 
+                          editedData.tested === "yes_not_working" ? "Tested - not working" : 
+                          "Not tested";
+
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Create a compelling, professional product description for this watch:
 
@@ -850,7 +854,8 @@ YOUR RESPONSE MUST INCLUDE:
         Condition: ${editedData.condition || "N/A"}
         Movement: ${editedData.movement_type || "N/A"}
         Case Material: ${editedData.case_material || "N/A"}
-        Case Size: ${editedData.case_size || "N/A"}${conditionContext}
+        Case Size: ${editedData.case_size || "N/A"}
+        Testing Status: ${testedStatus}${conditionContext}
 
         Create an engaging, accurate description that will attract buyers while being completely honest about condition.
 
