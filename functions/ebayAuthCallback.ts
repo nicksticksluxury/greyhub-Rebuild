@@ -30,19 +30,48 @@ Deno.serve(async (req) => {
         params.append("code", code);
         params.append("redirect_uri", ruName);
 
+        // Log what we're sending for debugging
+        await base44.asServiceRole.entities.Log.create({
+            company_id: user.company_id,
+            user_id: user.id,
+            timestamp: new Date().toISOString(),
+            level: "debug",
+            category: "ebay",
+            message: "Attempting to exchange code for token",
+            details: { 
+                codeLength: code.length, 
+                codePrefix: code.substring(0, 20),
+                redirect_uri: ruName,
+                grant_type: "authorization_code"
+            }
+        });
+
         const response = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Authorization": `Basic ${credentials}`
             },
-            body: params
+            body: params.toString()
         });
 
         const data = await response.json();
 
         if (!response.ok) {
             console.error("eBay Token Error:", data);
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "error",
+                category: "ebay",
+                message: "eBay token exchange failed",
+                details: { 
+                    status: response.status,
+                    error: data,
+                    requestBody: params.toString()
+                }
+            });
             throw new Error(data.error_description || "Failed to exchange authorization code for token");
         }
 
