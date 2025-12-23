@@ -5,6 +5,19 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
         
+        // VERY EARLY LOG - Function reached
+        if (user && user.company_id) {
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "info",
+                category: "ebay",
+                message: "✓ ebayAuthCallback function reached",
+                details: { url: req.url, method: req.method }
+            });
+        }
+        
         if (!user) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -30,18 +43,27 @@ Deno.serve(async (req) => {
         params.append("code", code);
         params.append("redirect_uri", ruName);
 
-        // Log what we're sending for debugging
+        // LOG EVERYTHING WE'RE SENDING TO EBAY
         await base44.asServiceRole.entities.Log.create({
             company_id: user.company_id,
             user_id: user.id,
             timestamp: new Date().toISOString(),
             level: "debug",
             category: "ebay",
-            message: "Attempting to exchange code for token",
+            message: "EXACT DATA being sent to eBay token endpoint",
             details: { 
-                codeLength: code.length, 
-                codePrefix: code.substring(0, 20),
+                endpoint: "https://api.ebay.com/identity/v1/oauth2/token",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": `Basic ${credentials}`
+                },
+                body: params.toString(),
+                decoded_credentials: `${clientId}:${clientSecret}`,
+                clientId: clientId,
+                clientSecret: clientSecret,
                 redirect_uri: ruName,
+                code: code,
                 grant_type: "authorization_code"
             }
         });
