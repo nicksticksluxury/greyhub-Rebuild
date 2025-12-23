@@ -324,6 +324,36 @@ Deno.serve(async (req) => {
 
     } catch (error) {
         console.error("Sync failed:", error);
+        
+        // Log the error
+        try {
+            const base44 = createClientFromRequest(req);
+            const user = await base44.auth.me();
+            if (user && user.company_id) {
+                await Promise.all([
+                    base44.asServiceRole.entities.EbayLog.create({
+                        company_id: user.company_id,
+                        timestamp: new Date().toISOString(),
+                        level: "error",
+                        operation: "sync",
+                        message: `eBay sync failed: ${error.message}`,
+                        details: { error: error.message, stack: error.stack }
+                    }),
+                    base44.asServiceRole.entities.Log.create({
+                        company_id: user.company_id,
+                        user_id: user.id,
+                        timestamp: new Date().toISOString(),
+                        level: "error",
+                        category: "ebay",
+                        message: `eBay Sync Failed: ${error.message}`,
+                        details: { error: error.message, stack: error.stack }
+                    })
+                ]);
+            }
+        } catch (logError) {
+            console.error("Failed to log error:", logError);
+        }
+        
         return Response.json({ error: error.message }, { status: 500 });
     }
 });
