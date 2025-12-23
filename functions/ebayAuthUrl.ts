@@ -32,6 +32,24 @@ Deno.serve(async (req) => {
         // Using 'production' endpoint (auth.ebay.com)
         const url = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scopes)}`;
         
+        // LOG EXACT URL BEING SENT TO EBAY
+        await base44.asServiceRole.entities.Log.create({
+            company_id: user.company_id,
+            user_id: user.id,
+            timestamp: new Date().toISOString(),
+            level: "info",
+            category: "ebay",
+            message: "eBay Authorization URL Generated - EXACT URL being sent to user",
+            details: { 
+                full_url: url,
+                client_id: clientId,
+                redirect_uri: ruName,
+                response_type: "code",
+                scopes: scopes,
+                endpoint: "https://auth.ebay.com/oauth2/authorize"
+            }
+        });
+        
         return Response.json({ url });
 
     } catch (error) {
