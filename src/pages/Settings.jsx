@@ -135,6 +135,36 @@ export default function Settings() {
     }
   };
 
+  // Handle OAuth Callback from redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    
+    if (code) {
+      const handleCallback = async () => {
+        setIsConnecting(true);
+        try {
+          // Remove code from URL to prevent re-triggering
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          const result = await base44.functions.invoke("ebayAuthCallback", { code });
+          if (result.data.success) {
+            toast.success("Successfully connected to eBay!");
+            refetch();
+          } else {
+            toast.error("Failed to connect: " + (result.data.error || "Unknown error"));
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Connection failed: " + error.message);
+        } finally {
+          setIsConnecting(false);
+        }
+      };
+      handleCallback();
+    }
+  }, []);
+
   const handleSaveManualToken = async () => {
     try {
       if (accessTokenSetting) {

@@ -46,22 +46,26 @@ Deno.serve(async (req) => {
             throw new Error(data.error_description || "Failed to exchange authorization code for token");
         }
 
-        // Helper to update or create setting
-        // Using service role to ensure we can write settings if needed, though user role should suffice based on RLS
-        const settings = await base44.entities.Setting.list();
+        // Helper to update or create setting with company_id
+        const settings = await base44.entities.Setting.filter({ company_id: user.company_id });
         
         const saveSetting = async (key, value, description) => {
             const existing = settings.find(s => s.key === key);
             if (existing) {
                 await base44.entities.Setting.update(existing.id, { value });
             } else {
-                await base44.entities.Setting.create({ key, value, description });
+                await base44.entities.Setting.create({ 
+                    company_id: user.company_id,
+                    key, 
+                    value, 
+                    description 
+                });
             }
         };
 
         // Save tokens to Settings entity
         await saveSetting("ebay_user_access_token", data.access_token, "eBay User Access Token");
-        await saveSetting("ebay_user_refresh_token", data.refresh_token, "eBay User Refresh Token");
+        await saveSetting("ebay_refresh_token", data.refresh_token, "eBay User Refresh Token");
         
         // Calculate expiry time
         const expiryDate = new Date(Date.now() + (data.expires_in * 1000)).toISOString();
