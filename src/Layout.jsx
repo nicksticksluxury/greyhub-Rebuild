@@ -167,7 +167,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <style>{`
         :root {
           --primary: #1e293b;
@@ -177,7 +177,7 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
       <div className="min-h-screen flex w-full bg-slate-50">
-        <Sidebar className="border-r border-slate-200">
+        <Sidebar collapsible="icon" className="border-r border-slate-200">
           <SidebarHeader className="border-b border-slate-200 p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center shadow-lg">
