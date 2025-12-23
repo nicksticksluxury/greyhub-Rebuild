@@ -141,6 +141,17 @@ Deno.serve(async (req) => {
 
         const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
         
+        // Log listing start
+        await base44.asServiceRole.entities.Log.create({
+            company_id: user.company_id,
+            user_id: user.id,
+            timestamp: new Date().toISOString(),
+            level: "info",
+            category: "ebay",
+            message: `eBay List: Starting to list ${watchIds.length} watches`,
+            details: { watchCount: watchIds.length, watchIds }
+        });
+        
         const results = {
             success: 0,
             failed: 0,
@@ -316,6 +327,17 @@ Deno.serve(async (req) => {
                         ebay: listingId 
                     }
                 });
+                
+                // Log successful listing
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "success",
+                    category: "ebay",
+                    message: `eBay Listed: ${watch.brand} ${watch.model} - Listing ID: ${listingId}`,
+                    details: { watch_id: watch.id, listing_id: listingId, price, sku }
+                });
 
                 results.success++;
 
@@ -331,6 +353,17 @@ Deno.serve(async (req) => {
                         }
                     }
                 } catch (e) {}
+                
+                // Log listing error
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "error",
+                    category: "ebay",
+                    message: `eBay List Failed: ${watch.brand} ${watch.model} - ${errorMessage}`,
+                    details: { watch_id: watch.id, error: errorMessage }
+                });
                 
                 results.errors.push(`Failed to list ${watch.brand} ${watch.model}: ${errorMessage}`);
                 results.failed++;

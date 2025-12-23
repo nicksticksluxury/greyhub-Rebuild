@@ -53,14 +53,25 @@ Deno.serve(async (req) => {
         const orders = data.orders || [];
         
         // Log sync start
-        await base44.asServiceRole.entities.EbayLog.create({
-            company_id: user.company_id,
-            timestamp: new Date().toISOString(),
-            level: "info",
-            operation: "sync",
-            message: `Starting eBay sync - found ${orders.length} orders to process`,
-            details: { orderCount: orders.length }
-        });
+        await Promise.all([
+            base44.asServiceRole.entities.EbayLog.create({
+                company_id: user.company_id,
+                timestamp: new Date().toISOString(),
+                level: "info",
+                operation: "sync",
+                message: `Starting eBay sync - found ${orders.length} orders to process`,
+                details: { orderCount: orders.length }
+            }),
+            base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "info",
+                category: "ebay",
+                message: `eBay Sync: Found ${orders.length} orders to process`,
+                details: { orderCount: orders.length }
+            })
+        ]);
         
         let syncedCount = 0;
         const syncedItems = [];
@@ -146,25 +157,47 @@ Deno.serve(async (req) => {
                     syncedItems.push(`${quantitySold}x ${watch.brand} ${watch.model}`);
                     
                     // Log successful sync
-                    await base44.asServiceRole.entities.EbayLog.create({
-                        company_id: user.company_id,
-                        timestamp: new Date().toISOString(),
-                        level: "success",
-                        operation: "sync",
-                        message: `Synced sale: ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice}`,
-                        details: { watch_id: watch.id, quantity: quantitySold, price: soldPrice, remaining: remainingQuantity }
-                    });
+                    await Promise.all([
+                        base44.asServiceRole.entities.EbayLog.create({
+                            company_id: user.company_id,
+                            timestamp: new Date().toISOString(),
+                            level: "success",
+                            operation: "sync",
+                            message: `Synced sale: ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice}`,
+                            details: { watch_id: watch.id, quantity: quantitySold, price: soldPrice, remaining: remainingQuantity }
+                        }),
+                        base44.asServiceRole.entities.Log.create({
+                            company_id: user.company_id,
+                            user_id: user.id,
+                            timestamp: new Date().toISOString(),
+                            level: "success",
+                            category: "ebay",
+                            message: `eBay Sale Synced: ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice}`,
+                            details: { watch_id: watch.id, quantity: quantitySold, price: soldPrice, remaining: remainingQuantity }
+                        })
+                    ]);
 
                 } catch (e) {
                     console.error(`Error syncing item SKU ${sku}:`, e);
-                    await base44.asServiceRole.entities.EbayLog.create({
-                        company_id: user.company_id,
-                        timestamp: new Date().toISOString(),
-                        level: "error",
-                        operation: "sync",
-                        message: `Failed to sync item SKU ${sku}: ${e.message}`,
-                        details: { sku, error: e.message }
-                    });
+                    await Promise.all([
+                        base44.asServiceRole.entities.EbayLog.create({
+                            company_id: user.company_id,
+                            timestamp: new Date().toISOString(),
+                            level: "error",
+                            operation: "sync",
+                            message: `Failed to sync item SKU ${sku}: ${e.message}`,
+                            details: { sku, error: e.message }
+                        }),
+                        base44.asServiceRole.entities.Log.create({
+                            company_id: user.company_id,
+                            user_id: user.id,
+                            timestamp: new Date().toISOString(),
+                            level: "error",
+                            category: "ebay",
+                            message: `eBay Sync Failed: SKU ${sku} - ${e.message}`,
+                            details: { sku, error: e.message }
+                        })
+                    ]);
                 }
             }
         }

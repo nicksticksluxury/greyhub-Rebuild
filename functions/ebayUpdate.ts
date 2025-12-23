@@ -111,6 +111,17 @@ Deno.serve(async (req) => {
 
         const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
         
+        // Log update start
+        await base44.asServiceRole.entities.Log.create({
+            company_id: user.company_id,
+            user_id: user.id,
+            timestamp: new Date().toISOString(),
+            level: "info",
+            category: "ebay",
+            message: `eBay Update: Starting to update ${watchIds.length} watches`,
+            details: { watchCount: watchIds.length, watchIds }
+        });
+        
         const results = {
             success: 0,
             failed: 0,
@@ -256,6 +267,17 @@ Deno.serve(async (req) => {
                         ebay: new Date().toISOString()
                     }
                 });
+                
+                // Log successful update
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "success",
+                    category: "ebay",
+                    message: `eBay Updated: ${watch.brand} ${watch.model} - Price: $${price}`,
+                    details: { watch_id: watch.id, price, sku }
+                });
 
                 results.success++;
 
@@ -270,6 +292,17 @@ Deno.serve(async (req) => {
                         }
                     }
                 } catch (e) {}
+                
+                // Log update error
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "error",
+                    category: "ebay",
+                    message: `eBay Update Failed: ${watch.brand} ${watch.model} - ${errorMessage}`,
+                    details: { watch_id: watch.id, error: errorMessage }
+                });
                 
                 results.errors.push(`Failed to update ${watch.brand} ${watch.model}: ${errorMessage}`);
                 results.failed++;
