@@ -11,13 +11,13 @@ Deno.serve(async (req) => {
 
         // Try to get token from Settings first (OAuth flow), fall back to Env
         let ebayToken = null;
+        let refreshToken = null;
         try {
-            // Access settings securely (if user has read access to settings, or use service role if needed)
-            // Since this is triggered by user action usually, we try user access. 
-            // But Settings entity might be restricted. Let's use service role for reliability in backend function.
             const settings = await base44.asServiceRole.entities.Setting.list();
             const tokenSetting = settings.find(s => s.key === 'ebay_user_access_token');
+            const refreshSetting = settings.find(s => s.key === 'ebay_refresh_token');
             if (tokenSetting) ebayToken = tokenSetting.value;
+            if (refreshSetting) refreshToken = refreshSetting.value;
         } catch (e) {
             console.error("Failed to read settings", e);
         }
@@ -30,22 +30,89 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'eBay Access Token not configured. Please connect eBay in Settings.' }, { status: 500 });
         }
 
+        // Helper function to refresh token
+        const refreshAccessToken = async () => {
+            if (!refreshToken) {
+                throw new Error("No refresh token available. Please reconnect eBay in Settings.");
+            }
+
+            const clientId = Deno.env.get("EBAY_APP_ID");
+            const clientSecret = Deno.env.get("EBAY_CERT_ID");
+            const credentials = btoa(`${clientId}:${clientSecret}`);
+
+            const refreshResponse = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": `Basic ${credentials}`
+                },
+                body: `grant_type=refresh_token&refresh_token=${refreshToken}`
+            });
+
+            if (!refreshResponse.ok) {
+                const errorText = await refreshResponse.text();
+                throw new Error(`Token refresh failed: ${errorText}`);
+            }
+
+            const tokenData = await refreshResponse.json();
+            const newAccessToken = tokenData.access_token;
+            const newRefreshToken = tokenData.refresh_token;
+
+            // Save new tokens
+            const settings = await base44.asServiceRole.entities.Setting.list();
+            const accessTokenSetting = settings.find(s => s.key === 'ebay_user_access_token');
+            const refreshTokenSetting = settings.find(s => s.key === 'ebay_refresh_token');
+
+            if (accessTokenSetting) {
+                await base44.asServiceRole.entities.Setting.update(accessTokenSetting.id, { value: newAccessToken });
+            }
+            if (refreshTokenSetting && newRefreshToken) {
+                await base44.asServiceRole.entities.Setting.update(refreshTokenSetting.id, { value: newRefreshToken });
+            }
+
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "info",
+                category: "ebay",
+                message: "eBay access token refreshed successfully",
+                details: {}
+            });
+
+            return newAccessToken;
+        };
+
         // fetch recent orders from eBay
         // Using Fulfillment API
         // Filter by creation date (last 60 days) to capture recent sales
         const date = new Date();
         date.setDate(date.getDate() - 60);
         const dateStr = date.toISOString();
-        const response = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=creationdate:[${dateStr}..]`, {
+        let response = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=creationdate:[${dateStr}..]`, {
             headers: {
                 'Authorization': `Bearer ${ebayToken}`,
                 'Content-Type': 'application/json'
             }
         });
 
+        // If 401, try to refresh token and retry
+        if (response.status === 401 && refreshToken) {
+            try {
+                ebayToken = await refreshAccessToken();
+                response = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=creationdate:[${dateStr}..]`, {
+                    headers: {
+                        'Authorization': `Bearer ${ebayToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } catch (refreshError) {
+                throw new Error(`Token refresh failed: ${refreshError.message}. Please reconnect eBay in Settings.`);
+            }
+        }
+
         if (!response.ok) {
             const errorText = await response.text();
-            // If it's a 401, it means token expired or invalid
             throw new Error(`eBay API Error: ${response.status} - ${errorText}`);
         }
 
