@@ -328,6 +328,45 @@ export default function Inventory() {
     }
   };
 
+  const handleUpdateCostFromShipment = async () => {
+    if (selectedWatchIds.length === 0) return;
+    
+    const toastId = toast.loading("Calculating costs from shipments...");
+    try {
+      let updatedCount = 0;
+      let skippedCount = 0;
+      
+      for (const watchId of selectedWatchIds) {
+        const watch = watches.find(w => w.id === watchId);
+        if (!watch || !watch.source_order_id) {
+          skippedCount++;
+          continue;
+        }
+        
+        const order = sourceOrders.find(o => o.id === watch.source_order_id);
+        if (!order || !order.total_cost || !order.initial_quantity || order.initial_quantity === 0) {
+          skippedCount++;
+          continue;
+        }
+        
+        const costPerWatch = order.total_cost / order.initial_quantity;
+        await base44.entities.Watch.update(watchId, { cost: costPerWatch });
+        updatedCount++;
+      }
+      
+      if (updatedCount > 0) {
+        toast.success(`Updated ${updatedCount} watches. ${skippedCount > 0 ? `Skipped ${skippedCount} (no shipment or cost).` : ''}`, { id: toastId });
+        queryClient.invalidateQueries({ queryKey: ['watches'] });
+        setSelectedWatchIds([]);
+      } else {
+        toast.error("No watches could be updated. Ensure they have shipments with costs.", { id: toastId });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update costs", { id: toastId });
+    }
+  };
+
   // Get unique case materials from all watches
   const caseMaterials = [...new Set(watches
     .map(w => w.case_material)
@@ -423,7 +462,7 @@ export default function Inventory() {
               </div>
               
               {/* General Statistics */}
-              <div className="grid grid-cols-4 gap-3 mt-4">
+              <div className="grid grid-cols-6 gap-3 mt-4">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
                   <p className="text-xs text-blue-600 font-semibold uppercase mb-1">Total Watches</p>
                   <p className="text-2xl font-bold text-blue-900">{filteredWatches.reduce((sum, w) => sum + (w.quantity || 1), 0)}</p>
@@ -448,6 +487,35 @@ export default function Inventory() {
                   <p className="text-xs text-amber-600 font-semibold uppercase mb-1">{selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} Total</p>
                   <p className="text-2xl font-bold text-amber-900">
                     ${filteredWatches.reduce((sum, w) => sum + (w.platform_prices?.[selectedPlatform] || 0) * (w.quantity || 1), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-3 border border-emerald-200">
+                  <p className="text-xs text-emerald-600 font-semibold uppercase mb-1">Margin</p>
+                  <p className="text-2xl font-bold text-emerald-900">
+                    ${(() => {
+                      const totalCost = filteredWatches.reduce((sum, w) => {
+                        const cost = (w.cost || 0);
+                        const repairCost = (w.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
+                        return sum + (cost + repairCost) * (w.quantity || 1);
+                      }, 0);
+                      const totalRevenue = filteredWatches.reduce((sum, w) => sum + (w.platform_prices?.[selectedPlatform] || w.retail_price || 0) * (w.quantity || 1), 0);
+                      return (totalRevenue - totalCost).toLocaleString(undefined, { maximumFractionDigits: 0 });
+                    })()}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-lg p-3 border border-rose-200">
+                  <p className="text-xs text-rose-600 font-semibold uppercase mb-1">ROI</p>
+                  <p className="text-2xl font-bold text-rose-900">
+                    {(() => {
+                      const totalCost = filteredWatches.reduce((sum, w) => {
+                        const cost = (w.cost || 0);
+                        const repairCost = (w.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
+                        return sum + (cost + repairCost) * (w.quantity || 1);
+                      }, 0);
+                      const totalRevenue = filteredWatches.reduce((sum, w) => sum + (w.platform_prices?.[selectedPlatform] || w.retail_price || 0) * (w.quantity || 1), 0);
+                      const roi = totalCost > 0 ? ((totalRevenue - totalCost) / totalCost * 100) : 0;
+                      return `${roi.toFixed(0)}%`;
+                    })()}
                   </p>
                 </div>
               </div>
@@ -566,7 +634,12 @@ export default function Inventory() {
 
                       <DropdownMenuItem onClick={() => setShowSetSourceDialog(true)}>
                       <Package className="w-4 h-4 mr-2" />
-                      Set Source
+                      Set Source & Shipment
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={handleUpdateCostFromShipment}>
+                      <Package className="w-4 h-4 mr-2" />
+                      Update Cost from Shipment
                       </DropdownMenuItem>
                       </DropdownMenuContent>
                       </DropdownMenu>
@@ -822,14 +895,34 @@ export default function Inventory() {
               
               const toastId = toast.loading(`Updating ${selectedWatchIds.length} watches...`);
               try {
-                await Promise.all(selectedWatchIds.map(id => 
-                  base44.entities.Watch.update(id, { 
+                // If shipment is selected, calculate cost per watch from shipment
+                let costPerWatch = null;
+                if (selectedOrderId) {
+                  const order = sourceOrders.find(o => o.id === selectedOrderId);
+                  if (order && order.total_cost && order.initial_quantity && order.initial_quantity > 0) {
+                    costPerWatch = order.total_cost / order.initial_quantity;
+                  }
+                }
+                
+                await Promise.all(selectedWatchIds.map(id => {
+                  const updateData = { 
                     source_id: selectedSourceId,
                     source_order_id: selectedOrderId || null
-                  })
-                ));
+                  };
+                  
+                  // Add cost if calculated from shipment
+                  if (costPerWatch !== null) {
+                    updateData.cost = costPerWatch;
+                  }
+                  
+                  return base44.entities.Watch.update(id, updateData);
+                }));
                 
-                toast.success(`Updated ${selectedWatchIds.length} watches`, { id: toastId });
+                const message = costPerWatch !== null 
+                  ? `Updated ${selectedWatchIds.length} watches with source, shipment, and cost ($${costPerWatch.toFixed(2)} each)`
+                  : `Updated ${selectedWatchIds.length} watches with source${selectedOrderId ? ' and shipment' : ''}`;
+                
+                toast.success(message, { id: toastId });
                 queryClient.invalidateQueries({ queryKey: ['watches'] });
                 setSelectedWatchIds([]);
                 setShowSetSourceDialog(false);
