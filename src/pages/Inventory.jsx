@@ -123,6 +123,34 @@ export default function Inventory() {
     queryFn: () => base44.entities.SourceOrder.list("date_received", 1000),
   });
 
+  const handleBulkListEtsy = async () => {
+    if (selectedWatchIds.length === 0) return;
+    setListing(true);
+    try {
+      const result = await base44.functions.invoke("etsyList", { watchIds: selectedWatchIds });
+      const { success, failed, errors } = result.data;
+
+      if (success > 0) {
+        toast.success(`Successfully listed ${success} items on Etsy`);
+        queryClient.invalidateQueries({ queryKey: ['watches'] });
+        setSelectedWatchIds([]);
+      }
+
+      if (failed > 0) {
+        toast.error(`Failed to list ${failed} items`);
+        if (errors && errors.length > 0) {
+          console.error("Etsy listing errors:", errors);
+          toast.error(errors[0]);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to list items on Etsy");
+    } finally {
+      setListing(false);
+    }
+  };
+
   const handleSyncEbay = async () => {
     setSyncing(true);
     try {
@@ -576,6 +604,10 @@ export default function Inventory() {
                     <DropdownMenuItem onClick={handleBulkUpdateEbay} disabled={listing}>
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Updating..." : "Update eBay"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkListEtsy} disabled={listing}>
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      {listing ? "Listing..." : "List on Etsy"}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSyncSquare} disabled={syncingSquare}>
                       {syncingSquare ? (
