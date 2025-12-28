@@ -144,7 +144,7 @@ export default function OutForRepair() {
                 {selectedWatchIds.length > 0 ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="border-slate-300 hover:bg-slate-50">
+                    <Button variant="outline" className="border-slate-300 hover:bg-slate-50 text-slate-900">
                       Bulk Actions ({selectedWatchIds.length})
                     </Button>
                   </DropdownMenuTrigger>
@@ -161,7 +161,7 @@ export default function OutForRepair() {
                 <Button
                   variant="outline"
                   onClick={() => setShowExport(true)}
-                  className="border-slate-300 hover:bg-slate-50"
+                  className="border-slate-300 hover:bg-slate-50 text-slate-900"
                   disabled={filteredWatches.length === 0}
                 >
                   <Download className="w-4 h-4 mr-2" />

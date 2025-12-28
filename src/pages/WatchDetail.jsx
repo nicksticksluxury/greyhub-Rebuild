@@ -1580,7 +1580,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSoldQuantityDialog(false)}>Cancel</Button>
-            <Button onClick={handleConfirmSoldQuantity}>Confirm Sale</Button>
+            <Button onClick={handleConfirmSoldQuantity} className="bg-slate-800 hover:bg-slate-900 text-white">Confirm Sale</Button>
           </DialogFooter>
           </DialogContent>
           </Dialog>
