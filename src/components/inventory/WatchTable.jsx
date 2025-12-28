@@ -90,7 +90,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
   };
 
   const handleRowClick = (watchId) => {
-    window.location.href = createPageUrl(`WatchDetail?id=${watchId}`);
+    window.location.href = createPageUrl(`ProductDetail?id=${watchId}`);
   };
 
   const handleSort = (field) => {
