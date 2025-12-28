@@ -59,6 +59,7 @@ export default function MigrateData() {
                 <div className="text-sm text-green-700 space-y-1">
                   <p>Total: {result.total}</p>
                   <p>Migrated: {result.migrated}</p>
+                  {result.skipped > 0 && <p>Skipped (already migrated): {result.skipped}</p>}
                   <p>Failed: {result.failed}</p>
                   {result.errors && result.errors.length > 0 && (
                     <div className="mt-2">
