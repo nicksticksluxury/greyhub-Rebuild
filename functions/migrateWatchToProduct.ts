@@ -12,14 +12,30 @@ Deno.serve(async (req) => {
         // Get all Watch records from all companies
         const watches = await base44.asServiceRole.entities.Watch.list("-created_date", 10000);
         
-        console.log(`Found ${watches.length} watches to migrate`);
+        // Get all existing Products to check for duplicates
+        const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 10000);
+        const existingSerialNumbers = new Set(
+            existingProducts
+                .filter(p => p.serial_number)
+                .map(p => `${p.company_id}_${p.serial_number}`)
+        );
+        
+        console.log(`Found ${watches.length} watches to migrate, ${existingProducts.length} products already exist`);
         
         let migrated = 0;
+        let skipped = 0;
         let failed = 0;
         const errors = [];
 
         for (const watch of watches) {
             try {
+                // Skip if already migrated (check by company_id + serial_number)
+                const watchKey = `${watch.company_id}_${watch.serial_number || 'nosn_' + watch.id}`;
+                if (existingSerialNumbers.has(watchKey)) {
+                    console.log(`Skipping already migrated watch ${watch.id}`);
+                    skipped++;
+                    continue;
+                }
                 // Extract watch-specific attributes
                 const categorySpecificAttributes = {
                     movement_type: watch.movement_type,
