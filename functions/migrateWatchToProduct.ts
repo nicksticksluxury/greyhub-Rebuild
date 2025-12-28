@@ -106,8 +106,8 @@ Deno.serve(async (req) => {
                     migrated++;
                 }
                 
-                // Add delay to avoid rate limits (250ms between operations)
-                await new Promise(resolve => setTimeout(resolve, 250));
+                // Add delay to avoid rate limits (500ms between operations)
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
             } catch (error) {
                 console.error(`Failed to migrate watch ${watch.id}:`, error);
