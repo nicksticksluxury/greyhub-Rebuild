@@ -94,11 +94,20 @@ Deno.serve(async (req) => {
                     category_specific_attributes: categorySpecificAttributes
                 };
 
-                await base44.asServiceRole.entities.Product.create(productData);
-                migrated++;
+                if (existingProduct) {
+                    // Update existing product with latest watch data
+                    await base44.asServiceRole.entities.Product.update(existingProduct.id, productData);
+                    console.log(`Updated existing product ${existingProduct.id} from watch ${watch.id}`);
+                    skipped++;
+                } else {
+                    // Create new product
+                    await base44.asServiceRole.entities.Product.create(productData);
+                    console.log(`Created new product from watch ${watch.id}`);
+                    migrated++;
+                }
                 
-                // Add delay to avoid rate limits (150ms between creates)
-                await new Promise(resolve => setTimeout(resolve, 150));
+                // Add delay to avoid rate limits (250ms between operations)
+                await new Promise(resolve => setTimeout(resolve, 250));
                 
             } catch (error) {
                 console.error(`Failed to migrate watch ${watch.id}:`, error);
