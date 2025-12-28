@@ -97,6 +97,9 @@ Deno.serve(async (req) => {
                 await base44.asServiceRole.entities.Product.create(productData);
                 migrated++;
                 
+                // Add delay to avoid rate limits (150ms between creates)
+                await new Promise(resolve => setTimeout(resolve, 150));
+                
             } catch (error) {
                 console.error(`Failed to migrate watch ${watch.id}:`, error);
                 errors.push({ id: watch.id, error: error.message });
