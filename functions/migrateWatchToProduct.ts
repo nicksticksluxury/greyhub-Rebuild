@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
         return Response.json({
             success: true,
             migrated,
+            skipped,
             failed,
             total: watches.length,
             errors: errors.slice(0, 10) // Return first 10 errors
