@@ -6,6 +6,7 @@ import CompleteSignup from './pages/CompleteSignup';
 import Home from './pages/Home';
 import Inventory from './pages/Inventory';
 import JoinCompany from './pages/JoinCompany';
+import MigrateData from './pages/MigrateData';
 import OutForRepair from './pages/OutForRepair';
 import SalesView from './pages/SalesView';
 import Settings from './pages/Settings';
@@ -21,7 +22,7 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
-import MigrateData from './pages/MigrateData';
+import ProductDetail from './pages/ProductDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -34,6 +35,7 @@ export const PAGES = {
     "Home": Home,
     "Inventory": Inventory,
     "JoinCompany": JoinCompany,
+    "MigrateData": MigrateData,
     "OutForRepair": OutForRepair,
     "SalesView": SalesView,
     "Settings": Settings,
@@ -49,7 +51,7 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
-    "MigrateData": MigrateData,
+    "ProductDetail": ProductDetail,
 }
 
 export const pagesConfig = {
