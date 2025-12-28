@@ -21,6 +21,7 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
+import MigrateData from './pages/MigrateData';
 import __Layout from './Layout.jsx';
 
 
@@ -48,6 +49,7 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
+    "MigrateData": MigrateData,
 }
 
 export const pagesConfig = {
