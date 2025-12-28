@@ -105,7 +105,7 @@ export default function Inventory() {
 
   const { data: watches = [], isLoading } = useQuery({
     queryKey: ['watches'],
-    queryFn: () => base44.entities.Watch.list("-created_date", 1000),
+    queryFn: () => base44.entities.Product.list("-created_date", 1000),
   });
 
   const { data: auctions = [] } = useQuery({
@@ -254,7 +254,7 @@ export default function Inventory() {
     try {
       // Process in parallel
       await Promise.all(selectedWatchIds.map(id => 
-        base44.entities.Watch.update(id, { gender })
+        base44.entities.Product.update(id, { gender })
       ));
 
       toast.success(`Updated ${selectedWatchIds.length} watches to ${gender}`, { id: toastId });
@@ -378,7 +378,7 @@ export default function Inventory() {
         }
         
         const costPerWatch = order.total_cost / order.initial_quantity;
-        await base44.entities.Watch.update(watchId, { cost: costPerWatch });
+        await base44.entities.Product.update(watchId, { cost: costPerWatch });
         updatedCount++;
       }
       
@@ -647,7 +647,7 @@ export default function Inventory() {
                                 const toastId = toast.loading("Adding to auction...");
                                 try {
                                   await Promise.all(selectedWatchIds.map(id => 
-                                    base44.entities.Watch.update(id, { auction_id: auction.id })
+                                    base44.entities.Product.update(id, { auction_id: auction.id })
                                   ));
                                   toast.success(`Added ${selectedWatchIds.length} watches to ${auction.name}`, { id: toastId });
                                   queryClient.invalidateQueries({ queryKey: ['watches'] });
@@ -947,8 +947,8 @@ export default function Inventory() {
                     updateData.cost = costPerWatch;
                   }
                   
-                  return base44.entities.Watch.update(id, updateData);
-                }));
+                  return base44.entities.Product.update(id, updateData);
+                  }));
                 
                 const message = costPerWatch !== null 
                   ? `Updated ${selectedWatchIds.length} watches with source, shipment, and cost ($${costPerWatch.toFixed(2)} each)`

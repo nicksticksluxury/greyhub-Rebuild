@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
         }
         // --- END FETCH OR CREATE LOCATION ---
 
-        const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
+        const watches = await Promise.all(watchIds.map(id => base44.entities.Product.get(id)));
         
         // Log listing start
         await base44.asServiceRole.entities.Log.create({
@@ -321,7 +321,7 @@ Deno.serve(async (req) => {
                 }
 
                 // Update Watch record ONLY after successful publish
-                await base44.entities.Watch.update(watch.id, {
+                await base44.entities.Product.update(watch.id, {
                     exported_to: {
                         ...(watch.exported_to || {}),
                         ebay: new Date().toISOString()

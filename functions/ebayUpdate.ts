@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'No inventory location found. Please set up an inventory location in your eBay account.' }, { status: 400 });
         }
 
-        const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
+        const watches = await Promise.all(watchIds.map(id => base44.entities.Product.get(id)));
         
         // Log update start
         await base44.asServiceRole.entities.Log.create({

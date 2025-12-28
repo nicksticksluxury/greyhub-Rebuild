@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Shop ID not found' }, { status: 400 });
         }
 
-        const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
+        const watches = await Promise.all(watchIds.map(id => base44.entities.Product.get(id)));
         
         const results = {
             success: 0,
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
                 }
 
                 // Update watch record
-                await base44.entities.Watch.update(watch.id, {
+                await base44.entities.Product.update(watch.id, {
                     exported_to: {
                         ...(watch.exported_to || {}),
                         etsy: new Date().toISOString()
