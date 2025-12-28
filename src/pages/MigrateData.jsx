@@ -38,7 +38,7 @@ export default function MigrateData() {
             <Button
               onClick={runMigration}
               disabled={migrating}
-              className="w-full"
+              className="w-full bg-slate-800 hover:bg-slate-900 text-white"
             >
               {migrating ? (
                 <>
