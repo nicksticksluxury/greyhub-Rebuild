@@ -29,13 +29,13 @@ Deno.serve(async (req) => {
 
         for (const watch of watches) {
             try {
-                // Skip if already migrated (check by company_id + serial_number)
+                // Check if already migrated (by company_id + serial_number)
                 const watchKey = `${watch.company_id}_${watch.serial_number || 'nosn_' + watch.id}`;
-                if (existingSerialNumbers.has(watchKey)) {
-                    console.log(`Skipping already migrated watch ${watch.id}`);
-                    skipped++;
-                    continue;
-                }
+                const existingProduct = existingProducts.find(p => {
+                    const pKey = `${p.company_id}_${p.serial_number || 'nosn_' + p.id}`;
+                    return pKey === watchKey;
+                });
+                
                 // Extract watch-specific attributes
                 const categorySpecificAttributes = {
                     movement_type: watch.movement_type,
