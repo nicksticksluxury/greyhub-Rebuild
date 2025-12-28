@@ -265,7 +265,7 @@ Deno.serve(async (req) => {
                 }
 
                 // Update Watch record with new timestamp
-                await base44.entities.Watch.update(watch.id, {
+                await base44.entities.Product.update(watch.id, {
                     exported_to: {
                         ...(watch.exported_to || {}),
                         ebay: new Date().toISOString()

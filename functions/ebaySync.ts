@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
 
                 // Find watch by ID (SKU)
                 try {
-                    const watches = await base44.entities.Watch.filter({ id: sku });
+                    const watches = await base44.entities.Product.filter({ id: sku });
                     if (watches.length === 0) continue;
                     
                     const watch = watches[0];
@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
                     delete soldWatchData.updated_date;
                     delete soldWatchData.created_by;
                     
-                    await base44.entities.Watch.create(soldWatchData);
+                    await base44.entities.Product.create(soldWatchData);
 
                     // Update original watch
                     const updateData = {
@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
                         updateData.sold_platform = 'ebay';
                     }
                     
-                    await base44.entities.Watch.update(watch.id, updateData);
+                    await base44.entities.Product.update(watch.id, updateData);
 
                     // Create Alert
                     try {
@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
         
         try {
             // Get all watches with eBay listings (to sync quantity or end listing)
-            const allWatches = await base44.entities.Watch.list();
+            const allWatches = await base44.entities.Product.list();
             
             for (const watch of allWatches) {
                 const ebayItemId = watch.platform_ids?.ebay;
@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
                         });
                         
                         if (endResponse.ok || endResponse.status === 404) {
-                            await base44.entities.Watch.update(watch.id, {
+                            await base44.entities.Product.update(watch.id, {
                                 platform_ids: {
                                     ...(watch.platform_ids || {}),
                                     ebay: null
