@@ -44,8 +44,8 @@ export default function WatchDetail() {
   const { data: watch, isLoading } = useQuery({
     queryKey: ['watch', watchId],
     queryFn: async () => {
-      const watches = await base44.entities.Watch.list();
-      return watches.find(w => w.id === watchId);
+      const products = await base44.entities.Product.list();
+      return products.find(w => w.id === watchId);
     },
     enabled: !!watchId,
   });
@@ -102,7 +102,7 @@ export default function WatchDetail() {
   }, [hasUnsavedChanges]);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.Watch.update(watchId, data),
+    mutationFn: (data) => base44.entities.Product.update(watchId, data),
     onSuccess: (updatedWatch) => {
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       queryClient.invalidateQueries({ queryKey: ['watches'] });
@@ -114,7 +114,7 @@ export default function WatchDetail() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => base44.entities.Watch.delete(watchId),
+    mutationFn: () => base44.entities.Product.delete(watchId),
     onSuccess: () => {
       toast.success("Watch deleted");
       navigate(createPageUrl("Inventory"));
@@ -204,7 +204,7 @@ export default function WatchDetail() {
     
     try {
       // Create the sold watch record
-      await base44.entities.Watch.create(soldWatchData);
+      await base44.entities.Product.create(soldWatchData);
       
       // Update original watch
       const calculatedMinPrice = calculateMinimumPrice(editedData.cost);
@@ -223,13 +223,13 @@ export default function WatchDetail() {
         updatedOriginal.zero_price_reason = editedData.zero_price_reason;
       }
       
-      await base44.entities.Watch.update(watchId, updatedOriginal);
+      await base44.entities.Product.update(watchId, updatedOriginal);
       
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       queryClient.invalidateQueries({ queryKey: ['watches'] });
       
       // Reset edited data sold status to false since we're keeping the original
-      const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
+      const refreshedWatch = await base44.entities.Product.list().then(products => products.find(w => w.id === watchId));
       setEditedData(refreshedWatch);
       setOriginalData(refreshedWatch);
       setHasUnsavedChanges(false);
@@ -812,12 +812,12 @@ YOUR RESPONSE MUST INCLUDE:
       
       setEditedData(updatedData);
       
-      await base44.entities.Watch.update(watchId, { 
+      await base44.entities.Product.update(watchId, { 
         ai_analysis: combinedAnalysis,
         ...(pricing.msrp_source_link && !editedData.msrp_link && { msrp_link: pricing.msrp_source_link })
       });
       
-      const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
+      const refreshedWatch = await base44.entities.Product.list().then(products => products.find(w => w.id === watchId));
       setOriginalData(refreshedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
       
@@ -899,7 +899,7 @@ YOUR RESPONSE MUST INCLUDE:
       if (success > 0) {
         toast.success(isUpdate ? "Successfully updated on eBay!" : "Successfully listed on eBay!");
         queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
-        const updatedWatch = await base44.entities.Watch.get(watchId);
+        const updatedWatch = await base44.entities.Product.list().then(products => products.find(p => p.id === watchId));
         setEditedData(updatedWatch);
         setOriginalData(updatedWatch);
         setNeedsEbayUpdate(false);
@@ -1171,12 +1171,12 @@ Every comparable MUST show model number "${editedData.reference_number}".
 
       setEditedData(updatedData);
 
-      await base44.entities.Watch.update(watchId, { 
+      await base44.entities.Product.update(watchId, { 
         ai_analysis: updatedAnalysis,
         ...(msrpResult.msrp_source_link && !editedData.msrp_link && { msrp_link: msrpResult.msrp_source_link })
       });
 
-      const refreshedWatch = await base44.entities.Watch.list().then(watches => watches.find(w => w.id === watchId));
+      const refreshedWatch = await base44.entities.Product.list().then(products => products.find(w => w.id === watchId));
       setOriginalData(refreshedWatch);
       queryClient.invalidateQueries({ queryKey: ['watch', watchId] });
 

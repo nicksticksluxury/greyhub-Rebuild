@@ -81,12 +81,13 @@ export default function AddWatch() {
       
       const watchData = {
         company_id: user.company_id,
+        category: "watch",
         photos: photoObjects,
         brand: "Unknown",
         images_optimized: true
       };
 
-      const watch = await base44.entities.Watch.create(watchData);
+      const watch = await base44.entities.Product.create(watchData);
       console.log("Watch created:", watch.id);
       
       toast.success("Watch added with optimized images!");
