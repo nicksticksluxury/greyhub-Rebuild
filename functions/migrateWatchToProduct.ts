@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get all Watch records
+        // Get all Watch records from all companies
         const watches = await base44.asServiceRole.entities.Watch.list("-created_date", 10000);
         
         console.log(`Found ${watches.length} watches to migrate`);
