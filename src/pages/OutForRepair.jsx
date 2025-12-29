@@ -75,7 +75,7 @@ export default function OutForRepair() {
   const filteredProducts = products.filter(product => {
     // Only show products out for repair and not sold
     if (product.sold) return false;
-    if (product.repair_status !== 'out_for_repair') return false;
+    if (!product.repair_status || product.repair_status !== 'out_for_repair') return false;
 
     // Resolve source for this product
     const order = sourceOrders.find(o => o.id === product.source_order_id);

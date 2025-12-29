@@ -412,7 +412,7 @@ export default function Inventory() {
   const filteredProducts = products.filter(product => {
     // Filter out sold products and products out for repair from regular inventory
     if (product.sold) return false;
-    if (product.repair_status === 'out_for_repair') return false;
+    if (product.repair_status && product.repair_status === 'out_for_repair') return false;
 
     // Resolve source for this product
     const order = sourceOrders.find(o => o.id === product.source_order_id);
