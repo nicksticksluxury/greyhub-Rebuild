@@ -8,10 +8,10 @@ import { Upload, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import PhotoUpload from "../components/addwatch/PhotoUpload";
+import PhotoUpload from "../components/addproduct/PhotoUpload";
 import { optimizeImages } from "../components/utils/imageOptimizer";
 
-export default function AddWatch() {
+export default function AddProduct() {
   const navigate = useNavigate();
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -25,7 +25,7 @@ export default function AddWatch() {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
-  const createWatch = async () => {
+  const createProduct = async () => {
     if (photos.length === 0) {
       toast.error("Please upload at least one photo");
       return;
@@ -69,8 +69,8 @@ export default function AddWatch() {
         console.log(`✓ Photo ${i + 1} fully uploaded with all variants`);
       }
       
-      // Step 3: Create watch with pre-optimized photos
-      console.log("Creating watch with optimized photos...");
+      // Step 3: Create product with pre-optimized photos
+      console.log("Creating product with optimized photos...");
       const user = await base44.auth.me();
       
       console.log("Current user object:", user);
@@ -79,7 +79,7 @@ export default function AddWatch() {
         throw new Error("User not properly authenticated. Please log out and log back in.");
       }
       
-      const watchData = {
+      const productData = {
         company_id: user.company_id,
         category: "watch",
         photos: photoObjects,
@@ -87,14 +87,14 @@ export default function AddWatch() {
         images_optimized: true
       };
 
-      const watch = await base44.entities.Product.create(watchData);
-      console.log("Watch created:", watch.id);
+      const product = await base44.entities.Product.create(productData);
+      console.log("Product created:", product.id);
       
-      toast.success("Watch added with optimized images!");
-      navigate(createPageUrl(`WatchDetail?id=${watch.id}`));
+      toast.success("Product added with optimized images!");
+      navigate(createPageUrl(`ProductDetail?id=${product.id}`));
     } catch (error) {
-      console.error("Error creating watch:", error);
-      toast.error(`Failed to create watch: ${error.message || 'Unknown error'}`);
+      console.error("Error creating product:", error);
+      toast.error(`Failed to create product: ${error.message || 'Unknown error'}`);
     } finally {
       setUploading(false);
       setUploadProgress({ current: 0, total: 0, stage: '' });
@@ -105,12 +105,12 @@ export default function AddWatch() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Add New Watch</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Add New Product</h1>
           <p className="text-slate-500 mt-1">Upload photos, then add details and analyze with AI on the next page</p>
         </div>
 
         <Card className="p-6 mb-6">
-          <Label className="mb-3 block">Watch Photos</Label>
+          <Label className="mb-3 block">Product Photos</Label>
           <PhotoUpload 
             photos={photos}
             onPhotosSelected={handlePhotosSelected}
@@ -131,7 +131,7 @@ export default function AddWatch() {
         )}
 
         <Button
-          onClick={createWatch}
+          onClick={createProduct}
           disabled={photos.length === 0 || uploading}
           className="w-full bg-slate-800 hover:bg-slate-900 h-12"
         >
@@ -142,7 +142,7 @@ export default function AddWatch() {
             </>
           ) : (
             <>
-              Create Watch & Continue
+              Create Product & Continue
               <ArrowRight className="w-5 h-5 ml-2" />
             </>
           )}

@@ -55,7 +55,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           <h3 className="font-semibold text-slate-900">AI Analysis</h3>
         </div>
         <p className="text-sm text-slate-500 text-center py-8">
-          Click "Analyze with AI" to identify this watch and get market pricing recommendations
+          Click "Analyze with AI" to identify this product and get market pricing recommendations
         </p>
       </Card>
     );
@@ -138,7 +138,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
     }
 
     onImportData("batch_update", updates);
-    setSelectedKeys(new Set()); // Optional: clear after import? Or keep? Keeping is usually better UX if user wants to import subset again. But usually "Import" implies action done. I'll clear it.
+    setSelectedKeys(new Set());
   };
 
   const SelectableItem = ({ id, label, value, children, className = "" }) => {

@@ -54,8 +54,8 @@ export default function Layout({ children, currentPageName }) {
         icon: DollarSign,
       },
       {
-        title: "Add Watch",
-        url: createPageUrl("AddWatch"),
+        title: "Add Product",
+        url: createPageUrl("AddProduct"),
         icon: Upload,
       },
       {

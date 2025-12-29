@@ -81,7 +81,7 @@ function calculateMinimumPrice(cost, platform) {
   return Math.ceil(minPrice);
 }
 
-export default function WatchForm({ data, onChange, sources, orders, auctions }) {
+export default function ProductForm({ data, onChange, sources, orders, auctions }) {
   const [showRepairs, setShowRepairs] = useState(false);
   const [editingNet, setEditingNet] = useState(false);
   const [showZeroReasonDialog, setShowZeroReasonDialog] = useState(false);
@@ -100,8 +100,8 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
     if (field === 'source_order_id' && value && orders) {
       const order = orders.find(o => o.id === value);
       if (order && order.total_cost && order.initial_quantity) {
-        const costPerWatch = order.total_cost / order.initial_quantity;
-        newData.cost = parseFloat(costPerWatch.toFixed(2));
+        const costPerProduct = order.total_cost / order.initial_quantity;
+        newData.cost = parseFloat(costPerProduct.toFixed(2));
       }
     }
     
@@ -199,8 +199,6 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
   };
 
   const saleStats = calculateSaleStats();
-
-  // Legacy code removed for new source/order structure
 
   return (
     <Tabs defaultValue="basic" className="w-full">
@@ -330,7 +328,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           <div>
             <Label>Movement Type</Label>
             <Select
-              value={data.movement_type || ""}
+              value={data.category_specific_attributes?.movement_type || data.movement_type || ""}
               onValueChange={(value) => updateField("movement_type", value)}
             >
               <SelectTrigger>
@@ -349,7 +347,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           <div>
             <Label>Case Material</Label>
             <Input
-              value={data.case_material || ""}
+              value={data.category_specific_attributes?.case_material || data.case_material || ""}
               onChange={(e) => updateField("case_material", e.target.value)}
               placeholder="e.g., Stainless Steel"
             />
@@ -357,7 +355,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           <div>
             <Label>Case Size</Label>
             <Input
-              value={data.case_size || ""}
+              value={data.category_specific_attributes?.case_size || data.case_size || ""}
               onChange={(e) => updateField("case_size", e.target.value)}
               placeholder="e.g., 40mm"
             />
@@ -368,7 +366,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           <div>
             <Label>Dial Color</Label>
             <Input
-              value={data.dial_color || ""}
+              value={data.category_specific_attributes?.dial_color || data.dial_color || ""}
               onChange={(e) => updateField("dial_color", e.target.value)}
               placeholder="e.g., Black, Blue"
             />
@@ -376,7 +374,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           <div>
             <Label>Bracelet Material</Label>
             <Input
-              value={data.bracelet_material || ""}
+              value={data.category_specific_attributes?.bracelet_material || data.bracelet_material || ""}
               onChange={(e) => updateField("bracelet_material", e.target.value)}
               placeholder="e.g., Stainless Steel, Leather"
             />
@@ -405,7 +403,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           <Textarea
             value={data.description || ""}
             onChange={(e) => updateField("description", e.target.value)}
-            placeholder="Detailed description of the watch..."
+            placeholder="Detailed description of the product..."
             rows={4}
           />
         </div>
@@ -507,7 +505,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
             className="bg-amber-50 border-amber-300 text-amber-900 placeholder:text-amber-600/60"
           />
           <p className="text-xs text-slate-500 mt-1">
-            Provide specific instructions or context to help AI analyze this watch accurately
+            Provide specific instructions or context to help AI analyze this product accurately
           </p>
         </div>
 
@@ -698,7 +696,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
 
         <div>
           <Label className="flex items-center justify-between">
-            <span>Identical Watch Listings (EXACT Match)</span>
+            <span>Identical Product Listings (EXACT Match)</span>
             <Button
               type="button"
               size="sm"
@@ -762,7 +760,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
             )}
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            <strong>CRITICAL:</strong> Add links to the EXACT same watch. AI will prioritize these for identification and pricing.
+            <strong>CRITICAL:</strong> Add links to the EXACT same product. AI will prioritize these for identification and pricing.
           </p>
         </div>
 
@@ -1110,7 +1108,7 @@ export default function WatchForm({ data, onChange, sources, orders, auctions })
           <DialogHeader>
             <DialogTitle>Reason for $0 Sale</DialogTitle>
             <DialogDescription>
-              Please provide a reason why this watch is being sold/recorded for $0 (e.g., Giveaway, Trade, Gift, Error correction).
+              Please provide a reason why this product is being sold/recorded for $0 (e.g., Giveaway, Trade, Gift, Error correction).
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

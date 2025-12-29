@@ -1,5 +1,4 @@
 import AcceptInvitation from './pages/AcceptInvitation';
-import AddWatch from './pages/AddWatch';
 import Auctions from './pages/Auctions';
 import CompanySettings from './pages/CompanySettings';
 import CompleteSignup from './pages/CompleteSignup';
@@ -17,18 +16,17 @@ import Subscriptions from './pages/Subscriptions';
 import SystemAdmin from './pages/SystemAdmin';
 import TenantSettings from './pages/TenantSettings';
 import UpdateMinimumPrices from './pages/UpdateMinimumPrices';
-import WatchDetail from './pages/WatchDetail';
 import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
 import ProductDetail from './pages/ProductDetail';
+import AddProduct from './pages/AddProduct';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AcceptInvitation": AcceptInvitation,
-    "AddWatch": AddWatch,
     "Auctions": Auctions,
     "CompanySettings": CompanySettings,
     "CompleteSignup": CompleteSignup,
@@ -46,12 +44,12 @@ export const PAGES = {
     "SystemAdmin": SystemAdmin,
     "TenantSettings": TenantSettings,
     "UpdateMinimumPrices": UpdateMinimumPrices,
-    "WatchDetail": WatchDetail,
     "WatchSourceDetail": WatchSourceDetail,
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
     "ProductDetail": ProductDetail,
+    "AddProduct": AddProduct,
 }
 
 export const pagesConfig = {

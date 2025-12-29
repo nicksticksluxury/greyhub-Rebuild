@@ -106,7 +106,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
                       <div className="relative">
                         <img
                           src={typeof photo === 'string' ? photo : (photo.thumbnail || photo.medium || photo.full)}
-                          alt={`Watch ${index + 1}`}
+                          alt={`Product ${index + 1}`}
                           className="w-full aspect-square object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
                           onClick={() => setViewingPhoto(photo)}
                         />

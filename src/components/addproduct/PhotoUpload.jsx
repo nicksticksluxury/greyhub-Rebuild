@@ -84,7 +84,7 @@ export default function PhotoUpload({ photos, onPhotosSelected, onRemovePhoto })
               <div key={index} className="relative group">
                 <img
                   src={URL.createObjectURL(photo)}
-                  alt={`Watch ${index + 1}`}
+                  alt={`Product ${index + 1}`}
                   className="w-full h-40 object-cover rounded-lg shadow-sm"
                 />
                 <Button

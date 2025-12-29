@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { DollarSign, TrendingUp, Info } from "lucide-react";
 
-export default function AuctionSummaryTab({ watch }) {
+export default function AuctionSummaryTab({ product }) {
   const [selectedPhoto, setSelectedPhoto] = useState(0);
   const [simulatedPrice, setSimulatedPrice] = useState("");
 
@@ -21,9 +21,9 @@ export default function AuctionSummaryTab({ watch }) {
   };
 
   const calculateProfit = (price) => {
-    if (!watch || !price) return { profit: 0, margin: 0, roi: 0 };
+    if (!product || !price) return { profit: 0, margin: 0, roi: 0 };
     
-    const totalCost = (watch.cost || 0) + (watch.repair_costs?.reduce((sum, r) => sum + (r.cost || 0), 0) || 0);
+    const totalCost = (product.cost || 0) + (product.repair_costs?.reduce((sum, r) => sum + (r.cost || 0), 0) || 0);
     const profit = price - totalCost;
     const margin = totalCost > 0 ? ((profit / price) * 100) : 0;
     const roi = totalCost > 0 ? ((profit / totalCost) * 100) : 0;
@@ -31,8 +31,8 @@ export default function AuctionSummaryTab({ watch }) {
     return { profit, margin, roi };
   };
 
-  const totalCost = (watch.cost || 0) + (watch.repair_costs?.reduce((sum, r) => sum + (r.cost || 0), 0) || 0);
-  const photos = watch.photos || [];
+  const totalCost = (product.cost || 0) + (product.repair_costs?.reduce((sum, r) => sum + (r.cost || 0), 0) || 0);
+  const photos = product.photos || [];
   const currentPhoto = photos[selectedPhoto];
   const photoUrl = typeof currentPhoto === 'string' 
     ? currentPhoto 
@@ -49,7 +49,7 @@ export default function AuctionSummaryTab({ watch }) {
               <div className="aspect-square bg-slate-900 rounded-lg overflow-hidden">
                 <img 
                   src={photoUrl} 
-                  alt="Watch" 
+                  alt="Product" 
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -94,64 +94,64 @@ export default function AuctionSummaryTab({ watch }) {
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Info className="w-5 h-5" />
-              Watch Details
+              Product Details
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm text-slate-400">Brand</div>
-                <div className="text-lg font-semibold text-white">{watch.brand}</div>
+                <div className="text-lg font-semibold text-white">{product.brand}</div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Model</div>
-                <div className="text-lg font-semibold text-white">{watch.model || 'N/A'}</div>
+                <div className="text-lg font-semibold text-white">{product.model || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Reference #</div>
-                <div className="text-white">{watch.reference_number || 'N/A'}</div>
+                <div className="text-white">{product.reference_number || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Serial #</div>
-                <div className="text-white">{watch.serial_number || 'N/A'}</div>
+                <div className="text-white">{product.serial_number || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Year</div>
-                <div className="text-white">{watch.year || 'N/A'}</div>
+                <div className="text-white">{product.year || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Condition</div>
                 <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                  {conditionLabels[watch.condition] || watch.condition || 'N/A'}
+                  {conditionLabels[product.condition] || product.condition || 'N/A'}
                 </Badge>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Movement</div>
-                <div className="text-white">{watch.movement_type || 'N/A'}</div>
+                <div className="text-white">{product.category_specific_attributes?.movement_type || product.movement_type || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Case Material</div>
-                <div className="text-white">{watch.case_material || 'N/A'}</div>
+                <div className="text-white">{product.category_specific_attributes?.case_material || product.case_material || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Case Size</div>
-                <div className="text-white">{watch.case_size || 'N/A'}</div>
+                <div className="text-white">{product.category_specific_attributes?.case_size || product.case_size || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Tested</div>
                 <div className="text-white">
-                  {watch.tested === 'yes_working' && '✓ Working'}
-                  {watch.tested === 'yes_not_working' && '✗ Not Working'}
-                  {watch.tested === 'no' && 'Not Tested'}
+                  {product.tested === 'yes_working' && '✓ Working'}
+                  {product.tested === 'yes_not_working' && '✗ Not Working'}
+                  {product.tested === 'no' && 'Not Tested'}
                 </div>
               </div>
             </div>
 
-            {watch.ai_analysis?.notable_features && watch.ai_analysis.notable_features.length > 0 && (
+            {product.ai_analysis?.notable_features && product.ai_analysis.notable_features.length > 0 && (
               <div className="pt-4 border-t border-slate-700">
                 <div className="text-sm text-slate-400 mb-2">Notable Features</div>
                 <ul className="space-y-1">
-                  {watch.ai_analysis.notable_features.map((feature, idx) => (
+                  {product.ai_analysis.notable_features.map((feature, idx) => (
                     <li key={idx} className="text-white text-sm flex items-start gap-2">
                       <span className="text-amber-500 mt-1">•</span>
                       <span>{feature}</span>
@@ -161,11 +161,11 @@ export default function AuctionSummaryTab({ watch }) {
               </div>
             )}
 
-            {watch.description && (
+            {product.description && (
               <div className="pt-4 border-t border-slate-700">
                 <div className="text-sm text-slate-400 mb-2">Description</div>
                 <div className="text-white text-sm leading-relaxed space-y-2">
-                  {watch.description.split(/(\*\*[^*]+\*\*)/).map((part, idx) => {
+                  {product.description.split(/(\*\*[^*]+\*\*)/).map((part, idx) => {
                     if (part.startsWith('**') && part.endsWith('**')) {
                       return <p key={idx} className="font-semibold">{part.slice(2, -2)}</p>;
                     }
@@ -192,11 +192,11 @@ export default function AuctionSummaryTab({ watch }) {
             <div className="bg-slate-900 rounded-lg p-4 space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Initial Cost</span>
-                <span className="text-white font-semibold">${watch.cost?.toFixed(2) || '0.00'}</span>
+                <span className="text-white font-semibold">${product.cost?.toFixed(2) || '0.00'}</span>
               </div>
-              {watch.repair_costs && watch.repair_costs.length > 0 && (
+              {product.repair_costs && product.repair_costs.length > 0 && (
                 <div className="space-y-2 pl-4 border-l-2 border-slate-700">
-                  {watch.repair_costs.map((repair, idx) => (
+                  {product.repair_costs.map((repair, idx) => (
                     <div key={idx} className="flex justify-between items-center text-sm">
                       <span className="text-slate-500">{repair.description}</span>
                       <span className="text-slate-400">${repair.cost?.toFixed(2) || '0.00'}</span>
@@ -211,7 +211,7 @@ export default function AuctionSummaryTab({ watch }) {
               <div className="pt-3 border-t border-slate-700">
                 <div className="flex justify-between items-center">
                   <span className="text-amber-400 font-semibold">Minimum Price (Break-Even)</span>
-                  <span className="text-2xl font-bold text-amber-400">${watch.minimum_price?.toFixed(2) || '0.00'}</span>
+                  <span className="text-2xl font-bold text-amber-400">${product.minimum_price?.toFixed(2) || '0.00'}</span>
                 </div>
                 <div className="text-xs text-slate-500 mt-1">
                   Covers all costs + highest platform fees
@@ -219,11 +219,11 @@ export default function AuctionSummaryTab({ watch }) {
               </div>
             </div>
 
-            {watch.msrp && (
+            {product.msrp && (
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <span className="text-blue-400">Original MSRP</span>
-                  <span className="text-xl font-bold text-blue-400">${watch.msrp.toFixed(2)}</span>
+                  <span className="text-xl font-bold text-blue-400">${product.msrp.toFixed(2)}</span>
                 </div>
               </div>
             )}
@@ -240,10 +240,10 @@ export default function AuctionSummaryTab({ watch }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {watch.platform_prices?.whatnot && (() => {
-                const price = watch.platform_prices.whatnot;
+              {product.platform_prices?.whatnot && (() => {
+                const price = product.platform_prices.whatnot;
                 const { profit, margin, roi } = calculateProfit(price);
-                const isAboveMin = price >= (watch.minimum_price || 0);
+                const isAboveMin = price >= (product.minimum_price || 0);
                 
                 return (
                   <div className={`rounded-lg p-4 ${isAboveMin ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
@@ -288,7 +288,7 @@ export default function AuctionSummaryTab({ watch }) {
                 {simulatedPrice && parseFloat(simulatedPrice) > 0 && (() => {
                   const price = parseFloat(simulatedPrice);
                   const { profit, margin, roi } = calculateProfit(price);
-                  const isAboveMin = price >= (watch.minimum_price || 0);
+                  const isAboveMin = price >= (product.minimum_price || 0);
                   
                   return (
                     <div className={`rounded-lg p-3 ${isAboveMin ? 'bg-green-500/20 border border-green-500/40' : 'bg-red-500/20 border border-red-500/40'}`}>
@@ -319,16 +319,16 @@ export default function AuctionSummaryTab({ watch }) {
                 })()}
               </div>
 
-              {watch.retail_price && (
+              {product.retail_price && (
                 <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-semibold text-white">Retail / Market Price</span>
                     <span className="text-xl font-bold text-white">
-                      ${watch.retail_price.toFixed(2)}
+                      ${product.retail_price.toFixed(2)}
                     </span>
                   </div>
                   {(() => {
-                    const { profit, margin, roi } = calculateProfit(watch.retail_price);
+                    const { profit, margin, roi } = calculateProfit(product.retail_price);
                     return (
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div>
@@ -353,21 +353,21 @@ export default function AuctionSummaryTab({ watch }) {
         </Card>
 
         {/* Market Insights */}
-        {watch.ai_analysis?.market_insights && (
+        {product.ai_analysis?.market_insights && (
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white">Market Insights</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-slate-300 text-sm leading-relaxed">
-                {watch.ai_analysis.market_insights}
+                {product.ai_analysis.market_insights}
               </p>
             </CardContent>
           </Card>
         )}
 
         {/* Value Range */}
-        {watch.ai_analysis && (watch.ai_analysis.estimated_value_low || watch.ai_analysis.estimated_value_high) && (
+        {product.ai_analysis && (product.ai_analysis.estimated_value_low || product.ai_analysis.estimated_value_high) && (
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white">Market Value Range</CardTitle>
@@ -377,23 +377,23 @@ export default function AuctionSummaryTab({ watch }) {
                 <div className="text-center">
                   <div className="text-sm text-slate-400">Low</div>
                   <div className="text-xl font-bold text-white">
-                    ${watch.ai_analysis.estimated_value_low?.toFixed(2) || 'N/A'}
+                    ${product.ai_analysis.estimated_value_low?.toFixed(2) || 'N/A'}
                   </div>
                 </div>
                 <div className="text-slate-600">—</div>
                 <div className="text-center">
                   <div className="text-sm text-slate-400">High</div>
                   <div className="text-xl font-bold text-white">
-                    ${watch.ai_analysis.estimated_value_high?.toFixed(2) || 'N/A'}
+                    ${product.ai_analysis.estimated_value_high?.toFixed(2) || 'N/A'}
                   </div>
                 </div>
-                {watch.ai_analysis.average_market_value && (
+                {product.ai_analysis.average_market_value && (
                   <>
                     <div className="text-slate-600">•</div>
                     <div className="text-center">
                       <div className="text-sm text-slate-400">Average</div>
                       <div className="text-xl font-bold text-amber-400">
-                        ${watch.ai_analysis.average_market_value.toFixed(2)}
+                        ${product.ai_analysis.average_market_value.toFixed(2)}
                       </div>
                     </div>
                   </>
