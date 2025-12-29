@@ -9,8 +9,8 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get all Watch records from all companies using filter with empty query
-        const watches = await base44.asServiceRole.entities.Watch.list("-created_date", 10000);
+        // Get all Watch records that haven't been migrated yet
+        const watches = await base44.asServiceRole.entities.Watch.filter({ migrated_to_product: { $ne: true } }, "-created_date", 10000);
         
         // Get all existing Products to check for duplicates
         const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 10000);
@@ -105,6 +105,9 @@ Deno.serve(async (req) => {
                     console.log(`Created new product from watch ${watch.id}`);
                     migrated++;
                 }
+                
+                // Mark watch as migrated
+                await base44.asServiceRole.entities.Watch.update(watch.id, { migrated_to_product: true });
                 
                 // Add delay to avoid rate limits (500ms between operations)
                 await new Promise(resolve => setTimeout(resolve, 500));
