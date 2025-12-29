@@ -11,9 +11,12 @@ export default function ResolveProductDuplicates() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProducts, setSelectedProducts] = useState({});
   const [resolvingGroups, setResolvingGroups] = useState({});
+  const [sources, setSources] = useState([]);
+  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
     loadDuplicates();
+    loadSourcesAndOrders();
   }, []);
 
   const loadDuplicates = async () => {
@@ -25,6 +28,19 @@ export default function ResolveProductDuplicates() {
       toast.error('Failed to load duplicates: ' + error.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadSourcesAndOrders = async () => {
+    try {
+      const [sourcesData, ordersData] = await Promise.all([
+        base44.entities.WatchSource.list(),
+        base44.entities.SourceOrder.list()
+      ]);
+      setSources(sourcesData);
+      setOrders(ordersData);
+    } catch (error) {
+      console.error('Failed to load sources/orders:', error);
     }
   };
 
@@ -163,9 +179,36 @@ export default function ResolveProductDuplicates() {
                             {product.condition.replace(/_/g, ' ')}
                           </Badge>
                         )}
-                        <div className="pt-2 border-t mt-2">
+                        <div className="pt-2 border-t mt-2 space-y-1">
                           <p className="text-slate-600">Cost: <span className="font-semibold">${product.cost || 0}</span></p>
                           <p className="text-slate-600">Retail: <span className="font-semibold">${product.retail_price || 0}</span></p>
+                          {product.platform_prices?.whatnot && (
+                            <p className="text-slate-600">Whatnot: <span className="font-semibold">${product.platform_prices.whatnot}</span></p>
+                          )}
+                          {product.platform_prices?.ebay && (
+                            <p className="text-slate-600">eBay: <span className="font-semibold">${product.platform_prices.ebay}</span></p>
+                          )}
+                        </div>
+                        <div className="pt-2 border-t mt-2 space-y-1">
+                          {(() => {
+                            const order = orders.find(o => o.id === product.source_order_id);
+                            const sourceId = order ? order.source_id : product.source_id;
+                            const source = sources.find(s => s.id === sourceId);
+                            return (
+                              <>
+                                {source && (
+                                  <p className="text-xs text-slate-500">
+                                    Source: <span className="font-medium">{source.name}</span>
+                                  </p>
+                                )}
+                                {order && (
+                                  <p className="text-xs text-slate-500">
+                                    Order: <span className="font-medium">#{order.order_number}</span>
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                         {product.sold && (
                           <Badge className="bg-green-600 text-white">Sold</Badge>
