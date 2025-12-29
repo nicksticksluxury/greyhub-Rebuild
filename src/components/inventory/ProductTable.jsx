@@ -58,7 +58,7 @@ const conditionLabels = {
   parts_repair: "Parts/Repair"
 };
 
-export default function WatchTable({ watches, isLoading, onQuickView, sources, auctions, selectedPlatform, selectedIds = [], onSelectionChange, sourceOrders }) {
+export default function ProductTable({ products, isLoading, onQuickView, sources, auctions, selectedPlatform, selectedIds = [], onSelectionChange, sourceOrders }) {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [sortField, setSortField] = useState(null);
@@ -66,22 +66,22 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
 
   const handleSelectAll = (checked) => {
     if (onSelectionChange) {
-      onSelectionChange(checked ? watches.map(w => w.id) : []);
+      onSelectionChange(checked ? products.map(p => p.id) : []);
     }
   };
 
-  const handleSelectOne = (watchId, checked) => {
+  const handleSelectOne = (productId, checked) => {
     if (onSelectionChange) {
       if (checked) {
-        onSelectionChange([...selectedIds, watchId]);
+        onSelectionChange([...selectedIds, productId]);
       } else {
-        onSelectionChange(selectedIds.filter(id => id !== watchId));
+        onSelectionChange(selectedIds.filter(id => id !== productId));
       }
     }
   };
 
-  const allSelected = watches.length > 0 && selectedIds.length === watches.length;
-  const someSelected = selectedIds.length > 0 && selectedIds.length < watches.length;
+  const allSelected = products.length > 0 && selectedIds.length === products.length;
+  const someSelected = selectedIds.length > 0 && selectedIds.length < products.length;
 
   const handleImageClick = (e, photo) => {
     e.stopPropagation();
@@ -89,8 +89,8 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
     setImageDialogOpen(true);
   };
 
-  const handleRowClick = (watchId) => {
-    window.location.href = createPageUrl(`ProductDetail?id=${watchId}`);
+  const handleRowClick = (productId) => {
+    window.location.href = createPageUrl(`ProductDetail?id=${productId}`);
   };
 
   const handleSort = (field) => {
@@ -107,13 +107,13 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
     return sortDirection === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
   };
 
-  const getMinimumPrice = (watch) => {
-    if (!watch.platform_prices) return watch.minimum_price || 0;
-    const prices = Object.values(watch.platform_prices).filter(p => p > 0);
-    return prices.length > 0 ? Math.min(...prices) : (watch.minimum_price || 0);
+  const getMinimumPrice = (product) => {
+    if (!product.platform_prices) return product.minimum_price || 0;
+    const prices = Object.values(product.platform_prices).filter(p => p > 0);
+    return prices.length > 0 ? Math.min(...prices) : (product.minimum_price || 0);
   };
 
-  const sortedWatches = [...watches].sort((a, b) => {
+  const sortedProducts = [...products].sort((a, b) => {
       if (!sortField) return 0;
 
       let aValue, bValue;
@@ -156,10 +156,10 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
     );
   }
 
-  if (watches.length === 0) {
+  if (products.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-12 text-center">
-        <p className="text-slate-500">No watches found</p>
+        <p className="text-slate-500">No products found</p>
       </div>
     );
   }
@@ -229,37 +229,37 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedWatches.map((watch) => {
-                  const order = sourceOrders?.find(o => o.id === watch.source_order_id);
-                  const sourceId = order ? order.source_id : watch.source_id;
+              {sortedProducts.map((product) => {
+                  const order = sourceOrders?.find(o => o.id === product.source_order_id);
+                  const sourceId = order ? order.source_id : product.source_id;
                   const source = sources.find(s => s.id === sourceId);
                   
-                  const minPrice = calculateMinimumPrice(watch.cost, selectedPlatform);
-                  const platformPrice = watch.platform_prices?.[selectedPlatform] || 0;
+                  const minPrice = calculateMinimumPrice(product.cost, selectedPlatform);
+                  const platformPrice = product.platform_prices?.[selectedPlatform] || 0;
 
                 return (
                   <TableRow 
-                    key={watch.id} 
-                    className={`hover:bg-slate-50 cursor-pointer transition-colors ${selectedIds.includes(watch.id) ? 'bg-blue-50' : ''}`}
-                    onClick={() => handleRowClick(watch.id)}
+                    key={product.id} 
+                    className={`hover:bg-slate-50 cursor-pointer transition-colors ${selectedIds.includes(product.id) ? 'bg-blue-50' : ''}`}
+                    onClick={() => handleRowClick(product.id)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox 
-                        checked={selectedIds.includes(watch.id)}
-                        onCheckedChange={(checked) => handleSelectOne(watch.id, checked)}
+                        checked={selectedIds.includes(product.id)}
+                        onCheckedChange={(checked) => handleSelectOne(product.id, checked)}
                       />
                     </TableCell>
                     <TableCell className="text-center font-medium text-slate-600">
-                      {watch.quantity || 1}
+                      {product.quantity || 1}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      {watch.photos?.[0] ? (
-                        typeof watch.photos[0] === 'object' && watch.photos[0].thumbnail ? (
+                      {product.photos?.[0] ? (
+                        typeof product.photos[0] === 'object' && product.photos[0].thumbnail ? (
                           <img
-                            src={watch.photos[0].thumbnail}
-                            alt={watch.brand}
+                            src={product.photos[0].thumbnail}
+                            alt={product.brand}
                             className="w-16 h-16 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-75 transition-opacity"
-                            onClick={(e) => handleImageClick(e, watch.photos[0].full || watch.photos[0].medium || watch.photos[0].thumbnail)}
+                            onClick={(e) => handleImageClick(e, product.photos[0].full || product.photos[0].medium || product.photos[0].thumbnail)}
                           />
                         ) : (
                           <div className="w-16 h-16 bg-amber-100 rounded-lg flex items-center justify-center border border-amber-300">
@@ -274,34 +274,34 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-semibold text-slate-900">{watch.brand}</p>
-                        {watch.model && (
-                          <p className="text-sm text-slate-500">{watch.model}</p>
+                        <p className="font-semibold text-slate-900">{product.brand}</p>
+                        {product.model && (
+                          <p className="text-sm text-slate-500">{product.model}</p>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm text-slate-700">
-                        {[watch.reference_number, watch.serial_number].filter(Boolean).join(" / ")}
+                        {[product.reference_number, product.serial_number].filter(Boolean).join(" / ")}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {watch.condition && (
+                      {product.condition && (
                         <Badge variant="outline" className="capitalize">
-                          {conditionLabels[watch.condition] || watch.condition.replace(/_/g, ' ')}
+                          {conditionLabels[product.condition] || product.condition.replace(/_/g, ' ')}
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      {watch.gender && (
-                        <span className="capitalize text-slate-700">{watch.gender}</span>
+                      {product.gender && (
+                        <span className="capitalize text-slate-700">{product.gender}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-semibold">
-                      {watch.cost ? `$${watch.cost.toLocaleString()}` : '-'}
+                      {product.cost ? `$${product.cost.toLocaleString()}` : '-'}
                     </TableCell>
                     <TableCell className="text-right font-semibold">
-                      {watch.retail_price ? `$${watch.retail_price.toLocaleString()}` : '-'}
+                      {product.retail_price ? `$${product.retail_price.toLocaleString()}` : '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <span className="text-amber-700 font-semibold">
@@ -319,9 +319,9 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                         {(() => {
                           const platforms = ['ebay', 'poshmark', 'etsy', 'mercari', 'whatnot', 'shopify'];
                           const activePlatforms = platforms.filter(p => 
-                            (watch.listing_urls && watch.listing_urls[p]) || 
-                            (watch.platform_ids && watch.platform_ids[p]) ||
-                            (watch.exported_to && watch.exported_to[p])
+                            (product.listing_urls && product.listing_urls[p]) || 
+                            (product.platform_ids && product.platform_ids[p]) ||
+                            (product.exported_to && product.exported_to[p])
                           );
                           
                           return activePlatforms.length > 0 ? (
@@ -349,36 +349,36 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
                         className="h-8 w-8 hover:bg-amber-50 hover:text-amber-600"
                         onClick={() => {
                           const params = new URLSearchParams();
-                          params.set("brand", watch.brand || "");
-                          params.set("model", watch.model || "");
-                          params.set("ref", watch.reference_number || "");
-                          params.set("year", watch.year || "");
-                          params.set("condition", watch.condition || "");
+                          params.set("brand", product.brand || "");
+                          params.set("model", product.model || "");
+                          params.set("ref", product.reference_number || "");
+                          params.set("year", product.year || "");
+                          params.set("condition", product.condition || "");
 
                           // Images - pass all available full-size images
-                          const allImages = watch.photos?.map(p => p.full || p.original || p).filter(Boolean) || [];
+                          const allImages = product.photos?.map(p => p.full || p.original || p).filter(Boolean) || [];
                           if (allImages.length > 0) {
                             params.set("images", allImages.join('|'));
                           }
 
                           // Prices
                           const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
-                          params.set("msrp", format(watch.msrp || watch.ai_analysis?.original_msrp));
-                          params.set("price", format(watch.retail_price || watch.ai_analysis?.average_market_value));
+                          params.set("msrp", format(product.msrp || product.ai_analysis?.original_msrp));
+                          params.set("price", format(product.retail_price || product.ai_analysis?.average_market_value));
                           
                           // Prioritize set platform price, fallback to AI recommendation
-                          const whatnotPrice = watch.platform_prices?.whatnot || watch.ai_analysis?.pricing_recommendations?.whatnot;
+                          const whatnotPrice = product.platform_prices?.whatnot || product.ai_analysis?.pricing_recommendations?.whatnot;
                           params.set("whatnotPrice", format(whatnotPrice));
 
                           // Highlights
-                          if (watch.ai_analysis?.notable_features?.length) {
-                            params.set("highlights", watch.ai_analysis.notable_features.join(","));
-                          } else if (watch.description) {
-                            params.set("desc", watch.description.substring(0, 200));
+                          if (product.ai_analysis?.notable_features?.length) {
+                            params.set("highlights", product.ai_analysis.notable_features.join(","));
+                          } else if (product.description) {
+                            params.set("desc", product.description.substring(0, 200));
                           }
 
                           // Use ID for cleaner URLs and reliable data fetching
-                          params.set("id", watch.id);
+                          params.set("id", product.id);
                           window.open(createPageUrl(`SalesView?${params.toString()}`), 'ObsWindow', 'width=450,height=850,menubar=no,toolbar=no,location=no,status=no');
                         }}
                       >
@@ -395,7 +395,7 @@ export default function WatchTable({ watches, isLoading, onQuickView, sources, a
 
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
         <DialogContent className="max-w-4xl">
-          <img src={currentImage} alt="Watch" className="w-full h-auto rounded-lg" />
+          <img src={currentImage} alt="Product" className="w-full h-auto rounded-lg" />
         </DialogContent>
       </Dialog>
     </>

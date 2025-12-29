@@ -21,7 +21,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import WatchTable from "../components/inventory/WatchTable";
+import ProductTable from "../components/inventory/ProductTable";
 import ExportDialog from "../components/inventory/ExportDialog";
 import FilterPanel from "../components/inventory/FilterPanel";
 import QuickViewDialog from "../components/inventory/QuickViewDialog";
@@ -30,7 +30,7 @@ export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [selectedWatch, setSelectedWatch] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState("whatnot");
   const [syncing, setSyncing] = useState(false);
   const [listing, setListing] = useState(false);
@@ -72,7 +72,7 @@ export default function Inventory() {
       localStorage.removeItem('inventory_auction_filter');
     }
   }, [filters.auction]);
-  const [selectedWatchIds, setSelectedWatchIds] = useState([]);
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
   const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
   const [showImageExportDialog, setShowImageExportDialog] = useState(false);
   const [imageExportSizes, setImageExportSizes] = useState({ thumbnail: false, medium: true, full: false });
@@ -103,8 +103,8 @@ export default function Inventory() {
     setupNotifications();
   }, []);
 
-  const { data: watches = [], isLoading } = useQuery({
-    queryKey: ['watches'],
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['products'],
     queryFn: () => base44.entities.Product.list("-created_date", 1000),
   });
 
@@ -124,16 +124,16 @@ export default function Inventory() {
   });
 
   const handleBulkListEtsy = async () => {
-    if (selectedWatchIds.length === 0) return;
+    if (selectedProductIds.length === 0) return;
     setListing(true);
     try {
-      const result = await base44.functions.invoke("etsyList", { watchIds: selectedWatchIds });
+      const result = await base44.functions.invoke("etsyList", { watchIds: selectedProductIds });
       const { success, failed, errors } = result.data;
 
       if (success > 0) {
         toast.success(`Successfully listed ${success} items on Etsy`);
-        queryClient.invalidateQueries({ queryKey: ['watches'] });
-        setSelectedWatchIds([]);
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        setSelectedProductIds([]);
       }
 
       if (failed > 0) {
@@ -169,7 +169,7 @@ export default function Inventory() {
         
         if (messages.length > 0) {
           toast.success(messages.join(" | "));
-          queryClient.invalidateQueries({ queryKey: ['watches'] });
+          queryClient.invalidateQueries({ queryKey: ['products'] });
           queryClient.invalidateQueries({ queryKey: ['alerts'] });
         } else {
           toast.info("Sync complete. No changes needed.");
@@ -186,16 +186,16 @@ export default function Inventory() {
   };
 
   const handleBulkListEbay = async () => {
-    if (selectedWatchIds.length === 0) return;
+    if (selectedProductIds.length === 0) return;
     setListing(true);
     try {
-      const result = await base44.functions.invoke("ebayList", { watchIds: selectedWatchIds });
+      const result = await base44.functions.invoke("ebayList", { watchIds: selectedProductIds });
       const { success, failed, errors } = result.data;
       
       if (success > 0) {
         toast.success(`Successfully listed ${success} items on eBay`);
-        queryClient.invalidateQueries({ queryKey: ['watches'] });
-        setSelectedWatchIds([]);
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        setSelectedProductIds([]);
       }
       
       if (failed > 0) {
@@ -214,16 +214,16 @@ export default function Inventory() {
   };
 
   const handleBulkUpdateEbay = async () => {
-    if (selectedWatchIds.length === 0) return;
+    if (selectedProductIds.length === 0) return;
     setListing(true);
     try {
-      const result = await base44.functions.invoke("ebayUpdate", { watchIds: selectedWatchIds });
+      const result = await base44.functions.invoke("ebayUpdate", { watchIds: selectedProductIds });
       const { success, failed, errors } = result.data;
       
       if (success > 0) {
         toast.success(`Successfully updated ${success} items on eBay`);
-        queryClient.invalidateQueries({ queryKey: ['watches'] });
-        setSelectedWatchIds([]);
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        setSelectedProductIds([]);
       }
       
       if (failed > 0) {
@@ -244,44 +244,44 @@ export default function Inventory() {
 
 
   const handleBulkUpdateGender = async (gender) => {
-    if (selectedWatchIds.length === 0) return;
+    if (selectedProductIds.length === 0) return;
     
-    if (!confirm(`Are you sure you want to set the gender to "${gender}" for ${selectedWatchIds.length} watches?`)) {
+    if (!confirm(`Are you sure you want to set the gender to "${gender}" for ${selectedProductIds.length} products?`)) {
       return;
     }
 
-    const toastId = toast.loading("Updating watches...");
+    const toastId = toast.loading("Updating products...");
     try {
       // Process in parallel
-      await Promise.all(selectedWatchIds.map(id => 
+      await Promise.all(selectedProductIds.map(id => 
         base44.entities.Product.update(id, { gender })
       ));
 
-      toast.success(`Updated ${selectedWatchIds.length} watches to ${gender}`, { id: toastId });
-      queryClient.invalidateQueries({ queryKey: ['watches'] });
-      setSelectedWatchIds([]);
+      toast.success(`Updated ${selectedProductIds.length} products to ${gender}`, { id: toastId });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setSelectedProductIds([]);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update watches", { id: toastId });
+      toast.error("Failed to update products", { id: toastId });
     }
   };
 
   const handleSyncSquare = async () => {
-    if (selectedWatchIds.length === 0) return;
+    if (selectedProductIds.length === 0) return;
     
     setSyncingSquare(true);
-    const toastId = toast.loading(`Syncing ${selectedWatchIds.length} watches to Square...`);
+    const toastId = toast.loading(`Syncing ${selectedProductIds.length} products to Square...`);
     try {
-      const result = await base44.functions.invoke("syncWatchesToSquare", { watch_ids: selectedWatchIds });
+      const result = await base44.functions.invoke("syncWatchesToSquare", { watch_ids: selectedProductIds });
       if (result.data.success) {
         const { success, failed } = result.data.results;
         if (failed > 0) {
           toast.error(`Synced ${success}, failed ${failed}`, { id: toastId });
         } else {
-          toast.success(`Successfully synced ${success} watches to Square!`, { id: toastId });
+          toast.success(`Successfully synced ${success} products to Square!`, { id: toastId });
         }
-        queryClient.invalidateQueries({ queryKey: ['watches'] });
-        setSelectedWatchIds([]);
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        setSelectedProductIds([]);
       } else {
         toast.error("Sync failed: " + (result.data.error || "Unknown error"), { id: toastId });
       }
@@ -357,37 +357,37 @@ export default function Inventory() {
   };
 
   const handleUpdateCostFromShipment = async () => {
-    if (selectedWatchIds.length === 0) return;
+    if (selectedProductIds.length === 0) return;
     
     const toastId = toast.loading("Calculating costs from shipments...");
     try {
       let updatedCount = 0;
       let skippedCount = 0;
       
-      for (const watchId of selectedWatchIds) {
-        const watch = watches.find(w => w.id === watchId);
-        if (!watch || !watch.source_order_id) {
+      for (const productId of selectedProductIds) {
+        const product = products.find(p => p.id === productId);
+        if (!product || !product.source_order_id) {
           skippedCount++;
           continue;
         }
         
-        const order = sourceOrders.find(o => o.id === watch.source_order_id);
+        const order = sourceOrders.find(o => o.id === product.source_order_id);
         if (!order || !order.total_cost || !order.initial_quantity || order.initial_quantity === 0) {
           skippedCount++;
           continue;
         }
         
-        const costPerWatch = order.total_cost / order.initial_quantity;
-        await base44.entities.Product.update(watchId, { cost: costPerWatch });
+        const costPerProduct = order.total_cost / order.initial_quantity;
+        await base44.entities.Product.update(productId, { cost: costPerProduct });
         updatedCount++;
       }
       
       if (updatedCount > 0) {
-        toast.success(`Updated ${updatedCount} watches. ${skippedCount > 0 ? `Skipped ${skippedCount} (no shipment or cost).` : ''}`, { id: toastId });
-        queryClient.invalidateQueries({ queryKey: ['watches'] });
-        setSelectedWatchIds([]);
+        toast.success(`Updated ${updatedCount} products. ${skippedCount > 0 ? `Skipped ${skippedCount} (no shipment or cost).` : ''}`, { id: toastId });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        setSelectedProductIds([]);
       } else {
-        toast.error("No watches could be updated. Ensure they have shipments with costs.", { id: toastId });
+        toast.error("No products could be updated. Ensure they have shipments with costs.", { id: toastId });
       }
     } catch (error) {
       console.error(error);
@@ -395,46 +395,48 @@ export default function Inventory() {
     }
   };
 
-  // Get unique case materials from all watches
-  const caseMaterials = [...new Set(watches
-    .map(w => w.case_material)
+  // Get unique case materials from all products
+  const caseMaterials = [...new Set(products
+    .map(p => p.category_specific_attributes?.case_material || p.case_material)
     .filter(Boolean)
     .map(m => m.trim())
   )].sort();
 
-  // Get unique manufacturers from all watches
-  const manufacturers = [...new Set(watches
-    .map(w => w.brand)
+  // Get unique manufacturers from all products
+  const manufacturers = [...new Set(products
+    .map(p => p.brand)
     .filter(Boolean)
     .map(m => m.trim())
   )].sort();
 
-  const filteredWatches = watches.filter(watch => {
-    // Filter out sold watches and watches out for repair from regular inventory
-    if (watch.sold) return false;
-    if (watch.repair_status === 'out_for_repair') return false;
+  const filteredProducts = products.filter(product => {
+    // Filter out sold products and products out for repair from regular inventory
+    if (product.sold) return false;
+    if (product.repair_status === 'out_for_repair') return false;
 
-    // Resolve source for this watch
-    const order = sourceOrders.find(o => o.id === watch.source_order_id);
-    const sourceId = order ? order.source_id : watch.source_id;
+    // Resolve source for this product
+    const order = sourceOrders.find(o => o.id === product.source_order_id);
+    const sourceId = order ? order.source_id : product.source_id;
     const source = watchSources.find(s => s.id === sourceId);
     const sourceName = source ? source.name : "";
 
     const matchesSearch = !searchTerm || 
-      watch.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sourceName.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesAuction = filters.auction === "all" || watch.auction_id === filters.auction;
+    const matchesAuction = filters.auction === "all" || product.auction_id === filters.auction;
     const matchesSource = filters.source === "all" || sourceId === filters.source;
-    const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
-    const matchesMovementType = filters.movement_type === "all" || watch.movement_type === filters.movement_type;
-    const matchesCaseMaterial = !filters.case_material || watch.case_material?.trim() === filters.case_material;
-    const matchesManufacturer = !filters.manufacturer || watch.brand?.trim() === filters.manufacturer;
-    const matchesTested = filters.tested === "all" || (watch.tested || "no") === filters.tested;
-    const matchesGender = filters.gender === "all" || watch.gender === filters.gender;
+    const matchesCondition = filters.condition === "all" || product.condition === filters.condition;
+    const movementType = product.category_specific_attributes?.movement_type || product.movement_type;
+    const matchesMovementType = filters.movement_type === "all" || movementType === filters.movement_type;
+    const caseMaterial = product.category_specific_attributes?.case_material || product.case_material;
+    const matchesCaseMaterial = !filters.case_material || caseMaterial?.trim() === filters.case_material;
+    const matchesManufacturer = !filters.manufacturer || product.brand?.trim() === filters.manufacturer;
+    const matchesTested = filters.tested === "all" || (product.tested || "no") === filters.tested;
+    const matchesGender = filters.gender === "all" || product.gender === filters.gender;
 
     return matchesSearch && matchesAuction && matchesSource && matchesCondition && matchesMovementType && matchesCaseMaterial && matchesManufacturer && matchesTested && matchesGender;
   });
@@ -448,7 +450,7 @@ export default function Inventory() {
               <h1 className="text-3xl font-bold text-slate-900">Inventory</h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-slate-500">
-                  {filteredWatches.length} {filteredWatches.length === 1 ? 'watch' : 'watches'} 
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} 
                   {filters.auction !== "all" && " in auction"}
                 </p>
                 {filters.source !== "all" && (
@@ -492,41 +494,41 @@ export default function Inventory() {
               {/* General Statistics */}
               <div className="grid grid-cols-6 gap-3 mt-4">
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
-                  <p className="text-xs text-blue-600 font-semibold uppercase mb-1">Total Watches</p>
-                  <p className="text-2xl font-bold text-blue-900">{filteredWatches.reduce((sum, w) => sum + (w.quantity || 1), 0)}</p>
+                  <p className="text-xs text-blue-600 font-semibold uppercase mb-1">Total Products</p>
+                  <p className="text-2xl font-bold text-blue-900">{filteredProducts.reduce((sum, p) => sum + (p.quantity || 1), 0)}</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
                   <p className="text-xs text-green-600 font-semibold uppercase mb-1">Total Cost</p>
                   <p className="text-2xl font-bold text-green-900">
-                    ${filteredWatches.reduce((sum, w) => {
-                      const cost = (w.cost || 0);
-                      const repairCost = (w.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
-                      return sum + (cost + repairCost) * (w.quantity || 1);
+                    ${filteredProducts.reduce((sum, p) => {
+                      const cost = (p.cost || 0);
+                      const repairCost = (p.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
+                      return sum + (cost + repairCost) * (p.quantity || 1);
                     }, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
                   <p className="text-xs text-purple-600 font-semibold uppercase mb-1">Retail Value</p>
                   <p className="text-2xl font-bold text-purple-900">
-                    ${filteredWatches.reduce((sum, w) => sum + (w.retail_price || 0) * (w.quantity || 1), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    ${filteredProducts.reduce((sum, p) => sum + (p.retail_price || 0) * (p.quantity || 1), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                 </div>
                 <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg p-3 border border-amber-200">
                   <p className="text-xs text-amber-600 font-semibold uppercase mb-1">{selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} Total</p>
                   <p className="text-2xl font-bold text-amber-900">
-                    ${filteredWatches.reduce((sum, w) => sum + (w.platform_prices?.[selectedPlatform] || 0) * (w.quantity || 1), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    ${filteredProducts.reduce((sum, p) => sum + (p.platform_prices?.[selectedPlatform] || 0) * (p.quantity || 1), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                 </div>
                 <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-3 border border-emerald-200">
                   <p className="text-xs text-emerald-600 font-semibold uppercase mb-1">Margin</p>
                   <p className="text-2xl font-bold text-emerald-900">
                     ${(() => {
-                      const totalCost = filteredWatches.reduce((sum, w) => {
-                        const cost = (w.cost || 0);
-                        const repairCost = (w.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
-                        return sum + (cost + repairCost) * (w.quantity || 1);
+                      const totalCost = filteredProducts.reduce((sum, p) => {
+                        const cost = (p.cost || 0);
+                        const repairCost = (p.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
+                        return sum + (cost + repairCost) * (p.quantity || 1);
                       }, 0);
-                      const totalRevenue = filteredWatches.reduce((sum, w) => sum + (w.platform_prices?.[selectedPlatform] || w.retail_price || 0) * (w.quantity || 1), 0);
+                      const totalRevenue = filteredProducts.reduce((sum, p) => sum + (p.platform_prices?.[selectedPlatform] || p.retail_price || 0) * (p.quantity || 1), 0);
                       return (totalRevenue - totalCost).toLocaleString(undefined, { maximumFractionDigits: 0 });
                     })()}
                   </p>
@@ -535,12 +537,12 @@ export default function Inventory() {
                   <p className="text-xs text-rose-600 font-semibold uppercase mb-1">ROI</p>
                   <p className="text-2xl font-bold text-rose-900">
                     {(() => {
-                      const totalCost = filteredWatches.reduce((sum, w) => {
-                        const cost = (w.cost || 0);
-                        const repairCost = (w.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
-                        return sum + (cost + repairCost) * (w.quantity || 1);
+                      const totalCost = filteredProducts.reduce((sum, p) => {
+                        const cost = (p.cost || 0);
+                        const repairCost = (p.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
+                        return sum + (cost + repairCost) * (p.quantity || 1);
                       }, 0);
-                      const totalRevenue = filteredWatches.reduce((sum, w) => sum + (w.platform_prices?.[selectedPlatform] || w.retail_price || 0) * (w.quantity || 1), 0);
+                      const totalRevenue = filteredProducts.reduce((sum, p) => sum + (p.platform_prices?.[selectedPlatform] || p.retail_price || 0) * (p.quantity || 1), 0);
                       const roi = totalCost > 0 ? ((totalRevenue - totalCost) / totalCost * 100) : 0;
                       return `${roi.toFixed(0)}%`;
                     })()}
@@ -549,14 +551,14 @@ export default function Inventory() {
               </div>
             </div>
             <div className="flex gap-3">
-              {selectedWatchIds.length > 0 && (
+              {selectedProductIds.length > 0 && (
                 <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
                   <CheckSquare className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">{selectedWatchIds.length} selected</span>
+                  <span className="text-sm font-medium text-blue-800">{selectedProductIds.length} selected</span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSelectedWatchIds([])}
+                    onClick={() => setSelectedProductIds([])}
                     className="h-6 w-6 p-0 hover:bg-blue-100"
                   >
                     <X className="w-4 h-4 text-blue-600" />
@@ -564,11 +566,11 @@ export default function Inventory() {
                 </div>
               )}
               
-              {selectedWatchIds.length > 0 ? (
+              {selectedProductIds.length > 0 ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="border-slate-300 hover:bg-slate-50">
-                      Bulk Actions ({selectedWatchIds.length})
+                      Bulk Actions ({selectedProductIds.length})
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -642,22 +644,22 @@ export default function Inventory() {
                         ) : (
                           auctions.map(auction => (
                             <DropdownMenuItem 
-                              key={auction.id}
-                              onClick={async () => {
-                                const toastId = toast.loading("Adding to auction...");
-                                try {
-                                  await Promise.all(selectedWatchIds.map(id => 
-                                    base44.entities.Product.update(id, { auction_id: auction.id })
-                                  ));
-                                  toast.success(`Added ${selectedWatchIds.length} watches to ${auction.name}`, { id: toastId });
-                                  queryClient.invalidateQueries({ queryKey: ['watches'] });
-                                  setSelectedWatchIds([]);
-                                } catch (error) {
-                                  toast.error("Failed to add watches to auction", { id: toastId });
-                                }
-                              }}
+                             key={auction.id}
+                             onClick={async () => {
+                               const toastId = toast.loading("Adding to auction...");
+                               try {
+                                 await Promise.all(selectedProductIds.map(id => 
+                                   base44.entities.Product.update(id, { auction_id: auction.id })
+                                 ));
+                                 toast.success(`Added ${selectedProductIds.length} products to ${auction.name}`, { id: toastId });
+                                 queryClient.invalidateQueries({ queryKey: ['products'] });
+                                 setSelectedProductIds([]);
+                               } catch (error) {
+                                 toast.error("Failed to add products to auction", { id: toastId });
+                               }
+                             }}
                             >
-                              {auction.name}
+                             {auction.name}
                             </DropdownMenuItem>
                           ))
                         )}
@@ -688,23 +690,23 @@ export default function Inventory() {
                     {syncing ? 'Syncing...' : 'Sync Sales'}
                   </Button>
                   <Button
-                    variant="outline"
-                    onClick={() => setShowExport(true)}
-                    className="border-slate-300 hover:bg-slate-50"
-                    disabled={filteredWatches.length === 0}
+                  variant="outline"
+                  onClick={() => setShowExport(true)}
+                  className="border-slate-300 hover:bg-slate-50"
+                  disabled={filteredProducts.length === 0}
                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
                   </Button>
-                </>
-              )}
+                  </>
+                  )}
 
-              <Link to={createPageUrl("AddWatch")}>
-                <Button className="bg-slate-800 hover:bg-slate-900 shadow-md">
+                  <Link to={createPageUrl("AddProduct")}>
+                  <Button className="bg-slate-800 hover:bg-slate-900 shadow-md">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Watch
-                </Button>
-              </Link>
+                  Add Product
+                  </Button>
+                  </Link>
             </div>
           </div>
 
@@ -759,34 +761,34 @@ export default function Inventory() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <WatchTable 
-          watches={filteredWatches}
+        <ProductTable 
+          products={filteredProducts}
           isLoading={isLoading || isLoadingSources || isLoadingOrders}
-          onQuickView={setSelectedWatch}
+          onQuickView={setSelectedProduct}
           sources={watchSources}
           sourceOrders={sourceOrders}
           auctions={auctions}
           selectedPlatform={selectedPlatform}
-          selectedIds={selectedWatchIds}
-          onSelectionChange={setSelectedWatchIds}
+          selectedIds={selectedProductIds}
+          onSelectionChange={setSelectedProductIds}
         />
       </div>
 
       {showExport && (
         <ExportDialog 
-          watches={selectedWatchIds.length > 0 
-            ? filteredWatches.filter(w => selectedWatchIds.includes(w.id))
-            : filteredWatches
+          watches={selectedProductIds.length > 0 
+            ? filteredProducts.filter(p => selectedProductIds.includes(p.id))
+            : filteredProducts
           }
-          allWatches={filteredWatches}
+          allWatches={filteredProducts}
           onClose={() => setShowExport(false)}
         />
       )}
 
-      {selectedWatch && (
+      {selectedProduct && (
         <QuickViewDialog
-          watch={selectedWatch}
-          onClose={() => setSelectedWatch(null)}
+          watch={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
         />
       )}
 
@@ -795,7 +797,7 @@ export default function Inventory() {
           <DialogHeader>
             <DialogTitle>Export Image Links</DialogTitle>
             <DialogDescription>
-              Select which image sizes to export for the {selectedWatchIds.length} selected watch{selectedWatchIds.length !== 1 ? 'es' : ''}
+              Select which image sizes to export for the {selectedProductIds.length} selected product{selectedProductIds.length !== 1 ? 's' : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -833,11 +835,11 @@ export default function Inventory() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowImageExportDialog(false)}>Cancel</Button>
             <Button className="bg-slate-800 hover:bg-slate-900" onClick={() => {
-              const selectedWatches = filteredWatches.filter(w => selectedWatchIds.includes(w.id));
+              const selectedProducts = filteredProducts.filter(p => selectedProductIds.includes(p.id));
               const imageLinks = [];
               
-              selectedWatches.forEach(watch => {
-                (watch.photos || []).forEach(photo => {
+              selectedProducts.forEach(product => {
+                (product.photos || []).forEach(photo => {
                   if (imageExportSizes.thumbnail && photo.thumbnail) imageLinks.push(photo.thumbnail);
                   if (imageExportSizes.medium && photo.medium) imageLinks.push(photo.medium);
                   if (imageExportSizes.full && photo.full) imageLinks.push(photo.full);
@@ -853,7 +855,7 @@ export default function Inventory() {
               const url = window.URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
-              a.download = `watch-images-${new Date().toISOString().split('T')[0]}.txt`;
+              a.download = `product-images-${new Date().toISOString().split('T')[0]}.txt`;
               document.body.appendChild(a);
               a.click();
               window.URL.revokeObjectURL(url);
@@ -874,7 +876,7 @@ export default function Inventory() {
           <DialogHeader>
             <DialogTitle>Set Source & Shipment</DialogTitle>
             <DialogDescription>
-              Set the source and shipment for {selectedWatchIds.length} selected watch{selectedWatchIds.length !== 1 ? 'es' : ''}
+              Set the source and shipment for {selectedProductIds.length} selected product{selectedProductIds.length !== 1 ? 's' : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -925,44 +927,44 @@ export default function Inventory() {
                 return;
               }
               
-              const toastId = toast.loading(`Updating ${selectedWatchIds.length} watches...`);
+              const toastId = toast.loading(`Updating ${selectedProductIds.length} products...`);
               try {
-                // If shipment is selected, calculate cost per watch from shipment
-                let costPerWatch = null;
+                // If shipment is selected, calculate cost per product from shipment
+                let costPerProduct = null;
                 if (selectedOrderId) {
                   const order = sourceOrders.find(o => o.id === selectedOrderId);
                   if (order && order.total_cost && order.initial_quantity && order.initial_quantity > 0) {
-                    costPerWatch = order.total_cost / order.initial_quantity;
+                    costPerProduct = order.total_cost / order.initial_quantity;
                   }
                 }
                 
-                await Promise.all(selectedWatchIds.map(id => {
+                await Promise.all(selectedProductIds.map(id => {
                   const updateData = { 
                     source_id: selectedSourceId,
                     source_order_id: selectedOrderId || null
                   };
                   
                   // Add cost if calculated from shipment
-                  if (costPerWatch !== null) {
-                    updateData.cost = costPerWatch;
+                  if (costPerProduct !== null) {
+                    updateData.cost = costPerProduct;
                   }
                   
                   return base44.entities.Product.update(id, updateData);
                   }));
                 
-                const message = costPerWatch !== null 
-                  ? `Updated ${selectedWatchIds.length} watches with source, shipment, and cost ($${costPerWatch.toFixed(2)} each)`
-                  : `Updated ${selectedWatchIds.length} watches with source${selectedOrderId ? ' and shipment' : ''}`;
+                const message = costPerProduct !== null 
+                  ? `Updated ${selectedProductIds.length} products with source, shipment, and cost ($${costPerProduct.toFixed(2)} each)`
+                  : `Updated ${selectedProductIds.length} products with source${selectedOrderId ? ' and shipment' : ''}`;
                 
                 toast.success(message, { id: toastId });
-                queryClient.invalidateQueries({ queryKey: ['watches'] });
-                setSelectedWatchIds([]);
+                queryClient.invalidateQueries({ queryKey: ['products'] });
+                setSelectedProductIds([]);
                 setShowSetSourceDialog(false);
                 setSelectedSourceId("");
                 setSelectedOrderId("");
               } catch (error) {
                 console.error(error);
-                toast.error("Failed to update watches", { id: toastId });
+                toast.error("Failed to update products", { id: toastId });
               }
             }}>
               Update
