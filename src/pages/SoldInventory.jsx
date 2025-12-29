@@ -6,7 +6,7 @@ import { Search, Filter, Download, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import WatchTable from "../components/inventory/WatchTable";
+import ProductTable from "../components/inventory/ProductTable";
 import ExportDialog from "../components/inventory/ExportDialog";
 import FilterPanel from "../components/inventory/FilterPanel";
 import QuickViewDialog from "../components/inventory/QuickViewDialog";
@@ -15,7 +15,7 @@ export default function SoldInventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [selectedWatch, setSelectedWatch] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState("ebay");
   const location = useLocation();
   const [filters, setFilters] = useState({
@@ -33,9 +33,9 @@ export default function SoldInventory() {
     }
   }, [location.search, filters.source]);
 
-  const { data: watches = [], isLoading } = useQuery({
-    queryKey: ['watches'],
-    queryFn: () => base44.entities.Watch.list("-sold_date", 1000),
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => base44.entities.Product.list("-sold_date", 1000),
   });
 
   const { data: auctions = [] } = useQuery({
@@ -53,29 +53,29 @@ export default function SoldInventory() {
     queryFn: () => base44.entities.SourceOrder.list("date_received", 1000),
   });
 
-  const filteredWatches = watches.filter(watch => {
-    // Only show sold watches
-    if (!watch.sold) return false;
+  const filteredProducts = products.filter(product => {
+    // Only show sold products
+    if (!product.sold) return false;
 
     // Resolve source
-    const order = sourceOrders.find(o => o.id === watch.source_order_id);
-    const sourceId = order ? order.source_id : watch.source_id;
+    const order = sourceOrders.find(o => o.id === product.source_order_id);
+    const sourceId = order ? order.source_id : product.source_id;
 
     const matchesSearch = !searchTerm || 
-      watch.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.reference_number?.toLowerCase().includes(searchTerm.toLowerCase());
+      product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.reference_number?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesAuction = filters.auction === "all" || watch.auction_id === filters.auction;
+    const matchesAuction = filters.auction === "all" || product.auction_id === filters.auction;
     const matchesSource = filters.source === "all" || sourceId === filters.source;
-    const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
+    const matchesCondition = filters.condition === "all" || product.condition === filters.condition;
 
     return matchesSearch && matchesAuction && matchesSource && matchesCondition;
   });
 
-  const totalRevenue = filteredWatches.reduce((sum, watch) => sum + (watch.sold_price || 0), 0);
-  const totalCost = filteredWatches.reduce((sum, watch) => sum + (watch.cost || 0), 0);
+  const totalRevenue = filteredProducts.reduce((sum, product) => sum + (product.sold_price || 0), 0);
+  const totalCost = filteredProducts.reduce((sum, product) => sum + (product.cost || 0), 0);
   const totalProfit = totalRevenue - totalCost;
 
   return (
@@ -84,10 +84,10 @@ export default function SoldInventory() {
         <div className="max-w-[1800px] mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Sold Inventory</h1>
+              <h1 className="text-3xl font-bold text-slate-900">Sold Products</h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-slate-500">
-                  {filteredWatches.length} {filteredWatches.length === 1 ? 'watch' : 'watches'} sold
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} sold
                 </p>
                 {filters.source !== "all" && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -111,7 +111,7 @@ export default function SoldInventory() {
                 variant="outline"
                 onClick={() => setShowExport(true)}
                 className="border-slate-300 hover:bg-slate-50 text-slate-900"
-                disabled={filteredWatches.length === 0}
+                disabled={filteredProducts.length === 0}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export
@@ -195,10 +195,10 @@ export default function SoldInventory() {
       </div>
 
       <div className="max-w-[1800px] mx-auto px-6 py-6">
-        <WatchTable 
-          watches={filteredWatches}
+        <ProductTable 
+          products={filteredProducts}
           isLoading={isLoading || isLoadingSources || isLoadingOrders}
-          onQuickView={setSelectedWatch}
+          onQuickView={setSelectedProduct}
           sources={watchSources}
           sourceOrders={sourceOrders}
           auctions={auctions}
@@ -208,15 +208,15 @@ export default function SoldInventory() {
 
       {showExport && (
         <ExportDialog 
-          watches={filteredWatches}
+          watches={filteredProducts}
           onClose={() => setShowExport(false)}
         />
       )}
 
-      {selectedWatch && (
+      {selectedProduct && (
         <QuickViewDialog
-          watch={selectedWatch}
-          onClose={() => setSelectedWatch(null)}
+          watch={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
         />
       )}
     </div>

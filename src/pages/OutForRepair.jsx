@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import WatchTable from "../components/inventory/WatchTable";
+import ProductTable from "../components/inventory/ProductTable";
 import ExportDialog from "../components/inventory/ExportDialog";
 import FilterPanel from "../components/inventory/FilterPanel";
 import QuickViewDialog from "../components/inventory/QuickViewDialog";
@@ -24,7 +24,7 @@ export default function OutForRepair() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [selectedWatch, setSelectedWatch] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState("whatnot");
   const location = useLocation();
   const [filters, setFilters] = useState({
@@ -36,11 +36,11 @@ export default function OutForRepair() {
     manufacturer: "",
     tested: "all"
   });
-  const [selectedWatchIds, setSelectedWatchIds] = useState([]);
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
 
-  const { data: watches = [], isLoading } = useQuery({
-    queryKey: ['watches'],
-    queryFn: () => base44.entities.Watch.list("-created_date", 1000),
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => base44.entities.Product.list("-created_date", 1000),
   });
 
   const { data: auctions = [] } = useQuery({
@@ -58,45 +58,47 @@ export default function OutForRepair() {
     queryFn: () => base44.entities.SourceOrder.list("date_received", 1000),
   });
 
-  // Get unique case materials from all watches
-  const caseMaterials = [...new Set(watches
-    .map(w => w.case_material)
+  // Get unique case materials from all products
+  const caseMaterials = [...new Set(products
+    .map(p => p.category_specific_attributes?.case_material || p.case_material)
     .filter(Boolean)
     .map(m => m.trim())
   )].sort();
 
-  // Get unique manufacturers from all watches
-  const manufacturers = [...new Set(watches
-    .map(w => w.brand)
+  // Get unique manufacturers from all products
+  const manufacturers = [...new Set(products
+    .map(p => p.brand)
     .filter(Boolean)
     .map(m => m.trim())
   )].sort();
 
-  const filteredWatches = watches.filter(watch => {
-    // Only show watches out for repair and not sold
-    if (watch.sold) return false;
-    if (watch.repair_status !== 'out_for_repair') return false;
+  const filteredProducts = products.filter(product => {
+    // Only show products out for repair and not sold
+    if (product.sold) return false;
+    if (product.repair_status !== 'out_for_repair') return false;
 
-    // Resolve source for this watch
-    const order = sourceOrders.find(o => o.id === watch.source_order_id);
-    const sourceId = order ? order.source_id : watch.source_id;
+    // Resolve source for this product
+    const order = sourceOrders.find(o => o.id === product.source_order_id);
+    const sourceId = order ? order.source_id : product.source_id;
     const source = watchSources.find(s => s.id === sourceId);
     const sourceName = source ? source.name : "";
 
     const matchesSearch = !searchTerm || 
-      watch.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      watch.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sourceName.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesAuction = filters.auction === "all" || watch.auction_id === filters.auction;
+    const matchesAuction = filters.auction === "all" || product.auction_id === filters.auction;
     const matchesSource = filters.source === "all" || sourceId === filters.source;
-    const matchesCondition = filters.condition === "all" || watch.condition === filters.condition;
-    const matchesMovementType = filters.movement_type === "all" || watch.movement_type === filters.movement_type;
-    const matchesCaseMaterial = !filters.case_material || watch.case_material?.trim() === filters.case_material;
-    const matchesManufacturer = !filters.manufacturer || watch.brand?.trim() === filters.manufacturer;
-    const matchesTested = filters.tested === "all" || (watch.tested || "no") === filters.tested;
+    const matchesCondition = filters.condition === "all" || product.condition === filters.condition;
+    const movementType = product.category_specific_attributes?.movement_type || product.movement_type;
+    const matchesMovementType = filters.movement_type === "all" || movementType === filters.movement_type;
+    const caseMaterial = product.category_specific_attributes?.case_material || product.case_material;
+    const matchesCaseMaterial = !filters.case_material || caseMaterial?.trim() === filters.case_material;
+    const matchesManufacturer = !filters.manufacturer || product.brand?.trim() === filters.manufacturer;
+    const matchesTested = filters.tested === "all" || (product.tested || "no") === filters.tested;
 
     return matchesSearch && matchesAuction && matchesSource && matchesCondition && matchesMovementType && matchesCaseMaterial && matchesManufacturer && matchesTested;
   });
@@ -110,7 +112,7 @@ export default function OutForRepair() {
               <h1 className="text-3xl font-bold text-amber-900">Out for Repair</h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-slate-500">
-                  {filteredWatches.length} {filteredWatches.length === 1 ? 'watch' : 'watches'} being repaired
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} being repaired
                 </p>
                 {filters.source !== "all" && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -126,14 +128,14 @@ export default function OutForRepair() {
               </div>
             </div>
             <div className="flex gap-3">
-                {selectedWatchIds.length > 0 && (
+                {selectedProductIds.length > 0 && (
                     <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
                       <CheckSquare className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">{selectedWatchIds.length} selected</span>
+                      <span className="text-sm font-medium text-blue-800">{selectedProductIds.length} selected</span>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setSelectedWatchIds([])}
+                        onClick={() => setSelectedProductIds([])}
                         className="h-6 w-6 p-0 hover:bg-blue-100"
                       >
                         <X className="w-4 h-4 text-blue-600" />
@@ -141,11 +143,11 @@ export default function OutForRepair() {
                     </div>
                   )}
 
-                {selectedWatchIds.length > 0 ? (
+                {selectedProductIds.length > 0 ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="border-slate-300 hover:bg-slate-50 text-slate-900">
-                      Bulk Actions ({selectedWatchIds.length})
+                      Bulk Actions ({selectedProductIds.length})
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -162,7 +164,7 @@ export default function OutForRepair() {
                   variant="outline"
                   onClick={() => setShowExport(true)}
                   className="border-slate-300 hover:bg-slate-50 text-slate-900"
-                  disabled={filteredWatches.length === 0}
+                  disabled={filteredProducts.length === 0}
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Export List
@@ -222,34 +224,34 @@ export default function OutForRepair() {
       </div>
 
       <div className="max-w-[1800px] mx-auto px-6 py-6">
-        <WatchTable 
-          watches={filteredWatches}
+        <ProductTable 
+          products={filteredProducts}
           isLoading={isLoading || isLoadingSources || isLoadingOrders}
-          onQuickView={setSelectedWatch}
+          onQuickView={setSelectedProduct}
           sources={watchSources}
           sourceOrders={sourceOrders}
           auctions={auctions}
           selectedPlatform={selectedPlatform}
-          selectedIds={selectedWatchIds}
-          onSelectionChange={setSelectedWatchIds}
+          selectedIds={selectedProductIds}
+          onSelectionChange={setSelectedProductIds}
         />
       </div>
 
       {showExport && (
         <ExportDialog 
-          watches={selectedWatchIds.length > 0 
-            ? filteredWatches.filter(w => selectedWatchIds.includes(w.id))
-            : filteredWatches
+          watches={selectedProductIds.length > 0 
+            ? filteredProducts.filter(p => selectedProductIds.includes(p.id))
+            : filteredProducts
           }
-          allWatches={filteredWatches}
+          allWatches={filteredProducts}
           onClose={() => setShowExport(false)}
         />
       )}
 
-      {selectedWatch && (
+      {selectedProduct && (
         <QuickViewDialog
-          watch={selectedWatch}
-          onClose={() => setSelectedWatch(null)}
+          watch={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
         />
       )}
     </div>
