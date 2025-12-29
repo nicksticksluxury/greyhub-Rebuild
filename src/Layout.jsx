@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut, Wrench, Shield } from "lucide-react";
+import { Watch, LayoutList, Upload, Package, Gavel, TrendingUp, DollarSign, Radio, Settings, LogOut, Wrench, Shield, Copy } from "lucide-react";
 import AlertsBell from "./components/layout/AlertsBell";
 import ToastHistoryBell from "./components/layout/ToastHistoryBell";
 
@@ -52,6 +52,11 @@ export default function Layout({ children, currentPageName }) {
         title: "Sold",
         url: createPageUrl("SoldInventory"),
         icon: DollarSign,
+      },
+      {
+        title: "Resolve Duplicates",
+        url: createPageUrl("ResolveProductDuplicates"),
+        icon: Copy,
       },
       {
         title: "Add Product",
