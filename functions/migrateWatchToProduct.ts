@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
         }
 
         // Get all Watch records from all companies using filter with empty query
-        const watches = await base44.asServiceRole.entities.Watch.filter({ company_id: { $ne: null } }, "-created_date", 10000);
+        const watches = await base44.asServiceRole.entities.Watch.list("-created_date", 10000);
         
         // Get all existing Products to check for duplicates
         const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 10000);
