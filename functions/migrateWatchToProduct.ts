@@ -14,11 +14,6 @@ Deno.serve(async (req) => {
         
         // Get all existing Products to check for duplicates
         const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 10000);
-        const existingSerialNumbers = new Set(
-            existingProducts
-                .filter(p => p.serial_number)
-                .map(p => `${p.company_id}_${p.serial_number}`)
-        );
         
         console.log(`Found ${watches.length} watches to migrate, ${existingProducts.length} products already exist`);
         
@@ -29,12 +24,8 @@ Deno.serve(async (req) => {
 
         for (const watch of watches) {
             try {
-                // Check if already migrated (by company_id + serial_number)
-                const watchKey = `${watch.company_id}_${watch.serial_number || 'nosn_' + watch.id}`;
-                const existingProduct = existingProducts.find(p => {
-                    const pKey = `${p.company_id}_${p.serial_number || 'nosn_' + p.id}`;
-                    return pKey === watchKey;
-                });
+                // Check if already migrated by original_watch_id
+                const existingProduct = existingProducts.find(p => p.original_watch_id === watch.id);
                 
                 // Extract watch-specific attributes
                 const categorySpecificAttributes = {
@@ -91,7 +82,8 @@ Deno.serve(async (req) => {
                     sold_date: watch.sold_date,
                     sold_platform: watch.sold_platform,
                     zero_price_reason: watch.zero_price_reason,
-                    category_specific_attributes: categorySpecificAttributes
+                    category_specific_attributes: categorySpecificAttributes,
+                    original_watch_id: watch.id
                 };
 
                 if (existingProduct) {
