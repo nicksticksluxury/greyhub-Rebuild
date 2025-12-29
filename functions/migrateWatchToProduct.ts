@@ -9,8 +9,8 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get all Watch records from all companies
-        const watches = await base44.asServiceRole.entities.Watch.list("-created_date", 10000);
+        // Get all Watch records from all companies using filter with empty query
+        const watches = await base44.asServiceRole.entities.Watch.filter({}, "-created_date", 10000);
         
         // Get all existing Products to check for duplicates
         const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 10000);
