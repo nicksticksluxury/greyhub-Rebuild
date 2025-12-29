@@ -1,4 +1,5 @@
 import AcceptInvitation from './pages/AcceptInvitation';
+import AddProduct from './pages/AddProduct';
 import Auctions from './pages/Auctions';
 import CompanySettings from './pages/CompanySettings';
 import CompleteSignup from './pages/CompleteSignup';
@@ -7,6 +8,7 @@ import Inventory from './pages/Inventory';
 import JoinCompany from './pages/JoinCompany';
 import MigrateData from './pages/MigrateData';
 import OutForRepair from './pages/OutForRepair';
+import ProductDetail from './pages/ProductDetail';
 import SalesView from './pages/SalesView';
 import Settings from './pages/Settings';
 import SoldInventory from './pages/SoldInventory';
@@ -20,13 +22,12 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
-import ProductDetail from './pages/ProductDetail';
-import AddProduct from './pages/AddProduct';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AcceptInvitation": AcceptInvitation,
+    "AddProduct": AddProduct,
     "Auctions": Auctions,
     "CompanySettings": CompanySettings,
     "CompleteSignup": CompleteSignup,
@@ -35,6 +36,7 @@ export const PAGES = {
     "JoinCompany": JoinCompany,
     "MigrateData": MigrateData,
     "OutForRepair": OutForRepair,
+    "ProductDetail": ProductDetail,
     "SalesView": SalesView,
     "Settings": Settings,
     "SoldInventory": SoldInventory,
@@ -48,8 +50,6 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
-    "ProductDetail": ProductDetail,
-    "AddProduct": AddProduct,
 }
 
 export const pagesConfig = {
