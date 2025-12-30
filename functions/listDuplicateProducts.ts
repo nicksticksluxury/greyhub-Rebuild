@@ -10,25 +10,25 @@ Deno.serve(async (req) => {
         }
 
         // Fetch ALL products across all companies using service role
-        const products = await base44.asServiceRole.entities.Product.list('-created_date', 10000);
+        // Use a very high limit to get all records
+        const products = await base44.asServiceRole.entities.Product.list('-created_date', 500000);
 
         // Generate unique keys for each product based on identifying fields
         const groupedProducts = {};
 
         for (const product of products) {
-            // Create a unique key from brand, model, and reference_number (cross-company duplicates)
-            const keyParts = [
-                (product.brand || '').toLowerCase().trim(),
-                (product.model || '').toLowerCase().trim(),
-                (product.reference_number || '').toLowerCase().trim()
-            ];
+            // Create a unique key from brand and model (simpler matching)
+            const brand = (product.brand || '').toLowerCase().trim();
+            const model = (product.model || '').toLowerCase().trim();
+            const ref = (product.reference_number || '').toLowerCase().trim();
             
-            // Skip products with no identifying information
-            if (!keyParts[0] || !keyParts[1]) {
+            // Skip products with no brand
+            if (!brand) {
                 continue;
             }
             
-            const uniqueKey = keyParts.join('|||');
+            // Use brand + model + reference if available, otherwise just brand + model
+            const uniqueKey = ref ? `${brand}|||${model}|||${ref}` : `${brand}|||${model}`;
 
             if (!groupedProducts[uniqueKey]) {
                 groupedProducts[uniqueKey] = [];
