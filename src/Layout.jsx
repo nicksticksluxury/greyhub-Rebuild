@@ -59,7 +59,7 @@ export default function Layout({ children, currentPageName }) {
           icon: Upload,
         },
         {
-          title: "Watch Sources",
+          title: "Product Sources",
           url: createPageUrl("WatchSources"),
           icon: Package,
         },
