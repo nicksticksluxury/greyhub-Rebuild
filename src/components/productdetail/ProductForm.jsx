@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench, Pencil, HelpCircle, Check, ChevronsUpDown } from "lucide-react";
+import DynamicFields from "./DynamicFields";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -324,62 +325,11 @@ export default function ProductForm({ data, onChange, sources, orders, auctions 
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <Label>Movement Type</Label>
-            <Select
-              value={data.category_specific_attributes?.movement_type || data.movement_type || ""}
-              onValueChange={(value) => updateField("movement_type", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Movement" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Automatic">Automatic</SelectItem>
-                <SelectItem value="Digital">Digital</SelectItem>
-                <SelectItem value="Manual">Manual</SelectItem>
-                <SelectItem value="Quartz">Quartz</SelectItem>
-                <SelectItem value="Solar">Solar</SelectItem>
-                <SelectItem value="Unknown">Unknown</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Case Material</Label>
-            <Input
-              value={data.category_specific_attributes?.case_material || data.case_material || ""}
-              onChange={(e) => updateField("case_material", e.target.value)}
-              placeholder="e.g., Stainless Steel"
-            />
-          </div>
-          <div>
-            <Label>Case Size</Label>
-            <Input
-              value={data.category_specific_attributes?.case_size || data.case_size || ""}
-              onChange={(e) => updateField("case_size", e.target.value)}
-              placeholder="e.g., 40mm"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Dial Color</Label>
-            <Input
-              value={data.category_specific_attributes?.dial_color || data.dial_color || ""}
-              onChange={(e) => updateField("dial_color", e.target.value)}
-              placeholder="e.g., Black, Blue"
-            />
-          </div>
-          <div>
-            <Label>Bracelet Material</Label>
-            <Input
-              value={data.category_specific_attributes?.bracelet_material || data.bracelet_material || ""}
-              onChange={(e) => updateField("bracelet_material", e.target.value)}
-              placeholder="e.g., Stainless Steel, Leather"
-            />
-          </div>
-        </div>
+        <DynamicFields 
+          productTypeCode={data.product_type_code}
+          data={data}
+          onChange={onChange}
+        />
 
 
 
