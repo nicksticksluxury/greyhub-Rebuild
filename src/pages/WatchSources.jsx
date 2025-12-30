@@ -117,7 +117,23 @@ export default function WatchSources() {
     const activeProducts = sourceProducts.filter(p => !p.sold).reduce((sum, p) => sum + (p.quantity || 1), 0);
     const soldProducts = sourceProducts.filter(p => p.sold).reduce((sum, p) => sum + (p.quantity || 1), 0);
     const grossIncome = sourceProducts.filter(p => p.sold).reduce((sum, p) => sum + (p.sold_price || 0), 0);
-    const netRevenue = sourceProducts.filter(p => p.sold).reduce((sum, p) => sum + (p.sold_net_proceeds || 0), 0);
+    
+    // Calculate net revenue - use sold_net_proceeds if available, otherwise calculate from sold_price
+    const netRevenue = sourceProducts.filter(p => p.sold).reduce((sum, p) => {
+      if (p.sold_net_proceeds !== null && p.sold_net_proceeds !== undefined) {
+        return sum + p.sold_net_proceeds;
+      }
+      // Fallback: estimate net from sold_price if we have it
+      if (p.sold_price && p.sold_platform) {
+        const platform = p.sold_platform.toLowerCase();
+        // Simple fee estimation (15% for eBay as default)
+        const feeRate = platform === 'ebay' ? 0.15 : 
+                       platform === 'poshmark' ? 0.20 : 
+                       platform === 'whatnot' ? 0.13 : 0.15;
+        return sum + (p.sold_price * (1 - feeRate));
+      }
+      return sum;
+    }, 0);
 
     return {
       totalOrders,
