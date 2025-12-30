@@ -26,24 +26,41 @@ Deno.serve(async (req) => {
         console.log('[DEBUG] Attempting to fetch primary Product with ID:', primaryProductId);
         console.log('[DEBUG] User company_id:', user.data?.company_id || user.company_id);
         
-        // First, let's try to get the product with company_id filter
         const companyId = user.data?.company_id || user.company_id;
-        console.log('[DEBUG] Using asServiceRole to filter Product entity with company_id:', companyId);
         
-        // Fetch the primary Product record
-        const primaryProduct = await base44.asServiceRole.entities.Product.filter({ 
-            id: primaryProductId,
-            company_id: companyId 
-        });
-        console.log('[DEBUG] Primary product fetched, count:', primaryProduct?.length);
-        
-        if (primaryProduct && primaryProduct.length > 0) {
-            console.log('[DEBUG] Found product:', JSON.stringify(primaryProduct[0]));
+        // Try with user-scoped context first
+        console.log('[DEBUG] Trying to fetch with user context');
+        let primaryProduct;
+        try {
+            primaryProduct = await base44.entities.Product.filter({ 
+                id: primaryProductId,
+                company_id: companyId 
+            });
+            console.log('[DEBUG] User context fetch result, count:', primaryProduct?.length);
+        } catch (err) {
+            console.log('[DEBUG] User context fetch failed:', err.message);
         }
+        
+        // If that didn't work, try with service role
         if (!primaryProduct || primaryProduct.length === 0) {
-            console.log('[DEBUG] Primary product not found');
+            console.log('[DEBUG] Trying with asServiceRole');
+            try {
+                primaryProduct = await base44.asServiceRole.entities.Product.filter({ 
+                    id: primaryProductId,
+                    company_id: companyId 
+                });
+                console.log('[DEBUG] Service role fetch result, count:', primaryProduct?.length);
+            } catch (err) {
+                console.log('[DEBUG] Service role fetch failed:', err.message);
+            }
+        }
+        
+        if (!primaryProduct || primaryProduct.length === 0) {
+            console.log('[DEBUG] Primary product not found after both attempts');
             return Response.json({ error: 'Primary product not found' }, { status: 404 });
         }
+        
+        console.log('[DEBUG] Found product:', primaryProduct[0]?.id, primaryProduct[0]?.brand);
 
         const product = primaryProduct[0];
         console.log('[DEBUG] Primary product found:', product.id, product.brand);
