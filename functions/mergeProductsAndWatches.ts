@@ -312,7 +312,8 @@ Deno.serve(async (req) => {
       'sold_net_proceeds', 'sold_date', 'sold_platform', 'zero_price_reason'
     ];
 
-    let fieldsUpdated = 0;
+    // Collect all field merge operations
+    const mergeOperations = [];
 
     for (const { product, watch } of linkedPairs) {
       const productUpdates = {};
@@ -322,10 +323,6 @@ Deno.serve(async (req) => {
       for (const field of fieldsToSync) {
         if (hasData(watch[field]) && !hasData(product[field])) {
           productUpdates[field] = watch[field];
-          if (simulationMode) {
-            addLog(`[SIMULATION] Would copy ${field} from Watch ${watch.id} to Product ${product.id} (${product.brand} ${product.model})`, 'info');
-          }
-          fieldsUpdated++;
         }
       }
 
@@ -333,10 +330,6 @@ Deno.serve(async (req) => {
       for (const field of fieldsToSync) {
         if (hasData(product[field]) && !hasData(watch[field])) {
           watchUpdates[field] = product[field];
-          if (simulationMode) {
-            addLog(`[SIMULATION] Would copy ${field} from Product ${product.id} to Watch ${watch.id} (${product.brand} ${product.model})`, 'info');
-          }
-          fieldsUpdated++;
         }
       }
 
@@ -357,10 +350,6 @@ Deno.serve(async (req) => {
         if (hasData(value) && !hasData(productAttrs[key])) {
           updatedProductAttrs[key] = value;
           productAttrsChanged = true;
-          if (simulationMode) {
-            addLog(`[SIMULATION] Would copy ${key} from Watch ${watch.id} to Product ${product.id} attributes`, 'info');
-          }
-          fieldsUpdated++;
         }
       }
 
@@ -370,27 +359,67 @@ Deno.serve(async (req) => {
 
       // Watch attributes from Product
       for (const [key, value] of Object.entries(productAttrs)) {
-        const watchField = key; // movement_type, case_material, etc.
+        const watchField = key;
         if (hasData(value) && !hasData(watch[watchField])) {
           watchUpdates[watchField] = value;
-          if (simulationMode) {
-            addLog(`[SIMULATION] Would copy ${watchField} from Product ${product.id} to Watch ${watch.id}`, 'info');
-          }
-          fieldsUpdated++;
         }
       }
 
-      // Apply updates
-      if (!simulationMode) {
-        if (Object.keys(productUpdates).length > 0) {
-          await base44.asServiceRole.entities.Product.update(product.id, productUpdates);
-          addLog(`Updated Product ${product.id} with ${Object.keys(productUpdates).length} fields`, 'success');
-        }
+      if (Object.keys(productUpdates).length > 0 || Object.keys(watchUpdates).length > 0) {
+        mergeOperations.push({
+          product,
+          watch,
+          productUpdates,
+          watchUpdates
+        });
+      }
+    }
 
-        if (Object.keys(watchUpdates).length > 0) {
-          await base44.asServiceRole.entities.Watch.update(watch.id, watchUpdates);
-          addLog(`Updated Watch ${watch.id} with ${Object.keys(watchUpdates).length} fields`, 'success');
+    // Execute merge operations in batches
+    let fieldsUpdated = 0;
+    
+    for (let i = 0; i < mergeOperations.length; i += BATCH_SIZE) {
+      const batch = mergeOperations.slice(i, i + BATCH_SIZE);
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(mergeOperations.length / BATCH_SIZE);
+      
+      addLog(`Processing Stage 2 batch ${batchNum}/${totalBatches} (${batch.length} pairs)...`, 'info');
+
+      for (const operation of batch) {
+        const productFieldCount = Object.keys(operation.productUpdates).length;
+        const watchFieldCount = Object.keys(operation.watchUpdates).length;
+        
+        if (simulationMode) {
+          if (productFieldCount > 0) {
+            addLog(`[SIMULATION] Would update Product ${operation.product.id} with ${productFieldCount} fields`, 'info');
+          }
+          if (watchFieldCount > 0) {
+            addLog(`[SIMULATION] Would update Watch ${operation.watch.id} with ${watchFieldCount} fields`, 'info');
+          }
+        } else {
+          try {
+            if (productFieldCount > 0) {
+              await base44.asServiceRole.entities.Product.update(operation.product.id, operation.productUpdates);
+              addLog(`Updated Product ${operation.product.id} with ${productFieldCount} fields`, 'success');
+            }
+            if (watchFieldCount > 0) {
+              await base44.asServiceRole.entities.Watch.update(operation.watch.id, operation.watchUpdates);
+              addLog(`Updated Watch ${operation.watch.id} with ${watchFieldCount} fields`, 'success');
+            }
+          } catch (error) {
+            addLog(`Failed to update pair Product ${operation.product.id} / Watch ${operation.watch.id}: ${error.message}`, 'error');
+          }
         }
+        
+        fieldsUpdated += productFieldCount + watchFieldCount;
+      }
+
+      addLog(`Stage 2 batch ${batchNum}/${totalBatches} complete`, 'success');
+      
+      // Add delay between batches (except for last batch)
+      if (i + BATCH_SIZE < mergeOperations.length && !simulationMode) {
+        addLog('Waiting 3 seconds before next batch...', 'info');
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
     }
 
