@@ -270,8 +270,8 @@ Deno.serve(async (req) => {
                 }
 
                 // 2. Handle Offer (Create or Update)
-                // Determine eBay category ID based on product type
-                const categoryId = getEbayCategoryId(product.product_type_code, productTypeName);
+                // Use product type's eBay category ID if available, otherwise use fallback
+                const categoryId = productType?.ebay_category_id || getEbayCategoryId(product.product_type_code, productTypeName);
                 
                 const offer = {
                     sku: sku,

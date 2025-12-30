@@ -27,6 +27,7 @@ export default function ProductTypeManagement() {
     name: '',
     code: '',
     description: '',
+    ebay_category_id: '',
     active: true
   });
 
@@ -48,7 +49,7 @@ export default function ProductTypeManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries(['productTypes']);
       setShowNewTypeForm(false);
-      setNewType({ name: '', code: '', description: '', active: true });
+      setNewType({ name: '', code: '', description: '', ebay_category_id: '', active: true });
       toast.success('Product type created successfully');
     }
   });
@@ -164,6 +165,15 @@ export default function ProductTypeManagement() {
                       rows={2}
                     />
                   </div>
+                  <div>
+                    <Label>eBay Category ID</Label>
+                    <Input
+                      value={newType.ebay_category_id || ''}
+                      onChange={(e) => setNewType({ ...newType, ebay_category_id: e.target.value })}
+                      placeholder="169291"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Find category IDs at eBay's Category Finder</p>
+                  </div>
                   <div className="flex gap-2">
                     <Button onClick={handleCreateType} size="sm" className="flex-1">
                       <Save className="w-4 h-4 mr-2" />
@@ -186,7 +196,9 @@ export default function ProductTypeManagement() {
                   }`}
                 >
                   <p className="font-semibold">{type.name}</p>
-                  <p className="text-xs opacity-70">{type.code}</p>
+                  {type.ebay_category_id && (
+                    <p className="text-xs opacity-70">eBay Category: {type.ebay_category_id}</p>
+                  )}
                 </button>
               ))}
             </CardContent>
