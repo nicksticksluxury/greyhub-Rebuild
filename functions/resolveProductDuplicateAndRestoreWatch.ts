@@ -80,40 +80,58 @@ Deno.serve(async (req) => {
         
         if (matchedWatch) {
             console.log('[DEBUG] Matched watch found:', matchedWatch.id);
-            // Copy data from Product to Watch
+            // Copy ALL data from Product to Watch (only non-empty fields)
             const updateData = {
-                platform_prices: product.platform_prices,
-                repair_status: product.repair_status,
-                sold: product.sold,
-                sold_price: product.sold_price,
-                sold_net_proceeds: product.sold_net_proceeds,
-                sold_date: product.sold_date,
-                sold_platform: product.sold_platform,
+                photos: product.photos,
                 listing_title: product.listing_title,
-                case_size: product.case_size,
-                dial_color: product.dial_color,
-                bracelet_material: product.bracelet_material,
+                serial_number: product.serial_number,
+                year: product.year,
+                condition: product.condition,
+                movement_type: product.category_specific_attributes?.movement_type || product.movement_type,
+                case_material: product.category_specific_attributes?.case_material || product.case_material,
+                case_size: product.category_specific_attributes?.case_size || product.case_size,
+                dial_color: product.category_specific_attributes?.dial_color || product.dial_color,
+                bracelet_material: product.category_specific_attributes?.bracelet_material || product.bracelet_material,
+                gender: product.gender,
+                tested: product.tested,
+                repair_status: product.repair_status,
                 description: product.description,
-                retail_price: product.retail_price,
-                minimum_price: product.minimum_price,
+                quantity: product.quantity,
+                cost: product.cost,
+                repair_costs: product.repair_costs,
                 msrp: product.msrp,
                 msrp_link: product.msrp_link,
                 identical_listing_link: product.identical_listing_link,
                 identical_listing_links: product.identical_listing_links,
                 ai_instructions: product.ai_instructions,
+                retail_price: product.retail_price,
+                minimum_price: product.minimum_price,
+                platform_prices: product.platform_prices,
+                platform_ids: product.platform_ids,
+                listing_urls: product.listing_urls,
+                exported_to: product.exported_to,
+                source_id: product.source_id,
+                source_order_id: product.source_order_id,
+                auction_id: product.auction_id,
+                market_research: product.market_research,
                 ai_confidence_level: product.ai_confidence_level,
                 comparable_listings_links: product.comparable_listings_links,
                 ai_analysis: product.ai_analysis,
                 platform_descriptions: product.platform_descriptions,
                 images_optimized: product.images_optimized,
                 optimization_status: product.optimization_status,
+                sold: product.sold,
+                sold_price: product.sold_price,
+                sold_net_proceeds: product.sold_net_proceeds,
+                sold_date: product.sold_date,
+                sold_platform: product.sold_platform,
                 zero_price_reason: product.zero_price_reason,
                 migrated_to_product: false
             };
 
-            // Remove undefined values
+            // Remove undefined/null values to avoid overwriting existing Watch data with empty values
             Object.keys(updateData).forEach(key => {
-                if (updateData[key] === undefined) {
+                if (updateData[key] === undefined || updateData[key] === null) {
                     delete updateData[key];
                 }
             });
