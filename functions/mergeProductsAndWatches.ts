@@ -21,18 +21,12 @@ Deno.serve(async (req) => {
 
     // Helper function to generate matching key
     const generateMatchKey = (record, isProduct = false) => {
-      const movementType = isProduct 
-        ? (record.category_specific_attributes?.movement_type || '')
-        : (record.movement_type || '');
-      
       const parts = [
-        record.listing_title || '',
         record.brand || '',
         record.model || '',
         record.reference_number || '',
         record.year || '',
-        record.condition || '',
-        movementType
+        record.condition || ''
       ];
       
       return parts.map(p => String(p).trim().toLowerCase()).join('|');
