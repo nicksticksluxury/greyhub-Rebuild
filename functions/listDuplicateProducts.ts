@@ -1,11 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
+    console.log('[DEBUG] Function invoked!');
     try {
+        console.log('[DEBUG] Creating client...');
         const base44 = createClientFromRequest(req);
+        console.log('[DEBUG] Authenticating user...');
         const user = await base44.auth.me();
+        console.log('[DEBUG] User authenticated:', user?.email);
 
         if (!user) {
+            console.log('[DEBUG] No user, returning 401');
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
