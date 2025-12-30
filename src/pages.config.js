@@ -12,6 +12,7 @@ import OutForRepair from './pages/OutForRepair';
 import ProductDetail from './pages/ProductDetail';
 import Products from './pages/Products';
 import ResolveProductDuplicates from './pages/ResolveProductDuplicates';
+import RestoreData from './pages/RestoreData';
 import SalesView from './pages/SalesView';
 import Settings from './pages/Settings';
 import SoldInventory from './pages/SoldInventory';
@@ -25,7 +26,6 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
-import RestoreData from './pages/RestoreData';
 import __Layout from './Layout.jsx';
 
 
@@ -44,6 +44,7 @@ export const PAGES = {
     "ProductDetail": ProductDetail,
     "Products": Products,
     "ResolveProductDuplicates": ResolveProductDuplicates,
+    "RestoreData": RestoreData,
     "SalesView": SalesView,
     "Settings": Settings,
     "SoldInventory": SoldInventory,
@@ -57,7 +58,6 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
-    "RestoreData": RestoreData,
 }
 
 export const pagesConfig = {

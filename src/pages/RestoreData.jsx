@@ -50,22 +50,28 @@ export default function RestoreData() {
       formData.append('entityName', selectedEntity);
       formData.append('file', selectedFile);
 
-      const response = await base44.functions.invoke('restoreData', formData);
+      const response = await fetch('/api/functions/restoreData', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
 
-      if (response.data.success) {
+      const data = await response.json();
+
+      if (data.success) {
         setResult({
           success: true,
-          message: response.data.message,
-          imported: response.data.imported,
-          total: response.data.total
+          message: data.message,
+          imported: data.imported,
+          total: data.total
         });
       } else {
         setResult({
           success: false,
-          error: response.data.error,
-          details: response.data.details,
-          csvHeaders: response.data.csvHeaders,
-          schemaProperties: response.data.schemaProperties
+          error: data.error,
+          details: data.details,
+          csvHeaders: data.csvHeaders,
+          schemaProperties: data.schemaProperties
         });
       }
     } catch (error) {
