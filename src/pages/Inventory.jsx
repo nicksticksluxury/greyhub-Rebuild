@@ -96,7 +96,7 @@ export default function Inventory() {
           sessionStorage.setItem('ebay_notifications_enabled', 'true');
         }
       } catch (error) {
-        console.error("Failed to auto-enable notifications:", error);
+        // Silently fail - don't clutter console
       }
     };
 
