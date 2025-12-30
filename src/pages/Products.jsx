@@ -3,15 +3,19 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, Trash2, Loader2 } from "lucide-react";
+import { Search, Trash2, Loader2, ArrowUpDown, ArrowUp, ArrowDown, CheckSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState("asc");
   const queryClient = useQueryClient();
 
   const { data: products = [], isLoading } = useQuery({
@@ -35,11 +39,58 @@ export default function Products() {
     }
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (productIds) => {
+      await Promise.all(productIds.map(id => base44.entities.Product.delete(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allProducts'] });
+      setSelectedIds([]);
+      toast.success("Products deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete products: " + error.message);
+    }
+  });
+
   const handleDelete = async (product) => {
     if (!confirm(`Are you sure you want to delete ${product.brand} ${product.model}?`)) {
       return;
     }
     deleteMutation.mutate(product.id);
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} products?`)) {
+      return;
+    }
+    bulkDeleteMutation.mutate(selectedIds);
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectedIds(checked ? filteredProducts.map(p => p.id) : []);
+  };
+
+  const handleSelectOne = (productId, checked) => {
+    if (checked) {
+      setSelectedIds([...selectedIds, productId]);
+    } else {
+      setSelectedIds(selectedIds.filter(id => id !== productId));
+    }
+  };
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1" />;
+    return sortDirection === "asc" ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />;
   };
 
   const filteredProducts = products.filter(product => {
@@ -52,6 +103,36 @@ export default function Products() {
     return matchesSearch;
   });
 
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (!sortField) return 0;
+
+    let aValue, bValue;
+
+    switch (sortField) {
+      case "brand":
+        aValue = `${a.brand || ""} ${a.model || ""}`.toLowerCase();
+        bValue = `${b.brand || ""} ${b.model || ""}`.toLowerCase();
+        break;
+      case "ref":
+        aValue = `${a.reference_number || ""} ${a.serial_number || ""}`.toLowerCase();
+        bValue = `${b.reference_number || ""} ${b.serial_number || ""}`.toLowerCase();
+        break;
+      case "photo":
+        aValue = a.photos?.[0] ? 1 : 0;
+        bValue = b.photos?.[0] ? 1 : 0;
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const allSelected = filteredProducts.length > 0 && selectedIds.length === filteredProducts.length;
+  const someSelected = selectedIds.length > 0 && selectedIds.length < filteredProducts.length;
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-200 shadow-sm">
@@ -63,6 +144,34 @@ export default function Products() {
                 {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} across all companies
               </p>
             </div>
+            {selectedIds.length > 0 && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                  <CheckSquare className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">{selectedIds.length} selected</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedIds([])}
+                    className="h-6 w-6 p-0 hover:bg-blue-100"
+                  >
+                    <X className="w-4 h-4 text-blue-600" />
+                  </Button>
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleteMutation.isPending}
+                >
+                  {bulkDeleteMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4 mr-2" />
+                  )}
+                  Delete Selected
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="mt-6">
@@ -98,10 +207,43 @@ export default function Products() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead className="w-20">Photo</TableHead>
-                    <TableHead>Brand / Model</TableHead>
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={allSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someSelected;
+                        }}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead className="w-20">
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("photo")}
+                        className="h-auto p-0 hover:bg-transparent font-semibold flex items-center"
+                      >
+                        Photo {getSortIcon("photo")}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("brand")}
+                        className="h-auto p-0 hover:bg-transparent font-semibold flex items-center"
+                      >
+                        Brand / Model {getSortIcon("brand")}
+                      </Button>
+                    </TableHead>
                     <TableHead>Company</TableHead>
-                    <TableHead>Ref / Serial</TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("ref")}
+                        className="h-auto p-0 hover:bg-transparent font-semibold flex items-center"
+                      >
+                        Ref / Serial {getSortIcon("ref")}
+                      </Button>
+                    </TableHead>
                     <TableHead>Condition</TableHead>
                     <TableHead className="text-right">Cost</TableHead>
                     <TableHead className="text-right">Retail</TableHead>
@@ -110,14 +252,20 @@ export default function Products() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProducts.map((product) => {
+                  {sortedProducts.map((product) => {
                     const company = companies.find(c => c.id === product.company_id);
                     return (
                       <TableRow 
                         key={product.id} 
-                        className="hover:bg-slate-50 cursor-pointer transition-colors"
+                        className={`hover:bg-slate-50 cursor-pointer transition-colors ${selectedIds.includes(product.id) ? 'bg-blue-50' : ''}`}
                         onClick={() => window.location.href = createPageUrl(`ProductDetail?id=${product.id}`)}
                       >
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox 
+                            checked={selectedIds.includes(product.id)}
+                            onCheckedChange={(checked) => handleSelectOne(product.id, checked)}
+                          />
+                        </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           {product.photos?.[0] ? (
                             typeof product.photos[0] === 'object' && product.photos[0].thumbnail ? (
