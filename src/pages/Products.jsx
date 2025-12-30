@@ -113,6 +113,12 @@ export default function Products() {
         aValue = `${a.brand || ""} ${a.model || ""}`.toLowerCase();
         bValue = `${b.brand || ""} ${b.model || ""}`.toLowerCase();
         break;
+      case "company":
+        const companyA = companies.find(c => c.id === a.company_id);
+        const companyB = companies.find(c => c.id === b.company_id);
+        aValue = (companyA?.name || "").toLowerCase();
+        bValue = (companyB?.name || "").toLowerCase();
+        break;
       case "ref":
         aValue = `${a.reference_number || ""} ${a.serial_number || ""}`.toLowerCase();
         bValue = `${b.reference_number || ""} ${b.serial_number || ""}`.toLowerCase();
@@ -234,7 +240,15 @@ export default function Products() {
                         Brand / Model {getSortIcon("brand")}
                       </Button>
                     </TableHead>
-                    <TableHead>Company</TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort("company")}
+                        className="h-auto p-0 hover:bg-transparent font-semibold flex items-center"
+                      >
+                        Company {getSortIcon("company")}
+                      </Button>
+                    </TableHead>
                     <TableHead>
                       <Button
                         variant="ghost"
