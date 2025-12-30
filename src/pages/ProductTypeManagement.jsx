@@ -22,6 +22,13 @@ export default function ProductTypeManagement() {
     order: 0
   });
   const [showNewFieldForm, setShowNewFieldForm] = useState(false);
+  const [showNewTypeForm, setShowNewTypeForm] = useState(false);
+  const [newType, setNewType] = useState({
+    name: '',
+    code: '',
+    description: '',
+    active: true
+  });
 
   const queryClient = useQueryClient();
 
@@ -34,6 +41,16 @@ export default function ProductTypeManagement() {
     queryKey: ['productTypeFields', selectedType?.code],
     queryFn: () => selectedType ? base44.entities.ProductTypeField.filter({ product_type_code: selectedType.code }) : [],
     enabled: !!selectedType
+  });
+
+  const createTypeMutation = useMutation({
+    mutationFn: (typeData) => base44.entities.ProductType.create(typeData),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['productTypes']);
+      setShowNewTypeForm(false);
+      setNewType({ name: '', code: '', description: '', active: true });
+      toast.success('Product type created successfully');
+    }
   });
 
   const createFieldMutation = useMutation({
@@ -90,14 +107,28 @@ export default function ProductTypeManagement() {
     createFieldMutation.mutate(newField);
   };
 
+  const handleCreateType = () => {
+    if (!newType.name || !newType.code) {
+      toast.error('Name and code are required');
+      return;
+    }
+    createTypeMutation.mutate(newType);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-slate-900">Product Type Management</h1>
-          <Button onClick={() => seedMutation.mutate()} variant="outline">
-            Seed Initial Data
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowNewTypeForm(true)} className="bg-slate-800 hover:bg-slate-900">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product Type
+            </Button>
+            <Button onClick={() => seedMutation.mutate()} variant="outline">
+              Seed Initial Data
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -106,6 +137,44 @@ export default function ProductTypeManagement() {
               <CardTitle>Product Types</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
+              {showNewTypeForm && (
+                <Card className="bg-blue-50 border-2 border-blue-300 p-4 space-y-3">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      value={newType.name}
+                      onChange={(e) => setNewType({ ...newType, name: e.target.value })}
+                      placeholder="Handbag"
+                    />
+                  </div>
+                  <div>
+                    <Label>Code</Label>
+                    <Input
+                      value={newType.code}
+                      onChange={(e) => setNewType({ ...newType, code: e.target.value })}
+                      placeholder="handbag"
+                    />
+                  </div>
+                  <div>
+                    <Label>Description</Label>
+                    <Textarea
+                      value={newType.description}
+                      onChange={(e) => setNewType({ ...newType, description: e.target.value })}
+                      placeholder="Luxury handbags and purses"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleCreateType} size="sm" className="flex-1">
+                      <Save className="w-4 h-4 mr-2" />
+                      Create
+                    </Button>
+                    <Button onClick={() => setShowNewTypeForm(false)} variant="outline" size="sm">
+                      Cancel
+                    </Button>
+                  </div>
+                </Card>
+              )}
               {productTypes.map((type) => (
                 <button
                   key={type.id}
