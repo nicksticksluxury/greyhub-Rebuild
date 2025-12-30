@@ -9,13 +9,8 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const companyId = user.data?.company_id || user.company_id;
-        if (!companyId) {
-            return Response.json({ error: 'No company associated with user' }, { status: 400 });
-        }
-
-        // Fetch all Product records for this company
-        const products = await base44.entities.Product.filter({ company_id: companyId });
+        // Fetch ALL products across all companies using service role
+        const products = await base44.asServiceRole.entities.Product.list('-created_date', 10000);
 
         // Generate unique keys for each product based on identifying fields
         const groupedProducts = {};
@@ -52,9 +47,11 @@ Deno.serve(async (req) => {
         }
 
         return Response.json({
+            success: true,
             totalProducts: products.length,
             duplicateGroupCount: duplicateGroups.length,
-            duplicateGroups: duplicateGroups
+            duplicateGroups: duplicateGroups,
+            note: 'Showing duplicates across ALL companies'
         });
 
     } catch (error) {
