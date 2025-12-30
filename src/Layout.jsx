@@ -64,6 +64,11 @@ export default function Layout({ children, currentPageName }) {
         icon: Copy,
       },
       {
+        title: "Merge Data",
+        url: createPageUrl("MergeData"),
+        icon: Package,
+      },
+      {
         title: "Add Product",
         url: createPageUrl("AddProduct"),
         icon: Upload,
