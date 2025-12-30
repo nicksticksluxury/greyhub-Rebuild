@@ -10,6 +10,7 @@ export default function MergeData() {
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [simulationMode, setSimulationMode] = useState(true);
 
   const handleMerge = async () => {
     setIsRunning(true);
@@ -17,7 +18,7 @@ export default function MergeData() {
     setSummary(null);
 
     try {
-      const response = await base44.functions.invoke('mergeProductsAndWatches');
+      const response = await base44.functions.invoke('mergeProductsAndWatches', { simulationMode });
       
       if (response.data.success) {
         setLogs(response.data.logs || []);
@@ -92,20 +93,20 @@ export default function MergeData() {
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-green-600">{summary.productsCreated}</div>
-                <div className="text-sm text-slate-600">Products Created</div>
+                <div className="text-2xl font-bold text-green-600">{summary.productsToCreate}</div>
+                <div className="text-sm text-slate-600">Products To Create</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-amber-600">{summary.orphanedProducts}</div>
-                <div className="text-sm text-slate-600">Orphaned Products</div>
+                <div className="text-2xl font-bold text-amber-600">{summary.watchesToCreate}</div>
+                <div className="text-sm text-slate-600">Watches To Create</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-blue-600">{summary.recordsMerged}</div>
-                <div className="text-sm text-slate-600">Records Merged</div>
+                <div className="text-2xl font-bold text-blue-600">{summary.fieldsUpdated}</div>
+                <div className="text-sm text-slate-600">Fields To Update</div>
               </CardContent>
             </Card>
           </div>
@@ -115,23 +116,34 @@ export default function MergeData() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Merge Process</span>
-              <Button
-                onClick={handleMerge}
-                disabled={isRunning}
-                className="bg-slate-800 hover:bg-slate-900"
-              >
-                {isRunning ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Running...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Start Merge
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-sm font-normal">
+                  <input
+                    type="checkbox"
+                    checked={simulationMode}
+                    onChange={(e) => setSimulationMode(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  Simulation Mode (Safe)
+                </label>
+                <Button
+                  onClick={handleMerge}
+                  disabled={isRunning}
+                  className={simulationMode ? "bg-blue-600 hover:bg-blue-700" : "bg-red-600 hover:bg-red-700"}
+                >
+                  {isRunning ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Running...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      {simulationMode ? 'Run Simulation' : 'Execute Merge (LIVE)'}
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
