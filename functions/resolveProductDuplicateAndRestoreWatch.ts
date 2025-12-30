@@ -2,34 +2,50 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
     try {
+        console.log('[DEBUG] Function started');
         const base44 = createClientFromRequest(req);
+        console.log('[DEBUG] Client created from request');
+        
         const user = await base44.auth.me();
+        console.log('[DEBUG] User authenticated:', user?.id, user?.email);
 
         if (!user) {
+            console.log('[DEBUG] No user found, returning 401');
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { primaryProductId, duplicateProductIds } = await req.json();
+        const body = await req.json();
+        console.log('[DEBUG] Request body:', JSON.stringify(body));
+        const { primaryProductId, duplicateProductIds } = body;
 
         if (!primaryProductId || !duplicateProductIds || !Array.isArray(duplicateProductIds)) {
+            console.log('[DEBUG] Invalid parameters');
             return Response.json({ error: 'Invalid parameters' }, { status: 400 });
         }
 
+        console.log('[DEBUG] Attempting to fetch primary Product with ID:', primaryProductId);
+        console.log('[DEBUG] Using asServiceRole to filter Product entity');
+        
         // Fetch the primary Product record
         const primaryProduct = await base44.asServiceRole.entities.Product.filter({ id: primaryProductId });
+        console.log('[DEBUG] Primary product fetched, count:', primaryProduct?.length);
         if (!primaryProduct || primaryProduct.length === 0) {
+            console.log('[DEBUG] Primary product not found');
             return Response.json({ error: 'Primary product not found' }, { status: 404 });
         }
 
         const product = primaryProduct[0];
+        console.log('[DEBUG] Primary product found:', product.id, product.brand);
 
         // Find matching Watch record using identifying fields
+        console.log('[DEBUG] Searching for matching Watch records');
         const watches = await base44.asServiceRole.entities.Watch.filter({
             company_id: product.company_id,
             listing_title: product.listing_title,
             brand: product.brand,
             model: product.model
         });
+        console.log('[DEBUG] Found watches:', watches?.length);
 
         let matchedWatch = null;
         
@@ -44,6 +60,7 @@ Deno.serve(async (req) => {
         }
 
         if (matchedWatch) {
+            console.log('[DEBUG] Matched watch found:', matchedWatch.id);
             // Copy data from Product to Watch
             const updateData = {
                 platform_prices: product.platform_prices,
@@ -82,12 +99,16 @@ Deno.serve(async (req) => {
                 }
             });
 
+            console.log('[DEBUG] Updating watch with data');
             await base44.asServiceRole.entities.Watch.update(matchedWatch.id, updateData);
+            console.log('[DEBUG] Watch updated successfully');
 
             // Delete duplicate Product records
+            console.log('[DEBUG] Deleting', duplicateProductIds.length, 'duplicate products');
             for (const dupId of duplicateProductIds) {
                 await base44.asServiceRole.entities.Product.delete(dupId);
             }
+            console.log('[DEBUG] Duplicates deleted');
 
             return Response.json({
                 success: true,
@@ -96,6 +117,7 @@ Deno.serve(async (req) => {
                 deletedProductCount: duplicateProductIds.length
             });
         } else {
+            console.log('[DEBUG] No matching watch found, marking product as orphaned');
             // No matching Watch found - mark primary Product as orphaned
             await base44.asServiceRole.entities.Product.update(primaryProductId, {
                 is_orphaned: true
@@ -116,7 +138,17 @@ Deno.serve(async (req) => {
         }
 
     } catch (error) {
-        console.error('Error resolving duplicate:', error);
-        return Response.json({ error: error.message }, { status: 500 });
+        console.error('[DEBUG] ERROR occurred:', error);
+        console.error('[DEBUG] Error name:', error.name);
+        console.error('[DEBUG] Error message:', error.message);
+        console.error('[DEBUG] Error stack:', error.stack);
+        console.error('[DEBUG] Error status:', error.status);
+        console.error('[DEBUG] Error data:', JSON.stringify(error.data || {}));
+        return Response.json({ 
+            error: error.message,
+            errorName: error.name,
+            errorStatus: error.status,
+            errorData: error.data
+        }, { status: 500 });
     }
 });
