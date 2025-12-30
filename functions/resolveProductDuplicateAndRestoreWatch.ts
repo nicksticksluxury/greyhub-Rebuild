@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
         // Find matching Watch record using identifying fields
         console.log('[DEBUG] Searching for matching Watch records');
-        const watches = await base44.asServiceRole.entities.Watch.filter({
+        const watches = await base44.entities.Watch.filter({
             company_id: product.company_id,
             listing_title: product.listing_title,
             brand: product.brand,
@@ -128,13 +128,13 @@ Deno.serve(async (req) => {
             });
 
             console.log('[DEBUG] Updating watch with data');
-            await base44.asServiceRole.entities.Watch.update(matchedWatch.id, updateData);
+            await base44.entities.Watch.update(matchedWatch.id, updateData);
             console.log('[DEBUG] Watch updated successfully');
 
             // Delete duplicate Product records
             console.log('[DEBUG] Deleting', duplicateProductIds.length, 'duplicate products');
             for (const dupId of duplicateProductIds) {
-                await base44.asServiceRole.entities.Product.delete(dupId);
+                await base44.entities.Product.delete(dupId);
             }
             console.log('[DEBUG] Duplicates deleted');
 
@@ -147,13 +147,13 @@ Deno.serve(async (req) => {
         } else {
             console.log('[DEBUG] No matching watch found, marking product as orphaned');
             // No matching Watch found - mark primary Product as orphaned
-            await base44.asServiceRole.entities.Product.update(primaryProductId, {
+            await base44.entities.Product.update(primaryProductId, {
                 is_orphaned: true
             });
 
             // Still delete the duplicate Products
             for (const dupId of duplicateProductIds) {
-                await base44.asServiceRole.entities.Product.delete(dupId);
+                await base44.entities.Product.delete(dupId);
             }
 
             return Response.json({
