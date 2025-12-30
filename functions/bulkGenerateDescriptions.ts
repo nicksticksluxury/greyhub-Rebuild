@@ -9,13 +9,13 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { watchIds } = await req.json();
+        const { productIds } = await req.json();
 
-        if (!watchIds || !Array.isArray(watchIds) || watchIds.length === 0) {
-            return Response.json({ error: 'Invalid watch IDs' }, { status: 400 });
+        if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+            return Response.json({ error: 'Invalid product IDs' }, { status: 400 });
         }
 
-        const watches = await Promise.all(watchIds.map(id => base44.entities.Watch.get(id)));
+        const products = await Promise.all(productIds.map(id => base44.entities.Product.get(id)));
 
         const results = {
             success: 0,
@@ -25,36 +25,41 @@ Deno.serve(async (req) => {
 
         // Process in parallel batches of 3 to balance speed and rate limits
         const BATCH_SIZE = 3;
-        for (let i = 0; i < watches.length; i += BATCH_SIZE) {
-            const batch = watches.slice(i, i + BATCH_SIZE);
-            await Promise.all(batch.map(async (watch) => {
+        for (let i = 0; i < products.length; i += BATCH_SIZE) {
+            const batch = products.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(async (product) => {
                 try {
-                    if (!watch.brand) {
-                        // Skip without error if barely any info, or maybe better to error
-                        // Let's just try with what we have, but brand is usually essential
+                    if (!product.brand) {
                         throw new Error("Missing brand");
                     }
 
-                    const aiCondition = watch.ai_analysis?.condition_assessment || "";
+                    const productTypes = await base44.entities.ProductType.filter({ code: product.product_type_code });
+                    const productType = productTypes && productTypes.length > 0 ? productTypes[0] : null;
+                    const aiResearchPrompt = productType?.ai_research_prompt || "Research this product thoroughly.";
+
+                    const aiCondition = product.ai_analysis?.condition_assessment || "";
                     const conditionContext = aiCondition ? `\n\nAI Analysis of Condition:\n${aiCondition}` : "";
 
-                    const prompt = `Create a compelling, professional product description for this watch:
+                    const attributesText = product.category_specific_attributes ? 
+                        `\n\nCategory Specific Attributes:\n${JSON.stringify(product.category_specific_attributes, null, 2)}` : "";
 
-Brand: ${watch.brand}
-Model: ${watch.model || "Unknown"}
-Reference: ${watch.reference_number || "N/A"}
-Year: ${watch.year || "Unknown"}
-Condition: ${watch.condition || "N/A"}
-Movement: ${watch.movement_type || "N/A"}
-Case Material: ${watch.case_material || "N/A"}
-Case Size: ${watch.case_size || "N/A"}${conditionContext}
+                    const prompt = `Create a compelling, professional product description for this ${productType?.name || 'product'}:
+
+Brand: ${product.brand}
+Model: ${product.model || "Unknown"}
+Reference: ${product.reference_number || "N/A"}
+Year: ${product.year || "Unknown"}
+Condition: ${product.condition || "N/A"}
+Gender: ${product.gender || "N/A"}${attributesText}${conditionContext}
+
+Product Type Context: ${aiResearchPrompt}
 
 Create an engaging, accurate description that will attract buyers while being completely honest about condition.
 
 CRITICAL CONDITION REQUIREMENTS:
 - If there are scratches, wear, tears, damage, or any cosmetic issues, clearly state them
 - Be specific about the location and severity of any condition issues
-- Use clear, honest language about wear (e.g., "light scratches on bezel", "moderate wear on bracelet")
+- Use clear, honest language about wear
 - Don't hide or minimize flaws - transparency builds trust
 - After noting any issues, you can emphasize strengths and features
 
@@ -63,14 +68,14 @@ Format it in a clear, professional way that can be used on any sales platform.`;
 
                     const description = await base44.integrations.Core.InvokeLLM({ prompt: prompt });
 
-                    await base44.entities.Watch.update(watch.id, { 
+                    await base44.entities.Product.update(product.id, { 
                         description: description
                     });
                     results.success++;
                 } catch (error) {
-                    console.error(`Failed to generate description for watch ${watch.id}:`, error);
+                    console.error(`Failed to generate description for product ${product.id}:`, error);
                     results.failed++;
-                    results.errors.push(`${watch.brand || 'Unknown Watch'}: ${error.message}`);
+                    results.errors.push(`${product.brand || 'Unknown Product'}: ${error.message}`);
                 }
             }));
         }

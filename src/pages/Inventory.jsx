@@ -294,39 +294,35 @@ export default function Inventory() {
   };
 
   const handleBulkGenerateDescriptions = async () => {
-    if (selectedWatchIds.length === 0) return;
-    
-    if (!confirm(`Are you sure you want to generate new titles and descriptions for ${selectedWatchIds.length} watches? This will overwrite existing content.`)) {
+    if (selectedProductIds.length === 0) return;
+
+    if (!confirm(`Are you sure you want to generate new titles and descriptions for ${selectedProductIds.length} products? This will overwrite existing content.`)) {
       return;
     }
 
     setGeneratingDescriptions(true);
-    const total = selectedWatchIds.length;
+    const total = selectedProductIds.length;
     let processed = 0;
     let successCount = 0;
     let failedCount = 0;
 
-    // Create a toast ID to update progress
-    const toastId = toast.loading(`Starting generation for ${total} watches...`);
+    const toastId = toast.loading(`Starting generation for ${total} products...`);
 
     try {
-      // Process in chunks of 1 to ensure we can show progress and avoid timeouts
-      // We could do 2 or 3, but 1 is safest for progress updates
       const CHUNK_SIZE = 1;
-      
+
       for (let i = 0; i < total; i += CHUNK_SIZE) {
-        const chunk = selectedWatchIds.slice(i, i + CHUNK_SIZE);
-        
+        const chunk = selectedProductIds.slice(i, i + CHUNK_SIZE);
+
         try {
-          // Update toast
           toast.loading(`Generating content: ${processed + 1}/${total}`, { id: toastId });
-          
-          const result = await base44.functions.invoke("bulkGenerateDescriptions", { watchIds: chunk });
+
+          const result = await base44.functions.invoke("bulkGenerateDescriptions", { productIds: chunk });
           const { success, failed, errors } = result.data;
-          
+
           successCount += success;
           failedCount += failed;
-          
+
           if (errors && errors.length > 0) {
             console.error("Chunk errors:", errors);
           }
@@ -334,19 +330,18 @@ export default function Inventory() {
           console.error("Chunk failed:", err);
           failedCount += chunk.length;
         }
-        
+
         processed += chunk.length;
       }
 
-      // Final status
       if (failedCount > 0) {
         toast.error(`Finished: ${successCount} updated, ${failedCount} failed`, { id: toastId });
       } else {
-        toast.success(`Successfully updated ${successCount} watches!`, { id: toastId });
+        toast.success(`Successfully updated ${successCount} products!`, { id: toastId });
       }
-      
-      queryClient.invalidateQueries({ queryKey: ['watches'] });
-      setSelectedWatchIds([]);
+
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setSelectedProductIds([]);
 
     } catch (error) {
       console.error(error);

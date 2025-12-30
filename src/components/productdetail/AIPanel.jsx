@@ -37,7 +37,7 @@ const LinkifiedText = ({ text }) => {
   );
 };
 
-export default function AIPanel({ aiAnalysis, onImportData }) {
+export default function AIPanel({ aiAnalysis, onImportData, productType }) {
   const [selectedKeys, setSelectedKeys] = useState(new Set());
 
   // Clear selection when analysis changes
@@ -52,7 +52,7 @@ export default function AIPanel({ aiAnalysis, onImportData }) {
           <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-slate-400" />
           </div>
-          <h3 className="font-semibold text-slate-900">AI Analysis</h3>
+          <h3 className="font-semibold text-slate-900">AI Analysis {productType ? `- ${productType.name}` : ''}</h3>
         </div>
         <p className="text-sm text-slate-500 text-center py-8">
           Click "Analyze with AI" to identify this product and get market pricing recommendations
