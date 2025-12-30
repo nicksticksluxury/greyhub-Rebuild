@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
     }
 
     // Execute operations in batches
-    const BATCH_SIZE = 20;
+    const BATCH_SIZE = 5; // Reduced batch size to avoid rate limits
     let linksEstablished = 0;
     let productsToCreate = 0;
     let watchesToCreate = 0;
@@ -283,8 +283,8 @@ Deno.serve(async (req) => {
       
       // Add delay between batches (except for last batch)
       if (i + BATCH_SIZE < operationsToExecute.length && !simulationMode) {
-        addLog('Waiting 3 seconds before next batch...', 'info');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        addLog('Waiting 10 seconds before next batch...', 'info');
+        await new Promise(resolve => setTimeout(resolve, 10000));
       }
     }
 
@@ -312,6 +312,12 @@ Deno.serve(async (req) => {
       'sold_net_proceeds', 'sold_date', 'sold_platform', 'zero_price_reason'
     ];
 
+    // Helper to filter arrays to only contain valid objects for strict schemas
+    const filterObjectsFromArray = (arr) => {
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(item => typeof item === 'object' && item !== null && !Array.isArray(item));
+    };
+
     // Collect all field merge operations
     const mergeOperations = [];
 
@@ -329,7 +335,12 @@ Deno.serve(async (req) => {
       // Product -> Watch (only if Watch field is empty and Product has data)
       for (const field of fieldsToSync) {
         if (hasData(product[field]) && !hasData(watch[field])) {
-          watchUpdates[field] = product[field];
+          // Special handling for array fields with strict object schemas in Watch
+          if (field === 'repair_costs' || field === 'comparable_listings_links') {
+            watchUpdates[field] = filterObjectsFromArray(product[field]);
+          } else {
+            watchUpdates[field] = product[field];
+          }
         }
       }
 
@@ -376,12 +387,13 @@ Deno.serve(async (req) => {
     }
 
     // Execute merge operations in batches
+    const BATCH_SIZE_STAGE2 = 5; // Separate batch size for stage 2
     let fieldsUpdated = 0;
     
-    for (let i = 0; i < mergeOperations.length; i += BATCH_SIZE) {
-      const batch = mergeOperations.slice(i, i + BATCH_SIZE);
-      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(mergeOperations.length / BATCH_SIZE);
+    for (let i = 0; i < mergeOperations.length; i += BATCH_SIZE_STAGE2) {
+      const batch = mergeOperations.slice(i, i + BATCH_SIZE_STAGE2);
+      const batchNum = Math.floor(i / BATCH_SIZE_STAGE2) + 1;
+      const totalBatches = Math.ceil(mergeOperations.length / BATCH_SIZE_STAGE2);
       
       addLog(`Processing Stage 2 batch ${batchNum}/${totalBatches} (${batch.length} pairs)...`, 'info');
 
@@ -417,9 +429,9 @@ Deno.serve(async (req) => {
       addLog(`Stage 2 batch ${batchNum}/${totalBatches} complete`, 'success');
       
       // Add delay between batches (except for last batch)
-      if (i + BATCH_SIZE < mergeOperations.length && !simulationMode) {
-        addLog('Waiting 3 seconds before next batch...', 'info');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+      if (i + BATCH_SIZE_STAGE2 < mergeOperations.length && !simulationMode) {
+        addLog('Waiting 10 seconds before next batch...', 'info');
+        await new Promise(resolve => setTimeout(resolve, 10000));
       }
     }
 
