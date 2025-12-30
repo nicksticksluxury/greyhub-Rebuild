@@ -79,9 +79,11 @@ export default function AddProduct() {
         throw new Error("User not properly authenticated. Please log out and log back in.");
       }
       
+      // Show product type selection dialog or navigate to type selection
+      // For now, default to 'watch' type
       const productData = {
         company_id: user.company_id,
-        category: "watch",
+        product_type_code: "watch",
         photos: photoObjects,
         brand: "Unknown",
         images_optimized: true
