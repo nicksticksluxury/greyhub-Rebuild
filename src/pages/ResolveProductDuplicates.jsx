@@ -13,6 +13,8 @@ export default function ResolveProductDuplicates() {
   const [resolvingGroups, setResolvingGroups] = useState({});
   const [sources, setSources] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [counts, setCounts] = useState(null);
+  const [loadingCounts, setLoadingCounts] = useState(false);
 
   useEffect(() => {
     loadDuplicates();
@@ -49,6 +51,21 @@ export default function ResolveProductDuplicates() {
       ...selectedProducts,
       [groupKey]: productId
     });
+  };
+
+  const handleGetCounts = async () => {
+    setLoadingCounts(true);
+    try {
+      const response = await base44.functions.invoke('getEntityCounts');
+      if (response.data.success) {
+        setCounts(response.data.counts);
+        toast.success(`Watches: ${response.data.counts.watches}, Products: ${response.data.counts.products}`);
+      }
+    } catch (error) {
+      toast.error('Failed to get counts: ' + error.message);
+    } finally {
+      setLoadingCounts(false);
+    }
   };
 
   const handleResolveGroup = async (group) => {
@@ -108,12 +125,39 @@ export default function ResolveProductDuplicates() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">Resolve Product Duplicates</h1>
-        <p className="text-slate-600 mt-2">
-          {duplicateGroups.length === 0 
-            ? 'No duplicate products found!' 
-            : `Found ${duplicateGroups.length} duplicate ${duplicateGroups.length === 1 ? 'group' : 'groups'} to resolve`}
-        </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Resolve Product Duplicates</h1>
+            <p className="text-slate-600 mt-2">
+              {duplicateGroups.length === 0 
+                ? 'No duplicate products found!' 
+                : `Found ${duplicateGroups.length} duplicate ${duplicateGroups.length === 1 ? 'group' : 'groups'} to resolve`}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {counts && (
+              <div className="text-sm text-slate-600">
+                <span className="font-semibold">Watches: {counts.watches}</span>
+                {' | '}
+                <span className="font-semibold">Products: {counts.products}</span>
+              </div>
+            )}
+            <Button
+              onClick={handleGetCounts}
+              disabled={loadingCounts}
+              variant="outline"
+            >
+              {loadingCounts ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Counting...
+                </>
+              ) : (
+                'Get Record Counts'
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {duplicateGroups.length === 0 ? (
