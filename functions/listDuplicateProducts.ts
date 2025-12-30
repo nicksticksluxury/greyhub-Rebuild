@@ -16,14 +16,17 @@ Deno.serve(async (req) => {
         const groupedProducts = {};
 
         for (const product of products) {
-            // Create a unique key from company_id, listing_title, brand, model, and photos
+            // Create a unique key from brand, model, and reference_number (cross-company duplicates)
             const keyParts = [
-                product.company_id || '',
-                product.listing_title || '',
-                product.brand || '',
-                product.model || '',
-                JSON.stringify(product.photos || []) // Serialize photos array for deep comparison
+                (product.brand || '').toLowerCase().trim(),
+                (product.model || '').toLowerCase().trim(),
+                (product.reference_number || '').toLowerCase().trim()
             ];
+            
+            // Skip products with no identifying information
+            if (!keyParts[0] || !keyParts[1]) {
+                continue;
+            }
             
             const uniqueKey = keyParts.join('|||');
 
