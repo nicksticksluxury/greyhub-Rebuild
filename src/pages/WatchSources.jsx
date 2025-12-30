@@ -25,7 +25,19 @@ export default function WatchSources() {
 
   const { data: sources = [], isLoading, refetch } = useQuery({
     queryKey: ['watchSources'],
-    queryFn: () => base44.entities.WatchSource.list("-total_watches_sourced"),
+    queryFn: () => base44.entities.WatchSource.list("name"),
+    initialData: [],
+  });
+
+  const { data: allOrders = [] } = useQuery({
+    queryKey: ['allSourceOrders'],
+    queryFn: () => base44.entities.SourceOrder.list("-date_received", 1000),
+    initialData: [],
+  });
+
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['allProducts'],
+    queryFn: () => base44.entities.Product.list("-created_date", 2000),
     initialData: [],
   });
 
@@ -86,16 +98,50 @@ export default function WatchSources() {
     createSourceMutation.mutate(data);
   };
 
+  // Calculate stats for each source from actual data
+  const getSourceStats = (sourceId) => {
+    const sourceOrders = allOrders.filter(o => o.source_id === sourceId);
+    const sourceProducts = allProducts.filter(p => {
+      // Check if product is from this source (either directly or via order)
+      if (p.source_id === sourceId) return true;
+      if (p.source_order_id) {
+        const order = allOrders.find(o => o.id === p.source_order_id);
+        return order?.source_id === sourceId;
+      }
+      return false;
+    });
+
+    const totalOrders = sourceOrders.length;
+    const totalProducts = sourceOrders.reduce((sum, o) => sum + (o.initial_quantity || 0), 0);
+    const totalCost = sourceOrders.reduce((sum, o) => sum + (o.total_cost || 0), 0);
+    const activeProducts = sourceProducts.filter(p => !p.sold).reduce((sum, p) => sum + (p.quantity || 1), 0);
+    const soldProducts = sourceProducts.filter(p => p.sold).reduce((sum, p) => sum + (p.quantity || 1), 0);
+    const grossIncome = sourceProducts.filter(p => p.sold).reduce((sum, p) => sum + (p.sold_price || 0), 0);
+    const netRevenue = sourceProducts.filter(p => p.sold).reduce((sum, p) => sum + (p.sold_net_proceeds || 0), 0);
+
+    return {
+      totalOrders,
+      totalProducts,
+      totalCost,
+      activeProducts,
+      soldProducts,
+      grossIncome,
+      netRevenue,
+      balance: totalCost - netRevenue
+    };
+  };
+
   const filteredSources = sources.filter(source => 
     source.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     source.primary_contact?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     source.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalCost = sources.reduce((acc, curr) => acc + (curr.total_cost_sourced || 0), 0);
-  const totalWatches = sources.reduce((acc, curr) => acc + (curr.total_watches_sourced || 0), 0);
-  const totalGrossIncome = sources.reduce((acc, curr) => acc + (curr.total_revenue_sourced || 0), 0);
-  const totalNetRevenue = sources.reduce((acc, curr) => acc + (curr.total_net_revenue || 0), 0);
+  // Calculate totals across all sources
+  const totalCost = sources.reduce((sum, s) => sum + getSourceStats(s.id).totalCost, 0);
+  const totalWatches = sources.reduce((sum, s) => sum + getSourceStats(s.id).totalProducts, 0);
+  const totalGrossIncome = sources.reduce((sum, s) => sum + getSourceStats(s.id).grossIncome, 0);
+  const totalNetRevenue = sources.reduce((sum, s) => sum + getSourceStats(s.id).netRevenue, 0);
   const totalBalance = totalCost - totalNetRevenue;
   const isTotalProfitable = totalBalance < 0;
 
@@ -237,8 +283,8 @@ export default function WatchSources() {
                   </TableRow>
                 ) : (
                   filteredSources.map((source) => {
-                      const balance = (source.total_cost_sourced || 0) - (source.total_net_revenue || 0);
-                      const isProfitable = balance < 0;
+                      const stats = getSourceStats(source.id);
+                      const isProfitable = stats.balance < 0;
 
                       return (
                     <TableRow key={source.id} className="hover:bg-slate-50 group">
@@ -254,37 +300,37 @@ export default function WatchSources() {
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="text-slate-600 text-sm font-medium">
-                          {source.total_orders || 0}
+                          {stats.totalOrders}
                         </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                          {source.total_watches_sourced || 0}
+                          {stats.totalProducts}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
                           <Link to={`${createPageUrl("SourceWatches")}?sourceId=${source.id}&view=active`}>
                               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer">
-                                  {source.active_watches_count || 0}
+                                  {stats.activeProducts}
                               </Badge>
                           </Link>
                       </TableCell>
                       <TableCell className="text-center">
                           <Link to={`${createPageUrl("SourceWatches")}?sourceId=${source.id}&view=sold`}>
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 cursor-pointer">
-                                  {source.sold_watches_count || 0}
+                                  {stats.soldProducts}
                               </Badge>
                           </Link>
                       </TableCell>
                       <TableCell className="text-right font-medium text-slate-900">
-                        ${(source.total_cost_sourced || 0).toLocaleString()}
+                        ${stats.totalCost.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right font-medium text-green-700">
-                        ${(source.total_revenue_sourced || 0).toLocaleString()}
+                        ${stats.grossIncome.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right font-bold">
                           <span className={isProfitable ? "text-green-600" : "text-red-600"}>
-                              ${Math.abs(balance).toLocaleString()}
+                              ${Math.abs(stats.balance).toLocaleString()}
                           </span>
                           <span className={`text-[10px] block ${isProfitable ? "text-green-400" : "text-red-300"}`}>
                               {isProfitable ? "PROFIT" : "INVESTED"}
