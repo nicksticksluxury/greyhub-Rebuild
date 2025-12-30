@@ -15,6 +15,7 @@ export default function ResolveProductDuplicates() {
   const [orders, setOrders] = useState([]);
   const [counts, setCounts] = useState(null);
   const [loadingCounts, setLoadingCounts] = useState(false);
+  const [companies, setCompanies] = useState([]);
 
   useEffect(() => {
     loadDuplicates();
@@ -35,14 +36,16 @@ export default function ResolveProductDuplicates() {
 
   const loadSourcesAndOrders = async () => {
     try {
-      const [sourcesData, ordersData] = await Promise.all([
+      const [sourcesData, ordersData, companiesData] = await Promise.all([
         base44.entities.WatchSource.list(),
-        base44.entities.SourceOrder.list()
+        base44.entities.SourceOrder.list(),
+        base44.entities.Company.list()
       ]);
       setSources(sourcesData);
       setOrders(ordersData);
+      setCompanies(companiesData);
     } catch (error) {
-      console.error('Failed to load sources/orders:', error);
+      console.error('Failed to load sources/orders/companies:', error);
     }
   };
 
@@ -182,7 +185,9 @@ export default function ResolveProductDuplicates() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                  {group.products.map((product) => (
+                  {group.products.map((product) => {
+                    const company = companies.find(c => c.id === product.company_id);
+                    return (
                     <div
                       key={product.id}
                       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
@@ -208,6 +213,11 @@ export default function ResolveProductDuplicates() {
                       )}
                       
                       <div className="space-y-1 text-sm">
+                        {company && (
+                          <Badge variant="outline" className="mb-2 text-xs bg-blue-50 text-blue-700 border-blue-300">
+                            {company.name}
+                          </Badge>
+                        )}
                         <p className="font-semibold text-slate-900">{product.brand} {product.model}</p>
                         {product.listing_title && (
                           <p className="text-slate-600 text-xs">{product.listing_title}</p>
@@ -261,8 +271,9 @@ export default function ResolveProductDuplicates() {
                           <Badge className="bg-amber-600 text-white">Out for Repair</Badge>
                         )}
                       </div>
-                    </div>
-                  ))}
+                      </div>
+                      );
+                      })}
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t">
