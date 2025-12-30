@@ -105,7 +105,7 @@ export default function Inventory() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
-    queryFn: () => base44.entities.Watch.list("-created_date", 1000),
+    queryFn: () => base44.entities.Product.list("-created_date", 1000),
   });
 
   const { data: auctions = [] } = useQuery({

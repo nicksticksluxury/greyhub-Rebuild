@@ -44,10 +44,21 @@ export default function ProductDetail() {
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', productId],
     queryFn: async () => {
-      const products = await base44.entities.Watch.list();
+      const products = await base44.entities.Product.list();
       return products.find(p => p.id === productId);
     },
     enabled: !!productId,
+  });
+
+  const { data: productTypes = [] } = useQuery({
+    queryKey: ['productTypes'],
+    queryFn: () => base44.entities.ProductType.list()
+  });
+
+  const { data: productTypeFields = [] } = useQuery({
+    queryKey: ['productTypeFields', product?.product_type_code],
+    queryFn: () => base44.entities.ProductTypeField.filter({ product_type_code: product.product_type_code }),
+    enabled: !!product?.product_type_code
   });
 
   const { data: sources = [] } = useQuery({
@@ -102,10 +113,10 @@ export default function ProductDetail() {
   }, [hasUnsavedChanges]);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.Watch.update(productId, data),
+    mutationFn: (data) => base44.entities.Product.update(productId, data),
     onSuccess: (updatedProduct) => {
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
-      queryClient.invalidateQueries({ queryKey: ['watches'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       setEditedData(updatedProduct);
       setOriginalData(updatedProduct);
       setHasUnsavedChanges(false);
@@ -114,7 +125,7 @@ export default function ProductDetail() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => base44.entities.Watch.delete(productId),
+    mutationFn: () => base44.entities.Product.delete(productId),
     onSuccess: () => {
       toast.success("Product deleted");
       navigate(createPageUrl("Inventory"));
@@ -204,7 +215,7 @@ export default function ProductDetail() {
     
     try {
       // Create the sold product record
-      await base44.entities.Watch.create(soldProductData);
+      await base44.entities.Product.create(soldProductData);
       
       // Update original product
       const calculatedMinPrice = calculateMinimumPrice(editedData.cost);
@@ -226,7 +237,7 @@ export default function ProductDetail() {
       await base44.entities.Product.update(productId, updatedOriginal);
       
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
-      queryClient.invalidateQueries({ queryKey: ['watches'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       
       // Reset edited data sold status to false since we're keeping the original
       const refreshedProduct = await base44.entities.Product.list().then(products => products.find(p => p.id === productId));
@@ -812,12 +823,12 @@ YOUR RESPONSE MUST INCLUDE:
       
       setEditedData(updatedData);
       
-      await base44.entities.Watch.update(productId, { 
+      await base44.entities.Product.update(productId, { 
         ai_analysis: combinedAnalysis,
         ...(pricing.msrp_source_link && !editedData.msrp_link && { msrp_link: pricing.msrp_source_link })
       });
 
-      const refreshedProduct = await base44.entities.Watch.list().then(products => products.find(p => p.id === productId));
+      const refreshedProduct = await base44.entities.Product.list().then(products => products.find(p => p.id === productId));
       setOriginalData(refreshedProduct);
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
       
@@ -1171,12 +1182,12 @@ Every comparable MUST show model number "${editedData.reference_number}".
 
       setEditedData(updatedData);
 
-      await base44.entities.Watch.update(productId, { 
+      await base44.entities.Product.update(productId, { 
         ai_analysis: updatedAnalysis,
         ...(msrpResult.msrp_source_link && !editedData.msrp_link && { msrp_link: msrpResult.msrp_source_link })
       });
 
-      const refreshedProduct = await base44.entities.Watch.list().then(products => products.find(p => p.id === productId));
+      const refreshedProduct = await base44.entities.Product.list().then(products => products.find(p => p.id === productId));
       setOriginalData(refreshedProduct);
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
 
@@ -1534,6 +1545,8 @@ Every comparable MUST show model number "${editedData.reference_number}".
                     sources={sources}
                     orders={orders}
                     auctions={auctions}
+                    productTypes={productTypes}
+                    productTypeFields={productTypeFields}
                   />
                 </div>
               </div>

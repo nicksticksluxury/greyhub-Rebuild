@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -14,8 +16,14 @@ import { optimizeImages } from "../components/utils/imageOptimizer";
 export default function AddProduct() {
   const navigate = useNavigate();
   const [photos, setPhotos] = useState([]);
+  const [productTypeCode, setProductTypeCode] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, stage: '' });
+
+  const { data: productTypes = [] } = useQuery({
+    queryKey: ['productTypes'],
+    queryFn: () => base44.entities.ProductType.list('-created_date', 100)
+  });
 
   const handlePhotosSelected = async (files) => {
     setPhotos([...photos, ...files]);
@@ -28,6 +36,11 @@ export default function AddProduct() {
   const createProduct = async () => {
     if (photos.length === 0) {
       toast.error("Please upload at least one photo");
+      return;
+    }
+
+    if (!productTypeCode) {
+      toast.error("Please select a product type");
       return;
     }
 
@@ -81,7 +94,7 @@ export default function AddProduct() {
       
       const productData = {
         company_id: user.company_id,
-        category: "watch",
+        product_type_code: productTypeCode,
         photos: photoObjects,
         brand: "Unknown",
         images_optimized: true
@@ -110,6 +123,22 @@ export default function AddProduct() {
         </div>
 
         <Card className="p-6 mb-6">
+          <div className="mb-6">
+            <Label className="mb-3 block text-lg font-semibold">Select Product Type</Label>
+            <Select value={productTypeCode} onValueChange={setProductTypeCode}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Choose product type" />
+              </SelectTrigger>
+              <SelectContent>
+                {productTypes.map((type) => (
+                  <SelectItem key={type.code} value={type.code}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Label className="mb-3 block">Product Photos</Label>
           <PhotoUpload 
             photos={photos}
@@ -132,7 +161,7 @@ export default function AddProduct() {
 
         <Button
           onClick={createProduct}
-          disabled={photos.length === 0 || uploading}
+          disabled={photos.length === 0 || !productTypeCode || uploading}
           className="w-full bg-slate-800 hover:bg-slate-900 h-12"
         >
           {uploading ? (

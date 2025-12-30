@@ -10,7 +10,6 @@ import MergeData from './pages/MergeData';
 import MigrateData from './pages/MigrateData';
 import OutForRepair from './pages/OutForRepair';
 import ProductDetail from './pages/ProductDetail';
-import Products from './pages/Products';
 import ResolveProductDuplicates from './pages/ResolveProductDuplicates';
 import RestoreData from './pages/RestoreData';
 import SalesView from './pages/SalesView';
@@ -43,7 +42,6 @@ export const PAGES = {
     "MigrateData": MigrateData,
     "OutForRepair": OutForRepair,
     "ProductDetail": ProductDetail,
-    "Products": Products,
     "ResolveProductDuplicates": ResolveProductDuplicates,
     "RestoreData": RestoreData,
     "SalesView": SalesView,
