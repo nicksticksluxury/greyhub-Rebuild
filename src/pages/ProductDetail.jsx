@@ -50,6 +50,16 @@ export default function ProductDetail() {
     enabled: !!productId,
   });
 
+  const { data: productType } = useQuery({
+    queryKey: ['productType', product?.product_type_code],
+    queryFn: async () => {
+      if (!product?.product_type_code) return null;
+      const types = await base44.entities.ProductType.filter({ code: product.product_type_code });
+      return types && types.length > 0 ? types[0] : null;
+    },
+    enabled: !!product?.product_type_code,
+  });
+
   const { data: sources = [] } = useQuery({
     queryKey: ['watchSources'],
     queryFn: () => base44.entities.WatchSource.list(),
@@ -267,8 +277,18 @@ export default function ProductDetail() {
     setAnalysisError(null);
     
     try {
+      // Fetch product type information
+      const productTypes = await base44.entities.ProductType.filter({ code: editedData.product_type_code });
+      const productType = productTypes && productTypes.length > 0 ? productTypes[0] : null;
+      const productTypeName = productType?.name || 'Product';
+      const aiResearchPrompt = productType?.ai_research_prompt || 'Research this product thoroughly.';
+      
+      // Fetch product type fields for this product type
+      const productTypeFields = editedData.product_type_code ? 
+        await base44.entities.ProductTypeField.filter({ product_type_code: editedData.product_type_code }) : [];
+      
       // STEP 1: Identify product from user's photos
-      setAnalysisStep("🔍 Step 1/3: Examining your product photos...");
+      setAnalysisStep(`🔍 Step 1/3: Examining your ${productTypeName} photos...`);
       console.log("=== STEP 1: IDENTIFICATION ===");
       
       // Get optimized full resolution photos for AI analysis
@@ -288,102 +308,96 @@ export default function ProductDetail() {
       const msrpLinkContext = editedData.msrp_link ? `\n\nIMPORTANT: The user provided this manufacturer/retailer link with exact specifications: ${editedData.msrp_link}\nUse this as the PRIMARY source of truth for model details.` : '';
       const aiInstructionsContext = editedData.ai_instructions ? `\n\n🔴 CRITICAL USER INSTRUCTIONS:\n${editedData.ai_instructions}\n\nYou MUST consider these user instructions carefully in your analysis.` : '';
 
+      // Build JSON schema for identification based on product type fields
+      const identificationSchema = {
+        type: "object",
+        properties: {
+          listing_title: { type: "string", description: "Optimized listing title (max 80 chars)" },
+          identified_brand: { type: "string" },
+          identified_model: { type: "string", description: "The descriptive model name" },
+          reference_number: { type: "string", description: "Model/reference code if applicable" },
+          serial_number: { type: "string" },
+          estimated_year: { type: "string" },
+          identified_gender: { type: "string", enum: ["mens", "womens", "unisex"] },
+          condition_assessment: { type: "string" },
+          notable_features: { type: "array", items: { type: "string" } },
+          all_visible_text: { type: "string" },
+          confidence_level: { type: "string" },
+          category_specific_attributes: { type: "object", description: "Product type specific attributes" }
+        }
+      };
+      
+      // Add product type specific fields to the schema
+      productTypeFields.forEach(field => {
+        if (field.field_type === 'select') {
+          identificationSchema.properties.category_specific_attributes.properties = identificationSchema.properties.category_specific_attributes.properties || {};
+          identificationSchema.properties.category_specific_attributes.properties[field.field_name] = {
+            type: "string",
+            enum: field.options || [],
+            description: field.field_label
+          };
+        } else if (field.field_type === 'number' || field.field_type === 'currency') {
+          identificationSchema.properties.category_specific_attributes.properties = identificationSchema.properties.category_specific_attributes.properties || {};
+          identificationSchema.properties.category_specific_attributes.properties[field.field_name] = {
+            type: "number",
+            description: field.field_label
+          };
+        } else if (field.field_type === 'checkbox') {
+          identificationSchema.properties.category_specific_attributes.properties = identificationSchema.properties.category_specific_attributes.properties || {};
+          identificationSchema.properties.category_specific_attributes.properties[field.field_name] = {
+            type: "boolean",
+            description: field.field_label
+          };
+        } else {
+          identificationSchema.properties.category_specific_attributes.properties = identificationSchema.properties.category_specific_attributes.properties || {};
+          identificationSchema.properties.category_specific_attributes.properties[field.field_name] = {
+            type: "string",
+            description: field.field_label
+          };
+        }
+      });
+
       const identification = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert watch dealer examining this watch. Your goal is to identify the EXACT model number.
+        prompt: `You are an expert dealer examining this ${productTypeName}. ${aiResearchPrompt}
 
 STEP 1 - PHOTOGRAPH EXAMINATION:
-Carefully examine ALL areas of the watch in these photos:
-
-1. DIAL FACE:
-   - Brand name (top center)
-   - Model name (below brand or on dial)
-   - Any text, numbers, or codes
-   - Subdial markings
-
-2. CASE BACK:
-   - Model/Reference numbers (often 4-6 digits like "6694" or alphanumeric)
-   - Serial numbers
-   - DO NOT confuse battery specs or water resistance ratings with model numbers
-   - Material markings (e.g., "STAINLESS STEEL")
-
-3. BETWEEN LUGS (where strap attaches):
-   - Reference numbers often stamped here
-   - Look at BOTH sides (12 o'clock and 6 o'clock positions)
-
-4. CLASP/BUCKLE:
-   - Brand logos
-   - Additional reference codes
-
-5. ANY PAPERS/DOCUMENTATION visible in photos
-
-CRITICAL - MODEL NUMBER IDENTIFICATION:
-- The MODEL NUMBER is usually a 4-6 digit code or alphanumeric string
-- It's different from the serial number
-- Examples: "16610", "6694", "SKX007", "AQ230"
-- This is THE MOST IMPORTANT piece of information - without it, pricing will be wrong
+Carefully examine ALL areas of this ${productTypeName} in these photos. Look for:
+- Brand name and logos
+- Model names or identifiers  
+- Serial numbers or reference codes
+- Materials and construction details
+- Condition and wear patterns
+- Any tags, labels, or documentation
+- ALL visible text and markings
 
 ${msrpLinkContext}${contextStr}${aiInstructionsContext}
 
-STEP 2 - REPORT YOUR FINDINGS AND CRITICAL JSON MAPPING:
-List EVERYTHING you see and map to the EXACT JSON fields specified below:
+STEP 2 - PRODUCT TYPE SPECIFIC ATTRIBUTES:
+For this ${productTypeName}, identify these specific attributes:
+${productTypeFields.map(f => `- ${f.field_label}${f.options && f.options.length > 0 ? ` (options: ${f.options.join(', ')})` : ''}`).join('\n')}
 
-- Brand → identified_brand (e.g., "Rolex", "Seiko", "Nixon")
+Map these to the category_specific_attributes object in your response.
 
-- Model Name → identified_model: The descriptive name like "Submariner", "Speedmaster", "Tank"
-  * Use WORDS, NOT numbers for this field
-  * Examples that go in identified_model: "Submariner", "Tank", "Speedmaster", "Pilot", "Santos"
-  * If you ONLY see alphanumeric codes with NO descriptive name, put "Unknown"
-
-- Model Number → reference_number: The alphanumeric code like "16610", "SKX007", "ZR15490"
-  * This is THE CRITICAL IDENTIFIER - usually 4-8 digits/letters
-  * This is stamped on the case back or between lugs
-  * Examples that go in reference_number: "16610", "ZR15490", "SKX007", "126334"
-  * NEVER put words like "Submariner" here - ONLY the alphanumeric code
-
-- Serial Number (if visible and different from model number)
-- Year estimate (based on style, condition, serial if visible)
-- Gender (Mens, Womens, or Unisex)
-- Movement Type (MUST be: "Automatic", "Digital", "Manual", "Quartz", "Solar", or "Unknown")
-- Case Material (e.g., "Stainless Steel", "Gold", "Titanium")
-- Case Size (e.g., "40mm", "42mm")
-- Dial Color (e.g., "Black", "White", "Blue")
-- Bracelet/Strap Material (e.g., "Stainless Steel", "Leather", "Rubber")
-- Condition Assessment
+STEP 3 - REPORT YOUR FINDINGS:
+- Brand → identified_brand
+- Model Name → identified_model (descriptive name)
+- Model Number → reference_number (alphanumeric code if applicable)
+- Serial Number (if visible)
+- Year estimate
+- Gender (mens, womens, or unisex)
+- Condition Assessment (detailed)
 - Notable Features
-- ALL visible text and numbers from every part of the watch
+- Category-specific attributes based on the fields listed above
 
-STEP 3 - CREATE LISTING TITLE:
-Format: Brand + Model Name + Model Number + Key Material + Color + "Watch"
+STEP 4 - CREATE LISTING TITLE:
+Format: Brand + Model + Key Features + "${productTypeName}"
 Max 80 characters
-Example: "Rolex Submariner 16610 Stainless Steel Black Dial Automatic Watch"
+Example: "Gucci Marmont Leather Crossbody ${productTypeName}"
 
 CONFIDENCE LEVEL:
-Rate your confidence in the model number identification:
-- "High" if you can clearly see the model number in photos
-- "Medium" if you're inferring from model name/features
-- "Low" if you're guessing`,
+Rate your identification confidence (High/Medium/Low)`,
         file_urls: photosToAnalyze,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            listing_title: { type: "string", description: "Optimized listing title (max 80 chars)" },
-            identified_brand: { type: "string" },
-            identified_model: { type: "string", description: "CRITICAL: The descriptive model name using WORDS (e.g. 'Submariner', 'Tank', 'Pilot'). Use 'Unknown' if only an alphanumeric code is visible with no name." },
-            reference_number: { type: "string", description: "CRITICAL: The alphanumeric model/reference code (e.g. '16610', 'ZR15490', 'SKX007'). This must be NUMBERS/LETTERS, NOT words like 'Submariner'." },
-            serial_number: { type: "string" },
-            estimated_year: { type: "string" },
-            identified_gender: { type: "string", enum: ["mens", "womens", "unisex"] },
-            movement_type: { type: "string", enum: ["Automatic", "Digital", "Manual", "Quartz", "Solar", "Unknown"], description: "Must be exactly one of these values with proper capitalization" },
-            case_material: { type: "string" },
-            case_size: { type: "string" },
-            dial_color: { type: "string" },
-            bracelet_material: { type: "string" },
-            condition_assessment: { type: "string" },
-            notable_features: { type: "array", items: { type: "string" } },
-            all_visible_text: { type: "string" },
-            confidence_level: { type: "string" }
-          }
-        }
+        response_json_schema: identificationSchema
       });
 
       console.log("Identified:", identification);
@@ -1542,6 +1556,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
                 <AIPanel 
                   aiAnalysis={editedData.ai_analysis}
                   onImportData={importAIData}
+                  productType={productType}
                 />
               </div>
             </div>

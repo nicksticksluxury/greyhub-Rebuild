@@ -55,7 +55,7 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
           <h3 className="font-semibold text-slate-900">AI Analysis {productType ? `- ${productType.name}` : ''}</h3>
         </div>
         <p className="text-sm text-slate-500 text-center py-8">
-          Click "Analyze with AI" to identify this product and get market pricing recommendations
+          Click "Analyze with AI" to identify this {productType?.name || 'product'} and get market pricing recommendations
         </p>
       </Card>
     );
@@ -74,9 +74,15 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
   const handleImportSelected = () => {
     const updates = {};
     const prices = {};
+    const categoryAttrs = {};
     
     selectedKeys.forEach(key => {
-      if (key.startsWith('price_')) {
+      if (key.startsWith('category_attr_')) {
+        const attrKey = key.replace('category_attr_', '');
+        if (aiAnalysis.category_specific_attributes && aiAnalysis.category_specific_attributes[attrKey] !== undefined) {
+          categoryAttrs[attrKey] = aiAnalysis.category_specific_attributes[attrKey];
+        }
+      } else if (key.startsWith('price_')) {
         const platform = key.replace('price_', '');
         let price = aiAnalysis.pricing_recommendations[platform];
         // Round whatnot prices
@@ -137,6 +143,10 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
       updates.platform_prices = prices;
     }
 
+    if (Object.keys(categoryAttrs).length > 0) {
+      updates.category_specific_attributes = categoryAttrs;
+    }
+
     onImportData("batch_update", updates);
     setSelectedKeys(new Set());
   };
@@ -174,13 +184,19 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
   const hasBasicInfo = aiAnalysis.identified_brand || aiAnalysis.identified_model;
 
   const selectAllBasicInfo = () => {
-    const basicInfoKeys = ['listing_title', 'brand', 'model', 'reference_number', 'serial_number', 'year', 'gender', 'movement_type', 'case_material', 'case_size', 'dial_color', 'bracelet_material'];
+    const basicInfoKeys = ['listing_title', 'brand', 'model', 'reference_number', 'serial_number', 'year', 'gender'];
     const newSet = new Set(selectedKeys);
     basicInfoKeys.forEach(key => {
       if (aiAnalysis[key] || aiAnalysis[`identified_${key}`]) {
         newSet.add(key);
       }
     });
+    // Add category specific attributes
+    if (aiAnalysis.category_specific_attributes) {
+      Object.keys(aiAnalysis.category_specific_attributes).forEach(key => {
+        newSet.add(`category_attr_${key}`);
+      });
+    }
     setSelectedKeys(newSet);
   };
 
@@ -267,21 +283,14 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                 {aiAnalysis.identified_gender && (
                   <SelectableItem id="gender" label="Gender" value={aiAnalysis.identified_gender} />
                 )}
-                {aiAnalysis.movement_type && (
-                  <SelectableItem id="movement_type" label="Movement" value={aiAnalysis.movement_type} />
-                )}
-                {aiAnalysis.case_material && (
-                  <SelectableItem id="case_material" label="Case Material" value={aiAnalysis.case_material} />
-                )}
-                {aiAnalysis.case_size && (
-                  <SelectableItem id="case_size" label="Case Size" value={aiAnalysis.case_size} />
-                )}
-                {aiAnalysis.dial_color && (
-                  <SelectableItem id="dial_color" label="Dial Color" value={aiAnalysis.dial_color} />
-                )}
-                {aiAnalysis.bracelet_material && (
-                  <SelectableItem id="bracelet_material" label="Bracelet Material" value={aiAnalysis.bracelet_material} />
-                )}
+                {aiAnalysis.category_specific_attributes && Object.entries(aiAnalysis.category_specific_attributes).map(([key, value]) => (
+                  <SelectableItem 
+                    key={key} 
+                    id={`category_attr_${key}`} 
+                    label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
+                    value={typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)} 
+                  />
+                ))}
             </div>
           )}
 
