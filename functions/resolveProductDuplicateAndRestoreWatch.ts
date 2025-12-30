@@ -69,9 +69,9 @@ Deno.serve(async (req) => {
         console.log('[DEBUG] Searching for matching Watch records');
         const watches = await base44.entities.Watch.filter({
             company_id: product.company_id,
-            listing_title: product.listing_title,
             brand: product.brand,
-            model: product.model
+            model: product.model,
+            reference_number: product.reference_number
         });
         console.log('[DEBUG] Found watches:', watches?.length);
 
