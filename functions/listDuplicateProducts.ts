@@ -10,8 +10,9 @@ Deno.serve(async (req) => {
         }
 
         // Fetch ALL products across all companies using service role
-        // Use a very high limit to get all records
-        const products = await base44.asServiceRole.entities.Product.list('-created_date', 500000);
+        console.log('[DEBUG] Starting to fetch all products...');
+        const products = await base44.asServiceRole.entities.Product.filter({});
+        console.log(`[DEBUG] Fetched ${products.length} total products`);
 
         // Generate unique keys for each product based on identifying fields
         const groupedProducts = {};
@@ -37,6 +38,8 @@ Deno.serve(async (req) => {
             groupedProducts[uniqueKey].push(product);
         }
 
+        console.log(`[DEBUG] Grouped into ${Object.keys(groupedProducts).length} unique keys`);
+
         // Filter to only groups with more than one product (duplicates)
         const duplicateGroups = [];
         for (const key in groupedProducts) {
@@ -48,6 +51,8 @@ Deno.serve(async (req) => {
                 });
             }
         }
+
+        console.log(`[DEBUG] Found ${duplicateGroups.length} duplicate groups`);
 
         return Response.json({
             success: true,
