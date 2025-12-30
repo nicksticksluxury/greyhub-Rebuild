@@ -104,7 +104,7 @@ export default function WatchSources() {
       <div className="max-w-[1600px] mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Watch Sources</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Product Sources</h1>
             <p className="text-slate-500 mt-1">Manage your suppliers and track performance</p>
           </div>
           <div className="flex gap-2">
@@ -150,7 +150,7 @@ export default function WatchSources() {
                 <Package className="w-5 h-5" />
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs text-slate-500 font-medium truncate">Total Watches</p>
+                <p className="text-xs text-slate-500 font-medium truncate">Total Products</p>
                 <h3 className="text-xl font-bold text-slate-900">{totalWatches}</h3>
               </div>
             </CardContent>

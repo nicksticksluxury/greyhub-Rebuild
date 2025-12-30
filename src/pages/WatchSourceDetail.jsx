@@ -209,13 +209,13 @@ export default function WatchSourceDetail() {
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-500 font-medium uppercase">Total Watches</p>
+                  <p className="text-xs text-slate-500 font-medium uppercase">Total Products</p>
                   <p className="text-2xl font-bold text-blue-600 mt-1">{source.total_watches_sourced || 0}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <p className="text-xs text-slate-500 font-medium uppercase">Active Watches</p>
+                  <p className="text-xs text-slate-500 font-medium uppercase">Active Products</p>
                   <p className="text-2xl font-bold text-green-600 mt-1">{source.active_watches_count || 0}</p>
                 </CardContent>
               </Card>
@@ -246,7 +246,7 @@ export default function WatchSourceDetail() {
                       <TableHead>Date</TableHead>
                       <TableHead className="text-center">Qty</TableHead>
                       <TableHead className="text-right">Cost</TableHead>
-                      <TableHead className="text-right">Avg/Watch</TableHead>
+                      <TableHead className="text-right">Avg/Product</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -333,7 +333,7 @@ export default function WatchSourceDetail() {
                     </div>
                     {currentOrder?.total_cost > 0 && currentOrder?.initial_quantity > 0 && (
                         <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <p className="text-xs text-slate-500 font-medium uppercase">Average Cost Per Watch</p>
+                            <p className="text-xs text-slate-500 font-medium uppercase">Average Cost Per Product</p>
                             <p className="text-xl font-bold text-slate-900 mt-1">
                                 ${(currentOrder.total_cost / currentOrder.initial_quantity).toFixed(2)}
                             </p>

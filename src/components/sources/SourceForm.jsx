@@ -72,7 +72,7 @@ export default function SourceForm({ source, onSubmit, onCancel }) {
             type="number"
             value={formData.initial_quantity}
             onChange={(e) => setFormData({...formData, initial_quantity: e.target.value})}
-            placeholder="Number of watches received"
+            placeholder="Number of products received"
           />
         </div>
       </div>
