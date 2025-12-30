@@ -33,74 +33,80 @@ export default function Layout({ children, currentPageName }) {
   // Build navigation based on user role
   const navigationItems = React.useMemo(() => {
     const items = [
-      {
-        title: "Dashboard",
-        url: createPageUrl("index"),
-        icon: LayoutList,
-      },
-      {
-        title: "Inventory",
-        url: createPageUrl("Inventory"),
-        icon: LayoutList,
-      },
-      {
-        title: "Products (All)",
-        url: createPageUrl("Products"),
-        icon: Package,
-      },
-      {
-        title: "Out for Repair",
-        url: createPageUrl("OutForRepair"),
-        icon: Wrench,
-      },
-      {
-        title: "Sold",
-        url: createPageUrl("SoldInventory"),
-        icon: DollarSign,
-      },
-      {
-        title: "Resolve Duplicates",
-        url: createPageUrl("ResolveProductDuplicates"),
-        icon: Copy,
-      },
-      {
-        title: "Merge Data",
-        url: createPageUrl("MergeData"),
-        icon: Package,
-      },
-      {
-        title: "Restore Data",
-        url: createPageUrl("RestoreData"),
-        icon: UploadIcon,
-      },
-      {
-        title: "Add Product",
-        url: createPageUrl("AddProduct"),
-        icon: Upload,
-      },
-      {
-        title: "Watch Sources",
-        url: createPageUrl("WatchSources"),
-        icon: Package,
-      },
-      {
-        title: "Auctions",
-        url: createPageUrl("Auctions"),
-        icon: Gavel,
-      },
-      {
-        title: "Company",
-        url: createPageUrl("CompanySettings"),
-        icon: Watch,
-      },
-      {
-        title: "Settings",
-        url: createPageUrl("TenantSettings"),
-        icon: Settings,
-      },
-    ];
+        {
+          title: "Dashboard",
+          url: createPageUrl("index"),
+          icon: LayoutList,
+        },
+        {
+          title: "Inventory",
+          url: createPageUrl("Inventory"),
+          icon: LayoutList,
+        },
+        {
+          title: "Out for Repair",
+          url: createPageUrl("OutForRepair"),
+          icon: Wrench,
+        },
+        {
+          title: "Sold",
+          url: createPageUrl("SoldInventory"),
+          icon: DollarSign,
+        },
+        {
+          title: "Add Product",
+          url: createPageUrl("AddProduct"),
+          icon: Upload,
+        },
+        {
+          title: "Watch Sources",
+          url: createPageUrl("WatchSources"),
+          icon: Package,
+        },
+        {
+          title: "Auctions",
+          url: createPageUrl("Auctions"),
+          icon: Gavel,
+        },
+        {
+          title: "Company",
+          url: createPageUrl("CompanySettings"),
+          icon: Watch,
+        },
+        {
+          title: "Settings",
+          url: createPageUrl("TenantSettings"),
+          icon: Settings,
+        },
+      ];
 
-    return items;
+      // Admin-only pages
+      if (user?.role === 'admin') {
+        items.push(
+          {
+            title: "Product Types",
+            url: createPageUrl("ProductTypeManagement"),
+            icon: Package,
+          },
+          {
+            title: "Resolve Duplicates",
+            url: createPageUrl("ResolveProductDuplicates"),
+            icon: Copy,
+          },
+          {
+            title: "Merge Data",
+            url: createPageUrl("MergeData"),
+            icon: Package,
+          },
+          {
+            title: "Restore Data",
+            url: createPageUrl("RestoreData"),
+            icon: UploadIcon,
+          }
+        );
+      }
+
+      return items;
   }, [user]);
 
   useEffect(() => {
