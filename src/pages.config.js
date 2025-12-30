@@ -1,16 +1,12 @@
 import AcceptInvitation from './pages/AcceptInvitation';
-import AddProduct from './pages/AddProduct';
 import Auctions from './pages/Auctions';
 import CompanySettings from './pages/CompanySettings';
 import CompleteSignup from './pages/CompleteSignup';
 import Home from './pages/Home';
-import Inventory from './pages/Inventory';
 import JoinCompany from './pages/JoinCompany';
 import MergeData from './pages/MergeData';
 import MigrateData from './pages/MigrateData';
 import OutForRepair from './pages/OutForRepair';
-import ProductDetail from './pages/ProductDetail';
-import Products from './pages/Products';
 import ResolveProductDuplicates from './pages/ResolveProductDuplicates';
 import RestoreData from './pages/RestoreData';
 import SalesView from './pages/SalesView';
@@ -27,23 +23,22 @@ import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
 import ProductTypeManagement from './pages/ProductTypeManagement';
+import AddProduct from './pages/AddProduct';
+import Inventory from './pages/Inventory';
+import ProductDetail from './pages/ProductDetail';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AcceptInvitation": AcceptInvitation,
-    "AddProduct": AddProduct,
     "Auctions": Auctions,
     "CompanySettings": CompanySettings,
     "CompleteSignup": CompleteSignup,
     "Home": Home,
-    "Inventory": Inventory,
     "JoinCompany": JoinCompany,
     "MergeData": MergeData,
     "MigrateData": MigrateData,
     "OutForRepair": OutForRepair,
-    "ProductDetail": ProductDetail,
-    "Products": Products,
     "ResolveProductDuplicates": ResolveProductDuplicates,
     "RestoreData": RestoreData,
     "SalesView": SalesView,
@@ -60,6 +55,9 @@ export const PAGES = {
     "WatchSummary": WatchSummary,
     "index": index,
     "ProductTypeManagement": ProductTypeManagement,
+    "AddProduct": AddProduct,
+    "Inventory": Inventory,
+    "ProductDetail": ProductDetail,
 }
 
 export const pagesConfig = {
