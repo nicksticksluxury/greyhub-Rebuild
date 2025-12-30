@@ -9,10 +9,12 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import PhotoUpload from "../components/addproduct/PhotoUpload";
+import ProductTypeSelector from "../components/addproduct/ProductTypeSelector";
 import { optimizeImages } from "../components/utils/imageOptimizer";
 
 export default function AddProduct() {
   const navigate = useNavigate();
+  const [productTypeCode, setProductTypeCode] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, stage: '' });
@@ -26,6 +28,11 @@ export default function AddProduct() {
   };
 
   const createProduct = async () => {
+    if (!productTypeCode) {
+      toast.error("Please select a product type");
+      return;
+    }
+    
     if (photos.length === 0) {
       toast.error("Please upload at least one photo");
       return;
@@ -73,17 +80,13 @@ export default function AddProduct() {
       console.log("Creating product with optimized photos...");
       const user = await base44.auth.me();
       
-      console.log("Current user object:", user);
-      
       if (!user || !user.company_id) {
         throw new Error("User not properly authenticated. Please log out and log back in.");
       }
       
-      // Show product type selection dialog or navigate to type selection
-      // For now, default to 'watch' type
       const productData = {
         company_id: user.company_id,
-        product_type_code: "watch",
+        product_type_code: productTypeCode,
         photos: photoObjects,
         brand: "Unknown",
         images_optimized: true
@@ -105,20 +108,38 @@ export default function AddProduct() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">Add New Product</h1>
-          <p className="text-slate-500 mt-1">Upload photos, then add details and analyze with AI on the next page</p>
+          <p className="text-slate-500 mt-1">Select product type, upload photos, then add details on the next page</p>
         </div>
 
-        <Card className="p-6 mb-6">
-          <Label className="mb-3 block">Product Photos</Label>
-          <PhotoUpload 
-            photos={photos}
-            onPhotosSelected={handlePhotosSelected}
-            onRemovePhoto={removePhoto}
-          />
-        </Card>
+        {!productTypeCode ? (
+          <Card className="p-6">
+            <Label className="text-xl font-semibold mb-6 block">Select Product Type</Label>
+            <ProductTypeSelector onSelect={setProductTypeCode} />
+          </Card>
+        ) : (
+          <>
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-lg font-semibold">Product Type: {productTypeCode}</Label>
+                <Button variant="outline" size="sm" onClick={() => setProductTypeCode(null)}>
+                  Change Type
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-6 mb-6">
+              <Label className="mb-3 block">Product Photos</Label>
+              <PhotoUpload 
+                photos={photos}
+                onPhotosSelected={handlePhotosSelected}
+                onRemovePhoto={removePhoto}
+              />
+            </Card>
+          </>
+        )}
 
         {uploading && (
           <Card className="p-4 mb-4">
@@ -134,7 +155,7 @@ export default function AddProduct() {
 
         <Button
           onClick={createProduct}
-          disabled={photos.length === 0 || uploading}
+          disabled={!productTypeCode || photos.length === 0 || uploading}
           className="w-full bg-slate-800 hover:bg-slate-900 h-12"
         >
           {uploading ? (
