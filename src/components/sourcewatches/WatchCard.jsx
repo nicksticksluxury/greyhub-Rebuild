@@ -11,7 +11,7 @@ export default function WatchCard({ watch }) {
   const isSold = watch.sold;
 
   return (
-    <Link to={createPageUrl(`WatchDetail?id=${watch.id}`)}>
+    <Link to={createPageUrl(`ProductDetail?id=${watch.id}`)}>
       <Card className="h-full hover:shadow-md transition-shadow overflow-hidden group">
         <div className="aspect-square relative overflow-hidden bg-slate-100">
           <img 

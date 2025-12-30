@@ -64,7 +64,7 @@ export default function SourceWatches() {
       console.log("Fetching SourceWatches for:", { sourceId, orderId });
       
       if (orderId) {
-        return base44.entities.Watch.filter({ source_order_id: orderId }, "-created_date", 1000);
+        return base44.entities.Product.filter({ source_order_id: orderId }, "-created_date", 1000);
       }
       
       if (sourceId) {
@@ -73,8 +73,8 @@ export default function SourceWatches() {
         const orderIds = sourceOrders.map(o => o.id);
         const orderIdSet = new Set(orderIds);
         
-        // 2. Fetch ALL recent watches (client-side filtering is safest vs complex backend queries)
-        const allWatches = await base44.entities.Watch.list("-created_date", 2000);
+        // 2. Fetch ALL recent products (client-side filtering is safest vs complex backend queries)
+        const allWatches = await base44.entities.Product.list("-created_date", 2000);
         
         // 3. Filter in memory
         return allWatches.filter(w => {
