@@ -138,6 +138,20 @@ export default function ResolveProductDuplicates() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              onClick={loadDuplicates}
+              disabled={isLoading}
+              variant="outline"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Scanning...
+                </>
+              ) : (
+                'Scan for Duplicates'
+              )}
+            </Button>
             {counts && (
               <div className="text-sm text-slate-600">
                 <span className="font-semibold">Watches: {counts.watches}</span>
