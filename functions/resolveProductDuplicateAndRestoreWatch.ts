@@ -75,18 +75,9 @@ Deno.serve(async (req) => {
         });
         console.log('[DEBUG] Found watches:', watches?.length);
 
-        let matchedWatch = null;
+        // If we found a watch with matching identifiers, use it
+        const matchedWatch = watches.length > 0 ? watches[0] : null;
         
-        // Deep compare photos to find exact match
-        const productPhotosStr = JSON.stringify(product.photos || []);
-        for (const watch of watches) {
-            const watchPhotosStr = JSON.stringify(watch.photos || []);
-            if (watchPhotosStr === productPhotosStr) {
-                matchedWatch = watch;
-                break;
-            }
-        }
-
         if (matchedWatch) {
             console.log('[DEBUG] Matched watch found:', matchedWatch.id);
             // Copy data from Product to Watch
