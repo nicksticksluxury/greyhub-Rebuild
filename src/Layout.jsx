@@ -44,6 +44,11 @@ export default function Layout({ children, currentPageName }) {
         icon: LayoutList,
       },
       {
+        title: "Products (All)",
+        url: createPageUrl("Products"),
+        icon: Package,
+      },
+      {
         title: "Out for Repair",
         url: createPageUrl("OutForRepair"),
         icon: Wrench,
