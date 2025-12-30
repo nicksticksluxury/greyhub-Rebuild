@@ -23,11 +23,17 @@ export default function ResolveProductDuplicates() {
   }, []);
 
   const loadDuplicates = async () => {
+    console.log('[FRONTEND] loadDuplicates called at:', new Date().toLocaleTimeString());
     setIsLoading(true);
     try {
+      console.log('[FRONTEND] Invoking listDuplicateProducts...');
       const response = await base44.functions.invoke('listDuplicateProducts');
+      console.log('[FRONTEND] Response received:', response);
+      console.log('[FRONTEND] Duplicate groups:', response.data?.duplicateGroups?.length || 0);
       setDuplicateGroups(response.data.duplicateGroups || []);
+      toast.success(`Scan complete: ${response.data?.duplicateGroups?.length || 0} duplicate groups found`);
     } catch (error) {
+      console.error('[FRONTEND] Error loading duplicates:', error);
       toast.error('Failed to load duplicates: ' + error.message);
     } finally {
       setIsLoading(false);
