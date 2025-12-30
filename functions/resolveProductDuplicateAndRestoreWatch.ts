@@ -147,9 +147,20 @@ Deno.serve(async (req) => {
         } else {
             console.log('[DEBUG] No matching watch found, marking product as orphaned');
             // No matching Watch found - mark primary Product as orphaned
-            await base44.entities.Product.update(primaryProductId, {
+            // Clear comparable_listings_links if it's in invalid format to avoid validation errors
+            const orphanUpdate = {
                 is_orphaned: true
-            });
+            };
+            
+            // If comparable_listings_links exists and is array of objects, clear it
+            if (product.comparable_listings_links && Array.isArray(product.comparable_listings_links)) {
+                const hasObjects = product.comparable_listings_links.some(item => typeof item === 'object' && item !== null);
+                if (hasObjects) {
+                    orphanUpdate.comparable_listings_links = [];
+                }
+            }
+            
+            await base44.entities.Product.update(primaryProductId, orphanUpdate);
 
             // Still delete the duplicate Products
             for (const dupId of duplicateProductIds) {
