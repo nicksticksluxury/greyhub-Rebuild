@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
         const { watchIds } = await req.json();
         
         if (!watchIds || !Array.isArray(watchIds) || watchIds.length === 0) {
-            return Response.json({ error: 'Invalid watch IDs' }, { status: 400 });
+            return Response.json({ error: 'Invalid product IDs' }, { status: 400 });
         }
 
         // --- TOKEN RETRIEVAL & REFRESH LOGIC ---
@@ -143,7 +143,26 @@ Deno.serve(async (req) => {
         }
         // --- END FETCH OR CREATE LOCATION ---
 
-        const watches = await Promise.all(watchIds.map(id => base44.entities.Product.get(id)));
+        const products = await Promise.all(watchIds.map(id => base44.entities.Product.get(id)));
+        
+        // Fetch all unique product types
+        const productTypeCodes = [...new Set(products.map(p => p.product_type_code).filter(Boolean))];
+        const productTypesData = await Promise.all(
+            productTypeCodes.map(code => base44.asServiceRole.entities.ProductType.filter({ code }))
+        );
+        const productTypesMap = {};
+        productTypesData.forEach(types => {
+            if (types && types[0]) productTypesMap[types[0].code] = types[0];
+        });
+        
+        // Fetch all product type fields
+        const productTypeFieldsData = await Promise.all(
+            productTypeCodes.map(code => base44.asServiceRole.entities.ProductTypeField.filter({ product_type_code: code }))
+        );
+        const productTypeFieldsMap = {};
+        productTypeFieldsData.forEach((fields, idx) => {
+            if (fields) productTypeFieldsMap[productTypeCodes[idx]] = fields;
+        });
         
         // Log listing start
         await base44.asServiceRole.entities.Log.create({
@@ -152,8 +171,8 @@ Deno.serve(async (req) => {
             timestamp: new Date().toISOString(),
             level: "info",
             category: "ebay",
-            message: `eBay List: Starting to list ${watchIds.length} watches`,
-            details: { watchCount: watchIds.length, watchIds }
+            message: `eBay List: Starting to list ${watchIds.length} products`,
+            details: { productCount: watchIds.length, productIds: watchIds }
         });
         
         const results = {
@@ -162,58 +181,74 @@ Deno.serve(async (req) => {
             errors: []
         };
 
-        for (const watch of watches) {
+        for (const product of products) {
             // Skip if already listed on eBay
-            if (watch.exported_to?.ebay) {
-                results.errors.push(`Watch ${watch.brand} ${watch.model} already listed on eBay`);
+            if (product.exported_to?.ebay) {
+                results.errors.push(`${product.brand} ${product.model} already listed on eBay`);
                 results.failed++;
                 continue;
             }
 
-            const price = watch.platform_prices?.ebay || watch.retail_price;
-            const title = watch.listing_title || `${watch.brand} ${watch.model} ${watch.reference_number || ''}`;
+            const productType = productTypesMap[product.product_type_code];
+            const productTypeFields = productTypeFieldsMap[product.product_type_code] || [];
+            const productTypeName = productType?.name || 'Product';
+
+            const price = product.platform_prices?.ebay || product.retail_price;
+            const title = product.listing_title || `${product.brand} ${product.model} ${product.reference_number || ''}`;
 
             if (!price) {
-                results.errors.push(`Watch ${watch.id}: Missing price for eBay`);
+                results.errors.push(`${productTypeName} ${product.id}: Missing price for eBay`);
                 results.failed++;
                 continue;
             }
 
             try {
                 // 1. Create Inventory Item Record (SKU)
-                const sku = watch.id; 
+                const sku = product.id; 
                 
-                const photoUrls = (watch.photos || [])
+                const photoUrls = (product.photos || [])
                     .map(p => p.full || p.original || (typeof p === 'string' ? p : null))
                     .filter(Boolean);
+
+                // Build aspects dynamically from product type fields
+                const aspects = {
+                    Brand: [product.brand || "Unbranded"],
+                    Model: [(product.model || "Unknown").substring(0, 65)]
+                };
+                
+                // Add gender/department if applicable
+                if (product.gender) {
+                    aspects.Department = [product.gender === 'womens' ? 'Women' : product.gender === 'mens' ? 'Men' : 'Unisex'];
+                }
+                
+                // Add category-specific attributes from product
+                if (product.category_specific_attributes) {
+                    productTypeFields.forEach(field => {
+                        const value = product.category_specific_attributes[field.field_name];
+                        if (value !== undefined && value !== null && value !== '') {
+                            aspects[field.field_label] = [String(value)];
+                        }
+                    });
+                }
 
                 const inventoryItem = {
                     availability: {
                         shipToLocationAvailability: {
-                            quantity: watch.quantity || 1
+                            quantity: product.quantity || 1
                         }
                     },
-                    condition: getEbayCondition(watch.condition),
+                    condition: getEbayCondition(product.condition),
                     packageWeightAndSize: {
                         packageType: "PACKAGE_THICK_ENVELOPE",
                         weight: {
-                            value: 0.5, // 8 oz
+                            value: 0.5,
                             unit: "POUND"
                         }
                     },
                     product: {
                         title: title.substring(0, 80),
-                        description: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
-                        aspects: {
-                            Brand: [watch.brand || "Unbranded"],
-                            Model: [(watch.model || "Unknown").substring(0, 65)],
-                            Type: ["Wristwatch"],
-                            Department: [watch.gender === 'womens' ? 'Women' : 'Men'],
-                            Movement: [watch.movement_type || "Unknown"],
-                            "Case Material": [watch.case_material || "Unknown"],
-                            "Reference Number": [watch.reference_number || "Does Not Apply"],
-                            "Country/Region of Manufacture": ["United States"]
-                        },
+                        description: product.platform_descriptions?.ebay || product.description || "No description provided.",
+                        aspects: aspects,
                         imageUrls: photoUrls
                     }
                 };
@@ -235,13 +270,16 @@ Deno.serve(async (req) => {
                 }
 
                 // 2. Handle Offer (Create or Update)
+                // Determine eBay category ID based on product type
+                const categoryId = getEbayCategoryId(product.product_type_code, productTypeName);
+                
                 const offer = {
                     sku: sku,
                     marketplaceId: "EBAY_US",
                     format: "FIXED_PRICE",
-                    availableQuantity: watch.quantity || 1,
-                    categoryId: "31387", // Wristwatches
-                    listingDescription: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
+                    availableQuantity: product.quantity || 1,
+                    categoryId: categoryId,
+                    listingDescription: product.platform_descriptions?.ebay || product.description || "No description provided.",
                     listingPolicies: {
                         fulfillmentPolicyId: fulfillmentPolicyId,
                         paymentPolicyId: paymentPolicyId,
@@ -320,14 +358,14 @@ Deno.serve(async (req) => {
                      throw new Error("Published but no Listing ID returned.");
                 }
 
-                // Update Watch record ONLY after successful publish
-                await base44.entities.Product.update(watch.id, {
+                // Update Product record ONLY after successful publish
+                await base44.entities.Product.update(product.id, {
                     exported_to: {
-                        ...(watch.exported_to || {}),
+                        ...(product.exported_to || {}),
                         ebay: new Date().toISOString()
                     },
                     platform_ids: {
-                        ...(watch.platform_ids || {}),
+                        ...(product.platform_ids || {}),
                         ebay: listingId 
                     }
                 });
@@ -339,14 +377,14 @@ Deno.serve(async (req) => {
                     timestamp: new Date().toISOString(),
                     level: "success",
                     category: "ebay",
-                    message: `eBay Listed: ${watch.brand} ${watch.model} - Listing ID: ${listingId}`,
-                    details: { watch_id: watch.id, listing_id: listingId, price, sku }
+                    message: `eBay Listed: ${product.brand} ${product.model} - Listing ID: ${listingId}`,
+                    details: { product_id: product.id, listing_id: listingId, price, sku, product_type: productTypeName }
                 });
 
                 results.success++;
 
             } catch (error) {
-                console.error(`Failed to list watch ${watch.id}:`, error);
+                console.error(`Failed to list product ${product.id}:`, error);
                 // Try to parse error if it's a JSON string
                 let errorMessage = error.message;
                 try {
@@ -365,11 +403,11 @@ Deno.serve(async (req) => {
                     timestamp: new Date().toISOString(),
                     level: "error",
                     category: "ebay",
-                    message: `eBay List Failed: ${watch.brand} ${watch.model} - ${errorMessage}`,
-                    details: { watch_id: watch.id, error: errorMessage }
+                    message: `eBay List Failed: ${product.brand} ${product.model} - ${errorMessage}`,
+                    details: { product_id: product.id, error: errorMessage, product_type: productTypeName }
                 });
                 
-                results.errors.push(`Failed to list ${watch.brand} ${watch.model}: ${errorMessage}`);
+                results.errors.push(`Failed to list ${product.brand} ${product.model}: ${errorMessage}`);
                 results.failed++;
             }
         }
@@ -384,18 +422,46 @@ Deno.serve(async (req) => {
 function getEbayCondition(condition) {
     switch (condition) {
         case 'new':
-        case 'new_with_box': return 'NEW';       // 1000: New with tags
-        case 'new_no_box': return 'NEW_OTHER';   // 1500: New without tags
+        case 'new_with_box': return 'NEW';
+        case 'new_no_box': return 'NEW_OTHER';
         
-        // Category 31387 (Wristwatches) generally uses generic "Pre-owned" (3000)
-        // It does not support granular used conditions (4000, 5000, 6000)
         case 'mint': 
         case 'excellent': 
         case 'very_good': 
         case 'good': 
-        case 'fair': return 'USED_EXCELLENT';    // 3000: Pre-owned
+        case 'fair': return 'USED_EXCELLENT';
         
-        case 'parts_repair': return 'FOR_PARTS_OR_NOT_WORKING'; // 7000
+        case 'parts_repair': return 'FOR_PARTS_OR_NOT_WORKING';
         default: return 'USED_EXCELLENT';
     }
+}
+
+function getEbayCategoryId(productTypeCode, productTypeName) {
+    // Map product types to eBay category IDs
+    const categoryMap = {
+        'watch': '31387',        // Wristwatches
+        'handbag': '169291',     // Women's Bags & Handbags
+        'purse': '169291',       // Women's Bags & Handbags
+        'jewelry': '281',        // Jewelry & Watches
+        'sunglasses': '179247',  // Sunglasses
+        'wallet': '169291',      // Women's Bags & Handbags
+        'shoes': '62107',        // Women's Shoes
+        'clothing': '15724'      // Women's Clothing
+    };
+    
+    // Try exact match first
+    if (categoryMap[productTypeCode]) {
+        return categoryMap[productTypeCode];
+    }
+    
+    // Try case-insensitive name match
+    const lowerName = productTypeName.toLowerCase();
+    for (const [key, categoryId] of Object.entries(categoryMap)) {
+        if (lowerName.includes(key)) {
+            return categoryId;
+        }
+    }
+    
+    // Default to general Women's Bags & Handbags for fashion items
+    return '169291';
 }
