@@ -1290,9 +1290,9 @@ Every comparable MUST show model number "${editedData.reference_number}".
       const urlRegex = /(https?:\/\/[^\s\)]+)/g;
       const urls = value.match(urlRegex) || [];
 
-      // Clean trailing parentheses and extract prices
+      // Clean trailing parentheses, quotes, commas and extract prices
       const listings = urls.map(url => {
-        const cleanUrl = url.replace(/\)+$/, '');
+        const cleanUrl = url.replace(/[\)\",]+$/, '');
         // Try to find a price near this URL (look for $XXX or $X,XXX patterns)
         const priceMatch = value.match(new RegExp(cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^$]*\\$([\\d,]+)', 'i'));
         return {
