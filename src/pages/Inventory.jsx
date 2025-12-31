@@ -1026,15 +1026,20 @@ export default function Inventory() {
 
               const toastId = toast.loading(`Reassigning ${selectedProductIds.length} products...`);
               try {
-                await Promise.all(selectedProductIds.map(id => 
-                  base44.entities.Product.update(id, { company_id: targetCompanyId })
-                ));
+                const result = await base44.functions.invoke('reassignProducts', {
+                  productIds: selectedProductIds,
+                  targetCompanyId: targetCompanyId
+                });
 
-                toast.success(`Reassigned ${selectedProductIds.length} products`, { id: toastId });
-                queryClient.invalidateQueries({ queryKey: ['products'] });
-                setSelectedProductIds([]);
-                setShowReassignDialog(false);
-                setTargetCompanyId("");
+                if (result.data.success) {
+                  toast.success(`Reassigned ${selectedProductIds.length} products`, { id: toastId });
+                  queryClient.invalidateQueries({ queryKey: ['products'] });
+                  setSelectedProductIds([]);
+                  setShowReassignDialog(false);
+                  setTargetCompanyId("");
+                } else {
+                  toast.error("Failed to reassign products", { id: toastId });
+                }
               } catch (error) {
                 console.error(error);
                 toast.error("Failed to reassign products", { id: toastId });
