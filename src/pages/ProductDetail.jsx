@@ -1230,6 +1230,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
         ...editedData,
         ...updates
       });
+      setHasUnsavedChanges(true);
       toast.success("Selected items imported!");
     } else if (field === "basic_info_all") {
       const updates = {};
@@ -1250,6 +1251,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
         ...editedData,
         ...updates
       });
+      setHasUnsavedChanges(true);
       toast.success("All basic info imported!");
     } else if (field === "pricing") {
       // Round Whatnot prices when importing all
@@ -1261,6 +1263,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
         ...editedData,
         platform_prices: prices
       });
+      setHasUnsavedChanges(true);
       toast.success("All platform prices imported!");
     } else if (field.startsWith("platform_price_")) {
       const platform = field.replace("platform_price_", "");
@@ -1276,6 +1279,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
           [platform]: price
         }
       });
+      setHasUnsavedChanges(true);
       toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} price imported!`);
     } else if (field === "comparable_listings_links") {
       // Extract URLs and prices from the text
@@ -1297,6 +1301,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
         ...editedData, 
         comparable_listings_links: listings 
       });
+      setHasUnsavedChanges(true);
       toast.success("Comparable listings imported!");
     } else if (field === "market_research") {
       const updates = { market_research: value };
@@ -1304,9 +1309,11 @@ Every comparable MUST show model number "${editedData.reference_number}".
         updates.ai_confidence_level = editedData.ai_analysis.confidence_level;
       }
       setEditedData({ ...editedData, ...updates });
+      setHasUnsavedChanges(true);
       toast.success("Market research imported!");
     } else {
       setEditedData({ ...editedData, [field]: value });
+      setHasUnsavedChanges(true);
       toast.success("Data imported from AI analysis");
     }
   };
