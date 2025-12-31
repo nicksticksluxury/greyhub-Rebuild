@@ -176,12 +176,20 @@ export default function ProductDetail() {
       setShowSoldQuantityDialog(true);
       return;
     }
-    
+
     const calculatedMinPrice = calculateMinimumPrice(editedData.cost);
     const dataToSave = {
       ...editedData,
       minimum_price: calculatedMinPrice
     };
+
+    // Normalize comparable_listings_links to array of strings if needed
+    if (dataToSave.comparable_listings_links && Array.isArray(dataToSave.comparable_listings_links)) {
+      dataToSave.comparable_listings_links = dataToSave.comparable_listings_links.map(item => 
+        typeof item === 'string' ? item : (item.url || item)
+      );
+    }
+
     updateMutation.mutate(dataToSave);
     // Mark as needing eBay update if already listed
     if (editedData.exported_to?.ebay) {
