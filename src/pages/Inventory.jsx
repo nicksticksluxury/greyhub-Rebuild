@@ -128,12 +128,14 @@ export default function Inventory() {
   const { data: allCompanies = [] } = useQuery({
     queryKey: ['allCompanies'],
     queryFn: async () => {
-      const user = await base44.auth.me();
-      if (user.role !== 'admin') return [];
-      const result = await base44.functions.invoke('listAllCompanies');
-      return result.data.companies || [];
+      try {
+        const result = await base44.functions.invoke('getAllCompanies', {});
+        return result.data?.companies || [];
+      } catch (error) {
+        console.error('Failed to fetch companies:', error);
+        return [];
+      }
     },
-    enabled: true,
   });
 
   const handleBulkListEtsy = async () => {
