@@ -80,6 +80,8 @@ export default function Inventory() {
   const [showSetSourceDialog, setShowSetSourceDialog] = useState(false);
   const [selectedSourceId, setSelectedSourceId] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState("");
+  const [showReassignDialog, setShowReassignDialog] = useState(false);
+  const [targetCompanyId, setTargetCompanyId] = useState("");
   
   const queryClient = useQueryClient();
 
@@ -121,6 +123,17 @@ export default function Inventory() {
   const { data: sourceOrders = [], isLoading: isLoadingOrders } = useQuery({
     queryKey: ['sourceOrders'],
     queryFn: () => base44.entities.SourceOrder.list("date_received", 1000),
+  });
+
+  const { data: allCompanies = [] } = useQuery({
+    queryKey: ['allCompanies'],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      if (user.role !== 'admin') return [];
+      const result = await base44.functions.invoke('listAllCompanies');
+      return result.data.companies || [];
+    },
+    enabled: true,
   });
 
   const handleBulkListEtsy = async () => {
@@ -662,13 +675,20 @@ export default function Inventory() {
                       </DropdownMenuSub>
 
                       <DropdownMenuItem onClick={() => setShowSetSourceDialog(true)}>
-                      <Package className="w-4 h-4 mr-2" />
-                      Set Source & Shipment
+                        <Package className="w-4 h-4 mr-2" />
+                        Set Source & Shipment
                       </DropdownMenuItem>
 
                       <DropdownMenuItem onClick={handleUpdateCostFromShipment}>
-                      <Package className="w-4 h-4 mr-2" />
-                      Update Cost from Shipment
+                        <Package className="w-4 h-4 mr-2" />
+                        Update Cost from Shipment
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem onClick={() => setShowReassignDialog(true)} className="text-red-600">
+                        <User className="w-4 h-4 mr-2" />
+                        Reassign to Company
                       </DropdownMenuItem>
                       </DropdownMenuContent>
                       </DropdownMenu>
@@ -965,8 +985,64 @@ export default function Inventory() {
               Update
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+          </DialogContent>
+          </Dialog>
+
+          <Dialog open={showReassignDialog} onOpenChange={setShowReassignDialog}>
+          <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reassign Products to Company</DialogTitle>
+            <DialogDescription>
+              Reassign {selectedProductIds.length} selected product{selectedProductIds.length !== 1 ? 's' : ''} to another company
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="targetCompany">Target Company</Label>
+              <Select value={targetCompanyId} onValueChange={setTargetCompanyId}>
+                <SelectTrigger id="targetCompany">
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allCompanies.map(company => (
+                    <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowReassignDialog(false);
+              setTargetCompanyId("");
+            }}>Cancel</Button>
+            <Button className="bg-red-600 hover:bg-red-700" onClick={async () => {
+              if (!targetCompanyId) {
+                toast.error("Please select a target company");
+                return;
+              }
+
+              const toastId = toast.loading(`Reassigning ${selectedProductIds.length} products...`);
+              try {
+                await Promise.all(selectedProductIds.map(id => 
+                  base44.entities.Product.update(id, { company_id: targetCompanyId })
+                ));
+
+                toast.success(`Reassigned ${selectedProductIds.length} products`, { id: toastId });
+                queryClient.invalidateQueries({ queryKey: ['products'] });
+                setSelectedProductIds([]);
+                setShowReassignDialog(false);
+                setTargetCompanyId("");
+              } catch (error) {
+                console.error(error);
+                toast.error("Failed to reassign products", { id: toastId });
+              }
+            }}>
+              Reassign
+            </Button>
+          </DialogFooter>
+          </DialogContent>
+          </Dialog>
+          </div>
+          );
+          }
