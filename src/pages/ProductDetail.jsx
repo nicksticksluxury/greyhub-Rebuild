@@ -1289,7 +1289,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
       // Extract URLs and prices from the text
       const urlRegex = /(https?:\/\/[^\s\)]+)/g;
       const urls = value.match(urlRegex) || [];
-      
+
       // Clean trailing parentheses and extract prices
       const listings = urls.map(url => {
         const cleanUrl = url.replace(/\)+$/, '');
@@ -1297,10 +1297,10 @@ Every comparable MUST show model number "${editedData.reference_number}".
         const priceMatch = value.match(new RegExp(cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^$]*\\$([\\d,]+)', 'i'));
         return {
           url: cleanUrl,
-          price: priceMatch ? priceMatch[1].replace(/,/g, '') : null
+          price: priceMatch ? priceMatch[1].replace(/,/g, '') : ""
         };
       });
-      
+
       setEditedData({ 
         ...editedData, 
         comparable_listings_links: listings 
