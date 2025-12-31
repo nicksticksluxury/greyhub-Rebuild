@@ -89,7 +89,7 @@ export default function ProductDetail() {
         setNeedsEbayUpdate(lastUpdate > lastExport);
       }
     }
-  }, [product]);
+  }, [product, editedData]);
 
   useEffect(() => {
     if (editedData && originalData) {
