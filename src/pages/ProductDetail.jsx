@@ -832,7 +832,9 @@ YOUR RESPONSE MUST INCLUDE:
       });
 
       const refreshedProduct = await base44.entities.Product.list().then(products => products.find(p => p.id === productId));
+      setEditedData(refreshedProduct);
       setOriginalData(refreshedProduct);
+      setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
       
       toast.success("✅ Complete!");
@@ -1191,7 +1193,9 @@ Every comparable MUST show model number "${editedData.reference_number}".
       });
 
       const refreshedProduct = await base44.entities.Product.list().then(products => products.find(p => p.id === productId));
+      setEditedData(refreshedProduct);
       setOriginalData(refreshedProduct);
+      setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
 
       toast.success("✅ Product re-priced successfully!");
