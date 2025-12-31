@@ -115,6 +115,10 @@ Deno.serve(async (req) => {
 
         const watches = await Promise.all(watchIds.map(id => base44.entities.Product.get(id)));
         
+        // Fetch all product types and their fields for aspect mapping
+        const allProductTypes = await base44.asServiceRole.entities.ProductType.list();
+        const allProductTypeFields = await base44.asServiceRole.entities.ProductTypeField.list();
+        
         // Log update start
         await base44.asServiceRole.entities.Log.create({
             company_id: user.company_id,
@@ -156,6 +160,99 @@ Deno.serve(async (req) => {
                     .map(p => p.full || p.original || (typeof p === 'string' ? p : null))
                     .filter(Boolean);
 
+                // Get product type fields for this product
+                const productType = allProductTypes.find(t => t.code === watch.product_type_code);
+                const productTypeFields = allProductTypeFields.filter(f => f.product_type_code === watch.product_type_code);
+                const categoryId = productType?.ebay_category_id || "31387";
+
+                // Build aspects dynamically from product type fields
+                const aspects = {
+                    Brand: [watch.brand || "Unbranded"],
+                    Model: [(watch.model || "Unknown").substring(0, 65)]
+                };
+                
+                // Add gender/department if applicable
+                if (watch.gender) {
+                    aspects.Department = [watch.gender === 'womens' ? 'Women' : watch.gender === 'mens' ? 'Men' : 'Unisex'];
+                }
+                
+                // Add condition description if available
+                if (watch.condition) {
+                    aspects.Condition = [watch.condition.replace(/_/g, ' ')];
+                }
+                
+                // Add year/vintage if available
+                if (watch.year) {
+                    aspects.Year = [watch.year];
+                }
+                
+                // Add serial number as item number if available
+                if (watch.serial_number) {
+                    aspects['Item Number'] = [watch.serial_number];
+                }
+                
+                // Add reference number if available
+                if (watch.reference_number) {
+                    aspects['Reference Number'] = [watch.reference_number];
+                }
+                
+                // Add category-specific attributes from product
+                if (watch.category_specific_attributes) {
+                    productTypeFields.forEach(field => {
+                        const value = watch.category_specific_attributes[field.field_name];
+                        if (value !== undefined && value !== null && value !== '') {
+                            // Map field names to eBay's expected names
+                            let aspectName = field.field_label;
+                            
+                            // Handbag-specific mappings
+                            if (field.field_name === 'handbag_style' || aspectName === 'Handbag Style') {
+                                aspectName = 'Style';
+                            } else if (field.field_name === 'exterior_material' || aspectName === 'Exterior Material') {
+                                aspectName = 'Exterior Material';
+                            } else if (field.field_name === 'exterior_color' || aspectName === 'Exterior Color') {
+                                aspectName = 'Color';
+                            } else if (field.field_name === 'hardware_color' || aspectName === 'Hardware Color') {
+                                aspectName = 'Hardware Color';
+                            } else if (field.field_name === 'lining_material' || aspectName === 'Lining Material') {
+                                aspectName = 'Lining Material';
+                            } else if (field.field_name === 'closure_type' || aspectName === 'Closure Type') {
+                                aspectName = 'Closure';
+                            } else if (field.field_name === 'handle_drop' || aspectName === 'Handle Drop') {
+                                aspectName = 'Handle/Strap Drop';
+                            } else if (field.field_name === 'bag_width' || aspectName === 'Bag Width') {
+                                aspectName = 'Bag Width';
+                            } else if (field.field_name === 'bag_height' || aspectName === 'Bag Height') {
+                                aspectName = 'Bag Height';
+                            } else if (field.field_name === 'bag_depth' || aspectName === 'Bag Depth') {
+                                aspectName = 'Bag Depth';
+                            }
+                            
+                            // Watch-specific mappings
+                            else if (field.field_name === 'movement_type' || aspectName === 'Movement Type') {
+                                aspectName = 'Movement';
+                            } else if (field.field_name === 'case_material' || aspectName === 'Case Material') {
+                                aspectName = 'Case Material';
+                            } else if (field.field_name === 'case_size' || aspectName === 'Case Size') {
+                                aspectName = 'Case Size';
+                            } else if (field.field_name === 'dial_color' || aspectName === 'Dial Color') {
+                                aspectName = 'Dial Color';
+                            } else if (field.field_name === 'bracelet_material' || field.field_name === 'band_material' || aspectName === 'Bracelet Material' || aspectName === 'Band Material') {
+                                aspectName = 'Band Material';
+                            } else if (field.field_name === 'water_resistance' || aspectName === 'Water Resistance') {
+                                aspectName = 'Water Resistance';
+                            } else if (field.field_name === 'crystal_type' || aspectName === 'Crystal Type') {
+                                aspectName = 'Display';
+                            } else if (field.field_name === 'bezel_material' || aspectName === 'Bezel Material') {
+                                aspectName = 'Bezel Material';
+                            } else if (field.field_name === 'features' || aspectName === 'Features') {
+                                aspectName = 'Features';
+                            }
+                            
+                            aspects[aspectName] = [String(value)];
+                        }
+                    });
+                }
+
                 // 1. Update Inventory Item
                 const inventoryItem = {
                     availability: {
@@ -174,16 +271,7 @@ Deno.serve(async (req) => {
                     product: {
                         title: title.substring(0, 80),
                         description: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
-                        aspects: {
-                            Brand: [watch.brand || "Unbranded"],
-                            Model: [(watch.model || "Unknown").substring(0, 65)],
-                            Type: ["Wristwatch"],
-                            Department: [watch.gender === 'womens' ? 'Women' : 'Men'],
-                            Movement: [watch.movement_type || "Unknown"],
-                            "Case Material": [watch.case_material || "Unknown"],
-                            "Reference Number": [watch.reference_number || "Does Not Apply"],
-                            "Country/Region of Manufacture": ["United States"]
-                        },
+                        aspects: aspects,
                         imageUrls: photoUrls
                     }
                 };
@@ -225,7 +313,7 @@ Deno.serve(async (req) => {
                     marketplaceId: "EBAY_US",
                     format: "FIXED_PRICE",
                     availableQuantity: watch.quantity || 1,
-                    categoryId: "31387",
+                    categoryId: categoryId,
                     listingDescription: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
                     listingPolicies: {
                         fulfillmentPolicyId: fulfillmentPolicyId,
