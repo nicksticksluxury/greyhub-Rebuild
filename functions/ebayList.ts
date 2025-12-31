@@ -246,11 +246,53 @@ Deno.serve(async (req) => {
                     productTypeFields.forEach(field => {
                         const value = product.category_specific_attributes[field.field_name];
                         if (value !== undefined && value !== null && value !== '') {
-                            // Map "Handbag Style" to "Style" for eBay
+                            // Map field names to eBay's expected names
                             let aspectName = field.field_label;
+                            
+                            // Handbag-specific mappings
                             if (field.field_name === 'handbag_style' || aspectName === 'Handbag Style') {
                                 aspectName = 'Style';
+                            } else if (field.field_name === 'exterior_material' || aspectName === 'Exterior Material') {
+                                aspectName = 'Exterior Material';
+                            } else if (field.field_name === 'exterior_color' || aspectName === 'Exterior Color') {
+                                aspectName = 'Color';
+                            } else if (field.field_name === 'hardware_color' || aspectName === 'Hardware Color') {
+                                aspectName = 'Hardware Color';
+                            } else if (field.field_name === 'lining_material' || aspectName === 'Lining Material') {
+                                aspectName = 'Lining Material';
+                            } else if (field.field_name === 'closure_type' || aspectName === 'Closure Type') {
+                                aspectName = 'Closure';
+                            } else if (field.field_name === 'handle_drop' || aspectName === 'Handle Drop') {
+                                aspectName = 'Handle/Strap Drop';
+                            } else if (field.field_name === 'bag_width' || aspectName === 'Bag Width') {
+                                aspectName = 'Bag Width';
+                            } else if (field.field_name === 'bag_height' || aspectName === 'Bag Height') {
+                                aspectName = 'Bag Height';
+                            } else if (field.field_name === 'bag_depth' || aspectName === 'Bag Depth') {
+                                aspectName = 'Bag Depth';
                             }
+                            
+                            // Watch-specific mappings
+                            else if (field.field_name === 'movement_type' || aspectName === 'Movement Type') {
+                                aspectName = 'Movement';
+                            } else if (field.field_name === 'case_material' || aspectName === 'Case Material') {
+                                aspectName = 'Case Material';
+                            } else if (field.field_name === 'case_size' || aspectName === 'Case Size') {
+                                aspectName = 'Case Size';
+                            } else if (field.field_name === 'dial_color' || aspectName === 'Dial Color') {
+                                aspectName = 'Dial Color';
+                            } else if (field.field_name === 'bracelet_material' || field.field_name === 'band_material' || aspectName === 'Bracelet Material' || aspectName === 'Band Material') {
+                                aspectName = 'Band Material';
+                            } else if (field.field_name === 'water_resistance' || aspectName === 'Water Resistance') {
+                                aspectName = 'Water Resistance';
+                            } else if (field.field_name === 'crystal_type' || aspectName === 'Crystal Type') {
+                                aspectName = 'Display';
+                            } else if (field.field_name === 'bezel_material' || aspectName === 'Bezel Material') {
+                                aspectName = 'Bezel Material';
+                            } else if (field.field_name === 'features' || aspectName === 'Features') {
+                                aspectName = 'Features';
+                            }
+                            
                             aspects[aspectName] = [String(value)];
                         }
                     });
