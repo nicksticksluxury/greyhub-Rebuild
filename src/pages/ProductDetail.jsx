@@ -1286,24 +1286,16 @@ Every comparable MUST show model number "${editedData.reference_number}".
       setHasUnsavedChanges(true);
       toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} price imported!`);
     } else if (field === "comparable_listings_links") {
-      // Extract URLs and prices from the text
+      // Extract URLs from the text
       const urlRegex = /(https?:\/\/[^\s\)]+)/g;
       const urls = value.match(urlRegex) || [];
 
-      // Clean trailing parentheses, quotes, commas and extract prices
-      const listings = urls.map(url => {
-        const cleanUrl = url.replace(/[\)\",]+$/, '');
-        // Try to find a price near this URL (look for $XXX or $X,XXX patterns)
-        const priceMatch = value.match(new RegExp(cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^$]*\\$([\\d,]+)', 'i'));
-        return {
-          url: cleanUrl,
-          price: priceMatch ? priceMatch[1].replace(/,/g, '') : ""
-        };
-      });
+      // Clean trailing parentheses, quotes, commas
+      const cleanUrls = urls.map(url => url.replace(/[\)\",]+$/, ''));
 
       setEditedData({ 
         ...editedData, 
-        comparable_listings_links: listings 
+        comparable_listings_links: cleanUrls 
       });
       setHasUnsavedChanges(true);
       toast.success("Comparable listings imported!");
