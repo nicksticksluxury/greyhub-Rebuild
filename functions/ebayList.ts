@@ -221,12 +221,37 @@ Deno.serve(async (req) => {
                     aspects.Department = [product.gender === 'womens' ? 'Women' : product.gender === 'mens' ? 'Men' : 'Unisex'];
                 }
                 
+                // Add condition description if available
+                if (product.condition) {
+                    aspects.Condition = [product.condition.replace(/_/g, ' ')];
+                }
+                
+                // Add year/vintage if available
+                if (product.year) {
+                    aspects.Year = [product.year];
+                }
+                
+                // Add serial number as item number if available
+                if (product.serial_number) {
+                    aspects['Item Number'] = [product.serial_number];
+                }
+                
+                // Add reference number if available
+                if (product.reference_number) {
+                    aspects['Reference Number'] = [product.reference_number];
+                }
+                
                 // Add category-specific attributes from product
                 if (product.category_specific_attributes) {
                     productTypeFields.forEach(field => {
                         const value = product.category_specific_attributes[field.field_name];
                         if (value !== undefined && value !== null && value !== '') {
-                            aspects[field.field_label] = [String(value)];
+                            // Map "Handbag Style" to "Style" for eBay
+                            let aspectName = field.field_label;
+                            if (field.field_name === 'handbag_style' || aspectName === 'Handbag Style') {
+                                aspectName = 'Style';
+                            }
+                            aspects[aspectName] = [String(value)];
                         }
                     });
                 }
