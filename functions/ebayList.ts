@@ -297,6 +297,9 @@ Deno.serve(async (req) => {
                         }
                     });
                 }
+                
+                // Add Type field (required by eBay)
+                aspects.Type = [product.product_type_code === 'watch' ? 'Wristwatch' : productTypeName];
 
                 const inventoryItem = {
                     availability: {
