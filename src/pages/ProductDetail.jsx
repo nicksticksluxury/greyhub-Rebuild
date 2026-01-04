@@ -78,6 +78,13 @@ export default function ProductDetail() {
     initialData: [],
   });
 
+  const { data: companySettings = [] } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => base44.entities.Setting.list(),
+  });
+
+  const ebayFooter = companySettings.find(s => s.key === 'ebay_listing_footer')?.value || '';
+
   useEffect(() => {
     if (product && !editedData) {
       setEditedData(product);
@@ -1560,6 +1567,14 @@ Every comparable MUST show model number "${editedData.reference_number}".
                     orders={orders}
                     auctions={auctions}
                   />
+
+                  <div className="mt-6">
+                    <HTMLDescriptionEditor
+                      value={editedData.description || ""}
+                      onChange={(html) => setEditedData({ ...editedData, description: html })}
+                      companyFooter={ebayFooter}
+                    />
+                  </div>
                 </div>
               </div>
 
