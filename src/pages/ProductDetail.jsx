@@ -868,42 +868,55 @@ YOUR RESPONSE MUST INCLUDE:
   const generateDescription = async () => {
     setGeneratingDescription(true);
     try {
+      const productTypes = await base44.entities.ProductType.filter({ code: editedData.product_type_code });
+      const productType = productTypes && productTypes.length > 0 ? productTypes[0] : null;
+      const productTypeName = productType?.name || 'product';
+      const aiResearchPrompt = productType?.ai_research_prompt || "Research this product thoroughly.";
+
       const aiCondition = editedData.ai_analysis?.condition_assessment || "";
       const conditionContext = aiCondition ? `\n\nAI Analysis of Condition:\n${aiCondition}` : "";
 
-      const testedStatus = editedData.tested === "yes_working" ? "Tested and working" : 
-                          editedData.tested === "yes_not_working" ? "Tested - not working" : 
-                          "Not tested";
+      const attributesText = editedData.category_specific_attributes ? 
+          `\n\nCategory Specific Attributes:\n${JSON.stringify(editedData.category_specific_attributes, null, 2)}` : "";
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Create a compelling, professional product description for this watch:
+        prompt: `Create an eBay SEO-optimized HTML product description for this ${productTypeName}:
 
-        Brand: ${editedData.brand}
-        Model: ${editedData.model}
-        Reference: ${editedData.reference_number || "N/A"}
-        Year: ${editedData.year || "Unknown"}
-        Condition: ${editedData.condition || "N/A"}
-        Movement: ${editedData.movement_type || "N/A"}
-        Case Material: ${editedData.case_material || "N/A"}
-        Case Size: ${editedData.case_size || "N/A"}
-        Testing Status: ${testedStatus}${conditionContext}
+CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
 
-        Create an engaging, accurate description that will attract buyers while being completely honest about condition.
+Brand: ${editedData.brand}
+Model: ${editedData.model || ""}
+Reference: ${editedData.reference_number || ""}
+Year: ${editedData.year || ""}
+Condition: ${editedData.condition || ""}
+Gender: ${editedData.gender || ""}${attributesText}${conditionContext}
 
-        CRITICAL CONDITION REQUIREMENTS:
-        - If there are scratches, wear, tears, damage, or any cosmetic issues, clearly state them
-        - Be specific about the location and severity of any condition issues
-        - Use clear, honest language about wear (e.g., "light scratches on bezel", "moderate wear on bracelet")
-        - Don't hide or minimize flaws - transparency builds trust
-        - After noting any issues, you can emphasize strengths and features
+Product Type Context: ${aiResearchPrompt}
 
-        Keep it concise but informative (150-300 words).
-        Format it in a clear, professional way that can be used on any sales platform.`
+eBay SEO Description Requirements:
+- Format in clean, simple HTML (use <h3>, <ul>, <li>, <p>, <strong>, <br>)
+- Include relevant keywords naturally throughout
+- Highlight key features and selling points
+- Be specific about materials, condition, measurements
+- NO generic filler words like "unknown", "blank", "N/A", "undefined"
+- If information is missing, don't mention that field at all
+- Use bullet points for features and specifications
+- Be honest about condition - state any flaws clearly
+- Keep it scannable and easy to read
+- Focus on what buyers search for
+
+Structure:
+1. Opening paragraph with key features
+2. Detailed specifications in bullet points
+3. Condition details (be honest about wear/damage)
+4. Any additional relevant information
+
+Return ONLY the HTML description, no wrapper text.`
       });
 
       setEditedData({
         ...editedData,
-        description: result
+        description: result.trim()
       });
       toast.success("Description generated!");
     } catch (error) {
