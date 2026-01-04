@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
 
                     const productTypes = await base44.entities.ProductType.filter({ code: product.product_type_code });
                     const productType = productTypes && productTypes.length > 0 ? productTypes[0] : null;
+                    const productTypeName = productType?.name || 'product';
                     const aiResearchPrompt = productType?.ai_research_prompt || "Research this product thoroughly.";
 
                     const aiCondition = product.ai_analysis?.condition_assessment || "";
@@ -43,33 +44,72 @@ Deno.serve(async (req) => {
                     const attributesText = product.category_specific_attributes ? 
                         `\n\nCategory Specific Attributes:\n${JSON.stringify(product.category_specific_attributes, null, 2)}` : "";
 
-                    const prompt = `Create a compelling, professional product description for this ${productType?.name || 'product'}:
+                    // Title generation prompt
+                    const titlePrompt = `Create an eBay SEO-optimized product title (MAX 80 characters) for this ${productTypeName}:
+
+CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
 
 Brand: ${product.brand}
-Model: ${product.model || "Unknown"}
-Reference: ${product.reference_number || "N/A"}
-Year: ${product.year || "Unknown"}
-Condition: ${product.condition || "N/A"}
-Gender: ${product.gender || "N/A"}${attributesText}${conditionContext}
+Model: ${product.model || ""}
+Reference: ${product.reference_number || ""}
+Year: ${product.year || ""}
+Condition: ${product.condition || ""}
+Gender: ${product.gender || ""}${attributesText}
+
+eBay SEO Title Requirements:
+- Include brand, model, and key features buyers search for
+- Use specific details (materials, colors, sizes) NOT generic words
+- NO filler words like "unknown", "blank", "N/A", "undefined"
+- If a field is empty, skip it entirely - don't mention it
+- Front-load most important keywords (brand, model)
+- Stay under 80 characters
+- Make it searchable and descriptive
+
+Return ONLY the title, nothing else.`;
+
+                    // Description generation prompt with HTML
+                    const descriptionPrompt = `Create an eBay SEO-optimized HTML product description for this ${productTypeName}:
+
+CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
+
+Brand: ${product.brand}
+Model: ${product.model || ""}
+Reference: ${product.reference_number || ""}
+Year: ${product.year || ""}
+Condition: ${product.condition || ""}
+Gender: ${product.gender || ""}${attributesText}${conditionContext}
 
 Product Type Context: ${aiResearchPrompt}
 
-Create an engaging, accurate description that will attract buyers while being completely honest about condition.
+eBay SEO Description Requirements:
+- Format in clean, simple HTML (use <h3>, <ul>, <li>, <p>, <strong>, <br>)
+- Include relevant keywords naturally throughout
+- Highlight key features and selling points
+- Be specific about materials, condition, measurements
+- NO generic filler words like "unknown", "blank", "N/A", "undefined"
+- If information is missing, don't mention that field at all
+- Use bullet points for features and specifications
+- Be honest about condition - state any flaws clearly
+- Keep it scannable and easy to read
+- Focus on what buyers search for
 
-CRITICAL CONDITION REQUIREMENTS:
-- If there are scratches, wear, tears, damage, or any cosmetic issues, clearly state them
-- Be specific about the location and severity of any condition issues
-- Use clear, honest language about wear
-- Don't hide or minimize flaws - transparency builds trust
-- After noting any issues, you can emphasize strengths and features
+Structure:
+1. Opening paragraph with key features
+2. Detailed specifications in bullet points
+3. Condition details (be honest about wear/damage)
+4. Any additional relevant information
 
-Keep it concise but informative (150-300 words).
-Format it in a clear, professional way that can be used on any sales platform.`;
+Return ONLY the HTML description, no wrapper text.`;
 
-                    const description = await base44.integrations.Core.InvokeLLM({ prompt: prompt });
+                    // Generate both title and description
+                    const [title, description] = await Promise.all([
+                        base44.integrations.Core.InvokeLLM({ prompt: titlePrompt }),
+                        base44.integrations.Core.InvokeLLM({ prompt: descriptionPrompt })
+                    ]);
 
                     await base44.entities.Product.update(product.id, { 
-                        description: description
+                        listing_title: title.trim(),
+                        description: description.trim()
                     });
                     results.success++;
                 } catch (error) {

@@ -349,13 +349,19 @@ export default function ProductForm({ data, onChange, sources, orders, auctions 
         </div>
 
         <div>
-          <Label>Description</Label>
-          <Textarea
-            value={data.description || ""}
-            onChange={(e) => updateField("description", e.target.value)}
-            placeholder="Detailed description of the product..."
-            rows={4}
-          />
+          <Label>eBay Free Shipping</Label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="ebay_free_shipping"
+              checked={data.ebay_free_shipping || false}
+              onChange={(e) => updateField("ebay_free_shipping", e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300"
+            />
+            <label htmlFor="ebay_free_shipping" className="text-sm text-slate-600 cursor-pointer">
+              Offer free shipping on eBay for this product
+            </label>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
