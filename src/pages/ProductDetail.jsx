@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageGallery from "../components/productdetail/ImageGallery";
 import ProductForm from "../components/productdetail/ProductForm";
 import AIPanel from "../components/productdetail/AIPanel";
-
+import HTMLDescriptionEditor from "../components/productdetail/HTMLDescriptionEditor";
 import AuctionSummaryTab from "../components/productdetail/AuctionSummaryTab";
 
 export default function ProductDetail() {
