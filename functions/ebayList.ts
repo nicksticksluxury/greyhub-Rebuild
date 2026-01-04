@@ -492,8 +492,13 @@ Deno.serve(async (req) => {
 function getEbayCondition(condition) {
     switch (condition) {
         case 'new':
-        case 'new_with_box': return 'NEW';
-        case 'new_no_box': return 'NEW_OTHER';
+        case 'new_with_box':
+        case 'New - With Box & Papers':
+        case 'New (Box Only)': return 'NEW';
+        
+        case 'new_no_box':
+        case 'New (No Box/Papers)':
+        case 'New (No Box)': return 'NEW_OTHER';
         
         case 'mint': 
         case 'excellent': 
