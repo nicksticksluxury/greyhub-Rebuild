@@ -256,6 +256,16 @@ Deno.serve(async (req) => {
                 // Add Type field (required by eBay)
                 aspects.Type = [watch.product_type_code === 'watch' ? 'Wristwatch' : productType?.name || 'Product'];
 
+                // Fetch company settings for eBay footer
+                const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: user.company_id });
+                const ebayFooter = settings.find(s => s.key === 'ebay_listing_footer')?.value || '';
+
+                // Combine description with footer
+                let fullDescription = watch.platform_descriptions?.ebay || watch.description || "No description provided.";
+                if (ebayFooter) {
+                    fullDescription = `${fullDescription}\n\n${ebayFooter}`;
+                }
+
                 // 1. Update Inventory Item
                 const inventoryItem = {
                     availability: {
@@ -273,7 +283,7 @@ Deno.serve(async (req) => {
                     },
                     product: {
                         title: title.substring(0, 80),
-                        description: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
+                        description: fullDescription,
                         aspects: aspects,
                         imageUrls: photoUrls
                     }
@@ -311,15 +321,28 @@ Deno.serve(async (req) => {
                     throw new Error(`No offer found for SKU ${sku}`);
                 }
 
+                // Determine fulfillment policy based on free shipping flag
+                let fulfillmentPolicy = fulfillmentPolicyId;
+
+                // If product has free shipping flag, try to find a free shipping policy
+                if (watch.ebay_free_shipping) {
+                    const freeShippingPolicy = fulfillmentData.fulfillmentPolicies?.find(p => 
+                        p.shippingOptions?.some(opt => opt.costType === 'FREE')
+                    );
+                    if (freeShippingPolicy) {
+                        fulfillmentPolicy = freeShippingPolicy.fulfillmentPolicyId;
+                    }
+                }
+
                 const offer = {
                     sku: sku,
                     marketplaceId: "EBAY_US",
                     format: "FIXED_PRICE",
                     availableQuantity: watch.quantity || 1,
                     categoryId: categoryId,
-                    listingDescription: watch.platform_descriptions?.ebay || watch.description || "No description provided.",
+                    listingDescription: fullDescription,
                     listingPolicies: {
-                        fulfillmentPolicyId: fulfillmentPolicyId,
+                        fulfillmentPolicyId: fulfillmentPolicy,
                         paymentPolicyId: paymentPolicyId,
                         returnPolicyId: returnPolicyId
                     },

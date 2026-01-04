@@ -301,6 +301,16 @@ Deno.serve(async (req) => {
                 // Add Type field (required by eBay)
                 aspects.Type = [product.product_type_code === 'watch' ? 'Wristwatch' : productTypeName];
 
+                // Fetch company settings for eBay footer
+                const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: user.company_id });
+                const ebayFooter = settings.find(s => s.key === 'ebay_listing_footer')?.value || '';
+                
+                // Combine description with footer
+                let fullDescription = product.platform_descriptions?.ebay || product.description || "No description provided.";
+                if (ebayFooter) {
+                    fullDescription = `${fullDescription}\n\n${ebayFooter}`;
+                }
+
                 const inventoryItem = {
                     availability: {
                         shipToLocationAvailability: {
@@ -317,7 +327,7 @@ Deno.serve(async (req) => {
                     },
                     product: {
                         title: title.substring(0, 80),
-                        description: product.platform_descriptions?.ebay || product.description || "No description provided.",
+                        description: fullDescription,
                         aspects: aspects,
                         imageUrls: photoUrls
                     }
@@ -343,15 +353,28 @@ Deno.serve(async (req) => {
                 // Use product type's eBay category ID if available, otherwise use fallback
                 const categoryId = productType?.ebay_category_id || getEbayCategoryId(product.product_type_code, productTypeName);
                 
+                // Determine fulfillment policy based on free shipping flag
+                let fulfillmentPolicy = fulfillmentPolicyId;
+                
+                // If product has free shipping flag, try to find a free shipping policy
+                if (product.ebay_free_shipping) {
+                    const freeShippingPolicy = fulfillmentData.fulfillmentPolicies?.find(p => 
+                        p.shippingOptions?.some(opt => opt.costType === 'FREE')
+                    );
+                    if (freeShippingPolicy) {
+                        fulfillmentPolicy = freeShippingPolicy.fulfillmentPolicyId;
+                    }
+                }
+
                 const offer = {
                     sku: sku,
                     marketplaceId: "EBAY_US",
                     format: "FIXED_PRICE",
                     availableQuantity: product.quantity || 1,
                     categoryId: categoryId,
-                    listingDescription: product.platform_descriptions?.ebay || product.description || "No description provided.",
+                    listingDescription: fullDescription,
                     listingPolicies: {
-                        fulfillmentPolicyId: fulfillmentPolicyId,
+                        fulfillmentPolicyId: fulfillmentPolicy,
                         paymentPolicyId: paymentPolicyId,
                         returnPolicyId: returnPolicyId
                     },

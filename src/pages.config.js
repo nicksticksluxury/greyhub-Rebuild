@@ -26,6 +26,7 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
+import EbayFooterSettings from './pages/EbayFooterSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -58,6 +59,7 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
+    "EbayFooterSettings": EbayFooterSettings,
 }
 
 export const pagesConfig = {
