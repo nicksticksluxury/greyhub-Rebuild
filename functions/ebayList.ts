@@ -519,14 +519,14 @@ function getEbayCondition(condition) {
         case 'new_full_set':
         case 'new_with_box':
         case 'New - With Box & Papers': 
-            return 'NEW_WITH_BOX';
+            return 'NEW';
         
         // New without box or papers
         case 'new_no_box':
         case 'New (No Box/Papers)':
         case 'New (No Box)':
         case 'New (Box Only)':
-            return 'NEW_WITHOUT_BOX';
+            return 'NEW_OTHER';
         
         // Pre-owned conditions
         case 'mint': 
