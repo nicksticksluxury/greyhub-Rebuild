@@ -51,15 +51,19 @@ export default function ProductDetail() {
         console.error('No productId provided');
         throw new Error('No product ID in URL');
       }
-      console.log('Fetching product with ID:', productId);
-      const allProducts = await base44.entities.Product.list();
-      console.log('All products count:', allProducts.length);
-      const foundProduct = allProducts.find(p => p.id === productId);
-      console.log('Found product:', foundProduct);
-      if (!foundProduct) {
-        throw new Error('Product not found');
+      const user = await base44.auth.me();
+      const companyId = user?.data?.company_id || user?.company_id;
+      if (!companyId) {
+        console.error('User not associated with a company.');
+        throw new Error('User not associated with a company. Cannot fetch product.');
       }
-      return foundProduct;
+      console.log('Fetching product with ID:', productId, 'for company ID:', companyId);
+      const products = await base44.entities.Product.filter({ id: productId, company_id: companyId });
+      console.log('Product query result:', products);
+      if (!products || products.length === 0) {
+        throw new Error('Product not found or access denied due to RLS.');
+      }
+      return products[0];
     },
     enabled: !!productId,
     retry: 1,
