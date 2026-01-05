@@ -745,6 +745,34 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
               const totalCost = getTotalCost();
               const minPrice = calculateMinimumPrice(totalCost, platform);
               const { fees, net } = calculateFees(price, platform);
+
+              // Calculate 30% ROI price
+              const targetROI = 0.30;
+              const config = PLATFORM_FEES[platform];
+              let roi30Price = 0;
+              if (totalCost > 0) {
+                const targetNet = totalCost * (1 + targetROI);
+                switch(platform) {
+                  case 'ebay':
+                    roi30Price = targetNet / (1 - 0.15);
+                    break;
+                  case 'poshmark':
+                    roi30Price = targetNet / (1 - config.rate);
+                    break;
+                  case 'etsy':
+                    roi30Price = (targetNet + config.fixed) / (1 - config.rate - config.payment);
+                    break;
+                  case 'whatnot':
+                    roi30Price = (targetNet + config.fixed) / (1 - config.rate - config.payment);
+                    break;
+                  case 'shopify':
+                    roi30Price = (targetNet + config.fixed) / (1 - config.rate);
+                    break;
+                  default:
+                    roi30Price = targetNet / (1 - config.rate);
+                }
+                roi30Price = Math.ceil(roi30Price);
+              }
               
               const listingUrl = data.listing_urls?.[platform] || "";
               const listingId = data.platform_ids?.[platform];
@@ -763,10 +791,16 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                       <p className="text-xs text-slate-500">{PLATFORM_FEES[platform].description}</p>
                     </div>
                     {totalCost > 0 && (
-                      <Badge variant="outline" className="bg-white text-amber-700 border-amber-300">
-                        <TrendingDown className="w-3 h-3 mr-1" />
-                        Min: ${minPrice}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="bg-white text-amber-700 border-amber-300">
+                          <TrendingDown className="w-3 h-3 mr-1" />
+                          Min: ${minPrice}
+                        </Badge>
+                        <Badge variant="outline" className="bg-white text-emerald-700 border-emerald-300">
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                          30% ROI: ${roi30Price}
+                        </Badge>
+                      </div>
                     )}
                   </div>
                   
@@ -808,23 +842,31 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                   </div>
                   
                   {price > 0 && (
-                    <div className="grid grid-cols-2 gap-2 text-sm mt-2">
-                      <div className="flex items-center justify-between p-2 bg-red-50 rounded border border-red-200">
-                        <span className="text-red-700">Fees:</span>
-                        <span className="font-semibold text-red-800">-${fees.toFixed(2)}</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
-                        <span className="text-green-700 flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" />
-                          Net:
-                        </span>
-                        <span className="font-semibold text-green-800">${net.toFixed(2)}</span>
+                    <div className="space-y-2 mt-2">
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div className="flex items-center justify-between p-2 bg-red-50 rounded border border-red-200">
+                          <span className="text-red-700">Fees:</span>
+                          <span className="font-semibold text-red-800">-${fees.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                          <span className="text-green-700 flex items-center gap-1">
+                            <DollarSign className="w-3 h-3" />
+                            Net:
+                          </span>
+                          <span className="font-semibold text-green-800">${net.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
+                          <span className="text-blue-700">ROI:</span>
+                          <span className={`font-semibold ${totalCost > 0 && net - totalCost >= 0 ? 'text-blue-800' : 'text-red-700'}`}>
+                            {totalCost > 0 ? `${((net - totalCost) / totalCost * 100).toFixed(1)}%` : 'N/A'}
+                          </span>
+                        </div>
                       </div>
                       {totalCost > 0 && (
-                        <div className="col-span-2 text-center p-2 bg-slate-100 rounded">
+                        <div className="text-center p-2 bg-slate-100 rounded">
                           <span className="text-slate-600">Profit: </span>
                           <span className={`font-bold ${net - totalCost >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                            ${(net - totalCost).toFixed(2)} ({((net - totalCost) / totalCost * 100).toFixed(1)}%)
+                            ${(net - totalCost).toFixed(2)}
                           </span>
                         </div>
                       )}
