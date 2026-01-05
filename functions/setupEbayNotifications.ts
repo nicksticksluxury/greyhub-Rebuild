@@ -9,13 +9,14 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        if (!user.company_id) {
+        const companyId = user.data?.company_id || user.company_id;
+        if (!companyId) {
             return Response.json({ error: 'User not linked to company' }, { status: 403 });
         }
 
         // Fetch OAuth token from Setting entity (company-scoped)
         const settings = await base44.entities.Setting.filter({ 
-            company_id: user.company_id,
+            company_id: companyId,
             key: 'ebay_oauth_token' 
         });
         
