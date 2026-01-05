@@ -1442,170 +1442,173 @@ Every comparable MUST show model number "${editedData.reference_number}".
                 </span>
               )}
             </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={analyzeWithAI}
-                disabled={analyzing || !editedData.photos?.length || hasUnsavedChanges || !editedData.condition}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                title={
-                  !editedData.condition ? "Please set the product condition before analyzing" :
-                  hasUnsavedChanges ? "Please save changes before analyzing" :
-                  !editedData.photos?.length ? "Please add photos before analyzing" :
-                  ""
-                }
-              >
-                {analyzing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Analyze with AI
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={repriceProduct}
-                disabled={analyzing || hasUnsavedChanges || !editedData.brand}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                title={
-                  hasUnsavedChanges ? "Please save changes before re-pricing" :
-                  !editedData.brand ? "Please set product brand before re-pricing" :
-                  ""
-                }
-              >
-                {analyzing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Re-pricing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Re-price Product
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={generateDescription}
-                disabled={generatingDescription || !editedData.brand}
-                variant="outline"
-                className="border-amber-300 text-amber-700 hover:bg-amber-50"
-              >
-                {generatingDescription ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Generate Title & Description
-                  </>
-                )}
-              </Button>
-              
-              <Button
-                onClick={generateHeroImage}
-                disabled={generatingHero || !editedData.photos?.length}
-                variant="outline"
-                className="border-purple-300 text-purple-700 hover:bg-purple-50"
-              >
-                {generatingHero ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Hero Image
-                  </>
-                )}
-              </Button>
-              
-              <Button
-                onClick={handleListOnEbay}
-                disabled={listingEbay || hasUnsavedChanges || !editedData.brand || (editedData.exported_to?.ebay && !needsEbayUpdate)}
-                variant="outline"
-                className={`border-blue-300 text-blue-700 hover:bg-blue-50 ${needsEbayUpdate ? 'border-amber-400 bg-amber-50 text-amber-700' : ''}`}
-              >
-                {listingEbay ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {editedData.exported_to?.ebay ? 'Updating...' : 'Listing...'}
-                  </>
-                ) : editedData.exported_to?.ebay ? (
-                  <>
-                    <ShoppingBag className="w-4 h-4 mr-2" />
-                    {needsEbayUpdate ? 'Update eBay' : 'Listed on eBay'}
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-4 h-4 mr-2" />
-                    List on eBay
-                  </>
-                )}
-              </Button>
-              <Button
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Button
+                  onClick={analyzeWithAI}
+                  disabled={analyzing || !editedData.photos?.length || hasUnsavedChanges || !editedData.condition}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                  title={
+                    !editedData.condition ? "Please set the product condition before analyzing" :
+                    hasUnsavedChanges ? "Please save changes before analyzing" :
+                    !editedData.photos?.length ? "Please add photos before analyzing" :
+                    ""
+                  }
+                >
+                  {analyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Analyze with AI
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={repriceProduct}
+                  disabled={analyzing || hasUnsavedChanges || !editedData.brand}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                  title={
+                    hasUnsavedChanges ? "Please save changes before re-pricing" :
+                    !editedData.brand ? "Please set product brand before re-pricing" :
+                    ""
+                  }
+                >
+                  {analyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Re-pricing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Re-price Product
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={generateDescription}
+                  disabled={generatingDescription || !editedData.brand}
                   variant="outline"
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    params.set("brand", editedData.brand || "");
-                    params.set("model", editedData.model || "");
-                    params.set("ref", editedData.reference_number || "");
-                    params.set("year", editedData.year || "");
-                    params.set("condition", editedData.condition || "");
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                >
+                  {generatingDescription ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Generate Title & Description
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={generateHeroImage}
+                  disabled={generatingHero || !editedData.photos?.length}
+                  variant="outline"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                >
+                  {generatingHero ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Hero Image
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleListOnEbay}
+                  disabled={listingEbay || hasUnsavedChanges || !editedData.brand || (editedData.exported_to?.ebay && !needsEbayUpdate)}
+                  variant="outline"
+                  className={`border-blue-300 text-blue-700 hover:bg-blue-50 ${needsEbayUpdate ? 'border-amber-400 bg-amber-50 text-amber-700' : ''}`}
+                >
+                  {listingEbay ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {editedData.exported_to?.ebay ? 'Updating...' : 'Listing...'}
+                    </>
+                  ) : editedData.exported_to?.ebay ? (
+                    <>
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      {needsEbayUpdate ? 'Update eBay' : 'Listed on eBay'}
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      List on eBay
+                    </>
+                  )}
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={() => {
+                      const params = new URLSearchParams();
+                      params.set("brand", editedData.brand || "");
+                      params.set("model", editedData.model || "");
+                      params.set("ref", editedData.reference_number || "");
+                      params.set("year", editedData.year || "");
+                      params.set("condition", editedData.condition || "");
 
-                    // Images - pass all available full-size images
-                    const allImages = editedData.photos?.map(p => p.full || p.original || p).filter(Boolean) || [];
-                    if (allImages.length > 0) {
-                      params.set("images", allImages.join('|'));
-                    }
+                      // Images - pass all available full-size images
+                      const allImages = editedData.photos?.map(p => p.full || p.original || p).filter(Boolean) || [];
+                      if (allImages.length > 0) {
+                        params.set("images", allImages.join('|'));
+                      }
 
-                    // Prices
-                    const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
-                    params.set("msrp", format(editedData.msrp || editedData.ai_analysis?.original_msrp));
-                    params.set("price", format(editedData.retail_price || editedData.ai_analysis?.average_market_value));
-                    
-                    // Prioritize set platform price, fallback to AI recommendation
-                    const whatnotPrice = editedData.platform_prices?.whatnot || editedData.ai_analysis?.pricing_recommendations?.whatnot;
-                    params.set("whatnotPrice", format(whatnotPrice));
+                      // Prices
+                      const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
+                      params.set("msrp", format(editedData.msrp || editedData.ai_analysis?.original_msrp));
+                      params.set("price", format(editedData.retail_price || editedData.ai_analysis?.average_market_value));
+                      
+                      // Prioritize set platform price, fallback to AI recommendation
+                      const whatnotPrice = editedData.platform_prices?.whatnot || editedData.ai_analysis?.pricing_recommendations?.whatnot;
+                      params.set("whatnotPrice", format(whatnotPrice));
 
-                    // Highlights
-                    if (editedData.ai_analysis?.notable_features?.length) {
-                      params.set("highlights", editedData.ai_analysis.notable_features.join(","));
-                    } else if (editedData.description) {
-                      params.set("desc", editedData.description.substring(0, 200));
-                    }
+                      // Highlights
+                      if (editedData.ai_analysis?.notable_features?.length) {
+                        params.set("highlights", editedData.ai_analysis.notable_features.join(","));
+                      } else if (editedData.description) {
+                        params.set("desc", editedData.description.substring(0, 200));
+                      }
 
-                    // Use ID for cleaner URLs and reliable data fetching
-                    params.set("id", productId);
-                    window.open(createPageUrl(`SalesView?${params.toString()}`), 'ObsWindow', 'width=450,height=850,menubar=no,toolbar=no,location=no,status=no');
-                  }}
-                  className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-              >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Sales Tool
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleDelete}
-                className="border-red-300 text-red-600 hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={updateMutation.isPending || !hasUnsavedChanges}
-                className="bg-slate-800 hover:bg-slate-900"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </Button>
+                      // Use ID for cleaner URLs and reliable data fetching
+                      params.set("id", productId);
+                      window.open(createPageUrl(`SalesView?${params.toString()}`), 'ObsWindow', 'width=450,height=850,menubar=no,toolbar=no,location=no,status=no');
+                    }}
+                    className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Sales Tool
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleDelete}
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={updateMutation.isPending || !hasUnsavedChanges}
+                  className="bg-slate-800 hover:bg-slate-900"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
             </div>
           </div>
           
