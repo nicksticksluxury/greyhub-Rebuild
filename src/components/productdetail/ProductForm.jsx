@@ -745,16 +745,18 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
               const totalCost = getTotalCost();
               const minPrice = calculateMinimumPrice(totalCost, platform);
               const { fees, net } = calculateFees(price, platform);
-              
+              const roi = totalCost > 0 && price > 0 ? ((net - totalCost) / totalCost * 100) : 0;
+              const threePercentRoiPrice = totalCost > 0 ? Math.ceil(totalCost * 1.03 / (1 - (PLATFORM_FEES[platform].rate || 0.15))) : 0;
+
               const listingUrl = data.listing_urls?.[platform] || "";
               const listingId = data.platform_ids?.[platform];
               let displayUrl = listingUrl;
-              
+
               // Auto-construct eBay URL if ID exists and URL is empty
               if (platform === 'ebay' && !displayUrl && listingId) {
                  displayUrl = `https://www.ebay.com/itm/${listingId}`;
               }
-              
+
               return (
                 <div key={platform} className="p-4 bg-slate-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
@@ -763,10 +765,15 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                       <p className="text-xs text-slate-500">{PLATFORM_FEES[platform].description}</p>
                     </div>
                     {totalCost > 0 && (
-                      <Badge variant="outline" className="bg-white text-amber-700 border-amber-300">
-                        <TrendingDown className="w-3 h-3 mr-1" />
-                        Min: ${minPrice}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="bg-white text-amber-700 border-amber-300">
+                          <TrendingDown className="w-3 h-3 mr-1" />
+                          Min: ${minPrice}
+                        </Badge>
+                        <Badge variant="outline" className="bg-white text-green-700 border-green-300">
+                          3% ROI: ${threePercentRoiPrice}
+                        </Badge>
+                      </div>
                     )}
                   </div>
                   
@@ -808,7 +815,7 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                   </div>
                   
                   {price > 0 && (
-                    <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                    <div className="grid grid-cols-3 gap-2 text-sm mt-2">
                       <div className="flex items-center justify-between p-2 bg-red-50 rounded border border-red-200">
                         <span className="text-red-700">Fees:</span>
                         <span className="font-semibold text-red-800">-${fees.toFixed(2)}</span>
@@ -820,8 +827,17 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                         </span>
                         <span className="font-semibold text-green-800">${net.toFixed(2)}</span>
                       </div>
+                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
+                        <span className="text-blue-700 flex items-center gap-1">
+                          <Percent className="w-3 h-3" />
+                          ROI:
+                        </span>
+                        <span className={`font-semibold ${roi >= 0 ? 'text-blue-800' : 'text-red-700'}`}>
+                          {roi.toFixed(1)}%
+                        </span>
+                      </div>
                       {totalCost > 0 && (
-                        <div className="col-span-2 text-center p-2 bg-slate-100 rounded">
+                        <div className="col-span-3 text-center p-2 bg-slate-100 rounded">
                           <span className="text-slate-600">Profit: </span>
                           <span className={`font-bold ${net - totalCost >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
                             ${(net - totalCost).toFixed(2)} ({((net - totalCost) / totalCost * 100).toFixed(1)}%)
