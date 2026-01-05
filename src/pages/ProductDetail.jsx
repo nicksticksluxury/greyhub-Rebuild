@@ -47,8 +47,13 @@ export default function ProductDetail() {
   const { data: product, isLoading, error: productError } = useQuery({
     queryKey: ['product', productId],
     queryFn: async () => {
-      if (!productId) return null;
+      if (!productId) {
+        console.error('No productId provided');
+        throw new Error('No product ID in URL');
+      }
+      console.log('Fetching product with ID:', productId);
       const products = await base44.entities.Product.filter({ id: productId });
+      console.log('Product query result:', products);
       if (!products || products.length === 0) {
         throw new Error('Product not found');
       }
