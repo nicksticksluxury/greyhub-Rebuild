@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle, FileText, ShoppingBag, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,9 @@ import AuctionSummaryTab from "../components/productdetail/AuctionSummaryTab";
 export default function ProductDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const urlParams = new URLSearchParams(window.location.search);
-  const productId = urlParams.get('id');
-  console.log('DEBUG: Product ID from URL:', productId);
+  const [searchParams] = useSearchParams();
+  const productId = searchParams.get('id');
+  console.log('DEBUG: Product ID from URL (useSearchParams):', productId);
 
   const [editedData, setEditedData] = useState(null);
   const [originalData, setOriginalData] = useState(null);
