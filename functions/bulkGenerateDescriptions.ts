@@ -107,9 +107,14 @@ Return ONLY the HTML description, no wrapper text.`;
                         base44.integrations.Core.InvokeLLM({ prompt: descriptionPrompt })
                     ]);
 
+                    // Remove markdown code fences if present
+                    const cleanDescription = description.trim()
+                        .replace(/^```html\n?/i, '')
+                        .replace(/\n?```$/, '');
+
                     await base44.entities.Product.update(product.id, { 
                         listing_title: title.trim(),
-                        description: description.trim()
+                        description: cleanDescription.trim()
                     });
                     results.success++;
                 } catch (error) {
