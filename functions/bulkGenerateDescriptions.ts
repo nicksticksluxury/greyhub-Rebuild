@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { marked } from 'npm:marked@14.1.3';
 
 Deno.serve(async (req) => {
     try {
@@ -102,14 +103,17 @@ Structure:
 Return ONLY the HTML description, no wrapper text.`;
 
                     // Generate both title and description
-                    const [title, description] = await Promise.all([
+                    const [title, rawDescription] = await Promise.all([
                         base44.integrations.Core.InvokeLLM({ prompt: titlePrompt }),
                         base44.integrations.Core.InvokeLLM({ prompt: descriptionPrompt })
                     ]);
 
+                    // Convert markdown/raw text to HTML
+                    const htmlDescription = marked.parse(rawDescription);
+
                     await base44.entities.Product.update(product.id, { 
                         listing_title: title.trim(),
-                        description: description.trim()
+                        description: htmlDescription.trim()
                     });
                     results.success++;
                 } catch (error) {
