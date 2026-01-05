@@ -78,11 +78,6 @@ export default function Layout({ children, currentPageName }) {
           url: createPageUrl("TenantSettings"),
           icon: Settings,
         },
-        {
-          title: "eBay Footer",
-          url: createPageUrl("EbayFooterSettings"),
-          icon: Settings,
-        },
       ];
 
       // Admin-only pages

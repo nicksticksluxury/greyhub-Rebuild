@@ -10,6 +10,7 @@ import JoinCompany from './pages/JoinCompany';
 import MergeData from './pages/MergeData';
 import MigrateData from './pages/MigrateData';
 import OutForRepair from './pages/OutForRepair';
+import ProductDetail from './pages/ProductDetail';
 import ProductTypeManagement from './pages/ProductTypeManagement';
 import ResolveProductDuplicates from './pages/ResolveProductDuplicates';
 import RestoreData from './pages/RestoreData';
@@ -26,7 +27,6 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
-import ProductDetail from './pages/ProductDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -43,6 +43,7 @@ export const PAGES = {
     "MergeData": MergeData,
     "MigrateData": MigrateData,
     "OutForRepair": OutForRepair,
+    "ProductDetail": ProductDetail,
     "ProductTypeManagement": ProductTypeManagement,
     "ResolveProductDuplicates": ResolveProductDuplicates,
     "RestoreData": RestoreData,
@@ -59,7 +60,6 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
-    "ProductDetail": ProductDetail,
 }
 
 export const pagesConfig = {

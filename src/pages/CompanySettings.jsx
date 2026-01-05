@@ -7,13 +7,32 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Building2, Save, Users, Mail, Phone, Globe, MapPin, UserPlus, Clock, Loader2 } from "lucide-react";
+import { Building2, Save, Users, Mail, Phone, Globe, MapPin, UserPlus, Clock, Loader2, Code, Eye } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
+
+const quillModules = {
+  toolbar: [
+    [{ 'header': [3, 4, false] }],
+    ['bold', 'italic', 'underline'],
+    [{'list': 'ordered'}, {'list': 'bullet'}],
+    ['link'],
+    ['clean']
+  ]
+};
+
+const quillFormats = [
+  'header', 'bold', 'italic', 'underline', 'list', 'bullet', 'link'
+];
 
 export default function CompanySettings() {
   const queryClient = useQueryClient();
   const [editedCompany, setEditedCompany] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [footerContent, setFooterContent] = useState("");
+  const [footerTab, setFooterTab] = useState("editor");
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -41,6 +60,11 @@ export default function CompanySettings() {
     enabled: !!companyId,
   });
 
+  const { data: settings = [] } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => base44.entities.Setting.list(),
+  });
+
   const [inviteEmail, setInviteEmail] = useState('');
   const [isSendingInvite, setIsSendingInvite] = useState(false);
 
@@ -49,6 +73,16 @@ export default function CompanySettings() {
       setEditedCompany(company);
     }
   }, [company]);
+
+  useEffect(() => {
+    const footer = settings.find(s => s.key === 'ebay_listing_footer');
+    if (footer) {
+      setFooterContent(footer.value);
+    } else if (company) {
+      const defaultFooter = `<hr><h3>About ${company.name || 'Our Store'}</h3><p>${company.email || ''} | ${company.phone || ''}</p><p>${company.address || ''}</p>`;
+      setFooterContent(defaultFooter);
+    }
+  }, [settings, company]);
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Company.update(company.id, data),
@@ -98,6 +132,26 @@ export default function CompanySettings() {
       setIsSendingInvite(false);
     }
   };
+
+  const saveFooterMutation = useMutation({
+    mutationFn: async () => {
+      const existing = settings.find(s => s.key === 'ebay_listing_footer');
+      if (existing) {
+        return base44.entities.Setting.update(existing.id, { value: footerContent });
+      } else {
+        return base44.entities.Setting.create({
+          company_id: companyId,
+          key: 'ebay_listing_footer',
+          value: footerContent,
+          description: 'HTML footer automatically added to all eBay listings'
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      toast.success("eBay footer saved!");
+    },
+  });
 
 
 
@@ -344,6 +398,63 @@ export default function CompanySettings() {
           </div>
         </Card>
 
+        {/* eBay Listing Footer */}
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center">
+              <Code className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">eBay Listing Footer</h2>
+              <p className="text-sm text-slate-500">HTML footer automatically added to all eBay listings</p>
+            </div>
+          </div>
+
+          <Tabs value={footerTab} onValueChange={setFooterTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="editor">
+                <Code className="w-4 h-4 mr-2" />
+                Editor
+              </TabsTrigger>
+              <TabsTrigger value="preview">
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="editor" className="mt-4">
+              <ReactQuill 
+                theme="snow"
+                value={footerContent}
+                onChange={setFooterContent}
+                modules={quillModules}
+                formats={quillFormats}
+                className="bg-white"
+                style={{ minHeight: '200px' }}
+              />
+            </TabsContent>
+            
+            <TabsContent value="preview" className="mt-4">
+              <div className="border border-slate-200 rounded-lg p-6 bg-white min-h-[200px]">
+                <div 
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: footerContent }}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="mt-6 flex justify-end">
+            <Button 
+              onClick={() => saveFooterMutation.mutate()}
+              disabled={saveFooterMutation.isPending}
+              className="bg-slate-800 hover:bg-slate-900"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saveFooterMutation.isPending ? 'Saving...' : 'Save Footer'}
+            </Button>
+          </div>
+        </Card>
 
         </div>
         </div>
