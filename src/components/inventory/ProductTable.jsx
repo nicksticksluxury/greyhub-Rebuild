@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +59,6 @@ const conditionLabels = {
 };
 
 export default function ProductTable({ products, isLoading, onQuickView, sources, auctions, selectedPlatform, selectedIds = [], onSelectionChange, sourceOrders }) {
-  const navigate = useNavigate();
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [sortField, setSortField] = useState(null);
@@ -92,7 +90,7 @@ export default function ProductTable({ products, isLoading, onQuickView, sources
   };
 
   const handleRowClick = (productId) => {
-    navigate(createPageUrl(`ProductDetail?id=${productId}`));
+    window.location.href = createPageUrl(`ProductDetail?id=${productId}`);
   };
 
   const handleSort = (field) => {
