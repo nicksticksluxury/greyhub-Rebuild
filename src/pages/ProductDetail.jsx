@@ -52,12 +52,14 @@ export default function ProductDetail() {
         throw new Error('No product ID in URL');
       }
       console.log('Fetching product with ID:', productId);
-      const products = await base44.entities.Product.filter({ id: productId });
-      console.log('Product query result:', products);
-      if (!products || products.length === 0) {
+      const allProducts = await base44.entities.Product.list();
+      console.log('All products count:', allProducts.length);
+      const foundProduct = allProducts.find(p => p.id === productId);
+      console.log('Found product:', foundProduct);
+      if (!foundProduct) {
         throw new Error('Product not found');
       }
-      return products[0];
+      return foundProduct;
     },
     enabled: !!productId,
     retry: 1,
