@@ -330,7 +330,6 @@ export default function ProductDetail() {
       const identificationSchema = {
         type: "object",
         properties: {
-          listing_title: { type: "string", description: "Optimized listing title (max 80 chars)" },
           identified_brand: { type: "string" },
           identified_model: { type: "string", description: "The descriptive model name" },
           reference_number: { type: "string", description: "Model/reference code if applicable" },
@@ -406,11 +405,6 @@ STEP 3 - REPORT YOUR FINDINGS:
 - Condition Assessment (detailed)
 - Notable Features
 - Category-specific attributes based on the fields listed above
-
-STEP 4 - CREATE LISTING TITLE:
-Format: Brand + Model + Key Features + "${productTypeName}"
-Max 80 characters
-Example: "Gucci Marmont Leather Crossbody ${productTypeName}"
 
 CONFIDENCE LEVEL:
 Rate your identification confidence (High/Medium/Low)`,
@@ -882,8 +876,31 @@ YOUR RESPONSE MUST INCLUDE:
       const attributesText = editedData.category_specific_attributes ? 
           `\n\nCategory Specific Attributes:\n${JSON.stringify(editedData.category_specific_attributes, null, 2)}` : "";
 
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Create an eBay SEO-optimized HTML product description for this ${productTypeName}:
+      // Generate title
+      const titlePrompt = `Create an eBay SEO-optimized product title (MAX 80 characters) for this ${productTypeName}:
+
+CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
+
+Brand: ${editedData.brand}
+Model: ${editedData.model || ""}
+Reference: ${editedData.reference_number || ""}
+Year: ${editedData.year || ""}
+Condition: ${editedData.condition || ""}
+Gender: ${editedData.gender || ""}${attributesText}
+
+eBay SEO Title Requirements:
+- Include brand, model, and key features buyers search for
+- Use specific details (materials, colors, sizes) NOT generic words
+- NO filler words like "unknown", "blank", "N/A", "undefined"
+- If a field is empty, skip it entirely - don't mention it
+- Front-load most important keywords (brand, model)
+- Stay under 80 characters
+- Make it searchable and descriptive
+
+Return ONLY the title, nothing else.`;
+
+      // Generate description
+      const descriptionPrompt = `Create an eBay SEO-optimized HTML product description for this ${productTypeName}:
 
 CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
 
@@ -914,17 +931,23 @@ Structure:
 3. Condition details (be honest about wear/damage)
 4. Any additional relevant information
 
-Return ONLY the HTML description, no wrapper text.`
-      });
+Return ONLY the HTML description, no wrapper text.`;
+
+      // Generate both
+      const [title, description] = await Promise.all([
+        base44.integrations.Core.InvokeLLM({ prompt: titlePrompt }),
+        base44.integrations.Core.InvokeLLM({ prompt: descriptionPrompt })
+      ]);
 
       setEditedData({
         ...editedData,
-        description: result.trim()
+        listing_title: title.trim(),
+        description: description.trim()
       });
-      toast.success("Description generated!");
+      toast.success("Title and description generated!");
     } catch (error) {
       console.error("Error generating description:", error);
-      toast.error("Failed to generate description");
+      toast.error("Failed to generate title and description");
     }
     setGeneratingDescription(false);
   };
@@ -1479,7 +1502,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
                 ) : (
                   <>
                     <FileText className="w-4 h-4 mr-2" />
-                    Generate Description
+                    Generate Title & Description
                   </>
                 )}
               </Button>
