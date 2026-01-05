@@ -26,7 +26,8 @@ export default function AlertsBell() {
         return [];
       }
     },
-    refetchInterval: 60000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 
@@ -58,21 +59,7 @@ export default function AlertsBell() {
     }
   });
 
-  // Check system health on mount (trigger backend check)
-  useEffect(() => {
-    const checkHealth = async () => {
-        try {
-            const user = await base44.auth.me();
-            if (user?.company_id || user?.data?.company_id) {
-              await base44.functions.invoke("checkSystemAlerts");
-              queryClient.invalidateQueries({ queryKey: ['alerts'] });
-            }
-        } catch (e) {
-            console.error("Failed to check alerts", e);
-        }
-    };
-    checkHealth();
-  }, []);
+
 
   const handleAlertClick = (alert) => {
     if (!alert.read) {

@@ -17,7 +17,8 @@ export default function ToastHistoryBell() {
   const { data: toasts = [] } = useQuery({
     queryKey: ['toastHistory'],
     queryFn: () => base44.entities.ToastNotification.list("-timestamp", 100),
-    refetchInterval: open ? 5000 : false,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   const markAllReadMutation = useMutation({
