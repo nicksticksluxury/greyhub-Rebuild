@@ -90,7 +90,7 @@ export default function ProductTable({ products, isLoading, onQuickView, sources
   };
 
   const handleRowClick = (productId) => {
-    window.location.href = createPageUrl(`ProductDetail?id=${productId}`);
+    window.location.href = `${createPageUrl("ProductDetail")}?id=${productId}`;
   };
 
   const handleSort = (field) => {
