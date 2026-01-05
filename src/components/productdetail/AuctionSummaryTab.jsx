@@ -32,6 +32,17 @@ export default function AuctionSummaryTab({ product }) {
   };
 
   const totalCost = (product.cost || 0) + (product.repair_costs?.reduce((sum, r) => sum + (r.cost || 0), 0) || 0);
+  
+  // Calculate 30% ROI price (using Whatnot fees as example: 10% + 2.9% + $0.30)
+  const calculate30ROIPrice = () => {
+    if (totalCost <= 0) return 0;
+    const targetNet = totalCost * 1.30; // Total cost + 30% ROI
+    const price = (targetNet + 0.30) / (1 - 0.10 - 0.029);
+    return Math.ceil(price);
+  };
+  
+  const roi30Price = calculate30ROIPrice();
+  
   const photos = product.photos || [];
   const currentPhoto = photos[selectedPhoto];
   const photoUrl = typeof currentPhoto === 'string' 
@@ -319,35 +330,51 @@ export default function AuctionSummaryTab({ product }) {
                 })()}
               </div>
 
-              {product.retail_price && (
-                <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold text-white">Retail / Market Price</span>
-                    <span className="text-xl font-bold text-white">
-                      ${product.retail_price.toFixed(2)}
-                    </span>
+              <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
+                {totalCost > 0 && roi30Price > 0 && (
+                  <div className="mb-4 pb-4 border-b border-slate-700">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-emerald-400">30% ROI Target Price</span>
+                      <span className="text-xl font-bold text-emerald-400">
+                        ${roi30Price.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      Achieves 30% return on investment after fees
+                    </div>
                   </div>
-                  {(() => {
-                    const { profit, margin, roi } = calculateProfit(product.retail_price);
-                    return (
-                      <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div>
-                          <div className="text-slate-500 text-xs">Profit</div>
-                          <div className="text-green-400">${profit.toFixed(2)}</div>
+                )}
+                
+                {product.retail_price && (
+                  <>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-white">Retail / Market Price</span>
+                      <span className="text-xl font-bold text-white">
+                        ${product.retail_price.toFixed(2)}
+                      </span>
+                    </div>
+                    {(() => {
+                      const { profit, margin, roi } = calculateProfit(product.retail_price);
+                      return (
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div>
+                            <div className="text-slate-500 text-xs">Profit</div>
+                            <div className="text-green-400">${profit.toFixed(2)}</div>
+                          </div>
+                          <div>
+                            <div className="text-slate-500 text-xs">Margin</div>
+                            <div className="text-white">{margin.toFixed(1)}%</div>
+                          </div>
+                          <div>
+                            <div className="text-slate-500 text-xs">ROI</div>
+                            <div className="text-white">{roi.toFixed(1)}%</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-slate-500 text-xs">Margin</div>
-                          <div className="text-white">{margin.toFixed(1)}%</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 text-xs">ROI</div>
-                          <div className="text-white">{roi.toFixed(1)}%</div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
+                      );
+                    })()}
+                  </>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
