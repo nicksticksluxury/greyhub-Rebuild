@@ -405,6 +405,32 @@ export default function Inventory() {
     }
   };
 
+  const handleUnlistFromEbay = async () => {
+    if (selectedProductIds.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to mark ${selectedProductIds.length} products as unlisted from eBay? This will clear their eBay listing data.`)) {
+      return;
+    }
+
+    const toastId = toast.loading("Unlisting products from eBay...");
+    try {
+      await Promise.all(selectedProductIds.map(id => 
+        base44.entities.Product.update(id, {
+          platform_ids: { ...products.find(p => p.id === id)?.platform_ids, ebay: null },
+          listing_urls: { ...products.find(p => p.id === id)?.listing_urls, ebay: null },
+          exported_to: { ...products.find(p => p.id === id)?.exported_to, ebay: null }
+        })
+      ));
+
+      toast.success(`Marked ${selectedProductIds.length} products as unlisted from eBay`, { id: toastId });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setSelectedProductIds([]);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to unlist products", { id: toastId });
+    }
+  };
+
   // Get unique case materials from all products
   const caseMaterials = [...new Set(products
     .map(p => p.category_specific_attributes?.case_material || p.case_material)
@@ -591,6 +617,8 @@ export default function Inventory() {
                       Export Selected
                     </DropdownMenuItem>
                     
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Update Fields</DropdownMenuLabel>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
                         <User className="w-4 h-4 mr-2" />
@@ -609,6 +637,7 @@ export default function Inventory() {
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
 
+                    <DropdownMenuLabel>eBay Actions</DropdownMenuLabel>
                     <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Listing..." : "List on eBay"}
@@ -617,6 +646,13 @@ export default function Inventory() {
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Updating..." : "Update eBay"}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleUnlistFromEbay}>
+                      <X className="w-4 h-4 mr-2" />
+                      Unlist from eBay
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Other Platforms</DropdownMenuLabel>
                     <DropdownMenuItem onClick={handleBulkListEtsy} disabled={listing}>
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Listing..." : "List on Etsy"}
@@ -629,6 +665,9 @@ export default function Inventory() {
                       )}
                       {syncingSquare ? "Syncing..." : "Sync to Square"}
                     </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Product Data</DropdownMenuLabel>
                     <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
                       {generatingDescriptions ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />

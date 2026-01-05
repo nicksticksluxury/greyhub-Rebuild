@@ -36,47 +36,56 @@ export default function Layout({ children, currentPageName }) {
         {
           title: "Dashboard",
           url: createPageUrl("index"),
-          icon: LayoutList,
+          icon: TrendingUp,
+          group: "main"
         },
         {
           title: "Inventory",
           url: createPageUrl("Inventory"),
-          icon: LayoutList,
+          icon: Package,
+          group: "inventory"
         },
         {
           title: "Out for Repair",
           url: createPageUrl("OutForRepair"),
           icon: Wrench,
+          group: "inventory"
         },
         {
           title: "Sold",
           url: createPageUrl("SoldInventory"),
           icon: DollarSign,
+          group: "inventory"
         },
         {
           title: "Add Product",
           url: createPageUrl("AddProduct"),
           icon: Upload,
+          group: "actions"
         },
         {
-          title: "Product Sources",
+          title: "Sources",
           url: createPageUrl("WatchSources"),
           icon: Package,
+          group: "management"
         },
         {
           title: "Auctions",
           url: createPageUrl("Auctions"),
           icon: Gavel,
+          group: "management"
         },
         {
           title: "Company",
           url: createPageUrl("CompanySettings"),
           icon: Watch,
+          group: "settings"
         },
         {
           title: "Settings",
           url: createPageUrl("TenantSettings"),
           icon: Settings,
+          group: "settings"
         },
       ];
 
@@ -86,22 +95,26 @@ export default function Layout({ children, currentPageName }) {
           {
             title: "Product Types",
             url: createPageUrl("ProductTypeManagement"),
-            icon: Package,
+            icon: LayoutList,
+            group: "admin"
           },
           {
             title: "Resolve Duplicates",
             url: createPageUrl("ResolveProductDuplicates"),
             icon: Copy,
+            group: "admin"
           },
           {
             title: "Merge Data",
             url: createPageUrl("MergeData"),
             icon: Package,
+            group: "admin"
           },
           {
             title: "Restore Data",
             url: createPageUrl("RestoreData"),
             icon: UploadIcon,
+            group: "admin"
           }
         );
       }
@@ -257,30 +270,158 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroup>
             )}
 
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
-                Navigation
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {(user && !(user.data?.company_id || user.company_id) ? systemAdminNav : navigationItems).map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
-                        className={`hover:bg-slate-800 hover:text-white transition-all duration-200 rounded-xl mb-1 ${
-                          location.pathname === item.url ? 'bg-slate-800 text-white shadow-md' : 'text-slate-700'
-                        }`}
-                      >
-                        <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
-                          <item.icon className="w-5 h-5" />
-                          <span className="font-semibold">{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {user && !(user.data?.company_id || user.company_id) ? (
+              <SidebarGroup>
+                <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
+                  System Admin
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {systemAdminNav.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`hover:bg-slate-800 hover:text-white transition-all duration-200 rounded-xl mb-1 ${
+                            location.pathname === item.url ? 'bg-slate-800 text-white shadow-md' : 'text-slate-700'
+                          }`}
+                        >
+                          <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                            <item.icon className="w-5 h-5" />
+                            <span className="font-semibold">{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : (
+              <>
+                <SidebarGroup>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {navigationItems.filter(item => item.group === 'main').map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton 
+                            asChild 
+                            className={`hover:bg-slate-800 hover:text-white transition-all duration-200 rounded-xl mb-1 ${
+                              location.pathname === item.url ? 'bg-slate-800 text-white shadow-md' : 'text-slate-700'
+                            }`}
+                          >
+                            <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                              <item.icon className="w-5 h-5" />
+                              <span className="font-semibold">{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+
+                <SidebarGroup>
+                  <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
+                    Inventory
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {navigationItems.filter(item => item.group === 'inventory').map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton 
+                            asChild 
+                            className={`hover:bg-slate-800 hover:text-white transition-all duration-200 rounded-xl mb-1 ${
+                              location.pathname === item.url ? 'bg-slate-800 text-white shadow-md' : 'text-slate-700'
+                            }`}
+                          >
+                            <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                              <item.icon className="w-5 h-5" />
+                              <span className="font-semibold">{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+
+                <SidebarGroup>
+                  <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
+                    Management
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {navigationItems.filter(item => item.group === 'management' || item.group === 'actions').map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton 
+                            asChild 
+                            className={`hover:bg-slate-800 hover:text-white transition-all duration-200 rounded-xl mb-1 ${
+                              location.pathname === item.url ? 'bg-slate-800 text-white shadow-md' : 'text-slate-700'
+                            }`}
+                          >
+                            <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                              <item.icon className="w-5 h-5" />
+                              <span className="font-semibold">{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+
+                <SidebarGroup>
+                  <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
+                    Settings
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {navigationItems.filter(item => item.group === 'settings').map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton 
+                            asChild 
+                            className={`hover:bg-slate-800 hover:text-white transition-all duration-200 rounded-xl mb-1 ${
+                              location.pathname === item.url ? 'bg-slate-800 text-white shadow-md' : 'text-slate-700'
+                            }`}
+                          >
+                            <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                              <item.icon className="w-5 h-5" />
+                              <span className="font-semibold">{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+
+                {user?.role === 'admin' && navigationItems.filter(item => item.group === 'admin').length > 0 && (
+                  <SidebarGroup>
+                    <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
+                      Admin Tools
+                    </SidebarGroupLabel>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {navigationItems.filter(item => item.group === 'admin').map((item) => (
+                          <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton 
+                              asChild 
+                              className={`hover:bg-slate-800 hover:text-white transition-all duration-200 rounded-xl mb-1 ${
+                                location.pathname === item.url ? 'bg-slate-800 text-white shadow-md' : 'text-slate-700'
+                              }`}
+                            >
+                              <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                                <item.icon className="w-5 h-5" />
+                                <span className="font-semibold">{item.title}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                )}
+              </>
+            )}
           </SidebarContent>
 
           <SidebarFooter className="border-t border-slate-200 p-4">
