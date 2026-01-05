@@ -1426,22 +1426,22 @@ Every comparable MUST show model number "${editedData.reference_number}".
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                onClick={handleBack}
-                className="hover:bg-slate-100"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Inventory
-              </Button>
-              {hasUnsavedChanges && (
-                <span className="text-sm text-amber-600 font-medium">
-                  • Unsaved changes
-                </span>
-              )}
-            </div>
+          <div className="flex items-center gap-3 mb-3">
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              className="hover:bg-slate-100"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Inventory
+            </Button>
+            {hasUnsavedChanges && (
+              <span className="text-sm text-amber-600 font-medium">
+                • Unsaved changes
+              </span>
+            )}
+          </div>
+          <div className="space-y-2">
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
                 <Button
@@ -1610,6 +1610,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
                 </Button>
               </div>
             </div>
+          </div>
           </div>
           
           {!editedData.condition && (
