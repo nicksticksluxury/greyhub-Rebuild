@@ -41,6 +41,8 @@ export default function ProductDetail() {
   const [showSoldQuantityDialog, setShowSoldQuantityDialog] = useState(false);
   const [soldQuantity, setSoldQuantity] = useState(1);
   const [generatingHero, setGeneratingHero] = useState(false);
+  const [beautifyingAll, setBeautifyingAll] = useState(false);
+  const [beautifyProgress, setBeautifyProgress] = useState({ current: 0, total: 0 });
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', productId],
@@ -1314,6 +1316,64 @@ Every comparable MUST show model number "${editedData.reference_number}".
     }
   };
 
+  const beautifyAllImages = async () => {
+    if (!editedData.photos || editedData.photos.length === 0) {
+      toast.error("No photos to beautify");
+      return;
+    }
+
+    if (!confirm(`This will beautify all ${editedData.photos.length} images. This may take several minutes. Continue?`)) {
+      return;
+    }
+
+    setBeautifyingAll(true);
+    setBeautifyProgress({ current: 0, total: editedData.photos.length });
+
+    try {
+      const beautifiedPhotos = [];
+
+      for (let i = 0; i < editedData.photos.length; i++) {
+        setBeautifyProgress({ current: i + 1, total: editedData.photos.length });
+        toast.loading(`Beautifying image ${i + 1} of ${editedData.photos.length}...`, { id: 'beautify' });
+
+        const photo = editedData.photos[i];
+        const imageUrl = photo.full || photo.medium || photo.original || photo;
+
+        try {
+          const result = await base44.integrations.Core.GenerateImage({
+            prompt: heroImagePrompt,
+            existing_image_urls: [imageUrl]
+          });
+
+          const imageBlob = await fetch(result.url).then(r => r.blob());
+          const file = new File([imageBlob], `beautified_${i}.png`, { type: 'image/png' });
+          
+          const uploadResult = await base44.integrations.Core.UploadFile({ file });
+          
+          const optimizeResult = await base44.functions.invoke('optimizeImage', { 
+            file_url: uploadResult.file_url 
+          });
+
+          beautifiedPhotos.push(optimizeResult.data);
+        } catch (error) {
+          console.error(`Failed to beautify image ${i + 1}:`, error);
+          // Keep original if beautification fails
+          beautifiedPhotos.push(photo);
+        }
+      }
+
+      setEditedData({ ...editedData, photos: beautifiedPhotos });
+      setHasUnsavedChanges(true);
+      toast.success(`Successfully beautified ${editedData.photos.length} images!`, { id: 'beautify' });
+    } catch (error) {
+      console.error("Beautify all failed:", error);
+      toast.error("Failed to beautify images: " + error.message, { id: 'beautify' });
+    } finally {
+      setBeautifyingAll(false);
+      setBeautifyProgress({ current: 0, total: 0 });
+    }
+  };
+
   const importAIData = (field, value) => {
     if (field === "batch_update") {
       const updates = { ...value };
@@ -1531,6 +1591,24 @@ Every comparable MUST show model number "${editedData.reference_number}".
                     </>
                   )}
                 </Button>
+                <Button
+                  onClick={beautifyAllImages}
+                  disabled={beautifyingAll || !editedData.photos?.length}
+                  variant="outline"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                >
+                  {beautifyingAll ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {beautifyProgress.current}/{beautifyProgress.total}...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Beautify All Images
+                    </>
+                  )}
+                </Button>
               </div>
               
               <div className="flex gap-2">
@@ -1676,7 +1754,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
                     sources={sources}
                     orders={orders}
                     auctions={auctions}
-                    ebayFooter={ebayFooter}
+                    ebayFooter={ebayFooter || ""}
                   />
                 </div>
               </div>
