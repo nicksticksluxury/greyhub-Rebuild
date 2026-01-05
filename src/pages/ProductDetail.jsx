@@ -48,6 +48,7 @@ export default function ProductDetail() {
   const { data: product, isLoading, error: productError } = useQuery({
     queryKey: ['product', productId],
     queryFn: async () => {
+      console.log('DEBUG: useQuery queryFn called with productId:', productId);
       if (!productId) {
         console.error('No productId provided');
         throw new Error('No product ID in URL');
@@ -69,6 +70,8 @@ export default function ProductDetail() {
     enabled: !!productId,
     retry: 1,
   });
+
+  console.log('DEBUG: useQuery state - isLoading:', isLoading, 'enabled:', !!productId, 'product:', product);
 
   const { data: productType } = useQuery({
     queryKey: ['productType', product?.product_type_code],
