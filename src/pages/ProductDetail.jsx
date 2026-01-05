@@ -47,8 +47,8 @@ export default function ProductDetail() {
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', productId],
     queryFn: async () => {
-      const products = await base44.entities.Product.list();
-      return products.find(p => p.id === productId);
+      const products = await base44.entities.Product.filter({ id: productId });
+      return products[0];
     },
     enabled: !!productId,
   });

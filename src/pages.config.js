@@ -5,12 +5,10 @@ import CompanySettings from './pages/CompanySettings';
 import CompleteSignup from './pages/CompleteSignup';
 import EbayFooterSettings from './pages/EbayFooterSettings';
 import Home from './pages/Home';
-import Inventory from './pages/Inventory';
 import JoinCompany from './pages/JoinCompany';
 import MergeData from './pages/MergeData';
 import MigrateData from './pages/MigrateData';
 import OutForRepair from './pages/OutForRepair';
-import ProductDetail from './pages/ProductDetail';
 import ProductTypeManagement from './pages/ProductTypeManagement';
 import ResolveProductDuplicates from './pages/ResolveProductDuplicates';
 import RestoreData from './pages/RestoreData';
@@ -27,6 +25,8 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
+import ProductDetail from './pages/ProductDetail';
+import Inventory from './pages/Inventory';
 import __Layout from './Layout.jsx';
 
 
@@ -38,12 +38,10 @@ export const PAGES = {
     "CompleteSignup": CompleteSignup,
     "EbayFooterSettings": EbayFooterSettings,
     "Home": Home,
-    "Inventory": Inventory,
     "JoinCompany": JoinCompany,
     "MergeData": MergeData,
     "MigrateData": MigrateData,
     "OutForRepair": OutForRepair,
-    "ProductDetail": ProductDetail,
     "ProductTypeManagement": ProductTypeManagement,
     "ResolveProductDuplicates": ResolveProductDuplicates,
     "RestoreData": RestoreData,
@@ -60,6 +58,8 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
+    "ProductDetail": ProductDetail,
+    "Inventory": Inventory,
 }
 
 export const pagesConfig = {
