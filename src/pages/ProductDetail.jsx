@@ -61,6 +61,12 @@ export default function ProductDetail() {
     enabled: !!product?.product_type_code,
   });
 
+  const { data: allProductTypes = [] } = useQuery({
+    queryKey: ['allProductTypes'],
+    queryFn: () => base44.entities.ProductType.filter({ active: true }),
+    initialData: [],
+  });
+
   const { data: sources = [] } = useQuery({
     queryKey: ['watchSources'],
     queryFn: () => base44.entities.WatchSource.list(),
@@ -1676,6 +1682,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
                     sources={sources}
                     orders={orders}
                     auctions={auctions}
+                    allProductTypes={allProductTypes}
                   />
 
                   <div className="mt-6">

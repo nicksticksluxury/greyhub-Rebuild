@@ -82,7 +82,7 @@ function calculateMinimumPrice(cost, platform) {
   return Math.ceil(minPrice);
 }
 
-export default function ProductForm({ data, onChange, sources, orders, auctions }) {
+export default function ProductForm({ data, onChange, sources, orders, auctions, allProductTypes = [] }) {
   const [showRepairs, setShowRepairs] = useState(false);
   const [editingNet, setEditingNet] = useState(false);
   const [showZeroReasonDialog, setShowZeroReasonDialog] = useState(false);
@@ -210,6 +210,23 @@ export default function ProductForm({ data, onChange, sources, orders, auctions 
       </TabsList>
 
       <TabsContent value="basic" className="space-y-4 mt-6">
+        <div>
+          <Label>Product Type</Label>
+          <Select
+            value={data.product_type_code || ""}
+            onValueChange={(value) => updateField("product_type_code", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select product type" />
+            </SelectTrigger>
+            <SelectContent>
+              {allProductTypes.map(type => (
+                <SelectItem key={type.code} value={type.code}>{type.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div>
           <Label>Tested</Label>
           <Select
