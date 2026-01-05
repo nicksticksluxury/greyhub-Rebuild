@@ -1611,7 +1611,6 @@ Every comparable MUST show model number "${editedData.reference_number}".
               </div>
             </div>
           </div>
-          </div>
           
           {!editedData.condition && (
             <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
