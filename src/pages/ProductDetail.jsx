@@ -40,6 +40,7 @@ export default function ProductDetail() {
   });
   const [showSoldQuantityDialog, setShowSoldQuantityDialog] = useState(false);
   const [soldQuantity, setSoldQuantity] = useState(1);
+  const [generatingHero, setGeneratingHero] = useState(false);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', productId],
@@ -84,6 +85,8 @@ export default function ProductDetail() {
   });
 
   const ebayFooter = companySettings.find(s => s.key === 'ebay_listing_footer')?.value || '';
+  const heroImagePrompt = companySettings.find(s => s.key === 'hero_image_prompt')?.value || 
+    "Place this product on a wooden table with a blurred natural background, soft lighting, and a small green plant in the corner, similar to a studio product shot.";
 
   useEffect(() => {
     if (product && !editedData) {
@@ -1239,6 +1242,49 @@ Every comparable MUST show model number "${editedData.reference_number}".
     }
   };
 
+  const generateHeroImage = async () => {
+    if (!editedData.photos || editedData.photos.length === 0) {
+      toast.error("Please add at least one photo first");
+      return;
+    }
+
+    setGeneratingHero(true);
+    try {
+      const mainPhoto = editedData.photos[0];
+      const imageUrl = mainPhoto.full || mainPhoto.medium || mainPhoto.original || mainPhoto;
+
+      toast.loading("Generating hero image (takes 5-10 seconds)...", { id: 'hero' });
+
+      const result = await base44.integrations.Core.GenerateImage({
+        prompt: heroImagePrompt,
+        existing_image_urls: [imageUrl]
+      });
+
+      // Upload the generated image
+      const imageBlob = await fetch(result.url).then(r => r.blob());
+      const file = new File([imageBlob], 'hero.png', { type: 'image/png' });
+      
+      const uploadResult = await base44.integrations.Core.UploadFile({ file });
+      
+      // Optimize the generated hero image
+      const optimizeResult = await base44.functions.invoke('optimizeImage', { 
+        imageUrl: uploadResult.file_url 
+      });
+
+      // Add to photos array at the beginning
+      const newPhotos = [optimizeResult.data, ...(editedData.photos || [])];
+      setEditedData({ ...editedData, photos: newPhotos });
+      setHasUnsavedChanges(true);
+
+      toast.success("Hero image generated and added!", { id: 'hero' });
+    } catch (error) {
+      console.error("Hero image generation failed:", error);
+      toast.error("Failed to generate hero image: " + error.message, { id: 'hero' });
+    } finally {
+      setGeneratingHero(false);
+    }
+  };
+
   const importAIData = (field, value) => {
     if (field === "batch_update") {
       const updates = { ...value };
@@ -1434,6 +1480,25 @@ Every comparable MUST show model number "${editedData.reference_number}".
                   <>
                     <FileText className="w-4 h-4 mr-2" />
                     Generate Description
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                onClick={generateHeroImage}
+                disabled={generatingHero || !editedData.photos?.length}
+                variant="outline"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {generatingHero ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Hero Image
                   </>
                 )}
               </Button>

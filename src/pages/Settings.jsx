@@ -687,6 +687,46 @@ export default function Settings() {
 
         <Card className="mt-6">
           <CardHeader>
+            <CardTitle>Hero Image Generation</CardTitle>
+            <CardDescription>Configure AI-generated hero images for product listings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 border border-slate-200 rounded-xl bg-white">
+              <Label className="mb-2 block">Hero Image Prompt</Label>
+              <textarea
+                className="w-full p-3 border border-slate-300 rounded-lg text-sm font-mono resize-y min-h-[100px]"
+                value={settings?.find(s => s.key === 'hero_image_prompt')?.value || "Place this product on a wooden table with a blurred natural background, soft lighting, and a small green plant in the corner, similar to a studio product shot."}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const existing = settings?.find(s => s.key === 'hero_image_prompt');
+                  if (existing) {
+                    base44.entities.Setting.update(existing.id, { value }).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['settings'] });
+                      toast.success("Hero image prompt updated");
+                    });
+                  } else {
+                    base44.entities.Setting.create({
+                      company_id: user.company_id,
+                      key: 'hero_image_prompt',
+                      value: value,
+                      description: 'AI prompt for generating hero images'
+                    }).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['settings'] });
+                      toast.success("Hero image prompt saved");
+                    });
+                  }
+                }}
+                placeholder="Describe the style for hero images..."
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                This prompt will be used to generate enhanced "hero" images from your product photos using AI
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
             <CardTitle>Image Optimization</CardTitle>
             <CardDescription>Manage image optimization for your inventory</CardDescription>
           </CardHeader>
