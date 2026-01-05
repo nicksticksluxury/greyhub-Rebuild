@@ -289,6 +289,8 @@ Deno.serve(async (req) => {
                     }
                 };
 
+                console.log(`[${sku}] Inventory Item Payload:`, JSON.stringify(inventoryItem, null, 2));
+
                 const inventoryResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${sku}`, {
                     method: 'PUT',
                     headers: {
@@ -302,6 +304,7 @@ Deno.serve(async (req) => {
 
                 if (!inventoryResponse.ok) {
                     const errorText = await inventoryResponse.text();
+                    console.error(`[${sku}] Inventory Update Error Response:`, errorText);
                     throw new Error(`Inventory Item Update Error: ${inventoryResponse.status} - ${errorText}`);
                 }
 
@@ -355,6 +358,8 @@ Deno.serve(async (req) => {
                     }
                 };
 
+                console.log(`[${sku}] Offer Payload:`, JSON.stringify(offer, null, 2));
+
                 const updateRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}`, {
                     method: 'PUT',
                     headers: apiHeaders,
@@ -363,6 +368,7 @@ Deno.serve(async (req) => {
 
                 if (!updateRes.ok) {
                     const err = await updateRes.text();
+                    console.error(`[${sku}] Offer Update Error Response:`, err);
                     throw new Error(`Failed to update offer ${offerId}: ${err}`);
                 }
 
@@ -375,6 +381,7 @@ Deno.serve(async (req) => {
                 const publishData = await publishResponse.json();
 
                 if (!publishResponse.ok) {
+                    console.error(`[${sku}] Publish Error Response:`, JSON.stringify(publishData, null, 2));
                     throw new Error(`Publish Error: ${JSON.stringify(publishData)}`);
                 }
 
