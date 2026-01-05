@@ -436,22 +436,36 @@ Deno.serve(async (req) => {
 
 function getEbayCondition(condition) {
     switch (condition) {
+        // New with box and papers
         case 'new':
+        case 'new_full_set':
         case 'new_with_box':
-        case 'New - With Box & Papers':
-        case 'New (Box Only)': return 'NEW';
+        case 'New - With Box & Papers': 
+            return 'NEW_WITH_BOX';
         
+        // New without box or papers
         case 'new_no_box':
         case 'New (No Box/Papers)':
-        case 'New (No Box)': return 'NEW_OTHER';
+        case 'New (No Box)':
+        case 'New (Box Only)':
+            return 'NEW_WITHOUT_BOX';
         
+        // Pre-owned conditions
         case 'mint': 
         case 'excellent': 
+            return 'USED_EXCELLENT';
+        
         case 'very_good': 
         case 'good': 
-        case 'fair': return 'USED_EXCELLENT';
+            return 'USED_GOOD';
         
-        case 'parts_repair': return 'FOR_PARTS_OR_NOT_WORKING';
-        default: return 'USED_EXCELLENT';
+        case 'fair': 
+            return 'USED_ACCEPTABLE';
+        
+        case 'parts_repair': 
+            return 'FOR_PARTS_OR_NOT_WORKING';
+        
+        default: 
+            return 'USED_EXCELLENT';
     }
 }
