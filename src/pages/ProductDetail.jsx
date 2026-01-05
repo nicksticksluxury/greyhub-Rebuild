@@ -1268,7 +1268,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
       
       // Optimize the generated hero image
       const optimizeResult = await base44.functions.invoke('optimizeImage', { 
-        imageUrl: uploadResult.file_url 
+        file_url: uploadResult.file_url 
       });
 
       // Add to photos array at the beginning
