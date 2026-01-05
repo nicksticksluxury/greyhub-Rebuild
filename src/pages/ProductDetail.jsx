@@ -44,13 +44,18 @@ export default function ProductDetail() {
   const [beautifyingAll, setBeautifyingAll] = useState(false);
   const [beautifyProgress, setBeautifyProgress] = useState({ current: 0, total: 0 });
 
-  const { data: product, isLoading } = useQuery({
+  const { data: product, isLoading, error: productError } = useQuery({
     queryKey: ['product', productId],
     queryFn: async () => {
+      if (!productId) return null;
       const products = await base44.entities.Product.filter({ id: productId });
+      if (!products || products.length === 0) {
+        throw new Error('Product not found');
+      }
       return products[0];
     },
     enabled: !!productId,
+    retry: 1,
   });
 
   const { data: productType } = useQuery({
@@ -1476,6 +1481,21 @@ Every comparable MUST show model number "${editedData.reference_number}".
       toast.success("Data imported from AI analysis");
     }
   };
+
+  if (productError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-slate-900 font-semibold mb-2">Product not found</p>
+          <p className="text-slate-600 mb-4">{productError.message}</p>
+          <Button onClick={() => navigate(createPageUrl("Inventory"))}>
+            Back to Inventory
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !editedData) {
     return (
