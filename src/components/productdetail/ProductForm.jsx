@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { DollarSign, TrendingDown, TrendingUp, Percent, ExternalLink, Plus, X, Wrench, Pencil, HelpCircle, Check, ChevronsUpDown } from "lucide-react";
 import DynamicFields from "./DynamicFields";
+import HTMLDescriptionEditor from "./HTMLDescriptionEditor";
 
 const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
@@ -84,7 +85,7 @@ function calculateMinimumPrice(cost, platform) {
   return Math.ceil(minPrice);
 }
 
-export default function ProductForm({ data, onChange, sources, orders, auctions }) {
+export default function ProductForm({ data, onChange, sources, orders, auctions, ebayFooter }) {
   const [showRepairs, setShowRepairs] = useState(false);
   const [editingNet, setEditingNet] = useState(false);
   const [showZeroReasonDialog, setShowZeroReasonDialog] = useState(false);
@@ -488,6 +489,14 @@ export default function ProductForm({ data, onChange, sources, orders, auctions 
               {(data.listing_title || "").length}/80
             </span>
           </div>
+        </div>
+
+        <div>
+          <HTMLDescriptionEditor
+            value={data.description || ""}
+            onChange={(html) => onChange({ ...data, description: html })}
+            companyFooter={ebayFooter}
+          />
         </div>
 
         {data.comparable_listings_links && data.comparable_listings_links.length > 0 && (

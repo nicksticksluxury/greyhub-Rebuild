@@ -1676,6 +1676,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
                     sources={sources}
                     orders={orders}
                     auctions={auctions}
+                    ebayFooter={ebayFooter}
                   />
                 </div>
               </div>
