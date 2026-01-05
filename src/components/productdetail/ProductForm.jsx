@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -88,6 +90,12 @@ export default function ProductForm({ data, onChange, sources, orders, auctions 
   const [showZeroReasonDialog, setShowZeroReasonDialog] = useState(false);
   const [tempReason, setTempReason] = useState("");
   const [sourceOpen, setSourceOpen] = useState(false);
+
+  const { data: productTypes = [] } = useQuery({
+    queryKey: ['productTypes'],
+    queryFn: () => base44.entities.ProductType.filter({ active: true }),
+    initialData: [],
+  });
 
   const updateField = (field, value) => {
     const newData = { ...data, [field]: value };
@@ -840,6 +848,25 @@ export default function ProductForm({ data, onChange, sources, orders, auctions 
 
       <TabsContent value="details" className="space-y-4 mt-6">
         <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Product Type</Label>
+            <Select
+              value={data.product_type_code || ""}
+              onValueChange={(value) => updateField("product_type_code", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select product type" />
+              </SelectTrigger>
+              <SelectContent>
+                {productTypes.map((type) => (
+                  <SelectItem key={type.code} value={type.code}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <Label>Status</Label>
             <div className="flex gap-2">

@@ -1677,14 +1677,6 @@ Every comparable MUST show model number "${editedData.reference_number}".
                     orders={orders}
                     auctions={auctions}
                   />
-
-                  <div className="mt-6">
-                    <HTMLDescriptionEditor
-                      value={editedData.description || ""}
-                      onChange={(html) => setEditedData({ ...editedData, description: html })}
-                      companyFooter={ebayFooter}
-                    />
-                  </div>
                 </div>
               </div>
 
