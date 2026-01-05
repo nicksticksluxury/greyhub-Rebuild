@@ -69,6 +69,8 @@ export default function ProductDetail() {
     },
     enabled: !!productId,
     retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   console.log('DEBUG: useQuery state - isLoading:', isLoading, 'enabled:', !!productId, 'product:', product);
