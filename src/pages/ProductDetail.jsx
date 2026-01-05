@@ -939,10 +939,16 @@ Return ONLY the HTML description, no wrapper text.`;
         base44.integrations.Core.InvokeLLM({ prompt: descriptionPrompt })
       ]);
 
+      // Strip markdown code blocks if present
+      const cleanDescription = description.trim()
+        .replace(/^```html\n?/i, '')
+        .replace(/^```\n?/i, '')
+        .replace(/\n?```$/i, '');
+
       setEditedData({
         ...editedData,
         listing_title: title.trim(),
-        description: description.trim()
+        description: cleanDescription
       });
       toast.success("Title and description generated!");
     } catch (error) {
