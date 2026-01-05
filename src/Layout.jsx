@@ -132,23 +132,7 @@ export default function Layout({ children, currentPageName }) {
     
     checkAuth();
 
-    // Only call setupEbayNotifications if user is authenticated and has a company
-    const setupEbayNotifs = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        const companyId = currentUser?.data?.company_id || currentUser?.company_id;
-        if (currentUser && companyId) {
-          await base44.functions.invoke('setupEbayNotifications');
-        }
-      } catch (error) {
-        // Silently fail - not critical
-        console.log('eBay notifications setup skipped');
-      }
-    };
 
-    if (currentPageName === 'Inventory') {
-      setupEbayNotifs();
-    }
   }, [currentPageName]);
 
   const toggleMode = () => {

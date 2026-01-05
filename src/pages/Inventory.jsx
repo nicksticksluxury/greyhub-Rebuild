@@ -85,25 +85,7 @@ export default function Inventory() {
   
   const queryClient = useQueryClient();
 
-  // Automatically enable notifications on mount
-  React.useEffect(() => {
-    const setupNotifications = async () => {
-      // Avoid repeated calls in the same session
-      if (sessionStorage.getItem('ebay_notifications_enabled')) return;
 
-      try {
-        const result = await base44.functions.invoke("setupEbayNotifications");
-        if (result.data.success) {
-          console.log("eBay Notifications enabled");
-          sessionStorage.setItem('ebay_notifications_enabled', 'true');
-        }
-      } catch (error) {
-        // Silently fail - don't clutter console
-      }
-    };
-
-    setupNotifications();
-  }, []);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
