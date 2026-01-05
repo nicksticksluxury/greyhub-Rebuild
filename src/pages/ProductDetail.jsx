@@ -23,6 +23,7 @@ export default function ProductDetail() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get('id');
+  console.log('DEBUG: Product ID from URL:', productId);
 
   const [editedData, setEditedData] = useState(null);
   const [originalData, setOriginalData] = useState(null);
