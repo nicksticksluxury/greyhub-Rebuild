@@ -538,46 +538,37 @@ Deno.serve(async (req) => {
 });
 
 function getEbayCondition(condition) {
-    // eBay Wristwatches (31387) ONLY supports these numeric condition IDs:
-    // 1000 = New
-    // 1500 = New other (see details)
-    // 1750 = New with defects
-    // 2000 = Certified refurbished
-    // 3000 = Used
-    // 5000 = For parts or not working
+    // eBay Inventory API requires string descriptors, not numeric IDs
+    // For Wristwatches (31387), map to these valid descriptors:
+    // NEW (1000), NEW_OTHER (1500), NEW_WITH_DEFECTS (1750), 
+    // LIKE_NEW (2000), USED_EXCELLENT (3000), FOR_PARTS_OR_NOT_WORKING (5000)
     
     if (!condition) {
-        return '3000';  // Default to Used
+        return 'USED_EXCELLENT';  // Default to Used
     }
     
     // Handle numeric condition values
     if (typeof condition === 'number') {
-        // Map all used conditions to 3000
-        if (condition >= 3000 && condition <= 6999) {
-            return '3000';
-        }
-        // Map parts/repair to 5000
-        if (condition === 7000) {
-            return '5000';
-        }
-        // Keep valid IDs as-is
-        if ([1000, 1500, 1750, 2000, 3000, 5000].includes(condition)) {
-            return String(condition);
-        }
-        return '3000';  // Default
+        if (condition === 1000) return 'NEW';
+        if (condition === 1500) return 'NEW_OTHER';
+        if (condition === 1750) return 'NEW_WITH_DEFECTS';
+        if (condition === 2000) return 'LIKE_NEW';
+        if (condition >= 3000 && condition <= 6999) return 'USED_EXCELLENT';
+        if (condition === 7000 || condition === 5000) return 'FOR_PARTS_OR_NOT_WORKING';
+        return 'USED_EXCELLENT';
     }
     
     const conditionStr = String(condition).toLowerCase().trim();
     
     // Handle numeric IDs stored as strings
-    if (conditionStr === '1000') return '1000';
-    if (conditionStr === '1500') return '1500';
-    if (conditionStr === '1750') return '1750';
-    if (conditionStr === '2000') return '2000';
+    if (conditionStr === '1000') return 'NEW';
+    if (conditionStr === '1500') return 'NEW_OTHER';
+    if (conditionStr === '1750') return 'NEW_WITH_DEFECTS';
+    if (conditionStr === '2000') return 'LIKE_NEW';
     if (conditionStr === '3000' || conditionStr === '4000' || conditionStr === '5000' || conditionStr === '6000') {
-        return '3000';
+        return 'USED_EXCELLENT';
     }
-    if (conditionStr === '7000') return '5000';
+    if (conditionStr === '7000') return 'FOR_PARTS_OR_NOT_WORKING';
     
     // Handle descriptive string conditions
     switch (conditionStr) {
@@ -585,20 +576,20 @@ function getEbayCondition(condition) {
         case 'new_full_set':
         case 'new_with_box':
         case 'new - with box & papers': 
-            return '1000';
+            return 'NEW';
         
         case 'new_no_box':
         case 'new (no box/papers)':
         case 'new (no box)':
         case 'new (box only)':
-            return '1500';
+            return 'NEW_OTHER';
         
         case 'new_with_defects':
-            return '1750';
+            return 'NEW_WITH_DEFECTS';
         
         case 'certified_refurbished':
         case 'certified refurbished':
-            return '2000';
+            return 'LIKE_NEW';
         
         case 'mint': 
         case 'excellent':
@@ -609,17 +600,17 @@ function getEbayCondition(condition) {
         case 'used':
         case 'like_new':
         case 'like new':
-            return '3000';  // All used conditions map to 3000
+            return 'USED_EXCELLENT';
         
         case 'parts_repair': 
         case 'parts': 
         case 'repair':
         case 'for parts':
         case 'not working':
-            return '5000';
+            return 'FOR_PARTS_OR_NOT_WORKING';
         
         default: 
-            return '3000';
+            return 'USED_EXCELLENT';
     }
 }
 
