@@ -567,13 +567,79 @@ export default function Inventory() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Export</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => setShowExport(true)}>
                       <Download className="w-4 h-4 mr-2" />
                       Export Selected
                     </DropdownMenuItem>
-                    
+                    <DropdownMenuItem onClick={() => setShowImageExportDialog(true)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Image Links
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Listings</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      {listing ? "Listing..." : "List on eBay"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkUpdateEbay} disabled={listing}>
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      {listing ? "Updating..." : "Update eBay"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      if (selectedProductIds.length === 0) return;
+                      if (!confirm(`Remove ${selectedProductIds.length} products from eBay?`)) return;
+                      const toastId = toast.loading("Removing from eBay...");
+                      try {
+                        await Promise.all(selectedProductIds.map(id => {
+                          const product = products.find(p => p.id === id);
+                          if (!product) return Promise.resolve();
+                          const newExportedTo = { ...(product.exported_to || {}) };
+                          const newPlatformIds = { ...(product.platform_ids || {}) };
+                          delete newExportedTo.ebay;
+                          delete newPlatformIds.ebay;
+                          return base44.entities.Product.update(id, {
+                            exported_to: newExportedTo,
+                            platform_ids: newPlatformIds
+                          });
+                        }));
+                        toast.success(`Removed ${selectedProductIds.length} products from eBay`, { id: toastId });
+                        queryClient.invalidateQueries({ queryKey: ['products'] });
+                        setSelectedProductIds([]);
+                      } catch (error) {
+                        toast.error("Failed to remove from eBay", { id: toastId });
+                      }
+                    }}>
+                      <X className="w-4 h-4 mr-2" />
+                      Remove from eBay
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkListEtsy} disabled={listing}>
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      {listing ? "Listing..." : "List on Etsy"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSyncSquare} disabled={syncingSquare}>
+                      {syncingSquare ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <ShoppingBag className="w-4 h-4 mr-2" />
+                      )}
+                      {syncingSquare ? "Syncing..." : "Sync to Square"}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Content</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
+                      {generatingDescriptions ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <FileText className="w-4 h-4 mr-2" />
+                      )}
+                      {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Organization</DropdownMenuLabel>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
                         <User className="w-4 h-4 mr-2" />
@@ -591,40 +657,6 @@ export default function Inventory() {
                         </DropdownMenuItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
-
-                    <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      {listing ? "Listing..." : "List on eBay"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleBulkUpdateEbay} disabled={listing}>
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      {listing ? "Updating..." : "Update eBay"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleBulkListEtsy} disabled={listing}>
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      {listing ? "Listing..." : "List on Etsy"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleSyncSquare} disabled={syncingSquare}>
-                      {syncingSquare ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <ShoppingBag className="w-4 h-4 mr-2" />
-                      )}
-                      {syncingSquare ? "Syncing..." : "Sync to Square"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
-                      {generatingDescriptions ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <FileText className="w-4 h-4 mr-2" />
-                      )}
-                      {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem onClick={() => setShowImageExportDialog(true)}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Export Image Links
-                    </DropdownMenuItem>
 
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
@@ -657,25 +689,25 @@ export default function Inventory() {
                           ))
                         )}
                       </DropdownMenuSubContent>
-                      </DropdownMenuSub>
+                    </DropdownMenuSub>
 
-                      <DropdownMenuItem onClick={() => setShowSetSourceDialog(true)}>
-                        <Package className="w-4 h-4 mr-2" />
-                        Set Source & Shipment
-                      </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowSetSourceDialog(true)}>
+                      <Package className="w-4 h-4 mr-2" />
+                      Set Source & Shipment
+                    </DropdownMenuItem>
 
-                      <DropdownMenuItem onClick={handleUpdateCostFromShipment}>
-                        <Package className="w-4 h-4 mr-2" />
-                        Update Cost from Shipment
-                      </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleUpdateCostFromShipment}>
+                      <Package className="w-4 h-4 mr-2" />
+                      Update Cost from Shipment
+                    </DropdownMenuItem>
 
-                      <DropdownMenuSeparator />
-
-                      <DropdownMenuItem onClick={() => setShowReassignDialog(true)} className="text-red-600">
-                        <User className="w-4 h-4 mr-2" />
-                        Reassign to Company
-                      </DropdownMenuItem>
-                      </DropdownMenuContent>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => setShowReassignDialog(true)} className="text-red-600">
+                      <User className="w-4 h-4 mr-2" />
+                      Reassign to Company
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
                       </DropdownMenu>
               ) : (
                 <>
