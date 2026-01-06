@@ -513,38 +513,43 @@ Deno.serve(async (req) => {
 });
 
 function getEbayCondition(condition) {
+    // eBay Condition IDs for Wristwatches (Category 31387):
+    // 1000 - New with tags
+    // 1500 - New without tags
+    // 1750 - New with defects
+    // 3000 - Pre-owned
+    // 7000 - For parts or not working
+    
     switch (condition) {
-        // New with box and papers
+        // New with box and papers -> New with tags
         case 'new':
         case 'new_full_set':
         case 'new_with_box':
         case 'New - With Box & Papers': 
-            return 'NEW';
+            return '1000';
         
-        // New without box or papers
+        // New without box or papers -> New without tags
         case 'new_no_box':
         case 'New (No Box/Papers)':
         case 'New (No Box)':
         case 'New (Box Only)':
-            return 'NEW_OTHER';
+            return '1500';
         
-        // Pre-owned conditions
+        // Pre-owned conditions -> All map to Pre-owned (3000)
         case 'mint': 
         case 'excellent': 
-            return 'USED_EXCELLENT';
-        
         case 'very_good': 
         case 'good': 
-            return 'USED_GOOD';
-        
         case 'fair': 
-            return 'USED_ACCEPTABLE';
+            return '3000';
         
+        // Parts or repair -> For parts or not working
         case 'parts_repair': 
-            return 'FOR_PARTS_OR_NOT_WORKING';
+            return '7000';
         
+        // Default to pre-owned
         default: 
-            return 'USED_EXCELLENT';
+            return '3000';
     }
 }
 
