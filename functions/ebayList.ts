@@ -526,10 +526,19 @@ function getEbayCondition(condition) {
         return 'USED_EXCELLENT';
     }
     
+    // Handle numeric condition values directly (type number)
+    if (typeof condition === 'number') {
+        if (condition === 1000 || condition === 1500) return 'NEW';
+        if (condition === 3000 || condition === 4000 || condition === 5000) return 'USED_EXCELLENT';
+        if (condition === 6000) return 'USED_GOOD';
+        if (condition === 7000) return 'FOR_PARTS_OR_NOT_WORKING';
+        return 'USED_EXCELLENT';
+    }
+    
     // Convert to lowercase string for consistent comparison
     const conditionStr = String(condition).toLowerCase().trim();
     
-    // Handle legacy numeric condition IDs - map them to proper values
+    // Handle legacy numeric condition IDs as strings
     if (conditionStr === '1000' || conditionStr === '1500') {
         return 'NEW';
     }
