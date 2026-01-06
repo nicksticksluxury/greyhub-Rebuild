@@ -36,41 +36,21 @@ export default function SoldInventory() {
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: () => base44.entities.Watch.list("-sold_date", 1000),
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const { data: auctions = [] } = useQuery({
     queryKey: ['auctions'],
     queryFn: () => base44.entities.Auction.list("created_date", 100),
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const { data: watchSources = [], isLoading: isLoadingSources } = useQuery({
     queryKey: ['watchSources'],
     queryFn: () => base44.entities.WatchSource.list("name", 1000),
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const { data: sourceOrders = [], isLoading: isLoadingOrders } = useQuery({
     queryKey: ['sourceOrders'],
     queryFn: () => base44.entities.SourceOrder.list("date_received", 1000),
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const filteredProducts = products.filter(product => {
