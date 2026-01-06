@@ -518,57 +518,65 @@ Deno.serve(async (req) => {
 
 function getEbayCondition(condition) {
     // eBay Inventory API uses condition descriptors (strings), not numeric IDs
-    // Valid values: NEW, NEW_OTHER, NEW_WITH_DEFECTS, LIKE_NEW, USED_EXCELLENT, 
+    // Valid values for wristwatches (category 31387):
+    // NEW, NEW_OTHER, NEW_WITH_DEFECTS, LIKE_NEW, USED_EXCELLENT, 
     // USED_VERY_GOOD, USED_GOOD, USED_ACCEPTABLE, FOR_PARTS_OR_NOT_WORKING
     
-    // Handle null/undefined
     if (!condition) {
         return 'USED_EXCELLENT';
     }
     
-    // Handle numeric condition values directly (type number)
+    // Handle numeric condition values (eBay's internal IDs)
     if (typeof condition === 'number') {
-        if (condition === 1000 || condition === 1500) return 'NEW';
-        if (condition === 3000 || condition === 4000 || condition === 5000) return 'USED_EXCELLENT';
-        if (condition === 6000) return 'USED_GOOD';
-        if (condition === 7000) return 'FOR_PARTS_OR_NOT_WORKING';
-        return 'USED_EXCELLENT';
+        switch (condition) {
+            case 1000: return 'NEW';
+            case 1500: return 'NEW_OTHER';
+            case 1750: return 'NEW_WITH_DEFECTS';
+            case 2750: return 'LIKE_NEW';
+            case 3000: return 'USED_EXCELLENT';
+            case 4000: return 'USED_VERY_GOOD';
+            case 5000: return 'USED_GOOD';
+            case 6000: return 'USED_ACCEPTABLE';
+            case 7000: return 'FOR_PARTS_OR_NOT_WORKING';
+            default: return 'USED_EXCELLENT';
+        }
     }
     
-    // Convert to lowercase string for consistent comparison
     const conditionStr = String(condition).toLowerCase().trim();
     
-    // Handle legacy numeric condition IDs as strings
-    if (conditionStr === '1000' || conditionStr === '1500') {
-        return 'NEW';
-    }
-    if (conditionStr === '3000' || conditionStr === '4000' || conditionStr === '5000') {
-        return 'USED_EXCELLENT';
-    }
-    if (conditionStr === '6000') {
-        return 'USED_GOOD';
-    }
-    if (conditionStr === '7000') {
-        return 'FOR_PARTS_OR_NOT_WORKING';
+    // Handle numeric IDs stored as strings
+    switch (conditionStr) {
+        case '1000': return 'NEW';
+        case '1500': return 'NEW_OTHER';
+        case '1750': return 'NEW_WITH_DEFECTS';
+        case '2750': return 'LIKE_NEW';
+        case '3000': return 'USED_EXCELLENT';
+        case '4000': return 'USED_VERY_GOOD';
+        case '5000': return 'USED_GOOD';
+        case '6000': return 'USED_ACCEPTABLE';
+        case '7000': return 'FOR_PARTS_OR_NOT_WORKING';
     }
     
-    // Handle string conditions
+    // Handle descriptive string conditions
     switch (conditionStr) {
-        // New with box and papers
         case 'new':
         case 'new_full_set':
         case 'new_with_box':
         case 'new - with box & papers': 
             return 'NEW';
         
-        // New without box or papers
         case 'new_no_box':
         case 'new (no box/papers)':
         case 'new (no box)':
         case 'new (box only)':
             return 'NEW_OTHER';
         
-        // Pre-owned conditions
+        case 'new_with_defects':
+            return 'NEW_WITH_DEFECTS';
+        
+        case 'like_new':
+            return 'LIKE_NEW';
+        
         case 'mint': 
         case 'excellent': 
             return 'USED_EXCELLENT';
@@ -582,13 +590,11 @@ function getEbayCondition(condition) {
         case 'fair': 
             return 'USED_ACCEPTABLE';
         
-        // Parts or repair
         case 'parts_repair': 
         case 'parts': 
         case 'repair':
             return 'FOR_PARTS_OR_NOT_WORKING';
         
-        // Default to pre-owned excellent
         default: 
             return 'USED_EXCELLENT';
     }
