@@ -527,16 +527,19 @@ function getEbayCondition(condition) {
     }
     
     // Handle numeric condition values (eBay's internal IDs)
+    // For wristwatches, consolidate all used conditions to USED_EXCELLENT since
+    // category 31387 has limited condition support
     if (typeof condition === 'number') {
         switch (condition) {
             case 1000: return 'NEW';
             case 1500: return 'NEW_OTHER';
             case 1750: return 'NEW_WITH_DEFECTS';
             case 2750: return 'LIKE_NEW';
-            case 3000: return 'USED_EXCELLENT';
-            case 4000: return 'USED_VERY_GOOD';
-            case 5000: return 'USED_GOOD';
-            case 6000: return 'USED_ACCEPTABLE';
+            case 3000:
+            case 4000:
+            case 5000:
+            case 6000:
+                return 'USED_EXCELLENT';  // Consolidate all used to USED_EXCELLENT
             case 7000: return 'FOR_PARTS_OR_NOT_WORKING';
             default: return 'USED_EXCELLENT';
         }
@@ -550,10 +553,11 @@ function getEbayCondition(condition) {
         case '1500': return 'NEW_OTHER';
         case '1750': return 'NEW_WITH_DEFECTS';
         case '2750': return 'LIKE_NEW';
-        case '3000': return 'USED_EXCELLENT';
-        case '4000': return 'USED_VERY_GOOD';
-        case '5000': return 'USED_GOOD';
-        case '6000': return 'USED_ACCEPTABLE';
+        case '3000':
+        case '4000':
+        case '5000':
+        case '6000':
+            return 'USED_EXCELLENT';  // Consolidate all used to USED_EXCELLENT
         case '7000': return 'FOR_PARTS_OR_NOT_WORKING';
     }
     
@@ -578,18 +582,12 @@ function getEbayCondition(condition) {
             return 'LIKE_NEW';
         
         case 'mint': 
-        case 'excellent': 
-            return 'USED_EXCELLENT';
-        
+        case 'excellent':
         case 'very_good':
         case 'very good':
-            return 'USED_VERY_GOOD';
-        
-        case 'good': 
-            return 'USED_GOOD';
-        
-        case 'fair': 
-            return 'USED_ACCEPTABLE';
+        case 'good':
+        case 'fair':
+            return 'USED_EXCELLENT';  // Consolidate all used to USED_EXCELLENT for watches
         
         case 'parts_repair': 
         case 'parts': 
