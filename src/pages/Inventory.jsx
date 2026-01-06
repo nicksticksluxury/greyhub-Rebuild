@@ -91,21 +91,32 @@ export default function Inventory() {
     queryKey: ['products'],
     queryFn: () => base44.entities.Product.list("-created_date", 1000),
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: Infinity,
   });
 
   const { data: auctions = [] } = useQuery({
     queryKey: ['auctions'],
     queryFn: () => base44.entities.Auction.list("created_date", 100),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: Infinity,
   });
 
   const { data: watchSources = [], isLoading: isLoadingSources } = useQuery({
     queryKey: ['watchSources'],
     queryFn: () => base44.entities.WatchSource.list("name", 1000),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: Infinity,
   });
 
   const { data: sourceOrders = [], isLoading: isLoadingOrders } = useQuery({
     queryKey: ['sourceOrders'],
     queryFn: () => base44.entities.SourceOrder.list("date_received", 1000),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: Infinity,
   });
 
   const { data: allCompanies = [] } = useQuery({
@@ -119,6 +130,9 @@ export default function Inventory() {
         return [];
       }
     },
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: Infinity,
   });
 
   const handleBulkListEtsy = async () => {

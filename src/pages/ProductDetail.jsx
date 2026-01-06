@@ -48,20 +48,15 @@ export default function ProductDetail() {
   const { data: product, isLoading, error: productError } = useQuery({
     queryKey: ['product', productId],
     queryFn: async () => {
-      console.log('DEBUG: useQuery queryFn called with productId:', productId);
       if (!productId) {
-        console.error('No productId provided');
         throw new Error('No product ID in URL');
       }
       const user = await base44.auth.me();
       const companyId = user?.data?.company_id || user?.company_id;
       if (!companyId) {
-        console.error('User not associated with a company.');
         throw new Error('User not associated with a company. Cannot fetch product.');
       }
-      console.log('Fetching product with ID:', productId, 'for company ID:', companyId);
       const products = await base44.entities.Product.filter({ id: productId, company_id: companyId });
-      console.log('Product query result:', products);
       if (!products || products.length === 0) {
         throw new Error('Product not found or access denied due to RLS.');
       }
@@ -71,6 +66,7 @@ export default function ProductDetail() {
     retry: 1,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    staleTime: Infinity,
   });
 
   console.log('DEBUG: useQuery state - isLoading:', isLoading, 'enabled:', !!productId, 'product:', product);
