@@ -482,18 +482,31 @@ Deno.serve(async (req) => {
 
             } catch (error) {
                 console.error(`Failed to list product ${product.id}:`, error);
-                // Try to parse error if it's a JSON string
+
+                // Enhanced error parsing - capture full eBay error details
                 let errorMessage = error.message;
+                let errorDetails = { raw_error: error.message };
+
                 try {
                     if (errorMessage.includes("{")) {
                         const parsed = JSON.parse(errorMessage.substring(errorMessage.indexOf("{")));
-                        if (parsed.errors && parsed.errors[0] && parsed.errors[0].message) {
-                            errorMessage = parsed.errors[0].message;
+                        errorDetails = parsed;
+
+                        if (parsed.errors && parsed.errors[0]) {
+                            const firstError = parsed.errors[0];
+                            errorMessage = firstError.message || errorMessage;
+
+                            // Include additional error context
+                            if (firstError.parameters) {
+                                errorMessage += ` | Parameters: ${JSON.stringify(firstError.parameters)}`;
+                            }
                         }
                     }
-                } catch (e) {}
-                
-                // Log listing error
+                } catch (e) {
+                    console.error("Failed to parse eBay error:", e);
+                }
+
+                // Log listing error with full details
                 await base44.asServiceRole.entities.Log.create({
                     company_id: user.company_id,
                     user_id: user.id,
@@ -501,9 +514,17 @@ Deno.serve(async (req) => {
                     level: "error",
                     category: "ebay",
                     message: `eBay List Failed: ${product.brand} ${product.model} - ${errorMessage}`,
-                    details: { product_id: product.id, error: errorMessage, product_type: productTypeName }
+                    details: { 
+                        product_id: product.id, 
+                        error: errorMessage,
+                        error_details: errorDetails,
+                        product_type: productTypeName,
+                        sku: product.id,
+                        condition_sent: getEbayCondition(product.condition),
+                        condition_original: product.condition
+                    }
                 });
-                
+
                 results.errors.push(`Failed to list ${product.brand} ${product.model}: ${errorMessage}`);
                 results.failed++;
             }
