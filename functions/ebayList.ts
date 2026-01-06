@@ -517,49 +517,46 @@ Deno.serve(async (req) => {
 });
 
 function getEbayCondition(condition) {
-    // eBay Inventory API uses condition descriptors (strings), not numeric IDs
-    // Valid values for wristwatches (category 31387):
-    // NEW, NEW_OTHER, NEW_WITH_DEFECTS, LIKE_NEW, USED_EXCELLENT, 
-    // USED_VERY_GOOD, USED_GOOD, USED_ACCEPTABLE, FOR_PARTS_OR_NOT_WORKING
+    // eBay Wristwatches (31387) ONLY supports these numeric condition IDs:
+    // 1000 = New
+    // 1500 = New other (see details)
+    // 1750 = New with defects
+    // 2000 = Certified refurbished
+    // 3000 = Used
+    // 5000 = For parts or not working
     
     if (!condition) {
-        return 'USED_EXCELLENT';
+        return '3000';  // Default to Used
     }
     
-    // Handle numeric condition values (eBay's internal IDs)
-    // For wristwatches, consolidate all used conditions to USED_EXCELLENT since
-    // category 31387 has limited condition support
+    // Handle numeric condition values
     if (typeof condition === 'number') {
-        switch (condition) {
-            case 1000: return 'NEW';
-            case 1500: return 'NEW_OTHER';
-            case 1750: return 'NEW_WITH_DEFECTS';
-            case 2750: return 'LIKE_NEW';
-            case 3000:
-            case 4000:
-            case 5000:
-            case 6000:
-                return 'USED_EXCELLENT';  // Consolidate all used to USED_EXCELLENT
-            case 7000: return 'FOR_PARTS_OR_NOT_WORKING';
-            default: return 'USED_EXCELLENT';
+        // Map all used conditions to 3000
+        if (condition >= 3000 && condition <= 6999) {
+            return '3000';
         }
+        // Map parts/repair to 5000
+        if (condition === 7000) {
+            return '5000';
+        }
+        // Keep valid IDs as-is
+        if ([1000, 1500, 1750, 2000, 3000, 5000].includes(condition)) {
+            return String(condition);
+        }
+        return '3000';  // Default
     }
     
     const conditionStr = String(condition).toLowerCase().trim();
     
     // Handle numeric IDs stored as strings
-    switch (conditionStr) {
-        case '1000': return 'NEW';
-        case '1500': return 'NEW_OTHER';
-        case '1750': return 'NEW_WITH_DEFECTS';
-        case '2750': return 'LIKE_NEW';
-        case '3000':
-        case '4000':
-        case '5000':
-        case '6000':
-            return 'USED_EXCELLENT';  // Consolidate all used to USED_EXCELLENT
-        case '7000': return 'FOR_PARTS_OR_NOT_WORKING';
+    if (conditionStr === '1000') return '1000';
+    if (conditionStr === '1500') return '1500';
+    if (conditionStr === '1750') return '1750';
+    if (conditionStr === '2000') return '2000';
+    if (conditionStr === '3000' || conditionStr === '4000' || conditionStr === '5000' || conditionStr === '6000') {
+        return '3000';
     }
+    if (conditionStr === '7000') return '5000';
     
     // Handle descriptive string conditions
     switch (conditionStr) {
@@ -567,19 +564,20 @@ function getEbayCondition(condition) {
         case 'new_full_set':
         case 'new_with_box':
         case 'new - with box & papers': 
-            return 'NEW';
+            return '1000';
         
         case 'new_no_box':
         case 'new (no box/papers)':
         case 'new (no box)':
         case 'new (box only)':
-            return 'NEW_OTHER';
+            return '1500';
         
         case 'new_with_defects':
-            return 'NEW_WITH_DEFECTS';
+            return '1750';
         
-        case 'like_new':
-            return 'LIKE_NEW';
+        case 'certified_refurbished':
+        case 'certified refurbished':
+            return '2000';
         
         case 'mint': 
         case 'excellent':
@@ -587,15 +585,20 @@ function getEbayCondition(condition) {
         case 'very good':
         case 'good':
         case 'fair':
-            return 'USED_EXCELLENT';  // Consolidate all used to USED_EXCELLENT for watches
+        case 'used':
+        case 'like_new':
+        case 'like new':
+            return '3000';  // All used conditions map to 3000
         
         case 'parts_repair': 
         case 'parts': 
         case 'repair':
-            return 'FOR_PARTS_OR_NOT_WORKING';
+        case 'for parts':
+        case 'not working':
+            return '5000';
         
         default: 
-            return 'USED_EXCELLENT';
+            return '3000';
     }
 }
 
