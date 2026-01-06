@@ -311,13 +311,17 @@ Deno.serve(async (req) => {
                     fullDescription = `${fullDescription}\n\n${ebayFooter}`;
                 }
 
+                // Get condition and log it for debugging
+                const ebayCondition = getEbayCondition(product.condition);
+                console.log(`[${sku}] Product condition: "${product.condition}" -> eBay condition: "${ebayCondition}"`);
+
                 const inventoryItem = {
                     availability: {
                         shipToLocationAvailability: {
                             quantity: product.quantity || 1
                         }
                     },
-                    condition: getEbayCondition(product.condition),
+                    condition: ebayCondition,
                     packageWeightAndSize: {
                         packageType: "PACKAGE_THICK_ENVELOPE",
                         weight: {
@@ -517,19 +521,42 @@ function getEbayCondition(condition) {
     // Valid values: NEW, NEW_OTHER, NEW_WITH_DEFECTS, LIKE_NEW, USED_EXCELLENT, 
     // USED_VERY_GOOD, USED_GOOD, USED_ACCEPTABLE, FOR_PARTS_OR_NOT_WORKING
     
-    switch (condition) {
+    // Handle null/undefined
+    if (!condition) {
+        return 'USED_EXCELLENT';
+    }
+    
+    // Convert to lowercase string for consistent comparison
+    const conditionStr = String(condition).toLowerCase().trim();
+    
+    // Handle legacy numeric condition IDs - map them to proper values
+    if (conditionStr === '1000' || conditionStr === '1500') {
+        return 'NEW';
+    }
+    if (conditionStr === '3000' || conditionStr === '4000' || conditionStr === '5000') {
+        return 'USED_EXCELLENT';
+    }
+    if (conditionStr === '6000') {
+        return 'USED_GOOD';
+    }
+    if (conditionStr === '7000') {
+        return 'FOR_PARTS_OR_NOT_WORKING';
+    }
+    
+    // Handle string conditions
+    switch (conditionStr) {
         // New with box and papers
         case 'new':
         case 'new_full_set':
         case 'new_with_box':
-        case 'New - With Box & Papers': 
+        case 'new - with box & papers': 
             return 'NEW';
         
         // New without box or papers
         case 'new_no_box':
-        case 'New (No Box/Papers)':
-        case 'New (No Box)':
-        case 'New (Box Only)':
+        case 'new (no box/papers)':
+        case 'new (no box)':
+        case 'new (box only)':
             return 'NEW_OTHER';
         
         // Pre-owned conditions
@@ -548,6 +575,8 @@ function getEbayCondition(condition) {
         
         // Parts or repair
         case 'parts_repair': 
+        case 'parts': 
+        case 'repair':
             return 'FOR_PARTS_OR_NOT_WORKING';
         
         // Default to pre-owned excellent
