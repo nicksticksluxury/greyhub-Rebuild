@@ -567,18 +567,34 @@ export default function Inventory() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuLabel>Export</DropdownMenuLabel>
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => setShowExport(true)}>
                       <Download className="w-4 h-4 mr-2" />
                       Export Selected
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowImageExportDialog(true)}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Export Image Links
-                    </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Listings</DropdownMenuLabel>
+                    <DropdownMenuLabel>Update Fields</DropdownMenuLabel>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <User className="w-4 h-4 mr-2" />
+                        Set Gender
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("mens")}>
+                          Men's
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("womens")}>
+                          Women's
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("unisex")}>
+                          Unisex
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>eBay Actions</DropdownMenuLabel>
                     <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Listing..." : "List on eBay"}
@@ -612,8 +628,11 @@ export default function Inventory() {
                       }
                     }}>
                       <X className="w-4 h-4 mr-2" />
-                      Remove from eBay
+                      Unlist from eBay
                     </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Other Platforms</DropdownMenuLabel>
                     <DropdownMenuItem onClick={handleBulkListEtsy} disabled={listing}>
                       <ShoppingBag className="w-4 h-4 mr-2" />
                       {listing ? "Listing..." : "List on Etsy"}
@@ -628,7 +647,7 @@ export default function Inventory() {
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Content</DropdownMenuLabel>
+                    <DropdownMenuLabel>Product Data</DropdownMenuLabel>
                     <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
                       {generatingDescriptions ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -637,27 +656,10 @@ export default function Inventory() {
                       )}
                       {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
                     </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Organization</DropdownMenuLabel>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <User className="w-4 h-4 mr-2" />
-                        Set Gender
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("mens")}>
-                          Men's
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("womens")}>
-                          Women's
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleBulkUpdateGender("unisex")}>
-                          Unisex
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-
+                    <DropdownMenuItem onClick={() => setShowImageExportDialog(true)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Image Links
+                    </DropdownMenuItem>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
                         <Gavel className="w-4 h-4 mr-2" />
@@ -690,19 +692,16 @@ export default function Inventory() {
                         )}
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
-
                     <DropdownMenuItem onClick={() => setShowSetSourceDialog(true)}>
                       <Package className="w-4 h-4 mr-2" />
                       Set Source & Shipment
                     </DropdownMenuItem>
-
                     <DropdownMenuItem onClick={handleUpdateCostFromShipment}>
                       <Package className="w-4 h-4 mr-2" />
                       Update Cost from Shipment
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Admin</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => setShowReassignDialog(true)} className="text-red-600">
                       <User className="w-4 h-4 mr-2" />
                       Reassign to Company
