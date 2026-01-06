@@ -110,37 +110,26 @@ export default function Layout({ children, currentPageName }) {
   }, [user]);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const publicPages = ['index', 'SalesView', 'JoinCompany'];
-      // If page is not public, check if user is logged in
-      if (!publicPages.includes(currentPageName)) {
-        if (!user) {
-          try {
-            const currentUser = await base44.auth.me();
-            if (!currentUser) {
-              base44.auth.redirectToLogin();
-            } else {
-              setUser(currentUser);
-              const companyId = currentUser.data?.company_id || currentUser.company_id;
-              setIsImpersonating(currentUser.role === 'admin' && !!companyId);
-            }
-          } catch (error) {
-            base44.auth.redirectToLogin();
-          }
-        } else {
-          const companyId = user.data?.company_id || user.company_id;
-          setIsImpersonating(user.role === 'admin' && !!companyId);
-        }
-      } else {
-        if (user) {
-          setUser(null);
-          setIsImpersonating(false);
-        }
-      }
-    };
+    const publicPages = ['index', 'SalesView', 'JoinCompany'];
 
-    checkAuth();
-  }, [currentPageName, user]);
+    if (!publicPages.includes(currentPageName) && !user) {
+      const checkAuth = async () => {
+        try {
+          const currentUser = await base44.auth.me();
+          if (!currentUser) {
+            base44.auth.redirectToLogin();
+          } else {
+            setUser(currentUser);
+            const companyId = currentUser.data?.company_id || currentUser.company_id;
+            setIsImpersonating(currentUser.role === 'admin' && !!companyId);
+          }
+        } catch (error) {
+          base44.auth.redirectToLogin();
+        }
+      };
+      checkAuth();
+    }
+  }, [currentPageName]);
 
   const toggleMode = () => {
     const newMode = mode === 'working' ? 'live' : 'working';
