@@ -114,26 +114,33 @@ export default function Layout({ children, currentPageName }) {
       const publicPages = ['index', 'SalesView', 'JoinCompany'];
       // If page is not public, check if user is logged in
       if (!publicPages.includes(currentPageName)) {
-        try {
-          const currentUser = await base44.auth.me();
-          if (!currentUser) {
+        if (!user) {
+          try {
+            const currentUser = await base44.auth.me();
+            if (!currentUser) {
+              base44.auth.redirectToLogin();
+            } else {
+              setUser(currentUser);
+              const companyId = currentUser.data?.company_id || currentUser.company_id;
+              setIsImpersonating(currentUser.role === 'admin' && !!companyId);
+            }
+          } catch (error) {
             base44.auth.redirectToLogin();
           }
-          setUser(currentUser);
-          // Check if user is system admin with a company (impersonating)
-          const companyId = currentUser.data?.company_id || currentUser.company_id;
-          setIsImpersonating(currentUser.role === 'admin' && !!companyId);
-        } catch (error) {
-          // If auth check fails (likely 401), redirect
-          base44.auth.redirectToLogin();
+        } else {
+          const companyId = user.data?.company_id || user.company_id;
+          setIsImpersonating(user.role === 'admin' && !!companyId);
+        }
+      } else {
+        if (user) {
+          setUser(null);
+          setIsImpersonating(false);
         }
       }
     };
-    
+
     checkAuth();
-
-
-  }, [currentPageName]);
+  }, [currentPageName, user]);
 
   const toggleMode = () => {
     const newMode = mode === 'working' ? 'live' : 'working';
