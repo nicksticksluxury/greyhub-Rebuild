@@ -581,7 +581,8 @@ function getEbayCondition(condition) {
         case 'excellent': 
             return 'USED_EXCELLENT';
         
-        case 'very_good': 
+        case 'very_good':
+        case 'very good':
             return 'USED_VERY_GOOD';
         
         case 'good': 
