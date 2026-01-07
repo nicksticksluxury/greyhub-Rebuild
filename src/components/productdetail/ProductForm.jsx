@@ -342,19 +342,36 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
 
 
 
-        <div>
-          <Label>eBay Free Shipping</Label>
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="ebay_free_shipping"
-              checked={data.ebay_free_shipping || false}
-              onChange={(e) => updateField("ebay_free_shipping", e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300"
-            />
-            <label htmlFor="ebay_free_shipping" className="text-sm text-slate-600 cursor-pointer">
-              Offer free shipping on eBay for this product
-            </label>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>eBay Free Shipping</Label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="ebay_free_shipping"
+                checked={data.ebay_free_shipping || false}
+                onChange={(e) => updateField("ebay_free_shipping", e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300"
+              />
+              <label htmlFor="ebay_free_shipping" className="text-sm text-slate-600 cursor-pointer">
+                Offer free shipping on eBay for this product
+              </label>
+            </div>
+          </div>
+          <div>
+            <Label>eBay Allow Offers</Label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="ebay_allow_offers"
+                checked={data.ebay_allow_offers !== undefined ? data.ebay_allow_offers : true}
+                onChange={(e) => updateField("ebay_allow_offers", e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300"
+              />
+              <label htmlFor="ebay_allow_offers" className="text-sm text-slate-600 cursor-pointer">
+                Allow best offers on eBay for this product
+              </label>
+            </div>
           </div>
         </div>
 
