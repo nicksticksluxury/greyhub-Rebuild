@@ -145,6 +145,17 @@ Whatnot Profile: ${formData.whatnotLink}
                         <p className="text-slate-400 mb-6">
                             Request an invite and trial to our customized watch inventory, management and listing system!
                         </p>
+                        <div className="space-y-3 text-sm text-slate-400 bg-slate-950/50 p-4 rounded-lg border border-amber-500/20 mb-6">
+                            <p className="font-semibold text-amber-400">
+                                If you're in a live show right now, and are looking for free entry into the game, please "Request Invite" below. Once you have filled that out, please put the following emoji in chat: 🧘🏼‍♂️
+                            </p>
+                            <p>
+                                Wait for the host to recognize your emoji. He will say Entry Received once he verifies you filled out the form.
+                            </p>
+                            <p className="text-amber-400/80 font-medium">
+                                Anything that reveals or hints at revealing the entry method to others in chat will disqualify you from the giveaway.
+                            </p>
+                        </div>
                         <Button 
                             onClick={() => setShowInviteForm(true)}
                             className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold"
