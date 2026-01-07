@@ -150,7 +150,7 @@ Whatnot Profile: ${formData.whatnotLink}
                                 If you're in a live show right now, and are looking for free entry into the game, please "Request Invite" below. Once you have filled that out, please put the following emoji in chat: 🧘🏼‍♂️
                             </p>
                             <p>
-                                Wait for the host to recognize your emoji. He will say Entry Received once he verifies you filled out the form.
+                                Wait for the host to recognize your emoji. If you haven't been recognized in a couple minutes, feel free to drop the emoji again. He will say Entry Received once he verifies you filled out the form.
                             </p>
                             <p className="text-amber-400/80 font-medium">
                                 Anything that reveals or hints at revealing the entry method to others in chat will disqualify you from the giveaway.
