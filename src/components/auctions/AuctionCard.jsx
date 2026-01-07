@@ -71,12 +71,20 @@ export default function AuctionCard({ auction, stats, onEdit, onDelete }) {
           <span className="font-semibold text-slate-900">{stats.totalWatches}</span>
         </div>
 
+        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-red-700" />
+            <span className="text-sm text-red-700">Total Cost</span>
+          </div>
+          <span className="font-semibold text-red-900">${stats.totalCost.toFixed(2)}</span>
+        </div>
+
         <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-200">
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-emerald-700" />
             <span className="text-sm text-emerald-700">Total Value</span>
           </div>
-          <span className="font-semibold text-emerald-900">${stats.totalValue.toLocaleString()}</span>
+          <span className="font-semibold text-emerald-900">${stats.totalValue.toFixed(2)}</span>
         </div>
       </div>
 
