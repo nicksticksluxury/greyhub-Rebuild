@@ -18,9 +18,9 @@ export default function Auctions() {
     initialData: [],
   });
 
-  const { data: watches = [] } = useQuery({
-    queryKey: ['watches'],
-    queryFn: () => base44.entities.Watch.list(),
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => base44.entities.Product.list(),
     initialData: [],
   });
 
@@ -52,10 +52,10 @@ export default function Auctions() {
   });
 
   const getAuctionStats = (auctionId) => {
-    const auctionWatches = watches.filter(w => w.auction_id === auctionId);
+    const auctionProducts = products.filter(p => p.auction_id === auctionId && !p.sold);
     return {
-      totalWatches: auctionWatches.length,
-      totalValue: auctionWatches.reduce((sum, w) => sum + (w.retail_price || 0), 0),
+      totalWatches: auctionProducts.reduce((sum, p) => sum + (p.quantity || 1), 0),
+      totalValue: auctionProducts.reduce((sum, p) => sum + ((p.retail_price || 0) * (p.quantity || 1)), 0),
     };
   };
 
