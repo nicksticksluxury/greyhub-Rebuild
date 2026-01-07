@@ -101,6 +101,11 @@ export default function Layout({ children, currentPageName }) {
             icon: Package,
           },
           {
+            title: "AI Management",
+            url: createPageUrl("AiManagement"),
+            icon: Package,
+          },
+          {
             title: "Resolve Duplicates",
             url: createPageUrl("ResolveProductDuplicates"),
             icon: Copy,
