@@ -56,6 +56,11 @@ export default function Auctions() {
     return {
       totalWatches: auctionProducts.reduce((sum, p) => sum + (p.quantity || 1), 0),
       totalValue: auctionProducts.reduce((sum, p) => sum + ((p.retail_price || 0) * (p.quantity || 1)), 0),
+      totalCost: auctionProducts.reduce((sum, p) => {
+        const cost = (p.cost || 0);
+        const repairCost = (p.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
+        return sum + ((cost + repairCost) * (p.quantity || 1));
+      }, 0),
     };
   };
 
