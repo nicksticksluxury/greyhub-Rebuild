@@ -297,7 +297,12 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
           <div>
             <Label>Year</Label>
             <Input
-              value={data.year || ""}
+              value={(() => {
+                const val = data.year;
+                if (!val && val !== 0) return "";
+                if (typeof val === 'object') return JSON.stringify(val);
+                return String(val);
+              })()}
               onChange={(e) => updateField("year", e.target.value)}
               placeholder="e.g., 1990"
             />
