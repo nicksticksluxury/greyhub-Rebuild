@@ -34,7 +34,13 @@ export default function SalesView() {
             images: images,
             desc: watch.description || "",
             highlights: watch.ai_analysis?.notable_features || [],
-            comparableListings: watch.comparable_listings_links || [],
+            comparableListings: (() => {
+              const links = watch.comparable_listings_links;
+              if (!links) return [];
+              if (Array.isArray(links)) return links;
+              if (typeof links === 'object') return Object.values(links);
+              return [];
+            })(),
             marketResearch: watch.market_research || watch.ai_analysis?.market_insights || "",
           });
         } catch (error) {
@@ -185,19 +191,23 @@ export default function SalesView() {
             </div>
             {data.comparableListings.length > 0 ? (
               <ul className="space-y-2">
-                {data.comparableListings.map((comp, i) => (
-                  <li key={i} className="flex justify-between items-center text-sm">
-                    <a 
-                      href={comp.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 underline text-sm flex-1 truncate"
-                    >
-                      {comp.url ? (comp.url.length > 30 ? comp.url.substring(0, 25) + "..." : comp.url) : "Link"}
-                    </a>
-                    {comp.price && <span className="text-white font-semibold ml-2">{comp.price}</span>}
-                  </li>
-                ))}
+                {data.comparableListings.map((comp, i) => {
+                  const url = typeof comp === 'string' ? comp : (comp?.url || '');
+                  const price = typeof comp === 'object' && comp?.price ? comp.price : null;
+                  return (
+                    <li key={i} className="flex justify-between items-center text-sm">
+                      <a 
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline text-sm flex-1 truncate"
+                      >
+                        {url ? (url.length > 30 ? url.substring(0, 25) + "..." : url) : "Link"}
+                      </a>
+                      {price && <span className="text-white font-semibold ml-2">{price}</span>}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-slate-400 text-sm italic">No comparable listings available.</p>
