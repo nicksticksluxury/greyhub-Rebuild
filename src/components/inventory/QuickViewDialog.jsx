@@ -54,16 +54,26 @@ export default function QuickViewDialog({ watch, onClose }) {
                     <span className="font-semibold">{watch.year}</span>
                   </div>
                 )}
-                {watch.movement_type && (
+                {(watch.category_specific_attributes?.movement_type || watch.movement_type) && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Movement:</span>
-                    <span className="font-semibold capitalize">{watch.movement_type}</span>
+                    <span className="font-semibold capitalize">
+                      {(() => {
+                        const val = watch.category_specific_attributes?.movement_type || watch.movement_type;
+                        return typeof val === 'object' ? JSON.stringify(val) : val;
+                      })()}
+                    </span>
                   </div>
                 )}
-                {watch.case_size && (
+                {(watch.category_specific_attributes?.case_size || watch.case_size) && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Case Size:</span>
-                    <span className="font-semibold">{watch.case_size}</span>
+                    <span className="font-semibold">
+                      {(() => {
+                        const val = watch.category_specific_attributes?.case_size || watch.case_size;
+                        return typeof val === 'object' ? JSON.stringify(val) : val;
+                      })()}
+                    </span>
                   </div>
                 )}
               </div>
