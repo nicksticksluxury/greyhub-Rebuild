@@ -19,12 +19,17 @@ Deno.serve(async (req) => {
 
     // Fetch product data
     const companyId = user.data?.company_id || user.company_id;
+    console.log('Company ID:', companyId);
+    
     const products = await base44.asServiceRole.entities.Product.filter({ 
       id: productId, 
       company_id: companyId 
     });
     
+    console.log('Products fetched:', products?.length || 0);
+    
     if (!products || products.length === 0) {
+      console.log('ERROR: Product not found for ID:', productId);
       return Response.json({ error: 'Product not found' }, { status: 404 });
     }
     
@@ -36,6 +41,8 @@ Deno.serve(async (req) => {
       company_id: companyId
     });
     
+    console.log('AI Prompts fetched:', aiPrompts?.length || 0);
+    
     const getPrompt = (key) => aiPrompts.find(p => p.key === key);
 
     // Fetch product type information
@@ -44,12 +51,14 @@ Deno.serve(async (req) => {
     });
     const productType = productTypes && productTypes.length > 0 ? productTypes[0] : null;
     const productTypeName = productType?.name || 'Product';
+    console.log('Product type:', productTypeName);
     
     // Fetch product type fields
     const productTypeFields = product.product_type_code ? 
       await base44.asServiceRole.entities.ProductTypeField.filter({ 
         product_type_code: product.product_type_code 
       }) : [];
+    console.log('Product type fields:', productTypeFields?.length || 0);
 
     // Prepare photos for analysis
     const photosToAnalyze = (product.photos || []).slice(0, 2).map(photo => 
@@ -57,6 +66,7 @@ Deno.serve(async (req) => {
     );
 
     if (photosToAnalyze.length === 0) {
+      console.log('ERROR: No photos available');
       return Response.json({ 
         error: 'No photos available for analysis' 
       }, { status: 400 });
