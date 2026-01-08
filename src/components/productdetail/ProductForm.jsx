@@ -754,12 +754,16 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
           </p>
         </div>
 
-        {data.ai_platform_recommendation && (
-          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-            <Label className="text-purple-900 font-semibold mb-2 block">AI Platform Recommendation</Label>
-            <p className="text-sm text-purple-800">{data.ai_platform_recommendation}</p>
-          </div>
-        )}
+        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+          <Label className="text-purple-900 font-semibold mb-2 block">AI Platform Recommendation</Label>
+          <Textarea
+            value={data.ai_platform_recommendation || ""}
+            onChange={(e) => updateField("ai_platform_recommendation", e.target.value)}
+            placeholder="AI will provide recommended platform for listing this product..."
+            rows={2}
+            className="bg-white border-purple-300"
+          />
+        </div>
 
         <div className="pt-4 border-t">
           <h3 className="font-semibold text-slate-900 mb-4">Platform Pricing</h3>
