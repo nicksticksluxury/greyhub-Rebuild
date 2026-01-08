@@ -459,6 +459,18 @@ Deno.serve(async (req) => {
       secondary_channel: pass6Result.secondary_channel,
       platform_justification: pass6Result.justification,
 
+      // UI compatibility aliases
+      average_market_value: pass4Result.final_base_market_value,
+      current_retail_price: pass4Result.final_base_market_value,
+      original_msrp: product.msrp || null,
+      market_research_summary: [
+        pass2Result.market_positioning,
+        `Demand: ${pass3Result.market_demand_indicators}`,
+        pass4Result.market_insights,
+        `Found ${pass3Result.num_comparables_found} comparable listings`,
+        `Price range: $${pass3Result.price_range_low?.toLocaleString() || 0} - $${pass3Result.price_range_high?.toLocaleString() || 0}`
+      ].filter(Boolean).join('\n\n'),
+
       // Metadata
       analysis_timestamp: new Date().toISOString(),
       analysis_version: '2.0-multi-pass'
