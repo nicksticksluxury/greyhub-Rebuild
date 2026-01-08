@@ -296,7 +296,7 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                 {aiAnalysis.identified_gender && (
                   <SelectableItem id="gender" label="Gender" value={aiAnalysis.identified_gender} />
                 )}
-                {aiAnalysis.category_specific_attributes && Object.entries(aiAnalysis.category_specific_attributes).map(([key, value]) => {
+                {aiAnalysis.category_specific_attributes && typeof aiAnalysis.category_specific_attributes === 'object' && !Array.isArray(aiAnalysis.category_specific_attributes) && Object.entries(aiAnalysis.category_specific_attributes).map(([key, value]) => {
                   let displayValue;
                   if (value === null || value === undefined) {
                     displayValue = 'N/A';
@@ -305,7 +305,7 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                   } else if (Array.isArray(value)) {
                     displayValue = value.join(', ');
                   } else if (typeof value === 'object') {
-                    displayValue = JSON.stringify(value, null, 2);
+                    displayValue = JSON.stringify(value);
                   } else {
                     displayValue = String(value);
                   }
