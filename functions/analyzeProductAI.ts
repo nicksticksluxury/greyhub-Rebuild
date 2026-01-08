@@ -464,8 +464,8 @@ Deno.serve(async (req) => {
       analysis_version: '2.0-multi-pass'
     };
 
-    // Update product with AI analysis
-    await base44.asServiceRole.entities.Product.update(productId, {
+    // Update product with AI analysis (use user-scoped for RLS)
+    await base44.entities.Product.update(productId, {
       ai_analysis: comprehensiveAnalysis
     });
 
