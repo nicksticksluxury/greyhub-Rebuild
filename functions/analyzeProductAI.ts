@@ -52,11 +52,13 @@ Deno.serve(async (req) => {
     console.log('Product loaded:', product.brand, product.model);
 
     // Fetch all AI prompts for this company
-    const aiPrompts = await base44.asServiceRole.entities.AiPrompt.filter({ 
-      company_id: companyId
-    });
+    // Try without company filter first since service role should have access to all
+    let aiPrompts = await base44.asServiceRole.entities.AiPrompt.list();
+    console.log('All AI Prompts (no filter):', aiPrompts?.length || 0);
     
-    console.log('AI Prompts fetched:', aiPrompts?.length || 0);
+    // Filter by company_id in code
+    aiPrompts = aiPrompts.filter(p => p.company_id === companyId);
+    console.log('AI Prompts for company:', aiPrompts?.length || 0);
     
     const getPrompt = (key) => aiPrompts.find(p => p.key === key);
 
