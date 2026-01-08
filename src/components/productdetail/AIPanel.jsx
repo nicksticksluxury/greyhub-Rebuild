@@ -298,10 +298,14 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                 )}
                 {aiAnalysis.category_specific_attributes && Object.entries(aiAnalysis.category_specific_attributes).map(([key, value]) => {
                   let displayValue;
-                  if (typeof value === 'boolean') {
+                  if (value === null || value === undefined) {
+                    displayValue = 'N/A';
+                  } else if (typeof value === 'boolean') {
                     displayValue = value ? 'Yes' : 'No';
-                  } else if (typeof value === 'object' && value !== null) {
-                    displayValue = JSON.stringify(value);
+                  } else if (Array.isArray(value)) {
+                    displayValue = value.join(', ');
+                  } else if (typeof value === 'object') {
+                    displayValue = JSON.stringify(value, null, 2);
                   } else {
                     displayValue = String(value);
                   }
