@@ -296,14 +296,24 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                 {aiAnalysis.identified_gender && (
                   <SelectableItem id="gender" label="Gender" value={aiAnalysis.identified_gender} />
                 )}
-                {aiAnalysis.category_specific_attributes && Object.entries(aiAnalysis.category_specific_attributes).map(([key, value]) => (
-                  <SelectableItem 
-                    key={key} 
-                    id={`category_attr_${key}`} 
-                    label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
-                    value={typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)} 
-                  />
-                ))}
+                {aiAnalysis.category_specific_attributes && Object.entries(aiAnalysis.category_specific_attributes).map(([key, value]) => {
+                  let displayValue;
+                  if (typeof value === 'boolean') {
+                    displayValue = value ? 'Yes' : 'No';
+                  } else if (typeof value === 'object' && value !== null) {
+                    displayValue = JSON.stringify(value);
+                  } else {
+                    displayValue = String(value);
+                  }
+                  return (
+                    <SelectableItem 
+                      key={key} 
+                      id={`category_attr_${key}`} 
+                      label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
+                      value={displayValue} 
+                    />
+                  );
+                })}
             </div>
           )}
 
