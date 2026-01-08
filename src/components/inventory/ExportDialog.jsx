@@ -99,6 +99,14 @@ export default function ExportDialog({ watches, allWatches, onClose }) {
         
         if (!description || description.trim() === "") {
           // Generate description
+          // Safely extract values from category_specific_attributes
+          const getValue = (key) => {
+            const val = w.category_specific_attributes?.[key] || w[key];
+            if (!val) return "N/A";
+            if (typeof val === 'object') return JSON.stringify(val);
+            return val;
+          };
+
           const prompt = `Write a professional, compelling product description for this watch for Whatnot marketplace:
 
 Brand: ${w.brand || "Unknown"}
@@ -106,9 +114,9 @@ Model: ${w.model || "Unknown"}
 Reference: ${w.reference_number || "N/A"}
 Year: ${w.year || "N/A"}
 Condition: ${w.condition || "N/A"}
-Movement: ${w.movement_type || "N/A"}
-Case Material: ${w.case_material || "N/A"}
-Case Size: ${w.case_size || "N/A"}
+Movement: ${getValue('movement_type')}
+Case Material: ${getValue('case_material')}
+Case Size: ${getValue('case_size')}
 
 Write a 3-4 sentence description that highlights key features and appeals to watch collectors. Keep it concise and engaging.`;
 
