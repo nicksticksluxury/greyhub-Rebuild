@@ -378,8 +378,12 @@ export default function ProductDetail() {
       const aiCondition = editedData.ai_analysis?.condition_assessment || "";
       const conditionContext = aiCondition ? `\n\nAI Analysis of Condition:\n${aiCondition}` : "";
 
+      // Safely stringify category specific attributes
       const attributesText = editedData.category_specific_attributes ? 
-          `\n\nCategory Specific Attributes:\n${JSON.stringify(editedData.category_specific_attributes, null, 2)}` : "";
+          `\n\nCategory Specific Attributes:\n${Object.entries(editedData.category_specific_attributes).map(([k, v]) => {
+            const val = typeof v === 'object' ? JSON.stringify(v) : v;
+            return `- ${k}: ${val}`;
+          }).join('\n')}` : "";
 
       // Generate title
       const titlePrompt = `Create an eBay SEO-optimized product title (MAX 80 characters) for this ${productTypeName}:
