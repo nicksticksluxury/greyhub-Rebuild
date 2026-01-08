@@ -343,7 +343,6 @@ export default function ProductDetail() {
       const comprehensiveAnalysis = result.data.ai_analysis;
       console.log("=== COMPREHENSIVE AI ANALYSIS ===", comprehensiveAnalysis);
 
-
       setEditedData({
         ...editedData,
         ai_analysis: comprehensiveAnalysis
@@ -506,257 +505,34 @@ Return ONLY the HTML description, no wrapper text.`;
     setAnalysisError(null);
 
     try {
-      const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
-      const conditionContext = isNewCondition ? 'NEW' : 'USED';
-
-      // PASS 3: Market Research - Checking Comps
+      // Call backend for repricing (pricing passes only)
       setAnalysisStep("📊 Market Research: Checking Comps!");
-      console.log("=== PASS 3: MARKET RESEARCH ===");
-
-      const msrpPrompt = `Find the MANUFACTURER'S SUGGESTED RETAIL PRICE (MSRP) for a NEW version with EXACT model number match:
-
-      Watch Details (EXACT MATCH REQUIRED):
-      - Brand: ${editedData.brand}
-      - Model Name: ${editedData.model || 'Unknown'}
-      - Model Number: ${editedData.reference_number || 'Unknown'} ← MUST MATCH EXACTLY
-      ${editedData.msrp_link ? `- Manufacturer Link Provided: ${editedData.msrp_link}` : ''}
-      ${editedData.identical_listing_link ? `- Identical Listing Link: ${editedData.identical_listing_link}` : ''}
-
-      ${editedData.reference_number ?
-        `CRITICAL MSRP SEARCH PRIORITY (use model number ONLY):
-      1. Jomashop.com - Search ONLY "${editedData.reference_number}" (not brand+model name)
-      2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number}"
-      3. Manufacturer's website
-      4. Kay Jewelers, Walmart
-      VERIFY: Every price must be for model number "${editedData.reference_number}"` :
-        `STOP - Find model number first:
-      1. Search manufacturer/Jomashop for ${editedData.brand} ${editedData.model} to find exact model number
-      2. Once found, search ONLY with that model number
-      3. Do NOT use generic model names in searches`}
-
-      VERIFICATION CRITICAL: 
-      - MUST verify the reference/model number MATCHES before using any price
-      - Different reference number = different watch = WRONG PRICE
-      - This MUST be the original retail price for a NEW watch with EXACT reference
-      - Do NOT use used, discounted, or sale prices
-      - Save the exact URL where you found the MSRP
-
-      Return the original MSRP and source URL, or null if exact match not found.`;
-
-      const msrpResult = await base44.integrations.Core.InvokeLLM({
-        prompt: msrpPrompt,
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            original_msrp: { type: "number", description: "Original MSRP from manufacturer or department store. Null if not found." },
-            msrp_source_link: { type: "string", description: "URL where MSRP was found. Empty string if not found." },
-            msrp_search_notes: { type: "string", description: "Notes about where you searched and what you found or didn't find" }
-          }
-        }
-      });
-
-      console.log("MSRP Result:", msrpResult);
-      toast.success("✅ MSRP search complete!");
-
-      // PASS 4: Filtering Comps for Junk
-      setAnalysisStep("🧹 Filtering comps for Junk");
-      console.log("=== PASS 4: COMP FILTERING ===");
-
-      const pricingPrompt = `Find comparable listings with EXACT model number match and calculate pricing:
-
-      Watch Details:
-      - Brand: ${editedData.brand}
-      - Model Name: ${editedData.model || 'Unknown'}
-      ${editedData.reference_number ? 
-        `- Model Number: ${editedData.reference_number} ← THIS IS THE CRITICAL IDENTIFIER` :
-        `- Model Number: NOT PROVIDED - YOU MUST FIND IT FIRST`}
-      - Year: ${editedData.year || 'Unknown'}
-      - Condition: ${conditionContext}
-      - Case Material: ${editedData.case_material || 'Unknown'}
-      - Case Size: ${editedData.case_size || 'Unknown'}
-      - Movement: ${editedData.movement_type || 'Unknown'}
-      ${editedData.ai_instructions ? `\n\n🔴🔴🔴 CRITICAL USER INSTRUCTIONS - READ CAREFULLY:\n${editedData.ai_instructions}\n\nYou MUST take these user instructions into account. If the user says the watch is worth more than your initial findings suggest, re-examine your comparable searches and pricing logic.` : ''}
-      ${(editedData.identical_listing_links || []).filter(Boolean).length > 0 ? 
-        `\n\n🔴 CRITICAL - ${(editedData.identical_listing_links || []).filter(Boolean).length} IDENTICAL WATCH LISTING(S) PROVIDED:
-${(editedData.identical_listing_links || []).filter(Boolean).map((link, i) => `${i + 1}. ${link}`).join('\n')}
-
-THESE ARE GUARANTEED TO BE THE EXACT WATCH. HIGHEST PRIORITY.
-1. Visit EVERY listing FIRST
-2. Extract EXACT model number from these
-3. Use ONLY this model number for ALL searches
-4. These listings override photo identification` : 
-        editedData.identical_listing_link ? `\n\n🔴 CRITICAL: User provided IDENTICAL watch listing: ${editedData.identical_listing_link}\nThis is GUARANTEED to be the exact watch. Extract model number from this listing first.` : ''}
-
-      ${(editedData.identical_listing_links || []).filter(Boolean).length > 0 ?
-      `🔴 IDENTICAL LISTINGS MODEL NUMBER VERIFICATION (ABSOLUTE):
-Step 1: Visit ALL ${(editedData.identical_listing_links || []).filter(Boolean).length} identical listing(s) provided
-Step 2: Extract the EXACT model number from these listings
-Step 3: Use ONLY this model number for ALL comparable searches
-Step 4: EVERY comparable MUST have this exact model number
-- Different model number = EXCLUDE (different watch)
-- Same brand but different model = EXCLUDE
-- Similar name but different number = EXCLUDE
-- No model number shown = EXCLUDE
-Search ONLY with the exact model number from identical listings.` :
-      editedData.reference_number ? 
-      `MODEL NUMBER VERIFICATION MANDATORY:
-Every comparable MUST show model number "${editedData.reference_number}". 
-- Different model number = EXCLUDE (different watch)
-- Same brand but different model = EXCLUDE
-- Search ONLY with model number "${editedData.reference_number}"` :
-      `🔴 CRITICAL - FIND MODEL NUMBER FIRST:
-      ${(editedData.identical_listing_links || []).filter(Boolean).length > 0 ?
-        `You have ${(editedData.identical_listing_links || []).filter(Boolean).length} identical listing(s). Visit them FIRST to get the model number.` :
-        `No model number provided. Find it from manufacturer/Jomashop for ${editedData.brand} ${editedData.model || 'Unknown'}`}
-      1. Get the EXACT model number (e.g., "16610", not "Submariner")
-      2. Use ONLY this specific number for ALL comparable searches
-      3. DO NOT search with generic names - ONLY use the model number
-      4. DO NOT proceed until you have the exact model number`}
-
-      COMPREHENSIVE PRICING RESEARCH WITH EXACT MATCH:
-
-  ${isNewCondition ? 
-  `This is a NEW watch. Search for NEW watches with EXACT model number match ONLY:
-
-  ${(editedData.identical_listing_links || []).filter(Boolean).length > 0 ?
-    `🔴 MANDATORY - Use model number from ${(editedData.identical_listing_links || []).filter(Boolean).length} identical listing(s):
-  1. Visit ALL identical listings to extract exact model number
-  2. Jomashop.com - Search ONLY that model number
-  3. Amazon.com - Search brand + that model number
-  4. eBay NEW - Search model number only, filter "New In Box"
-
-  VERIFICATION: Every listing MUST show the exact model number from identical listings
-  Find 8-12 NEW listings with VERIFIED model number match.` :
-    editedData.reference_number ? 
-    `MANDATORY - Search with model number ONLY:
-  1. Jomashop.com - Search ONLY "${editedData.reference_number}"
-  2. Amazon.com - Search "${editedData.brand} ${editedData.reference_number}"
-  3. eBay NEW - Search "${editedData.reference_number}", filter "New In Box"
-
-  VERIFICATION: Every listing MUST show "${editedData.reference_number}"
-  Find 8-12 NEW listings with VERIFIED match.` :
-    `STOP - Get exact model number first from manufacturer/Jomashop for ${editedData.brand} ${editedData.model}`}` :
-  `CRITICAL: This is a USED/PRE-OWNED watch. ONLY use PRE-OWNED sales with EXACT model number match:
-
-  ${(editedData.identical_listing_links || []).filter(Boolean).length > 0 ?
-    `🔴 MANDATORY - Use model number from ${(editedData.identical_listing_links || []).filter(Boolean).length} identical listing(s):
-  1. Visit ALL identical listings to extract exact model number
-  2. eBay SOLD: Search ONLY that model number, filter pre-owned/used + sold
-  3. Watchbox: Pre-owned section with that model number
-  4. VERIFY: Every listing MUST show the exact model number
-
-  ABSOLUTE REQUIREMENTS:
-  ✓ Model number MUST match identical listings exactly
-  ✗ EXCLUDE any listing without the model number
-  ✗ EXCLUDE different model numbers (even if similar)
-  ✗ EXCLUDE new/unworn watches` :
-    editedData.reference_number ?
-    `MANDATORY STEPS WITH STRICT VERIFICATION:
-  1. eBay SOLD: Search ONLY "${editedData.reference_number}", filter pre-owned/used + sold
-  2. Watchbox Pre-owned: Search "${editedData.reference_number}" only
-  3. VERIFY: Every listing MUST show "${editedData.reference_number}"
-
-  ABSOLUTE REQUIREMENTS:
-  ✓ Model number "${editedData.reference_number}" MUST be shown
-  ✗ EXCLUDE different model numbers (different watch)
-  ✗ EXCLUDE if no model number shown
-  ✗ EXCLUDE new/unworn watches` :
-    `STOP - Get exact model number first from manufacturer/Jomashop for ${editedData.brand} ${editedData.model}`}
-
-   ABSOLUTELY EXCLUDE:
-   - Any "new" watches (even discounted)
-   - "Unworn" or "Brand new" listings
-   - Different model numbers (even if same brand/similar name)
-   - Listings without model number shown
-   - Broken/parts/repair watches
-
-   Find 8-12 PRE-OWNED sold listings with VERIFIED exact model number match.
-   Average MUST be calculated from exact model number matches only.`}
-
-  PRICING CALCULATION:
-  1. List all comparable listings with URLs and prices
-  2. Calculate the average price (lean toward higher middle)
-  3. This average = your recommended retail price
-  4. Apply platform-specific pricing:
-   - whatnot: 70% of average (fast sales, auction format)
-   - ebay: 85% of average (competitive marketplace)
-   - square: 100% of average (Shopify/direct sales, full control)
-   - etsy: 90% of average
-   - poshmark: 80% of average
-   - mercari: 75% of average
-
-  IMPORTANT: Include ALL clickable listing URLs with their prices!
-
-  Return complete market analysis with pricing recommendations.`;
-
-      const pricingResult = await base44.integrations.Core.InvokeLLM({
-        prompt: pricingPrompt,
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            current_retail_price: { type: "number", description: "Average market price" },
-            estimated_value_low: { type: "number" },
-            estimated_value_high: { type: "number" },
-            average_market_value: { type: "number" },
-            market_insights: { type: "string" },
-            comparable_listings: { type: "string" },
-            market_research_summary: { type: "string" },
-            pricing_recommendations: {
-              type: "object",
-              properties: {
-                whatnot: { type: "number" },
-                ebay: { type: "number" },
-                square: { type: "number" },
-                etsy: { type: "number" },
-                poshmark: { type: "number" },
-                mercari: { type: "number" }
-              }
-            },
-            pricing_rationale: {
-              type: "object",
-              properties: {
-                whatnot: { type: "string" },
-                ebay: { type: "string" },
-                square: { type: "string" },
-                etsy: { type: "string" },
-                poshmark: { type: "string" },
-                mercari: { type: "string" }
-              }
-            }
-          }
-        }
-      });
-
-      console.log("Pricing Result:", pricingResult);
-      toast.success("✅ Pricing research complete!");
-
-      // PASS 5: Alright, let's get some numbers!
-      setAnalysisStep("💰 Alright, let's get some numbers!");
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      const updatedAnalysis = {
-        ...(editedData.ai_analysis || {}),
-        ...msrpResult,
-        ...pricingResult
-      };
+      setAnalysisStep("🧹 Filtering comps for Junk");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setAnalysisStep("💰 Alright, let's get some numbers!");
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      console.log("=== UPDATED PRICING ===", updatedAnalysis);
+      const result = await base44.functions.invoke('analyzeProductAI', { 
+        productId: productId 
+      });
 
-      const updatedData = {
-        ...editedData,
-        ai_analysis: updatedAnalysis
-      };
-
-      if (msrpResult.msrp_source_link && !editedData.msrp_link) {
-        updatedData.msrp_link = msrpResult.msrp_source_link;
+      if (!result.data.success) {
+        throw new Error(result.data.error || 'Re-pricing failed');
       }
 
-      setEditedData(updatedData);
+      const comprehensiveAnalysis = result.data.ai_analysis;
+      console.log("=== UPDATED PRICING ===", comprehensiveAnalysis);
+
+      setEditedData({
+        ...editedData,
+        ai_analysis: comprehensiveAnalysis
+      });
 
       await base44.entities.Product.update(productId, { 
-        ai_analysis: updatedAnalysis,
-        ...(msrpResult.msrp_source_link && !editedData.msrp_link && { msrp_link: msrpResult.msrp_source_link })
+        ai_analysis: comprehensiveAnalysis
       });
 
       const refreshedProduct = await base44.entities.Product.list().then(products => products.find(p => p.id === productId));
@@ -1294,12 +1070,12 @@ Every comparable MUST show model number "${editedData.reference_number}".
               <AuctionSummaryTab product={editedData} />
             </div>
           </TabsContent>
-          </Tabs>
-          </div>
+        </Tabs>
+      </div>
 
-          {/* Sold Quantity Dialog */}
-          <Dialog open={showSoldQuantityDialog} onOpenChange={setShowSoldQuantityDialog}>
-          <DialogContent>
+      {/* Sold Quantity Dialog */}
+      <Dialog open={showSoldQuantityDialog} onOpenChange={setShowSoldQuantityDialog}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>How many units did you sell?</DialogTitle>
             <DialogDescription>
@@ -1324,8 +1100,8 @@ Every comparable MUST show model number "${editedData.reference_number}".
             <Button variant="outline" onClick={() => setShowSoldQuantityDialog(false)}>Cancel</Button>
             <Button onClick={handleConfirmSoldQuantity} className="bg-slate-800 hover:bg-slate-900 text-white">Confirm Sale</Button>
           </DialogFooter>
-          </DialogContent>
-          </Dialog>
-          </div>
-          );
-          }
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
