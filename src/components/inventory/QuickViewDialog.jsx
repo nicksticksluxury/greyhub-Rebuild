@@ -39,19 +39,19 @@ export default function QuickViewDialog({ watch, onClose }) {
                 {watch.serial_number && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Serial Number:</span>
-                    <span className="font-mono font-semibold">{watch.serial_number}</span>
+                    <span className="font-mono font-semibold">{String(watch.serial_number)}</span>
                   </div>
                 )}
                 {watch.reference_number && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Reference:</span>
-                    <span className="font-mono font-semibold">{watch.reference_number}</span>
+                    <span className="font-mono font-semibold">{String(watch.reference_number)}</span>
                   </div>
                 )}
                 {watch.year && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Year:</span>
-                    <span className="font-semibold">{watch.year}</span>
+                    <span className="font-semibold">{String(watch.year)}</span>
                   </div>
                 )}
                 {(watch.category_specific_attributes?.movement_type || watch.movement_type) && (
@@ -59,8 +59,12 @@ export default function QuickViewDialog({ watch, onClose }) {
                     <span className="text-slate-600">Movement:</span>
                     <span className="font-semibold capitalize">
                       {(() => {
-                        const val = watch.category_specific_attributes?.movement_type || watch.movement_type;
-                        return typeof val === 'object' ? JSON.stringify(val) : val;
+                        const attrs = watch.category_specific_attributes;
+                        const val = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.movement_type : undefined;
+                        const fallback = val || watch.movement_type;
+                        if (!fallback) return '';
+                        if (typeof fallback === 'object') return JSON.stringify(fallback);
+                        return String(fallback);
                       })()}
                     </span>
                   </div>
@@ -70,8 +74,12 @@ export default function QuickViewDialog({ watch, onClose }) {
                     <span className="text-slate-600">Case Size:</span>
                     <span className="font-semibold">
                       {(() => {
-                        const val = watch.category_specific_attributes?.case_size || watch.case_size;
-                        return typeof val === 'object' ? JSON.stringify(val) : val;
+                        const attrs = watch.category_specific_attributes;
+                        const val = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.case_size : undefined;
+                        const fallback = val || watch.case_size;
+                        if (!fallback) return '';
+                        if (typeof fallback === 'object') return JSON.stringify(fallback);
+                        return String(fallback);
                       })()}
                     </span>
                   </div>
