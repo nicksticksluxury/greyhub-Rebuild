@@ -297,13 +297,13 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                   <SelectableItem id="gender" label="Gender" value={aiAnalysis.identified_gender} />
                 )}
                 {aiAnalysis.category_specific_attributes && typeof aiAnalysis.category_specific_attributes === 'object' && !Array.isArray(aiAnalysis.category_specific_attributes) && Object.entries(aiAnalysis.category_specific_attributes).map(([key, value]) => {
-                  let displayValue;
+                  let displayValue = "";
                   if (value === null || value === undefined) {
                     displayValue = 'N/A';
                   } else if (typeof value === 'boolean') {
                     displayValue = value ? 'Yes' : 'No';
                   } else if (Array.isArray(value)) {
-                    displayValue = value.join(', ');
+                    displayValue = value.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ');
                   } else if (typeof value === 'object') {
                     displayValue = JSON.stringify(value);
                   } else {
