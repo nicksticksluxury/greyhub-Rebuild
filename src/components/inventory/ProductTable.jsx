@@ -282,7 +282,7 @@ export default function ProductTable({ products, isLoading, onQuickView, sources
                     </TableCell>
                     <TableCell>
                       <div className="text-sm text-slate-700">
-                        {[product.reference_number, product.serial_number].filter(Boolean).join(" / ")}
+                        {[product.reference_number, product.serial_number].filter(Boolean).map(v => String(v)).join(" / ")}
                       </div>
                     </TableCell>
                     <TableCell>
