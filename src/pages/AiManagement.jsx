@@ -231,11 +231,11 @@ export default function AiManagement() {
         const existingPrompt = prompts.find(p => p.key === key);
         
         if (existingPrompt) {
-          // Update existing
+          console.log(`Updating prompt ${key}:`, changeData);
           await base44.entities.AiPrompt.update(existingPrompt.id, changeData);
         } else {
-          // Create new
           const defaultPrompt = DEFAULT_PROMPTS.find(p => p.key === key);
+          console.log(`Creating prompt ${key}:`, changeData);
           await base44.entities.AiPrompt.create({
             ...defaultPrompt,
             ...changeData,
@@ -266,11 +266,9 @@ export default function AiManagement() {
   };
 
   const getValue = (prompt, field) => {
-    // First check if there are pending changes
     if (changes[prompt.key]?.[field] !== undefined) {
       return changes[prompt.key][field];
     }
-    // Then return the saved value
     return prompt[field] || "";
   };
 
@@ -316,16 +314,14 @@ export default function AiManagement() {
                 Initialize Defaults
               </Button>
             )}
-            {hasUnsavedChanges && (
-              <Button 
-                onClick={saveAllChanges} 
-                disabled={saving}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? "Saving..." : `Save All Changes (${Object.keys(changes).length})`}
-              </Button>
-            )}
+            <Button 
+              onClick={saveAllChanges} 
+              disabled={saving || !hasUnsavedChanges}
+              className={hasUnsavedChanges ? "bg-green-600 hover:bg-green-700" : "bg-slate-300"}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? "Saving..." : hasUnsavedChanges ? `Save Changes (${Object.keys(changes).length})` : "No Changes"}
+            </Button>
           </div>
         </div>
 
@@ -351,7 +347,7 @@ export default function AiManagement() {
                   <AccordionContent className="px-6 pb-6">
                     <div className="space-y-6 pt-4">
                       {categoryPrompts.sort((a, b) => a.order - b.order).map((prompt) => (
-                        <div key={prompt.key} className="space-y-3 p-4 bg-slate-50 rounded-lg border-2 border-transparent data-[changed=true]:border-amber-400" data-changed={changes[prompt.key] ? 'true' : 'false'}>
+                        <div key={prompt.key} className={`space-y-3 p-4 bg-slate-50 rounded-lg border-2 ${changes[prompt.key] ? 'border-amber-400' : 'border-transparent'}`}>
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <Label className="text-base font-semibold text-slate-900">{prompt.name}</Label>
