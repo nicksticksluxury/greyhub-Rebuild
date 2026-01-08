@@ -9,7 +9,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { productId } = await req.json();
+    const body = await req.json();
+    const { productId } = body;
+    
+    console.log('Request body:', JSON.stringify(body));
+    console.log('Product ID type:', typeof productId);
+    console.log('Product ID value:', productId);
     
     if (!productId) {
       return Response.json({ error: 'Product ID is required' }, { status: 400 });
@@ -21,21 +26,22 @@ Deno.serve(async (req) => {
     const companyId = user.data?.company_id || user.company_id;
     console.log('Company ID:', companyId);
     
-    // First try to fetch the product without company filter to see if it exists
-    const allProducts = await base44.asServiceRole.entities.Product.filter({ id: productId });
-    console.log('Products found (no company filter):', allProducts?.length || 0);
+    // Try using the regular user-scoped SDK instead of service role to match ProductDetail page
+    console.log('Trying user-scoped query (like ProductDetail page)...');
+    const userProducts = await base44.entities.Product.filter({ id: productId, company_id: companyId });
+    console.log('User-scoped products found:', userProducts?.length || 0);
     
-    if (allProducts && allProducts.length > 0) {
-      console.log('Product company_id:', allProducts[0].company_id);
-      console.log('Expected company_id:', companyId);
+    if (userProducts && userProducts.length > 0) {
+      console.log('Found with user scope! Product:', userProducts[0].brand, userProducts[0].model);
     }
     
-    const products = await base44.asServiceRole.entities.Product.filter({ 
-      id: productId, 
-      company_id: companyId 
-    });
+    // Also try service role without company filter
+    const allProducts = await base44.asServiceRole.entities.Product.filter({ id: productId });
+    console.log('Service role products (no company filter):', allProducts?.length || 0);
     
-    console.log('Products fetched (with company filter):', products?.length || 0);
+    // Use whichever works
+    const products = userProducts && userProducts.length > 0 ? userProducts : allProducts;
+    console.log('Final products to use:', products?.length || 0);
     
     if (!products || products.length === 0) {
       console.log('ERROR: Product not found for ID:', productId);
