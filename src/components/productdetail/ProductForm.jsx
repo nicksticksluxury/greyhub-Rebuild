@@ -361,38 +361,7 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
 
 
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>eBay Free Shipping</Label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="ebay_free_shipping"
-                checked={data.ebay_free_shipping || false}
-                onChange={(e) => updateField("ebay_free_shipping", e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300"
-              />
-              <label htmlFor="ebay_free_shipping" className="text-sm text-slate-600 cursor-pointer">
-                Offer free shipping on eBay for this product
-              </label>
-            </div>
-          </div>
-          <div>
-            <Label>eBay Allow Offers</Label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="ebay_allow_offers"
-                checked={data.ebay_allow_offers !== undefined ? data.ebay_allow_offers : true}
-                onChange={(e) => updateField("ebay_allow_offers", e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300"
-              />
-              <label htmlFor="ebay_allow_offers" className="text-sm text-slate-600 cursor-pointer">
-                Allow best offers on eBay for this product
-              </label>
-            </div>
-          </div>
-        </div>
+
 
         <div className="grid grid-cols-3 gap-4">
           <div>
@@ -973,6 +942,75 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                           </div>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {platform === 'ebay' && (
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <Label>Free Shipping</Label>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <input
+                            type="checkbox"
+                            id="ebay_free_shipping"
+                            checked={data.ebay_free_shipping || false}
+                            onChange={(e) => updateField("ebay_free_shipping", e.target.checked)}
+                            className="w-4 h-4 rounded border-slate-300"
+                          />
+                          <label htmlFor="ebay_free_shipping" className="text-sm text-slate-600 cursor-pointer">
+                            Offer free shipping
+                          </label>
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Allow Best Offers</Label>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <input
+                            type="checkbox"
+                            id="ebay_allow_offers"
+                            checked={data.ebay_allow_offers !== undefined ? data.ebay_allow_offers : true}
+                            onChange={(e) => updateField("ebay_allow_offers", e.target.checked)}
+                            className="w-4 h-4 rounded border-slate-300"
+                          />
+                          <label htmlFor="ebay_allow_offers" className="text-sm text-slate-600 cursor-pointer">
+                            Enable best offers
+                          </label>
+                        </div>
+                      </div>
+                      {aiPricing && (data.ebay_allow_offers !== false) && (
+                        <>
+                          <div>
+                            <Label>Auto-Accept Offers</Label>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <input
+                                type="checkbox"
+                                id="ebay_auto_accept"
+                                checked={data.ebay_auto_accept_offers || false}
+                                onChange={(e) => updateField("ebay_auto_accept_offers", e.target.checked)}
+                                className="w-4 h-4 rounded border-slate-300"
+                              />
+                              <label htmlFor="ebay_auto_accept" className="text-sm text-slate-600 cursor-pointer">
+                                At ${aiPricing.bestOffer.autoAccept}
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Auto-Decline Offers</Label>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <input
+                                type="checkbox"
+                                id="ebay_auto_decline"
+                                checked={data.ebay_auto_decline_offers || false}
+                                onChange={(e) => updateField("ebay_auto_decline_offers", e.target.checked)}
+                                className="w-4 h-4 rounded border-slate-300"
+                              />
+                              <label htmlFor="ebay_auto_decline" className="text-sm text-slate-600 cursor-pointer">
+                                Below ${aiPricing.bestOffer.autoDecline}
+                              </label>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                   
