@@ -98,6 +98,25 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
     initialData: [],
   });
 
+  const { data: aiPrompts = [] } = useQuery({
+    queryKey: ['aiPrompts'],
+    queryFn: () => base44.entities.AiPrompt.filter({ key: 'ai_pricing_formulas_pass5' }),
+    initialData: [],
+  });
+
+  // Parse AI pricing formulas
+  const aiPricingConfig = React.useMemo(() => {
+    try {
+      const prompt = aiPrompts[0];
+      if (prompt && prompt.prompt_content) {
+        return JSON.parse(prompt.prompt_content);
+      }
+    } catch (e) {
+      console.error("Failed to parse AI pricing config:", e);
+    }
+    return null;
+  }, [aiPrompts]);
+
   const updateField = (field, value) => {
     const newData = { ...data, [field]: value };
     
@@ -817,6 +836,59 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
               if (platform === 'ebay' && !displayUrl && listingId) {
                  displayUrl = `https://www.ebay.com/itm/${listingId}`;
               }
+
+              // Calculate AI-based pricing for eBay and Whatnot
+              let aiPricing = null;
+              if (aiPricingConfig && totalCost > 0 && (platform === 'ebay' || platform === 'whatnot')) {
+                const bmv = data.retail_price || 0;
+                
+                if (platform === 'ebay') {
+                  const feeRate = aiPricingConfig.ebay_fee_rate || 0.18;
+                  const bmvMultiplier = aiPricingConfig.ebay_bin_multipliers?.bmv_multiplier || 0.95;
+                  const costMultiplier = aiPricingConfig.ebay_bin_multipliers?.cost_multiplier || 1.25;
+                  
+                  const bmvPrice = bmv * bmvMultiplier;
+                  const costMinimum = totalCost * costMultiplier;
+                  const binPrice = Math.max(bmvPrice, costMinimum);
+                  
+                  const priceAfterFees = binPrice * (1 - feeRate);
+                  
+                  const autoAcceptMultiplier = aiPricingConfig.ebay_best_offer?.auto_accept_multiplier || 0.92;
+                  const counterMultiplier = aiPricingConfig.ebay_best_offer?.counter_multiplier || 0.88;
+                  const autoDeclineCostMultiplier = aiPricingConfig.ebay_best_offer?.auto_decline_cost_multiplier || 1.15;
+                  
+                  aiPricing = {
+                    feeRate: (feeRate * 100).toFixed(0) + '%',
+                    priceAfterFees: priceAfterFees.toFixed(2),
+                    binPrice: binPrice.toFixed(2),
+                    costMinimum: costMinimum.toFixed(2),
+                    bestOffer: {
+                      autoAccept: (binPrice * autoAcceptMultiplier).toFixed(2),
+                      counter: (binPrice * counterMultiplier).toFixed(2),
+                      autoDecline: (totalCost * autoDeclineCostMultiplier).toFixed(2)
+                    }
+                  };
+                } else if (platform === 'whatnot') {
+                  const feeRate = aiPricingConfig.whatnot_fee_rate || 0.12;
+                  const displayBmvMultiplier = aiPricingConfig.whatnot?.display_bmv_multiplier || 1.00;
+                  const displayCostMultiplier = aiPricingConfig.whatnot?.display_cost_multiplier || 1.30;
+                  const auctionStartCostMultiplier = aiPricingConfig.whatnot?.auction_start_cost_multiplier || 1.10;
+                  
+                  const bmvDisplay = bmv * displayBmvMultiplier;
+                  const costDisplay = totalCost * displayCostMultiplier;
+                  const displayPrice = Math.max(bmvDisplay, costDisplay);
+                  
+                  const priceAfterFees = displayPrice * (1 - feeRate);
+                  
+                  aiPricing = {
+                    feeRate: (feeRate * 100).toFixed(0) + '%',
+                    priceAfterFees: priceAfterFees.toFixed(2),
+                    bmvAmount: bmvDisplay.toFixed(2),
+                    displayCostAmount: costDisplay.toFixed(2),
+                    auctionStart: (totalCost * auctionStartCostMultiplier).toFixed(2)
+                  };
+                }
+              }
               
               return (
                 <TabsContent key={platform} value={platform} className="space-y-4 mt-4">
@@ -838,6 +910,71 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                       </div>
                     )}
                   </div>
+
+                  {aiPricing && (
+                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg mb-4">
+                      <h4 className="text-sm font-semibold text-purple-900 mb-3">AI Pricing Calculations</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-purple-700">Fee Rate:</span>
+                          <span className="font-semibold text-purple-900">{aiPricing.feeRate}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-purple-700">Price After Fees:</span>
+                          <span className="font-semibold text-purple-900">${aiPricing.priceAfterFees}</span>
+                        </div>
+                        
+                        {platform === 'ebay' && (
+                          <>
+                            <div className="pt-2 border-t border-purple-200">
+                              <p className="text-purple-800 font-semibold mb-2">eBay BIN Pricing:</p>
+                              <div className="flex justify-between">
+                                <span className="text-purple-700">BMV Price:</span>
+                                <span className="font-semibold text-purple-900">${aiPricing.binPrice}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-purple-700">Cost Minimum:</span>
+                                <span className="font-semibold text-purple-900">${aiPricing.costMinimum}</span>
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t border-purple-200">
+                              <p className="text-purple-800 font-semibold mb-2">Best Offer Settings:</p>
+                              <div className="flex justify-between">
+                                <span className="text-purple-700">Auto-Accept:</span>
+                                <span className="font-semibold text-purple-900">${aiPricing.bestOffer.autoAccept}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-purple-700">Counter:</span>
+                                <span className="font-semibold text-purple-900">${aiPricing.bestOffer.counter}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-purple-700">Auto-Decline:</span>
+                                <span className="font-semibold text-purple-900">${aiPricing.bestOffer.autoDecline}</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        
+                        {platform === 'whatnot' && (
+                          <div className="pt-2 border-t border-purple-200">
+                            <p className="text-purple-800 font-semibold mb-2">Whatnot Pricing:</p>
+                            <div className="flex justify-between">
+                              <span className="text-purple-700">BMV Display Amount:</span>
+                              <span className="font-semibold text-purple-900">${aiPricing.bmvAmount}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-purple-700">Display Cost Amount:</span>
+                              <span className="font-semibold text-purple-900">${aiPricing.displayCostAmount}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-purple-700">Auction Start:</span>
+                              <span className="font-semibold text-purple-900">${aiPricing.auctionStart}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   
                   <Input
                     type="number"
