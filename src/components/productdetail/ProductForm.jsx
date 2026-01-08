@@ -754,9 +754,24 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
           </p>
         </div>
 
+        {data.ai_platform_recommendation && (
+          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <Label className="text-purple-900 font-semibold mb-2 block">AI Platform Recommendation</Label>
+            <p className="text-sm text-purple-800">{data.ai_platform_recommendation}</p>
+          </div>
+        )}
+
         <div className="pt-4 border-t">
           <h3 className="font-semibold text-slate-900 mb-4">Platform Pricing</h3>
-          <div className="space-y-4">
+          <Tabs defaultValue="whatnot" className="w-full">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="whatnot">Whatnot</TabsTrigger>
+              <TabsTrigger value="ebay">eBay</TabsTrigger>
+              <TabsTrigger value="shopify">Shopify</TabsTrigger>
+              <TabsTrigger value="etsy">Etsy</TabsTrigger>
+              <TabsTrigger value="poshmark">Poshmark</TabsTrigger>
+              <TabsTrigger value="mercari">Mercari</TabsTrigger>
+            </TabsList>
             {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map(platform => {
               const price = data.platform_prices?.[platform] || 0;
               const totalCost = getTotalCost();
@@ -801,7 +816,7 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
               }
               
               return (
-                <div key={platform} className="p-4 bg-slate-50 rounded-lg">
+                <TabsContent key={platform} value={platform} className="space-y-4 mt-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <Label className="capitalize text-base font-semibold">{platform}</Label>
@@ -889,10 +904,10 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                       )}
                     </div>
                   )}
-                </div>
+                </TabsContent>
               );
             })}
-          </div>
+          </Tabs>
         </div>
 
         {getTotalCost() > 0 && data.retail_price && (
