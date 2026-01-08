@@ -177,6 +177,7 @@ Return:
 export default function AiManagement() {
   const queryClient = useQueryClient();
   const [editingPrompts, setEditingPrompts] = useState({});
+  const [editingVariables, setEditingVariables] = useState({});
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -197,6 +198,8 @@ export default function AiManagement() {
     mutationFn: (data) => base44.entities.AiPrompt.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aiPrompts'] });
+      setEditingPrompts({});
+      setEditingVariables({});
       toast.success("AI prompt saved");
     },
   });
@@ -205,6 +208,8 @@ export default function AiManagement() {
     mutationFn: ({ id, data }) => base44.entities.AiPrompt.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aiPrompts'] });
+      setEditingPrompts({});
+      setEditingVariables({});
       toast.success("AI prompt updated");
     },
   });
@@ -230,32 +235,44 @@ export default function AiManagement() {
   };
 
   const handleSave = async (prompt) => {
-    const editedContent = editingPrompts[prompt.key];
-    if (editedContent === undefined) return;
+    const changes = {};
+    if (editingPrompts[prompt.key] !== undefined) {
+      changes.prompt_content = editingPrompts[prompt.key];
+    }
+    if (editingVariables[prompt.key] !== undefined) {
+      changes.variables_documentation = editingVariables[prompt.key];
+    }
+
+    if (Object.keys(changes).length === 0) return;
 
     if (prompt.id) {
       updateMutation.mutate({
         id: prompt.id,
-        data: { prompt_content: editedContent }
+        data: changes
       });
     } else {
       createMutation.mutate({
         ...prompt,
-        prompt_content: editedContent,
+        ...changes,
         company_id: user.company_id
       });
     }
   };
 
-  const handleEdit = (key, value) => {
-    setEditingPrompts(prev => ({ ...prev, [key]: value }));
+  const handleEdit = (key, value, field) => {
+    if (field === 'prompt_content') {
+      setEditingPrompts(prev => ({ ...prev, [key]: value }));
+    } else if (field === 'variables_documentation') {
+      setEditingVariables(prev => ({ ...prev, [key]: value }));
+    }
   };
 
-  const getPromptValue = (prompt) => {
-    if (editingPrompts[prompt.key] !== undefined) {
-      return editingPrompts[prompt.key];
+  const getPromptValue = (prompt, field) => {
+    const editorState = field === 'prompt_content' ? editingPrompts : editingVariables;
+    if (editorState[prompt.key] !== undefined) {
+      return editorState[prompt.key];
     }
-    return prompt.prompt_content || "";
+    return prompt[field] || "";
   };
 
   const groupedPrompts = DEFAULT_PROMPTS.reduce((acc, defaultPrompt) => {
@@ -330,7 +347,7 @@ export default function AiManagement() {
                             <Button
                               size="sm"
                               onClick={() => handleSave(prompt)}
-                              disabled={editingPrompts[prompt.key] === undefined}
+                              disabled={editingPrompts[prompt.key] === undefined && editingVariables[prompt.key] === undefined}
                               className="bg-slate-800 hover:bg-slate-900"
                             >
                               <Save className="w-4 h-4 mr-2" />
@@ -338,25 +355,31 @@ export default function AiManagement() {
                             </Button>
                           </div>
 
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <p className="text-xs font-semibold text-blue-900 mb-1">Available Variables:</p>
-                            <pre className="text-xs text-blue-800 whitespace-pre-wrap font-mono">
-                              {prompt.variables_documentation}
-                            </pre>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Available Variables (Documentation)</Label>
+                            <Textarea
+                              value={getPromptValue(prompt, 'variables_documentation')}
+                              onChange={(e) => handleEdit(prompt.key, e.target.value, 'variables_documentation')}
+                              className="min-h-[100px] bg-blue-50 border-blue-200 text-blue-900"
+                              placeholder="Document available variables here..."
+                            />
                           </div>
 
                           {prompt.type === "json_config" ? (
                             <PricingFormulaEditor
-                              value={getPromptValue(prompt)}
-                              onChange={(value) => handleEdit(prompt.key, value)}
+                              value={getPromptValue(prompt, 'prompt_content')}
+                              onChange={(value) => handleEdit(prompt.key, value, 'prompt_content')}
                             />
                           ) : (
-                            <Textarea
-                              value={getPromptValue(prompt)}
-                              onChange={(e) => handleEdit(prompt.key, e.target.value)}
-                              className="min-h-[200px]"
-                              placeholder="Enter AI prompt..."
-                            />
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Prompt Content</Label>
+                              <Textarea
+                                value={getPromptValue(prompt, 'prompt_content')}
+                                onChange={(e) => handleEdit(prompt.key, e.target.value, 'prompt_content')}
+                                className="min-h-[200px]"
+                                placeholder="Enter AI prompt..."
+                              />
+                            </div>
                           )}
                         </div>
                       ))}
