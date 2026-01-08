@@ -140,10 +140,12 @@ export default function AuctionSummaryTab({ product }) {
                 <div className="text-sm text-slate-400">Movement</div>
                 <div className="text-white">
                   {(() => {
-                    const val = product.category_specific_attributes?.movement_type || product.movement_type;
-                    if (!val) return 'N/A';
-                    if (typeof val === 'object') return JSON.stringify(val);
-                    return val;
+                    const attrs = product.category_specific_attributes;
+                    const val = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.movement_type : undefined;
+                    const fallback = val || product.movement_type;
+                    if (!fallback) return 'N/A';
+                    if (typeof fallback === 'object') return JSON.stringify(fallback);
+                    return String(fallback);
                   })()}
                 </div>
               </div>
@@ -151,10 +153,12 @@ export default function AuctionSummaryTab({ product }) {
                 <div className="text-sm text-slate-400">Case Material</div>
                 <div className="text-white">
                   {(() => {
-                    const val = product.category_specific_attributes?.case_material || product.case_material;
-                    if (!val) return 'N/A';
-                    if (typeof val === 'object') return JSON.stringify(val);
-                    return val;
+                    const attrs = product.category_specific_attributes;
+                    const val = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.case_material : undefined;
+                    const fallback = val || product.case_material;
+                    if (!fallback) return 'N/A';
+                    if (typeof fallback === 'object') return JSON.stringify(fallback);
+                    return String(fallback);
                   })()}
                 </div>
               </div>
@@ -162,10 +166,12 @@ export default function AuctionSummaryTab({ product }) {
                 <div className="text-sm text-slate-400">Case Size</div>
                 <div className="text-white">
                   {(() => {
-                    const val = product.category_specific_attributes?.case_size || product.case_size;
-                    if (!val) return 'N/A';
-                    if (typeof val === 'object') return JSON.stringify(val);
-                    return val;
+                    const attrs = product.category_specific_attributes;
+                    const val = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.case_size : undefined;
+                    const fallback = val || product.case_size;
+                    if (!fallback) return 'N/A';
+                    if (typeof fallback === 'object') return JSON.stringify(fallback);
+                    return String(fallback);
                   })()}
                 </div>
               </div>
