@@ -42,7 +42,7 @@ Provide a detailed analysis with confidence levels for each field.`
     category: "Image Analysis",
     order: 2,
     type: "text_prompt",
-    variables_documentation: "Available variables:\n{pass1_output} - Results from Pass 1\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{movement} - Movement type\n{case_size} - Case size\n{condition} - Product condition\n{box_papers} - Box and papers availability\n{existing_listing_link} - Link to existing listing\n{msrp_link} - MSRP source link",
+    variables_documentation: "Available variables:\n{pass1_output} - Results from Pass 1\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{movement} - Movement type\n{case_size} - Case size\n{condition} - Product condition\n{box_papers} - Box and papers availability\n{existing_listing_links} - Array of links to identical existing listings\n{msrp_link} - MSRP source link",
     prompt_content: `Based on the initial identification:
   {pass1_output}
 
