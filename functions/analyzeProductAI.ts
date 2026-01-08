@@ -18,9 +18,10 @@ Deno.serve(async (req) => {
     console.log('=== STARTING AI ANALYSIS FOR PRODUCT:', productId, '===');
 
     // Fetch product data
+    const companyId = user.data?.company_id || user.company_id;
     const products = await base44.asServiceRole.entities.Product.filter({ 
       id: productId, 
-      company_id: user.company_id 
+      company_id: companyId 
     });
     
     if (!products || products.length === 0) {
@@ -32,7 +33,7 @@ Deno.serve(async (req) => {
 
     // Fetch all AI prompts for this company
     const aiPrompts = await base44.asServiceRole.entities.AiPrompt.filter({ 
-      company_id: user.company_id 
+      company_id: companyId
     });
     
     const getPrompt = (key) => aiPrompts.find(p => p.key === key);
