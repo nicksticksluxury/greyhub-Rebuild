@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -437,9 +436,9 @@ Rate your identification confidence (High/Medium/Low)`,
       setAnalysisStep("🌐 Now I'm checking the internet to see if I have any matches");
       console.log("=== PASS 2: INTERNET VERIFICATION ===");
 
-      let researchPrompt;
-      const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
-      const conditionContext = isNewCondition ? 'NEW' : 'USED';
+      const result = await base44.functions.invoke('analyzeProductAI', { 
+        productId: productId 
+      });
 
       const identicalListingsContext = (editedData.identical_listing_links || []).filter(Boolean).length > 0
         ? `\n\n🔴 CRITICAL - IDENTICAL WATCH LISTINGS PROVIDED:
@@ -455,10 +454,7 @@ MANDATORY REQUIREMENTS:
 6. If multiple identical listings show different model numbers, use the most common one`
         : '';
 
-      // Prioritize identical listings, then MSRP link, then general search
-      if ((editedData.identical_listing_links || []).filter(Boolean).length > 0) {
-        console.log("Using Identical Listings (HIGHEST PRIORITY):", editedData.identical_listing_links);
-        researchPrompt = `${identicalListingsContext}
+      const comprehensiveAnalysis = result.data.ai_analysis;
 
 Based on photos, we identified:
 Brand: ${identification.identified_brand}
@@ -844,20 +840,9 @@ YOUR RESPONSE MUST INCLUDE:
 
       console.log("=== FINAL ===", combinedAnalysis);
 
-      const updatedData = {
+      setEditedData({
         ...editedData,
-        ai_analysis: combinedAnalysis
-      };
-
-      if (pricing.msrp_source_link && !editedData.msrp_link) {
-        updatedData.msrp_link = pricing.msrp_source_link;
-      }
-      
-      setEditedData(updatedData);
-      
-      await base44.entities.Product.update(productId, { 
-        ai_analysis: combinedAnalysis,
-        ...(pricing.msrp_source_link && !editedData.msrp_link && { msrp_link: pricing.msrp_source_link })
+        ai_analysis: comprehensiveAnalysis
       });
 
       const refreshedProduct = await base44.entities.Product.list().then(products => products.find(p => p.id === productId));
