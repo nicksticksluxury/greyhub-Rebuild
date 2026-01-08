@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -323,11 +324,10 @@ export default function ProductDetail() {
       const productTypeFields = editedData.product_type_code ? 
         await base44.entities.ProductTypeField.filter({ product_type_code: editedData.product_type_code }) : [];
       
-      // STEP 1: Identify product from user's photos
+      // PASS 1: Image Examination
       setAnalysisStep("🔍 I'm checking images");
-      console.log("=== STEP 1: IDENTIFICATION ===");
+      console.log("=== PASS 1: IMAGE EXAMINATION ===");
       
-      // Get optimized full resolution photos for AI analysis
       const photosToAnalyze = editedData.photos.slice(0, 2).map(photo => 
         photo.full || photo.medium || photo.original || photo
       );
@@ -433,15 +433,14 @@ Rate your identification confidence (High/Medium/Low)`,
       console.log("Identified:", identification);
       toast.success("✅ Product examined!");
 
-      // STEP 2: Verify with identical listing OR search for match
+      // PASS 2: Internet Research
       setAnalysisStep("🌐 Now I'm checking the internet to see if I have any matches");
-      console.log("=== STEP 2: VERIFICATION & PRICING ===");
+      console.log("=== PASS 2: INTERNET VERIFICATION ===");
 
       let researchPrompt;
       const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
       const conditionContext = isNewCondition ? 'NEW' : 'USED';
 
-      // Build identical listings context
       const identicalListingsContext = (editedData.identical_listing_links || []).filter(Boolean).length > 0
         ? `\n\n🔴 CRITICAL - IDENTICAL WATCH LISTINGS PROVIDED:
 The user has provided ${(editedData.identical_listing_links || []).filter(Boolean).length} listing(s) for the EXACT same watch:
@@ -834,7 +833,7 @@ YOUR RESPONSE MUST INCLUDE:
       toast.success("✅ Research & pricing complete!");
 
       // Combine results
-      setAnalysisStep("💾 Now let's figure out where we sell this watch");
+      setAnalysisStep("💾 Saving analysis results...");
       const combinedAnalysis = {
         ...identification,
         identified_model: pricing.confirmed_model || identification.identified_model,
@@ -1021,9 +1020,9 @@ Return ONLY the HTML description, no wrapper text.`;
       const isNewCondition = editedData.condition && (editedData.condition.toLowerCase().includes('new') || editedData.condition === 'new_with_box' || editedData.condition === 'new_no_box');
       const conditionContext = isNewCondition ? 'NEW' : 'USED';
 
-      // STEP 1: Find accurate MSRP
-      setAnalysisStep("💰 Market Research: Checking Comps!");
-      console.log("=== STEP 1: MSRP SEARCH ===");
+      // PASS 3: Market Research - Checking Comps
+      setAnalysisStep("📊 Market Research: Checking Comps!");
+      console.log("=== PASS 3: MARKET RESEARCH ===");
 
       const msrpPrompt = `Find the MANUFACTURER'S SUGGESTED RETAIL PRICE (MSRP) for a NEW version with EXACT model number match:
 
@@ -1071,9 +1070,9 @@ Return ONLY the HTML description, no wrapper text.`;
       console.log("MSRP Result:", msrpResult);
       toast.success("✅ MSRP search complete!");
 
-      // STEP 2: Comprehensive pricing research
-      setAnalysisStep("🌐 Filtering comps for Junk");
-      console.log("=== STEP 2: PRICING RESEARCH ===");
+      // PASS 4: Filtering Comps for Junk
+      setAnalysisStep("🧹 Filtering comps for Junk");
+      console.log("=== PASS 4: COMP FILTERING ===");
 
       const pricingPrompt = `Find comparable listings with EXACT model number match and calculate pricing:
 
@@ -1244,10 +1243,11 @@ Every comparable MUST show model number "${editedData.reference_number}".
       console.log("Pricing Result:", pricingResult);
       toast.success("✅ Pricing research complete!");
 
-      // Combine results - keep existing identification data, update pricing only
-      setAnalysisStep("💾 Alright, let's get some numbers!");
+      // PASS 5: Alright, let's get some numbers!
+      setAnalysisStep("💰 Alright, let's get some numbers!");
+      
       const updatedAnalysis = {
-        ...(editedData.ai_analysis || {}), // Keep existing identification data
+        ...(editedData.ai_analysis || {}),
         ...msrpResult,
         ...pricingResult
       };
