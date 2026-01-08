@@ -21,16 +21,25 @@ Deno.serve(async (req) => {
     const companyId = user.data?.company_id || user.company_id;
     console.log('Company ID:', companyId);
     
+    // First try to fetch the product without company filter to see if it exists
+    const allProducts = await base44.asServiceRole.entities.Product.filter({ id: productId });
+    console.log('Products found (no company filter):', allProducts?.length || 0);
+    
+    if (allProducts && allProducts.length > 0) {
+      console.log('Product company_id:', allProducts[0].company_id);
+      console.log('Expected company_id:', companyId);
+    }
+    
     const products = await base44.asServiceRole.entities.Product.filter({ 
       id: productId, 
       company_id: companyId 
     });
     
-    console.log('Products fetched:', products?.length || 0);
+    console.log('Products fetched (with company filter):', products?.length || 0);
     
     if (!products || products.length === 0) {
       console.log('ERROR: Product not found for ID:', productId);
-      return Response.json({ error: 'Product not found' }, { status: 404 });
+      return Response.json({ error: 'Product not found or access denied' }, { status: 404 });
     }
     
     const product = products[0];
