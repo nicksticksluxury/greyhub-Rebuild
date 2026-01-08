@@ -7,14 +7,11 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         
         // 1. Handle Verification Challenge (GET)
-        // Required for eBay Marketplace Account Deletion endpoint validation
         if (req.method === "GET") {
             const url = new URL(req.url);
             const challengeCode = url.searchParams.get("challenge_code");
             
             if (challengeCode) {
-                // Retrieve the verification token from Settings entity
-                // Note: We use service role to read settings securely without user context
                 const settings = await base44.asServiceRole.entities.Setting.list();
                 const tokenSetting = settings.find(s => s.key === 'ebay_verification_token');
                 const verificationToken = tokenSetting ? tokenSetting.value : null;
@@ -24,11 +21,9 @@ Deno.serve(async (req) => {
                     return Response.json({ error: "Configuration missing" }, { status: 500 });
                 }
 
-                // Get App ID to construct the endpoint URL
                 const appId = Deno.env.get("BASE44_APP_ID");
                 const endpoint = `https://nicksluxury.base44.app/api/apps/6916791b25dfec3c1970eb6d/functions/ebayWebhook`;
                 
-                // Calculate SHA256 hash
                 const textToHash = challengeCode + verificationToken + endpoint;
                 const encoder = new TextEncoder();
                 const data = encoder.encode(textToHash);
@@ -58,17 +53,11 @@ Deno.serve(async (req) => {
         
         const soapBody = jsonObj['soapenv:Envelope']?.['soapenv:Body'];
         
-        // Handle Account Deletion Notification (often JSON or different XML, but usually via this same endpoint)
-        // If it's not SOAP, it might be a pure JSON notification (eBay supports both depending on config)
-        // But typically for the Trading API notifications, it's SOAP.
-        
         if (!soapBody) {
-             // Check if it's a direct JSON payload (Marketplace Account Deletion is often JSON)
              try {
                  const jsonBody = JSON.parse(bodyText);
                  if (jsonBody.metadata && jsonBody.notification) {
                      console.log("Received Account Deletion Notification", jsonBody);
-                     // Process account deletion logic here if needed
                      return Response.json({ status: "ok" });
                  }
              } catch (e) {
@@ -84,56 +73,101 @@ Deno.serve(async (req) => {
              if (!transaction) return;
              
              const item = transaction.Item;
-             const sku = item?.SKU; // We use Watch ID as SKU
+             const sku = item?.SKU;
              const itemID = item?.ItemID;
              
-             let watch = null;
+             let product = null;
              
              if (sku) {
-                 const watches = await base44.asServiceRole.entities.Watch.filter({ id: sku });
-                 if (watches.length > 0) watch = watches[0];
+                 const products = await base44.asServiceRole.entities.Product.filter({ id: sku });
+                 if (products.length > 0) product = products[0];
              }
              
-             if (!watch && itemID) {
-                 // Fallback logic if needed
-                 console.log(`No watch found for SKU ${sku}. ItemID: ${itemID}`);
+             if (!product && itemID) {
+                 console.log(`No product found for SKU ${sku}. ItemID: ${itemID}`);
                  return;
              }
              
-             if (watch) {
+             if (product) {
                  const soldPrice = parseFloat(transaction.TransactionPrice || 0);
                  const soldDate = new Date().toISOString().split('T')[0];
                  
-                 if (!watch.sold) {
-                     await base44.asServiceRole.entities.Watch.update(watch.id, {
+                 if (!product.sold) {
+                     await base44.asServiceRole.entities.Product.update(product.id, {
                          sold: true,
                          sold_date: soldDate,
                          sold_price: soldPrice,
                          sold_platform: 'ebay',
                          platform_ids: {
-                             ...(watch.platform_ids || {}),
+                             ...(product.platform_ids || {}),
                              ebay_transaction_id: transaction.TransactionID
                          }
                      });
-                     // Create Alert (must include company_id and user_id)
+                     
                      try {
                        await base44.asServiceRole.entities.Alert.create({
-                           company_id: watch.company_id,
-                           user_id: watch.created_by,
+                           company_id: product.company_id,
+                           user_id: product.created_by,
                            type: "success",
                            title: "Item Sold on eBay",
-                           message: `Sold: ${watch.brand} ${watch.model} for $${soldPrice}`,
-                           link: `WatchDetail?id=${watch.id}`,
+                           message: `Sold: ${product.brand} ${product.model} for $${soldPrice}`,
+                           link: `ProductDetail?id=${product.id}`,
                            read: false,
-                           metadata: { watch_id: watch.id, platform: 'ebay', price: soldPrice }
+                           metadata: { product_id: product.id, platform: 'ebay', price: soldPrice }
                        });
                      } catch (alertErr) {
                          console.error("Failed to create alert", alertErr);
                      }
 
-                     console.log(`Marked watch ${watch.id} as sold on eBay`);
+                     console.log(`Marked product ${product.id} as sold on eBay`);
                  }
              }
+        };
+
+        // Helper to process Best Offer notifications
+        const processBestOffer = async (notification, platformId) => {
+            if (!notification) return;
+
+            const item = notification.Item;
+            const sku = item?.SKU;
+            const itemID = item?.ItemID;
+
+            let product = null;
+
+            if (sku) {
+                const products = await base44.asServiceRole.entities.Product.filter({ id: sku });
+                if (products.length > 0) product = products[0];
+            }
+
+            if (!product && itemID) {
+                console.log(`No product found for SKU ${sku}. ItemID: ${itemID}`);
+                return;
+            }
+
+            if (product) {
+                const bestOffer = notification.BestOffer;
+                const offerPrice = parseFloat(bestOffer?.Price?.['#text'] || bestOffer?.Price || 0);
+                const offerStatus = bestOffer?.Status;
+                const buyer = bestOffer?.Buyer?.UserID || bestOffer?.Buyer?.['#text'] || 'Unknown';
+
+                if (offerPrice > 0 && offerStatus === 'Active') {
+                    try {
+                        await base44.asServiceRole.entities.Alert.create({
+                            company_id: product.company_id,
+                            user_id: product.created_by,
+                            type: "info",
+                            title: "New eBay Best Offer",
+                            message: `New offer of $${offerPrice} from ${buyer} for ${product.brand} ${product.model}`,
+                            link: `ProductDetail?id=${product.id}`,
+                            read: false,
+                            metadata: { product_id: product.id, platform: 'ebay', offer_price: offerPrice, buyer: buyer, offer_status: offerStatus }
+                        });
+                        console.log(`New best offer for product ${product.id}: $${offerPrice}`);
+                    } catch (alertErr) {
+                        console.error("Failed to create offer alert", alertErr);
+                    }
+                }
+            }
         };
 
         const keys = Object.keys(soapBody);
@@ -151,10 +185,16 @@ Deno.serve(async (req) => {
                     await processTransaction(transactions, 'ebay');
                 }
             } else if (key === 'ItemSold') {
-                 // Handle ItemSold event structure if different
                  const payload = soapBody[key];
-                 // Logic typically similar to FixedPriceTransaction but payload structure might vary
-                 // usually contains ItemID, SellingStatus, etc.
+                 await processTransaction(payload, 'ebay');
+            } else if (key === 'BestOfferPlaced') {
+                const payload = soapBody[key];
+                await processBestOffer(payload, 'ebay');
+            } else if (key === 'ItemRevised') {
+                const payload = soapBody[key];
+                if (payload.BestOfferDetails) {
+                    await processBestOffer(payload, 'ebay');
+                }
             }
         }
 

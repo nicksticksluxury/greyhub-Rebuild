@@ -391,6 +391,33 @@ Deno.serve(async (req) => {
                     }
                 };
 
+                // Add Best Offer settings if enabled
+                if (product.ebay_allow_offers !== false && product.ai_analysis?.ai_pricing) {
+                    const aiPricing = product.ai_analysis.ai_pricing;
+                    const bestOfferSettings = {};
+                    
+                    if (product.ebay_auto_accept_offers && aiPricing.bestOffer?.autoAccept) {
+                        bestOfferSettings.autoAcceptPrice = {
+                            currency: "USD",
+                            value: aiPricing.bestOffer.autoAccept
+                        };
+                    }
+                    
+                    if (product.ebay_auto_decline_offers && aiPricing.bestOffer?.autoDecline) {
+                        bestOfferSettings.minPrice = {
+                            currency: "USD",
+                            value: aiPricing.bestOffer.autoDecline
+                        };
+                    }
+                    
+                    if (Object.keys(bestOfferSettings).length > 0) {
+                        offer.bestOfferTerms = {
+                            bestOfferEnabled: true,
+                            ...bestOfferSettings
+                        };
+                    }
+                }
+
                 // Log payloads for debugging
                 console.log(`[${sku}] Inventory Item Payload:`, JSON.stringify(inventoryItem, null, 2));
                 console.log(`[${sku}] Offer Payload:`, JSON.stringify(offer, null, 2));

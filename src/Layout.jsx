@@ -34,6 +34,16 @@ export default function Layout({ children, currentPageName }) {
   const navigationItems = React.useMemo(() => {
     const sections = [
       {
+        label: "OVERVIEW",
+        items: [
+          {
+            title: "Dashboard",
+            url: createPageUrl("Dashboard"),
+            icon: TrendingUp,
+          },
+        ]
+      },
+      {
         label: "INVENTORY",
         items: [
           {
