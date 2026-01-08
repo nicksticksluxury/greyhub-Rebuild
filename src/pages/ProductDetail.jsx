@@ -851,7 +851,7 @@ YOUR RESPONSE MUST INCLUDE:
       setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
       
-      toast.success("✅ Complete!");
+      toast.success("✅ 6-Pass AI Analysis Complete!");
       setAnalysisStep("");
     } catch (error) {
       console.error("=== FAILED ===", error);
