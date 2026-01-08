@@ -142,7 +142,7 @@ export default function FilterPanel({ filters, setFilters, auctions, sources, ca
             <SelectContent>
               <SelectItem value="all">All Sources</SelectItem>
               {sources.map(source => (
-                <SelectItem key={source.id} value={source.id}>{source.name} - {source.order_number}</SelectItem>
+                <SelectItem key={source.id} value={source.id}>{source.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
