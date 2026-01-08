@@ -496,62 +496,8 @@ Return ONLY the HTML description, no wrapper text.`;
   };
 
   const repriceProduct = async () => {
-    if (!editedData.brand) {
-      toast.error("Please set the product brand first");
-      return;
-    }
-
-    setAnalyzing(true);
-    setAnalysisError(null);
-
-    try {
-      // Call backend for repricing (pricing passes only)
-      setAnalysisStep("📊 Market Research: Checking Comps!");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setAnalysisStep("🧹 Filtering comps for Junk");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setAnalysisStep("💰 Alright, let's get some numbers!");
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const result = await base44.functions.invoke('analyzeProductAI', { 
-        productId: productId 
-      });
-
-      if (!result.data.success) {
-        throw new Error(result.data.error || 'Re-pricing failed');
-      }
-
-      const comprehensiveAnalysis = result.data.ai_analysis;
-      console.log("=== UPDATED PRICING ===", comprehensiveAnalysis);
-
-      setEditedData({
-        ...editedData,
-        ai_analysis: comprehensiveAnalysis
-      });
-
-      await base44.entities.Product.update(productId, { 
-        ai_analysis: comprehensiveAnalysis
-      });
-
-      const refreshedProduct = await base44.entities.Product.list().then(products => products.find(p => p.id === productId));
-      setEditedData(refreshedProduct);
-      setOriginalData(refreshedProduct);
-      setHasUnsavedChanges(false);
-      queryClient.invalidateQueries({ queryKey: ['product', productId] });
-
-      toast.success("✅ Product re-priced successfully!");
-      setAnalysisStep("");
-    } catch (error) {
-      console.error("=== RE-PRICING FAILED ===", error);
-
-      const errorMsg = `${error.message}\n\n${error.response?.data?.message || 'Check console (F12)'}`;
-      setAnalysisError(errorMsg);
-      toast.error("Re-pricing failed");
-    } finally {
-      setAnalyzing(false);
-    }
+    // Re-pricing is the same as full analysis - just call analyzeWithAI
+    return analyzeWithAI();
   };
 
   const generateHeroImage = async () => {
