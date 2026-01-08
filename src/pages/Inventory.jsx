@@ -390,7 +390,14 @@ export default function Inventory() {
 
   // Get unique case materials from all products
   const caseMaterials = [...new Set(products
-    .map(p => p.category_specific_attributes?.case_material || p.case_material)
+    .map(p => {
+      const attrs = p.category_specific_attributes;
+      const val = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.case_material : undefined;
+      const material = val || p.case_material;
+      if (!material) return null;
+      if (typeof material === 'object') return JSON.stringify(material);
+      return String(material);
+    })
     .filter(Boolean)
     .map(m => m.trim())
   )].sort();
@@ -423,10 +430,17 @@ export default function Inventory() {
     const matchesAuction = filters.auction === "all" || product.auction_id === filters.auction;
     const matchesSource = filters.source === "all" || sourceId === filters.source;
     const matchesCondition = filters.condition === "all" || product.condition === filters.condition;
-    const movementType = product.category_specific_attributes?.movement_type || product.movement_type;
-    const matchesMovementType = filters.movement_type === "all" || movementType === filters.movement_type;
-    const caseMaterial = product.category_specific_attributes?.case_material || product.case_material;
-    const matchesCaseMaterial = !filters.case_material || caseMaterial?.trim() === filters.case_material;
+    
+    const attrs = product.category_specific_attributes;
+    const movementTypeRaw = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.movement_type : undefined;
+    const movementType = movementTypeRaw || product.movement_type;
+    const movementTypeStr = movementType && typeof movementType === 'object' ? JSON.stringify(movementType) : (movementType ? String(movementType) : '');
+    const matchesMovementType = filters.movement_type === "all" || movementTypeStr === filters.movement_type;
+    
+    const caseMaterialRaw = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.case_material : undefined;
+    const caseMaterial = caseMaterialRaw || product.case_material;
+    const caseMaterialStr = caseMaterial && typeof caseMaterial === 'object' ? JSON.stringify(caseMaterial) : (caseMaterial ? String(caseMaterial) : '');
+    const matchesCaseMaterial = !filters.case_material || caseMaterialStr.trim() === filters.case_material;
     const matchesManufacturer = !filters.manufacturer || product.brand?.trim() === filters.manufacturer;
     const matchesTested = filters.tested === "all" || (product.tested || "no") === filters.tested;
     const matchesGender = filters.gender === "all" || product.gender === filters.gender;
