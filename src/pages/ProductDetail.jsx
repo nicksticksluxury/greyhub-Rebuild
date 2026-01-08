@@ -324,7 +324,7 @@ export default function ProductDetail() {
         await base44.entities.ProductTypeField.filter({ product_type_code: editedData.product_type_code }) : [];
       
       // STEP 1: Identify product from user's photos
-      setAnalysisStep(`🔍 Step 1/3: Examining your ${productTypeName} photos...`);
+      setAnalysisStep("🔍 I'm checking images");
       console.log("=== STEP 1: IDENTIFICATION ===");
       
       // Get optimized full resolution photos for AI analysis
@@ -434,7 +434,7 @@ Rate your identification confidence (High/Medium/Low)`,
       toast.success("✅ Product examined!");
 
       // STEP 2: Verify with identical listing OR search for match
-      setAnalysisStep("🌐 Step 2/3: Researching product details and pricing...");
+      setAnalysisStep("🌐 Now I'm checking the internet to see if I have any matches");
       console.log("=== STEP 2: VERIFICATION & PRICING ===");
 
       let researchPrompt;
@@ -834,7 +834,7 @@ YOUR RESPONSE MUST INCLUDE:
       toast.success("✅ Research & pricing complete!");
 
       // Combine results
-      setAnalysisStep("💾 Saving...");
+      setAnalysisStep("💾 Now let's figure out where we sell this watch");
       const combinedAnalysis = {
         ...identification,
         identified_model: pricing.confirmed_model || identification.identified_model,
@@ -1022,7 +1022,7 @@ Return ONLY the HTML description, no wrapper text.`;
       const conditionContext = isNewCondition ? 'NEW' : 'USED';
 
       // STEP 1: Find accurate MSRP
-      setAnalysisStep("💰 Step 1/2: Finding manufacturer MSRP...");
+      setAnalysisStep("💰 Market Research: Checking Comps!");
       console.log("=== STEP 1: MSRP SEARCH ===");
 
       const msrpPrompt = `Find the MANUFACTURER'S SUGGESTED RETAIL PRICE (MSRP) for a NEW version with EXACT model number match:
@@ -1072,7 +1072,7 @@ Return ONLY the HTML description, no wrapper text.`;
       toast.success("✅ MSRP search complete!");
 
       // STEP 2: Comprehensive pricing research
-      setAnalysisStep("🌐 Step 2/2: Researching comparable listings and pricing...");
+      setAnalysisStep("🌐 Filtering comps for Junk");
       console.log("=== STEP 2: PRICING RESEARCH ===");
 
       const pricingPrompt = `Find comparable listings with EXACT model number match and calculate pricing:
@@ -1245,7 +1245,7 @@ Every comparable MUST show model number "${editedData.reference_number}".
       toast.success("✅ Pricing research complete!");
 
       // Combine results - keep existing identification data, update pricing only
-      setAnalysisStep("💾 Saving updated pricing...");
+      setAnalysisStep("💾 Alright, let's get some numbers!");
       const updatedAnalysis = {
         ...(editedData.ai_analysis || {}), // Keep existing identification data
         ...msrpResult,
