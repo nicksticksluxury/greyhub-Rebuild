@@ -24,7 +24,7 @@ const DEFAULT_PROMPTS = [
     category: "Image Analysis",
     order: 1,
     type: "text_prompt",
-    variables_documentation: "Available variables:\n{photos} - Array of product photo URLs",
+    variables_documentation: "Available variables:\n{photos} - Array of product photo URLs\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{movement} - Movement type\n{case_size} - Case size\n{condition} - Product condition\n{box_papers} - Box and papers availability\n{existing_listing_links} - Array of links to identical existing listings\n{msrp_link} - MSRP source link",
     prompt_content: `Analyze the provided product images and identify:
 - Brand name
 - Model name or description
@@ -62,7 +62,7 @@ Provide a detailed analysis with confidence levels for each field.`
     category: "Market Research",
     order: 3,
     type: "text_prompt",
-    variables_documentation: "Available variables:\n{pass2_output} - Results from Pass 2\n{brand} - Product brand\n{model} - Product model\n{condition} - Product condition",
+    variables_documentation: "Available variables:\n{pass1_output} - Results from Pass 1\n{pass2_output} - Results from Pass 2\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{movement} - Movement type\n{case_size} - Case size\n{condition} - Product condition\n{box_papers} - Box and papers availability\n{existing_listing_links} - Array of links to identical existing listings\n{msrp_link} - MSRP source link",
     prompt_content: `Using the detailed product information:
 {pass2_output}
 
@@ -86,7 +86,7 @@ Return:
     category: "Market Research",
     order: 4,
     type: "text_prompt",
-    variables_documentation: "Available variables:\n{pass2_output} - Results from Pass 2\n{pass3_output} - Results from Pass 3\n{brand} - Product brand\n{model} - Product model",
+    variables_documentation: "Available variables:\n{pass1_output} - Results from Pass 1\n{pass2_output} - Results from Pass 2\n{pass3_output} - Results from Pass 3\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{movement} - Movement type\n{case_size} - Case size\n{condition} - Product condition\n{box_papers} - Box and papers availability\n{existing_listing_links} - Array of links to identical existing listings\n{msrp_link} - MSRP source link",
     prompt_content: `Review the comparable listings data:
 {pass3_output}
 
@@ -112,7 +112,7 @@ Return:
     category: "Pricing",
     order: 5,
     type: "json_config",
-    variables_documentation: "Available variables:\n{cost} - Product cost\n{BMV} - Base Market Value from Pass 4\n{brand} - Product brand\n{condition} - Product condition\n{velocity} - Market demand velocity\n{saturation} - Market saturation level",
+    variables_documentation: "Available variables:\n{pass1_output} - Results from Pass 1\n{pass2_output} - Results from Pass 2\n{pass3_output} - Results from Pass 3\n{pass4_output} - Results from Pass 4\n{cost} - Product cost\n{BMV} - Base Market Value from Pass 4\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{movement} - Movement type\n{case_size} - Case size\n{condition} - Product condition\n{box_papers} - Box and papers availability\n{existing_listing_links} - Array of links to identical existing listings\n{msrp_link} - MSRP source link\n{velocity} - Market demand velocity\n{saturation} - Market saturation level",
     prompt_content: JSON.stringify({
       ebay_fee_rate: 0.18,
       whatnot_fee_rate: 0.12,
@@ -139,7 +139,7 @@ Return:
     category: "Channel Decision",
     order: 6,
     type: "text_prompt",
-    variables_documentation: "Available variables:\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{condition} - Product condition\n{cost} - Product cost\n{BMV} - Base Market Value\n{velocity} - Demand velocity\n{saturation} - Market saturation (High/Medium/Low)",
+    variables_documentation: "Available variables:\n{pass1_output} - Results from Pass 1\n{pass2_output} - Results from Pass 2\n{pass3_output} - Results from Pass 3\n{pass4_output} - Results from Pass 4\n{pass5_output} - Results from Pass 5\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{movement} - Movement type\n{case_size} - Case size\n{condition} - Product condition\n{box_papers} - Box and papers availability\n{existing_listing_links} - Array of links to identical existing listings\n{msrp_link} - MSRP source link\n{cost} - Product cost\n{BMV} - Base Market Value\n{velocity} - Demand velocity\n{saturation} - Market saturation (High/Medium/Low)",
     prompt_content: `Given the following product and market data:
 
 Brand: {brand}
