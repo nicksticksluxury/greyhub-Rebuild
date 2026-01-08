@@ -45,7 +45,14 @@ export default function DynamicFields({ productTypeCode, data, onChange }) {
       </h3>
       <div className="grid grid-cols-2 gap-4">
         {sortedFields.map((field) => {
-          const value = data.category_specific_attributes?.[field.field_name] || "";
+          let value = data.category_specific_attributes?.[field.field_name];
+          
+          // Convert objects/arrays to strings for display
+          if (typeof value === 'object' && value !== null) {
+            value = Array.isArray(value) ? value.join(', ') : JSON.stringify(value);
+          } else if (value === undefined || value === null) {
+            value = "";
+          }
 
           if (field.field_type === 'select') {
             return (
