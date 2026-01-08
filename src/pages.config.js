@@ -1,5 +1,6 @@
 import AcceptInvitation from './pages/AcceptInvitation';
 import AddProduct from './pages/AddProduct';
+import AiManagement from './pages/AiManagement';
 import Auctions from './pages/Auctions';
 import CompanySettings from './pages/CompanySettings';
 import CompleteSignup from './pages/CompleteSignup';
@@ -27,13 +28,13 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
-import AiManagement from './pages/AiManagement';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AcceptInvitation": AcceptInvitation,
     "AddProduct": AddProduct,
+    "AiManagement": AiManagement,
     "Auctions": Auctions,
     "CompanySettings": CompanySettings,
     "CompleteSignup": CompleteSignup,
@@ -61,7 +62,6 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
-    "AiManagement": AiManagement,
 }
 
 export const pagesConfig = {

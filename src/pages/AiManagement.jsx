@@ -14,6 +14,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import PricingFormulaEditor from "../components/aimanagement/PricingFormulaEditor";
 
 const DEFAULT_PROMPTS = [
   {
@@ -345,11 +346,9 @@ export default function AiManagement() {
                           </div>
 
                           {prompt.type === "json_config" ? (
-                            <Textarea
+                            <PricingFormulaEditor
                               value={getPromptValue(prompt)}
-                              onChange={(e) => handleEdit(prompt.key, e.target.value)}
-                              className="font-mono text-sm min-h-[300px]"
-                              placeholder="JSON configuration..."
+                              onChange={(value) => handleEdit(prompt.key, value)}
                             />
                           ) : (
                             <Textarea
