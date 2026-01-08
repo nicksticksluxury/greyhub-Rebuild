@@ -163,7 +163,7 @@ export default function Dashboard() {
                   <div key={alert.id} className="flex items-start justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
                     <div className="flex-1">
                       <Link to={alert.link ? createPageUrl(alert.link) : "#"} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
-                        {alert.message}
+                        {typeof alert.message === 'object' ? JSON.stringify(alert.message) : alert.message}
                       </Link>
                       <p className="text-xs text-slate-500 mt-1">{new Date(alert.created_date).toLocaleDateString()}</p>
                     </div>
@@ -195,7 +195,7 @@ export default function Dashboard() {
                   <div key={alert.id} className="flex items-start justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex-1">
                       <Link to={alert.link ? createPageUrl(alert.link) : "#"} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
-                        {alert.message}
+                        {typeof alert.message === 'object' ? JSON.stringify(alert.message) : alert.message}
                       </Link>
                       <p className="text-xs text-slate-500 mt-1">{new Date(alert.created_date).toLocaleDateString()}</p>
                     </div>
@@ -253,8 +253,8 @@ export default function Dashboard() {
               {alerts.filter(a => !a.title?.includes("Best Offer") && !a.title?.includes("Sold on eBay")).map(alert => (
                 <div key={alert.id} className="flex items-start justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
-                    <p className="text-sm text-slate-600">{alert.message}</p>
+                    <p className="text-sm font-semibold text-slate-900">{typeof alert.title === 'object' ? JSON.stringify(alert.title) : alert.title}</p>
+                    <p className="text-sm text-slate-600">{typeof alert.message === 'object' ? JSON.stringify(alert.message) : alert.message}</p>
                     <p className="text-xs text-slate-500 mt-1">{new Date(alert.created_date).toLocaleDateString()}</p>
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => handleDismissAlert(alert.id)}>
