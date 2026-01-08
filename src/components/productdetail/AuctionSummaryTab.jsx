@@ -138,15 +138,36 @@ export default function AuctionSummaryTab({ product }) {
               </div>
               <div>
                 <div className="text-sm text-slate-400">Movement</div>
-                <div className="text-white">{product.category_specific_attributes?.movement_type || product.movement_type || 'N/A'}</div>
+                <div className="text-white">
+                  {(() => {
+                    const val = product.category_specific_attributes?.movement_type || product.movement_type;
+                    if (!val) return 'N/A';
+                    if (typeof val === 'object') return JSON.stringify(val);
+                    return val;
+                  })()}
+                </div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Case Material</div>
-                <div className="text-white">{product.category_specific_attributes?.case_material || product.case_material || 'N/A'}</div>
+                <div className="text-white">
+                  {(() => {
+                    const val = product.category_specific_attributes?.case_material || product.case_material;
+                    if (!val) return 'N/A';
+                    if (typeof val === 'object') return JSON.stringify(val);
+                    return val;
+                  })()}
+                </div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Case Size</div>
-                <div className="text-white">{product.category_specific_attributes?.case_size || product.case_size || 'N/A'}</div>
+                <div className="text-white">
+                  {(() => {
+                    const val = product.category_specific_attributes?.case_size || product.case_size;
+                    if (!val) return 'N/A';
+                    if (typeof val === 'object') return JSON.stringify(val);
+                    return val;
+                  })()}
+                </div>
               </div>
               <div>
                 <div className="text-sm text-slate-400">Tested</div>
