@@ -51,14 +51,9 @@ Deno.serve(async (req) => {
     const product = products[0];
     console.log('Product loaded:', product.brand, product.model);
 
-    // Fetch all AI prompts for this company
-    // Try without company filter first since service role should have access to all
-    let aiPrompts = await base44.asServiceRole.entities.AiPrompt.list();
-    console.log('All AI Prompts (no filter):', aiPrompts?.length || 0);
-    
-    // Filter by company_id in code
-    aiPrompts = aiPrompts.filter(p => p.company_id === companyId);
-    console.log('AI Prompts for company:', aiPrompts?.length || 0);
+    // Fetch all AI prompts for this company using user-scoped query (RLS requires user context)
+    const aiPrompts = await base44.entities.AiPrompt.list();
+    console.log('AI Prompts fetched (user-scoped):', aiPrompts?.length || 0);
     
     const getPrompt = (key) => aiPrompts.find(p => p.key === key);
 
