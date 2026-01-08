@@ -176,9 +176,9 @@ Return:
 
 export default function AiManagement() {
   const queryClient = useQueryClient();
-  const [editingPrompts, setEditingPrompts] = useState({});
-  const [editingVariables, setEditingVariables] = useState({});
+  const [changes, setChanges] = useState({});
   const [user, setUser] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -188,30 +188,13 @@ export default function AiManagement() {
     loadUser();
   }, []);
 
-  const { data: prompts = [], isLoading } = useQuery({
-    queryKey: ['aiPrompts'],
-    queryFn: () => base44.entities.AiPrompt.list("category, order"),
-    enabled: !!user,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.AiPrompt.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['aiPrompts'] });
-      setEditingPrompts({});
-      setEditingVariables({});
-      toast.success("AI prompt saved");
+  const { data: prompts = [], isLoading, refetch } = useQuery({
+    queryKey: ['aiPrompts', user?.company_id],
+    queryFn: async () => {
+      const allPrompts = await base44.entities.AiPrompt.filter({ company_id: user.company_id });
+      return allPrompts;
     },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.AiPrompt.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['aiPrompts'] });
-      setEditingPrompts({});
-      setEditingVariables({});
-      toast.success("AI prompt updated");
-    },
+    enabled: !!user?.company_id,
   });
 
   const initializeDefaults = async () => {
@@ -227,51 +210,67 @@ export default function AiManagement() {
           });
         }
       }
-      queryClient.invalidateQueries({ queryKey: ['aiPrompts'] });
+      await refetch();
       toast.success("Default prompts initialized", { id: toastId });
     } catch (error) {
       toast.error("Failed to initialize prompts", { id: toastId });
     }
   };
 
-  const handleSave = async (prompt) => {
-    const changes = {};
-    if (editingPrompts[prompt.key] !== undefined) {
-      changes.prompt_content = editingPrompts[prompt.key];
-    }
-    if (editingVariables[prompt.key] !== undefined) {
-      changes.variables_documentation = editingVariables[prompt.key];
+  const saveAllChanges = async () => {
+    if (Object.keys(changes).length === 0) {
+      toast.info("No changes to save");
+      return;
     }
 
-    if (Object.keys(changes).length === 0) return;
-
-    if (prompt.id) {
-      updateMutation.mutate({
-        id: prompt.id,
-        data: changes
-      });
-    } else {
-      createMutation.mutate({
-        ...prompt,
-        ...changes,
-        company_id: user.company_id
-      });
+    setSaving(true);
+    const toastId = toast.loading("Saving all changes...");
+    
+    try {
+      for (const [key, changeData] of Object.entries(changes)) {
+        const existingPrompt = prompts.find(p => p.key === key);
+        
+        if (existingPrompt) {
+          // Update existing
+          await base44.entities.AiPrompt.update(existingPrompt.id, changeData);
+        } else {
+          // Create new
+          const defaultPrompt = DEFAULT_PROMPTS.find(p => p.key === key);
+          await base44.entities.AiPrompt.create({
+            ...defaultPrompt,
+            ...changeData,
+            company_id: user.company_id
+          });
+        }
+      }
+      
+      setChanges({});
+      await refetch();
+      toast.success("All changes saved successfully", { id: toastId });
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Failed to save changes: " + error.message, { id: toastId });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleEdit = (key, value, field) => {
-    if (field === 'prompt_content') {
-      setEditingPrompts(prev => ({ ...prev, [key]: value }));
-    } else if (field === 'variables_documentation') {
-      setEditingVariables(prev => ({ ...prev, [key]: value }));
-    }
+  const handleChange = (key, field, value) => {
+    setChanges(prev => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] || {}),
+        [field]: value
+      }
+    }));
   };
 
-  const getPromptValue = (prompt, field) => {
-    const editorState = field === 'prompt_content' ? editingPrompts : editingVariables;
-    if (editorState[prompt.key] !== undefined) {
-      return editorState[prompt.key];
+  const getValue = (prompt, field) => {
+    // First check if there are pending changes
+    if (changes[prompt.key]?.[field] !== undefined) {
+      return changes[prompt.key][field];
     }
+    // Then return the saved value
     return prompt[field] || "";
   };
 
@@ -285,6 +284,8 @@ export default function AiManagement() {
     acc[prompt.category].push(prompt);
     return acc;
   }, {});
+
+  const hasUnsavedChanges = Object.keys(changes).length > 0;
 
   if (!user || user.role !== 'admin') {
     return (
@@ -308,12 +309,24 @@ export default function AiManagement() {
             </h1>
             <p className="text-slate-500 mt-1">Configure AI prompts and pricing formulas for product analysis</p>
           </div>
-          {prompts.length === 0 && (
-            <Button onClick={initializeDefaults} className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Initialize Defaults
-            </Button>
-          )}
+          <div className="flex gap-3">
+            {prompts.length === 0 && (
+              <Button onClick={initializeDefaults} className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Initialize Defaults
+              </Button>
+            )}
+            {hasUnsavedChanges && (
+              <Button 
+                onClick={saveAllChanges} 
+                disabled={saving}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Saving..." : `Save All Changes (${Object.keys(changes).length})`}
+              </Button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (
@@ -338,28 +351,22 @@ export default function AiManagement() {
                   <AccordionContent className="px-6 pb-6">
                     <div className="space-y-6 pt-4">
                       {categoryPrompts.sort((a, b) => a.order - b.order).map((prompt) => (
-                        <div key={prompt.key} className="space-y-3 p-4 bg-slate-50 rounded-lg">
+                        <div key={prompt.key} className="space-y-3 p-4 bg-slate-50 rounded-lg border-2 border-transparent data-[changed=true]:border-amber-400" data-changed={changes[prompt.key] ? 'true' : 'false'}>
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <Label className="text-base font-semibold text-slate-900">{prompt.name}</Label>
                               <p className="text-sm text-slate-600 mt-1">{prompt.description}</p>
+                              {changes[prompt.key] && (
+                                <p className="text-xs text-amber-600 mt-1 font-medium">● Unsaved changes</p>
+                              )}
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => handleSave(prompt)}
-                              disabled={editingPrompts[prompt.key] === undefined && editingVariables[prompt.key] === undefined}
-                              className="bg-slate-800 hover:bg-slate-900"
-                            >
-                              <Save className="w-4 h-4 mr-2" />
-                              Save
-                            </Button>
                           </div>
 
                           <div className="space-y-2">
                             <Label className="text-sm font-medium">Available Variables (Documentation)</Label>
                             <Textarea
-                              value={getPromptValue(prompt, 'variables_documentation')}
-                              onChange={(e) => handleEdit(prompt.key, e.target.value, 'variables_documentation')}
+                              value={getValue(prompt, 'variables_documentation')}
+                              onChange={(e) => handleChange(prompt.key, 'variables_documentation', e.target.value)}
                               className="min-h-[100px] bg-blue-50 border-blue-200 text-blue-900"
                               placeholder="Document available variables here..."
                             />
@@ -367,15 +374,15 @@ export default function AiManagement() {
 
                           {prompt.type === "json_config" ? (
                             <PricingFormulaEditor
-                              value={getPromptValue(prompt, 'prompt_content')}
-                              onChange={(value) => handleEdit(prompt.key, value, 'prompt_content')}
+                              value={getValue(prompt, 'prompt_content')}
+                              onChange={(value) => handleChange(prompt.key, 'prompt_content', value)}
                             />
                           ) : (
                             <div className="space-y-2">
                               <Label className="text-sm font-medium">Prompt Content</Label>
                               <Textarea
-                                value={getPromptValue(prompt, 'prompt_content')}
-                                onChange={(e) => handleEdit(prompt.key, e.target.value, 'prompt_content')}
+                                value={getValue(prompt, 'prompt_content')}
+                                onChange={(e) => handleChange(prompt.key, 'prompt_content', e.target.value)}
                                 className="min-h-[200px]"
                                 placeholder="Enter AI prompt..."
                               />
