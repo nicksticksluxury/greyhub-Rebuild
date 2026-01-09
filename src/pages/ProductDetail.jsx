@@ -196,7 +196,7 @@ export default function ProductDetail() {
     return Math.ceil(Math.max(...minimums));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Check if marking as sold and quantity > 1
     if (editedData.sold && !originalData.sold && editedData.quantity > 1) {
       // Show dialog to ask how many units sold
@@ -216,6 +216,18 @@ export default function ProductDetail() {
       dataToSave.comparable_listings_links = dataToSave.comparable_listings_links.map(item => 
         typeof item === 'string' ? item : (item.url || item)
       );
+    }
+
+    // If marking as sold and has eBay listing, end it
+    if (editedData.sold && !originalData.sold && editedData.platform_ids?.ebay) {
+      const toastId = toast.loading("Ending eBay listing...");
+      try {
+        await base44.functions.invoke('ebayEndListing', { productId });
+        toast.success("eBay listing ended", { id: toastId });
+      } catch (error) {
+        console.error('Failed to end eBay listing:', error);
+        toast.error("Failed to end eBay listing", { id: toastId });
+      }
     }
 
     updateMutation.mutate(dataToSave);
@@ -249,6 +261,18 @@ export default function ProductDetail() {
     delete soldProductData.created_by;
     
     try {
+      // If has eBay listing, end it
+      if (editedData.platform_ids?.ebay) {
+        const toastId = toast.loading("Ending eBay listing...");
+        try {
+          await base44.functions.invoke('ebayEndListing', { productId });
+          toast.success("eBay listing ended", { id: toastId });
+        } catch (error) {
+          console.error('Failed to end eBay listing:', error);
+          toast.error("Failed to end eBay listing", { id: toastId });
+        }
+      }
+
       // Create the sold product record
       await base44.entities.Product.create(soldProductData);
       
