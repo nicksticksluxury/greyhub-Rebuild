@@ -38,7 +38,7 @@ export default function SalesView() {
               const links = watch.comparable_listings_links;
               if (!links) return [];
               if (Array.isArray(links)) return links;
-              if (typeof links === 'object') return Object.values(links);
+              if (typeof links === 'object' && !Array.isArray(links)) return Object.values(links);
               return [];
             })(),
             marketResearch: watch.market_research || watch.ai_analysis?.market_insights || "",
