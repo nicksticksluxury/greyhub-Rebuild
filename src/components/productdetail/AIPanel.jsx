@@ -536,12 +536,15 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                 Notable Features
               </span>
               <ul className="space-y-1">
-                {aiAnalysis.notable_features.map((feature, index) => (
-                  <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
+               {aiAnalysis.notable_features.map((feature, index) => {
+                 const displayFeature = typeof feature === 'object' ? JSON.stringify(feature) : String(feature);
+                 return (
+                   <li key={index} className="text-sm text-slate-600 flex items-start gap-2">
+                     <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                     {displayFeature}
+                   </li>
+                 );
+               })}
               </ul>
             </div>
           )}
