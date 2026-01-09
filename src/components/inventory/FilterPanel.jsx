@@ -42,9 +42,12 @@ export default function FilterPanel({ filters, setFilters, auctions, sources, ca
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Manufacturers</SelectItem>
-              {manufacturers.map(manufacturer => (
-                <SelectItem key={manufacturer} value={manufacturer}>{manufacturer}</SelectItem>
-              ))}
+              {manufacturers.map(manufacturer => {
+                const displayManufacturer = typeof manufacturer === 'object' ? JSON.stringify(manufacturer) : String(manufacturer);
+                return (
+                  <SelectItem key={displayManufacturer} value={displayManufacturer}>{displayManufacturer}</SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -96,9 +99,12 @@ export default function FilterPanel({ filters, setFilters, auctions, sources, ca
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Materials</SelectItem>
-              {caseMaterials.map(material => (
-                <SelectItem key={material} value={material}>{material}</SelectItem>
-              ))}
+              {caseMaterials.map(material => {
+                const displayMaterial = typeof material === 'object' ? JSON.stringify(material) : String(material);
+                return (
+                  <SelectItem key={displayMaterial} value={displayMaterial}>{displayMaterial}</SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
