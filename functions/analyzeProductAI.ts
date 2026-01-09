@@ -423,8 +423,12 @@ Deno.serve(async (req) => {
       serial_number: pass1Result.serial_number,
       estimated_year: pass1Result.estimated_year,
       identified_gender: pass1Result.identified_gender,
-      condition_assessment: pass1Result.condition_assessment,
-      notable_features: pass1Result.notable_features,
+      condition_assessment: typeof pass1Result.condition_assessment === 'object' 
+        ? JSON.stringify(pass1Result.condition_assessment) 
+        : pass1Result.condition_assessment,
+      notable_features: Array.isArray(pass1Result.notable_features) 
+        ? pass1Result.notable_features.map(f => typeof f === 'object' ? JSON.stringify(f) : String(f))
+        : pass1Result.notable_features,
       all_visible_text: pass1Result.all_visible_text,
       confidence_level: pass1Result.confidence_level,
       category_specific_attributes: pass1Result.category_specific_attributes,
@@ -464,9 +468,9 @@ Deno.serve(async (req) => {
       current_retail_price: pass4Result.final_base_market_value,
       original_msrp: product.msrp || null,
       market_research_summary: [
-        pass2Result.market_positioning,
-        `Demand: ${pass3Result.market_demand_indicators}`,
-        pass4Result.market_insights,
+        typeof pass2Result.market_positioning === 'object' ? JSON.stringify(pass2Result.market_positioning) : pass2Result.market_positioning,
+        `Demand: ${typeof pass3Result.market_demand_indicators === 'object' ? JSON.stringify(pass3Result.market_demand_indicators) : pass3Result.market_demand_indicators}`,
+        typeof pass4Result.market_insights === 'object' ? JSON.stringify(pass4Result.market_insights) : pass4Result.market_insights,
         `Found ${pass3Result.num_comparables_found} comparable listings`,
         `Price range: $${pass3Result.price_range_low?.toLocaleString() || 0} - $${pass3Result.price_range_high?.toLocaleString() || 0}`
       ].filter(Boolean).join('\n\n'),
