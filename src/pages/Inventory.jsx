@@ -432,14 +432,23 @@ export default function Inventory() {
     const matchesCondition = filters.condition === "all" || product.condition === filters.condition;
     
     const attrs = product.category_specific_attributes;
+    
+    // Handle movement_type - ensure it's always a string for comparison
     const movementTypeRaw = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.movement_type : undefined;
     const movementType = movementTypeRaw || product.movement_type;
-    const movementTypeStr = movementType && typeof movementType === 'object' ? JSON.stringify(movementType) : (movementType ? String(movementType) : '');
+    let movementTypeStr = '';
+    if (movementType) {
+      movementTypeStr = typeof movementType === 'object' ? JSON.stringify(movementType) : String(movementType);
+    }
     const matchesMovementType = filters.movement_type === "all" || movementTypeStr === filters.movement_type;
     
+    // Handle case_material - ensure it's always a string for comparison
     const caseMaterialRaw = (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) ? attrs.case_material : undefined;
     const caseMaterial = caseMaterialRaw || product.case_material;
-    const caseMaterialStr = caseMaterial && typeof caseMaterial === 'object' ? JSON.stringify(caseMaterial) : (caseMaterial ? String(caseMaterial) : '');
+    let caseMaterialStr = '';
+    if (caseMaterial) {
+      caseMaterialStr = typeof caseMaterial === 'object' ? JSON.stringify(caseMaterial) : String(caseMaterial);
+    }
     const matchesCaseMaterial = !filters.case_material || caseMaterialStr.trim() === filters.case_material;
     const matchesManufacturer = !filters.manufacturer || product.brand?.trim() === filters.manufacturer;
     const matchesTested = filters.tested === "all" || (product.tested || "no") === filters.tested;
