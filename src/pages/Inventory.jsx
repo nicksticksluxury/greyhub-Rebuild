@@ -679,6 +679,45 @@ export default function Inventory() {
                       )}
                       {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      if (!confirm(`Run full AI analysis on ${selectedProductIds.length} product${selectedProductIds.length > 1 ? 's' : ''}? This will update ai_analysis and ai_platform_recommendation fields only.`)) {
+                        return;
+                      }
+
+                      setSyncing(true);
+                      let completed = 0;
+                      let failed = 0;
+
+                      for (const productId of selectedProductIds) {
+                        try {
+                          toast.loading(`Analyzing ${completed + 1}/${selectedProductIds.length}...`, { id: 'aiAnalysis' });
+                          
+                          const result = await base44.functions.invoke('analyzeProductAI', { productId });
+                          
+                          if (result.data.success) {
+                            completed++;
+                          } else {
+                            failed++;
+                          }
+                        } catch (error) {
+                          console.error('AI analysis failed:', error);
+                          failed++;
+                        }
+                      }
+
+                      setSyncing(false);
+                      setSelectedProductIds([]);
+                      queryClient.invalidateQueries({ queryKey: ['products'] });
+
+                      if (completed > 0) {
+                        toast.success(`AI analysis complete: ${completed} succeeded, ${failed} failed`, { id: 'aiAnalysis' });
+                      } else {
+                        toast.error(`All AI analyses failed`, { id: 'aiAnalysis' });
+                      }
+                    }}>
+                      <Loader2 className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                      {syncing ? "Analyzing..." : "Full AI Analysis"}
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowImageExportDialog(true)}>
                       <Download className="w-4 h-4 mr-2" />
                       Export Image Links
