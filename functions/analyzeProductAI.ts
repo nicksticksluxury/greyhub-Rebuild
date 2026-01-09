@@ -485,22 +485,53 @@ Deno.serve(async (req) => {
       ai_analysis: comprehensiveAnalysis
     };
 
-    // Update product identification fields if AI provided them
-    if (pass1Result.identified_brand) productUpdate.brand = pass1Result.identified_brand;
-    if (pass1Result.identified_model) productUpdate.model = pass1Result.identified_model;
-    if (pass1Result.reference_number) productUpdate.reference_number = pass1Result.reference_number;
-    if (pass1Result.serial_number) productUpdate.serial_number = pass1Result.serial_number;
-    if (pass1Result.estimated_year) productUpdate.year = pass1Result.estimated_year;
-    if (pass1Result.identified_gender) productUpdate.gender = pass1Result.identified_gender;
-    if (pass1Result.category_specific_attributes) productUpdate.category_specific_attributes = pass1Result.category_specific_attributes;
+    // Update product identification fields if AI provided them (with validation)
+    if (pass1Result.identified_brand && pass1Result.identified_brand !== 'Unknown') {
+      productUpdate.brand = pass1Result.identified_brand;
+    }
+    if (pass1Result.identified_model && pass1Result.identified_model !== 'Unknown') {
+      productUpdate.model = pass1Result.identified_model;
+    }
+    if (pass1Result.reference_number && pass1Result.reference_number !== 'Unknown') {
+      productUpdate.reference_number = pass1Result.reference_number;
+    }
+    if (pass1Result.serial_number && pass1Result.serial_number !== 'Unknown') {
+      productUpdate.serial_number = pass1Result.serial_number;
+    }
+    if (pass1Result.estimated_year && pass1Result.estimated_year !== 'Unknown') {
+      productUpdate.year = pass1Result.estimated_year;
+    }
+    if (pass1Result.identified_gender) {
+      productUpdate.gender = pass1Result.identified_gender;
+    }
+    if (pass1Result.category_specific_attributes && Object.keys(pass1Result.category_specific_attributes).length > 0) {
+      productUpdate.category_specific_attributes = pass1Result.category_specific_attributes;
+    }
 
-    // Update pricing and market data
-    productUpdate.retail_price = pass4Result.final_base_market_value;
-    productUpdate.platform_prices = platformPrices;
-    productUpdate.ai_platform_recommendation = pass6Result.primary_channel;
-    productUpdate.comparable_listings_links = pass3Result.comparable_listings?.map(c => c.url).filter(Boolean) || [];
-    productUpdate.market_research = comprehensiveAnalysis.market_research_summary;
-    productUpdate.ai_confidence_level = pass1Result.confidence_level;
+    // Update pricing and market data (with validation)
+    if (pass4Result.final_base_market_value && pass4Result.final_base_market_value > 0) {
+      productUpdate.retail_price = pass4Result.final_base_market_value;
+    }
+    if (platformPrices && Object.keys(platformPrices).length > 0) {
+      productUpdate.platform_prices = platformPrices;
+    }
+    if (pass6Result.primary_channel) {
+      productUpdate.ai_platform_recommendation = pass6Result.primary_channel;
+    }
+    if (pass3Result.comparable_listings && Array.isArray(pass3Result.comparable_listings)) {
+      const urls = pass3Result.comparable_listings.map(c => c?.url).filter(Boolean);
+      if (urls.length > 0) {
+        productUpdate.comparable_listings_links = urls;
+      }
+    }
+    if (comprehensiveAnalysis.market_research_summary) {
+      productUpdate.market_research = comprehensiveAnalysis.market_research_summary;
+    }
+    if (pass1Result.confidence_level) {
+      productUpdate.ai_confidence_level = pass1Result.confidence_level;
+    }
+
+    console.log('Updating product with:', Object.keys(productUpdate));
 
     // Update product with AI analysis (use user-scoped for RLS)
     await base44.entities.Product.update(productId, productUpdate);
