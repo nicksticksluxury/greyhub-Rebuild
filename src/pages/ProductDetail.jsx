@@ -617,6 +617,14 @@ Return ONLY the HTML description, no wrapper text.`;
         };
       }
 
+      // Merge category_specific_attributes if present
+      if (updates.category_specific_attributes) {
+        updates.category_specific_attributes = {
+          ...(editedData.category_specific_attributes || {}),
+          ...updates.category_specific_attributes
+        };
+      }
+
       // Save confidence level if market research or pricing data is being imported
       if (updates.market_research || updates.platform_prices || updates.retail_price || updates.msrp) {
         if (editedData.ai_analysis?.confidence_level) {
@@ -629,7 +637,7 @@ Return ONLY the HTML description, no wrapper text.`;
         ...updates
       });
       setHasUnsavedChanges(true);
-      toast.success("Selected items imported!");
+      toast.success("Selected items imported - remember to save!");
     } else if (field === "basic_info_all") {
       const updates = {};
       if (value.brand) updates.brand = value.brand;
