@@ -632,11 +632,18 @@ Return ONLY the HTML description, no wrapper text.`;
         }
       }
 
-      setEditedData({
+      // Create a completely new object to ensure React detects the change
+      const newEditedData = {
         ...editedData,
-        ...updates
-      });
-      setHasUnsavedChanges(true);
+        ...updates,
+        // Force new object references for nested objects
+        platform_prices: updates.platform_prices || editedData.platform_prices,
+        category_specific_attributes: updates.category_specific_attributes || editedData.category_specific_attributes
+      };
+
+      setEditedData(newEditedData);
+      // Use setTimeout to ensure state update completes before setting hasUnsavedChanges
+      setTimeout(() => setHasUnsavedChanges(true), 0);
       toast.success("Selected items imported - remember to save!");
     } else if (field === "basic_info_all") {
       const updates = {};
