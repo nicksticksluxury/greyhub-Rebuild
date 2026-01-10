@@ -38,7 +38,7 @@ export default function SoldInventory() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
-    queryFn: () => base44.entities.Product.list("-sold_date", 1000),
+    queryFn: () => base44.entities.Product.filter({ sold: true }),
   });
 
   const { data: auctions = [] } = useQuery({
