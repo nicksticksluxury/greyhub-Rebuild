@@ -171,6 +171,49 @@ Return:
 - Primary channel
 - Secondary channel (if any)
 - One-sentence justification`
+  },
+  {
+    key: "ai_hero_image_prompt",
+    name: "Hero Image Generation",
+    description: "Prompt for generating AI-enhanced hero images for product listings",
+    category: "Image Enhancement",
+    order: 7,
+    type: "text_prompt",
+    variables_documentation: "Available variables:\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{product_photo} - URL of the main product photo",
+    prompt_content: `Create a professional, eye-catching hero image for this product listing:
+
+Brand: {brand}
+Model: {model}
+Reference: {reference_number}
+
+Base Image: {product_photo}
+
+Requirements:
+- Enhance the product photo while maintaining authenticity
+- Professional lighting and presentation
+- Clean, minimal background
+- Highlight key product features
+- Maintain accurate colors and details`
+  },
+  {
+    key: "ai_beautify_image_prompt",
+    name: "Image Beautification",
+    description: "Prompt for enhancing all product images with AI",
+    category: "Image Enhancement",
+    order: 8,
+    type: "text_prompt",
+    variables_documentation: "Available variables:\n{product_photo} - URL of the product photo to enhance",
+    prompt_content: `Enhance this product photo while preserving authenticity:
+
+Image URL: {product_photo}
+
+Requirements:
+- Improve lighting and color balance
+- Remove distracting backgrounds or blemishes
+- Sharpen details and clarity
+- Maintain product authenticity
+- Professional e-commerce quality
+- Do not alter the actual product appearance`
   }
 ];
 

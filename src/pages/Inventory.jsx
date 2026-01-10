@@ -589,179 +589,177 @@ export default function Inventory() {
                       Bulk Actions ({selectedProductIds.length})
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => setShowExport(true)}>
                       <Download className="w-4 h-4 mr-2" />
                       Export Selected
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Update Fields</DropdownMenuLabel>
+                    
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <ShoppingBag className="w-4 h-4 mr-2" />
+                        eBay
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
+                          {listing ? "Listing..." : "List on eBay"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleBulkUpdateEbay} disabled={listing}>
+                          {listing ? "Updating..." : "Update eBay"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={async () => {
+                          if (selectedProductIds.length === 0) return;
+                          if (!confirm(`Remove ${selectedProductIds.length} products from eBay?`)) return;
+                          const toastId = toast.loading("Removing from eBay...");
+                          try {
+                            await Promise.all(selectedProductIds.map(id => {
+                              const product = products.find(p => p.id === id);
+                              if (!product) return Promise.resolve();
+                              const newExportedTo = { ...(product.exported_to || {}) };
+                              const newPlatformIds = { ...(product.platform_ids || {}) };
+                              delete newExportedTo.ebay;
+                              delete newPlatformIds.ebay;
+                              return base44.entities.Product.update(id, {
+                                exported_to: newExportedTo,
+                                platform_ids: newPlatformIds
+                              });
+                            }));
+                            toast.success(`Removed ${selectedProductIds.length} products from eBay`, { id: toastId });
+                            queryClient.invalidateQueries({ queryKey: ['products'] });
+                            setSelectedProductIds([]);
+                          } catch (error) {
+                            toast.error("Failed to remove from eBay", { id: toastId });
+                          }
+                        }}>
+                          <X className="w-4 h-4 mr-2" />
+                          Unlist from eBay
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <ShoppingBag className="w-4 h-4 mr-2" />
+                        Other Platforms
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={handleBulkListEtsy} disabled={listing}>
+                          {listing ? "Listing..." : "List on Etsy"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleSyncSquare} disabled={syncingSquare}>
+                          {syncingSquare ? "Syncing..." : "Sync to Square"}
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <FileText className="w-4 h-4 mr-2" />
+                        AI & Content
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
+                          {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={async () => {
+                          if (!confirm(`Run full AI analysis on ${selectedProductIds.length} product${selectedProductIds.length > 1 ? 's' : ''}?`)) return;
+                          setSyncing(true);
+                          let completed = 0;
+                          let failed = 0;
+                          for (const productId of selectedProductIds) {
+                            try {
+                              toast.loading(`Analyzing ${completed + 1}/${selectedProductIds.length}...`, { id: 'aiAnalysis' });
+                              const result = await base44.functions.invoke('analyzeProductAI', { productId });
+                              if (result.data.success) completed++;
+                              else failed++;
+                            } catch (error) {
+                              failed++;
+                            }
+                          }
+                          setSyncing(false);
+                          setSelectedProductIds([]);
+                          queryClient.invalidateQueries({ queryKey: ['products'] });
+                          if (completed > 0) {
+                            toast.success(`AI analysis complete: ${completed} succeeded, ${failed} failed`, { id: 'aiAnalysis' });
+                          } else {
+                            toast.error(`All AI analyses failed`, { id: 'aiAnalysis' });
+                          }
+                        }}>
+                          {syncing ? "Analyzing..." : "Full AI Analysis"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setShowImageExportDialog(true)}>
+                          Export Image Links
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Package className="w-4 h-4 mr-2" />
+                        Organization
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Gavel className="w-4 h-4 mr-2" />
+                            Add to Auction
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {auctions.length === 0 ? (
+                              <DropdownMenuItem disabled>No auctions</DropdownMenuItem>
+                            ) : (
+                              auctions.map(auction => (
+                                <DropdownMenuItem 
+                                 key={auction.id}
+                                 onClick={async () => {
+                                   const toastId = toast.loading("Adding to auction...");
+                                   try {
+                                     await Promise.all(selectedProductIds.map(id => 
+                                       base44.entities.Product.update(id, { auction_id: auction.id })
+                                     ));
+                                     toast.success(`Added ${selectedProductIds.length} products to ${auction.name}`, { id: toastId });
+                                     queryClient.invalidateQueries({ queryKey: ['products'] });
+                                     setSelectedProductIds([]);
+                                   } catch (error) {
+                                     toast.error("Failed to add products to auction", { id: toastId });
+                                   }
+                                 }}
+                                >
+                                 {auction.name}
+                                </DropdownMenuItem>
+                              ))
+                            )}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuItem onClick={() => setShowSetSourceDialog(true)}>
+                          Set Source & Shipment
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleUpdateCostFromShipment}>
+                          Update Cost from Shipment
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
                         <User className="w-4 h-4 mr-2" />
-                        Set Gender
+                        Update Fields
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent>
                         <DropdownMenuItem onClick={() => handleBulkUpdateGender("mens")}>
-                          Men's
+                          Set Gender: Men's
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleBulkUpdateGender("womens")}>
-                          Women's
+                          Set Gender: Women's
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleBulkUpdateGender("unisex")}>
-                          Unisex
+                          Set Gender: Unisex
                         </DropdownMenuItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>eBay Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={handleBulkListEbay} disabled={listing}>
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      {listing ? "Listing..." : "List on eBay"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleBulkUpdateEbay} disabled={listing}>
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      {listing ? "Updating..." : "Update eBay"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={async () => {
-                      if (selectedProductIds.length === 0) return;
-                      if (!confirm(`Remove ${selectedProductIds.length} products from eBay?`)) return;
-                      const toastId = toast.loading("Removing from eBay...");
-                      try {
-                        await Promise.all(selectedProductIds.map(id => {
-                          const product = products.find(p => p.id === id);
-                          if (!product) return Promise.resolve();
-                          const newExportedTo = { ...(product.exported_to || {}) };
-                          const newPlatformIds = { ...(product.platform_ids || {}) };
-                          delete newExportedTo.ebay;
-                          delete newPlatformIds.ebay;
-                          return base44.entities.Product.update(id, {
-                            exported_to: newExportedTo,
-                            platform_ids: newPlatformIds
-                          });
-                        }));
-                        toast.success(`Removed ${selectedProductIds.length} products from eBay`, { id: toastId });
-                        queryClient.invalidateQueries({ queryKey: ['products'] });
-                        setSelectedProductIds([]);
-                      } catch (error) {
-                        toast.error("Failed to remove from eBay", { id: toastId });
-                      }
-                    }}>
-                      <X className="w-4 h-4 mr-2" />
-                      Unlist from eBay
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Other Platforms</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={handleBulkListEtsy} disabled={listing}>
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      {listing ? "Listing..." : "List on Etsy"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleSyncSquare} disabled={syncingSquare}>
-                      {syncingSquare ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <ShoppingBag className="w-4 h-4 mr-2" />
-                      )}
-                      {syncingSquare ? "Syncing..." : "Sync to Square"}
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Product Data</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={handleBulkGenerateDescriptions} disabled={generatingDescriptions}>
-                      {generatingDescriptions ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <FileText className="w-4 h-4 mr-2" />
-                      )}
-                      {generatingDescriptions ? "Generating..." : "Generate Titles & Descriptions"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={async () => {
-                      if (!confirm(`Run full AI analysis on ${selectedProductIds.length} product${selectedProductIds.length > 1 ? 's' : ''}? This will update ai_analysis and ai_platform_recommendation fields only.`)) {
-                        return;
-                      }
-
-                      setSyncing(true);
-                      let completed = 0;
-                      let failed = 0;
-
-                      for (const productId of selectedProductIds) {
-                        try {
-                          toast.loading(`Analyzing ${completed + 1}/${selectedProductIds.length}...`, { id: 'aiAnalysis' });
-                          
-                          const result = await base44.functions.invoke('analyzeProductAI', { productId });
-                          
-                          if (result.data.success) {
-                            completed++;
-                          } else {
-                            failed++;
-                          }
-                        } catch (error) {
-                          console.error('AI analysis failed:', error);
-                          failed++;
-                        }
-                      }
-
-                      setSyncing(false);
-                      setSelectedProductIds([]);
-                      queryClient.invalidateQueries({ queryKey: ['products'] });
-
-                      if (completed > 0) {
-                        toast.success(`AI analysis complete: ${completed} succeeded, ${failed} failed`, { id: 'aiAnalysis' });
-                      } else {
-                        toast.error(`All AI analyses failed`, { id: 'aiAnalysis' });
-                      }
-                    }}>
-                      <Loader2 className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                      {syncing ? "Analyzing..." : "Full AI Analysis"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowImageExportDialog(true)}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Export Image Links
-                    </DropdownMenuItem>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <Gavel className="w-4 h-4 mr-2" />
-                        Add to Auction
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
-                        {auctions.length === 0 ? (
-                          <DropdownMenuItem disabled>No auctions available</DropdownMenuItem>
-                        ) : (
-                          auctions.map(auction => (
-                            <DropdownMenuItem 
-                             key={auction.id}
-                             onClick={async () => {
-                               const toastId = toast.loading("Adding to auction...");
-                               try {
-                                 await Promise.all(selectedProductIds.map(id => 
-                                   base44.entities.Product.update(id, { auction_id: auction.id })
-                                 ));
-                                 toast.success(`Added ${selectedProductIds.length} products to ${auction.name}`, { id: toastId });
-                                 queryClient.invalidateQueries({ queryKey: ['products'] });
-                                 setSelectedProductIds([]);
-                               } catch (error) {
-                                 toast.error("Failed to add products to auction", { id: toastId });
-                               }
-                             }}
-                            >
-                             {auction.name}
-                            </DropdownMenuItem>
-                          ))
-                        )}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    <DropdownMenuItem onClick={() => setShowSetSourceDialog(true)}>
-                      <Package className="w-4 h-4 mr-2" />
-                      Set Source & Shipment
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleUpdateCostFromShipment}>
-                      <Package className="w-4 h-4 mr-2" />
-                      Update Cost from Shipment
-                    </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setShowReassignDialog(true)} className="text-red-600">
