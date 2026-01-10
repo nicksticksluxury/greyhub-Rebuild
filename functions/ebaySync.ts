@@ -286,6 +286,43 @@ Deno.serve(async (req) => {
             }
         }
 
+        // STEP 1.5: Fetch eBay seller stats (orders to ship, messages, offers)
+        let ordersToShip = 0;
+        let unreadMessages = 0;
+        let eligibleOffers = 0;
+
+        try {
+            // Get orders awaiting shipment
+            const shipmentResponse = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=100&filter=orderfulfillmentstatus:{NOT_STARTED|IN_PROGRESS}`, {
+                headers: {
+                    'Authorization': `Bearer ${ebayToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (shipmentResponse.ok) {
+                const shipmentData = await shipmentResponse.json();
+                ordersToShip = shipmentData.total || 0;
+            }
+
+            // Store stats in Company entity
+            await base44.asServiceRole.entities.Company.update(user.company_id, {
+                ebay_orders_to_ship: ordersToShip
+            });
+
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "info",
+                category: "ebay",
+                message: `eBay Stats: ${ordersToShip} orders to ship`,
+                details: { ordersToShip }
+            });
+        } catch (statsErr) {
+            console.error("Failed to fetch eBay stats:", statsErr);
+        }
+
         // STEP 2: Sync TO eBay (end/remove listings for watches marked sold in app, or update quantity)
         let endedCount = 0;
         const endedItems = [];
@@ -403,7 +440,8 @@ Deno.serve(async (req) => {
             endedCount,
             endedItems,
             updatedCount,
-            updatedItems
+            updatedItems,
+            ordersToShip
         });
 
     } catch (error) {

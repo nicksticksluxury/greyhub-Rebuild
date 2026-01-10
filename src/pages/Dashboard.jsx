@@ -69,6 +69,16 @@ export default function Dashboard() {
     initialData: [],
   });
 
+  const { data: company } = useQuery({
+    queryKey: ['company'],
+    queryFn: async () => {
+      if (!user?.company_id) return null;
+      const companies = await base44.entities.Company.filter({ id: user.company_id });
+      return companies[0] || null;
+    },
+    enabled: !!user?.company_id,
+  });
+
   // Calculate key metrics
   const activeProducts = products.filter(p => !p.sold && p.repair_status !== 'out_for_repair');
   const soldProducts = products.filter(p => p.sold);
@@ -198,6 +208,40 @@ export default function Dashboard() {
             <p className="text-xs text-emerald-600 mt-1">Net After Costs</p>
           </Card>
         </div>
+
+        {/* eBay Stats Section */}
+        <Card className="p-6 mb-8 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <div className="flex items-center gap-2 mb-4">
+            <ShoppingBag className="w-6 h-6 text-blue-600" />
+            <h2 className="text-xl font-bold text-blue-900">eBay Seller Dashboard</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
+                <Package className="w-5 h-5 text-orange-600" />
+                <Badge className="bg-orange-600 text-white">{company?.ebay_orders_to_ship || 0}</Badge>
+              </div>
+              <p className="text-sm text-slate-600 font-semibold">Orders to Ship</p>
+              <p className="text-xs text-slate-500 mt-1">Awaiting fulfillment</p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
+                <Bell className="w-5 h-5 text-blue-600" />
+                <Badge className="bg-blue-600 text-white">{ebayOffers.length}</Badge>
+              </div>
+              <p className="text-sm text-slate-600 font-semibold">Open Offers</p>
+              <p className="text-xs text-slate-500 mt-1">Pending best offers</p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
+                <DollarSign className="w-5 h-5 text-green-600" />
+                <Badge className="bg-green-600 text-white">{products.filter(p => p.exported_to?.ebay && !p.sold).length}</Badge>
+              </div>
+              <p className="text-sm text-slate-600 font-semibold">Active Listings</p>
+              <p className="text-xs text-slate-500 mt-1">Currently on eBay</p>
+            </div>
+          </div>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* eBay Offers */}
