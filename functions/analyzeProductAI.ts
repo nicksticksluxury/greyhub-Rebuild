@@ -469,7 +469,8 @@ Deno.serve(async (req) => {
       price_range_high: pass3Result.price_range_high,
       num_comparables_found: pass3Result.num_comparables_found,
       market_demand_indicators: pass3Result.market_demand_indicators,
-      comparable_listings: pass3Result.comparable_listings,
+      comparable_listings: pass3Result.comparables || pass3Result.comparable_listings,
+      search_notes: pass3Result.search_notes,
 
       // Pass 4: Validated Pricing
       filtered_median_sold_price: pass4Result.filtered_median_sold_price,
