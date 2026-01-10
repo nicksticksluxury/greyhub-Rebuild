@@ -260,21 +260,25 @@ Deno.serve(async (req) => {
     const pass3Schema = {
       type: "object",
       properties: {
-        median_sold_price: { type: "number" },
-        price_range_low: { type: "number" },
-        price_range_high: { type: "number" },
-        num_comparables_found: { type: "number" },
-        market_demand_indicators: { type: "string" },
-        comparable_listings: { 
+        comparables: { 
           type: "array", 
           items: { 
             type: "object",
             properties: {
               url: { type: "string" },
-              price: { type: "number" }
+              sold_price: { type: "number" },
+              sold_date: { type: "string" },
+              condition: { type: "string" },
+              sold_proof: { type: "string" }
             }
           }
-        }
+        },
+        median_sold_price: { type: "number" },
+        num_comparables_found: { type: "number" },
+        search_notes: { type: "string" },
+        price_range_low: { type: "number" },
+        price_range_high: { type: "number" },
+        market_demand_indicators: { type: "string" }
       }
     };
 
