@@ -478,19 +478,64 @@ Deno.serve(async (req) => {
 
             // Get unread member messages count
             try {
-                const messagesResponse = await fetch(`https://api.ebay.com/post-order/v2/inquiry/search?inquiry_status=UNREAD`, {
+                // Try Member Messages API
+                const messagesResponse = await fetch(`https://api.ebay.com/ws/api.dll`, {
+                    method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${ebayToken}`,
-                        'Content-Type': 'application/json'
-                    }
+                        'X-EBAY-API-SITEID': '0',
+                        'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+                        'X-EBAY-API-CALL-NAME': 'GetMemberMessages',
+                        'X-EBAY-API-IAF-TOKEN': ebayToken,
+                        'Content-Type': 'text/xml'
+                    },
+                    body: `<?xml version="1.0" encoding="utf-8"?>
+                    <GetMemberMessagesRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+                      <DetailLevel>ReturnHeaders</DetailLevel>
+                      <MailMessageType>All</MailMessageType>
+                      <MessageStatus>Unanswered</MessageStatus>
+                      <MemberMessageID>0</MemberMessageID>
+                    </GetMemberMessagesRequest>`
+                });
+
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "debug",
+                    category: "ebay",
+                    message: `Messages API response status: ${messagesResponse.status}`,
+                    details: { status: messagesResponse.status }
                 });
 
                 if (messagesResponse.ok) {
-                    const messagesData = await messagesResponse.json();
-                    unreadMemberMessages = messagesData.total || 0;
+                    const messagesText = await messagesResponse.text();
+                    await base44.asServiceRole.entities.Log.create({
+                        company_id: user.company_id,
+                        user_id: user.id,
+                        timestamp: new Date().toISOString(),
+                        level: "debug",
+                        category: "ebay",
+                        message: `Messages API response body`,
+                        details: { body: messagesText.substring(0, 500) }
+                    });
+
+                    // Parse XML to get count
+                    const countMatch = messagesText.match(/<PaginationResult>[\s\S]*?<TotalNumberOfEntries>(\d+)<\/TotalNumberOfEntries>/);
+                    if (countMatch) {
+                        unreadMemberMessages = parseInt(countMatch[1]) || 0;
+                    }
                 }
             } catch (msgErr) {
                 console.error("Failed to fetch unread messages:", msgErr);
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "error",
+                    category: "ebay",
+                    message: `Failed to fetch member messages: ${msgErr.message}`,
+                    details: { error: msgErr.message }
+                });
             }
 
             // Store stats in Company entity
