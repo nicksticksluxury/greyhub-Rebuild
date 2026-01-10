@@ -82,25 +82,42 @@ Deno.serve(async (req) => {
       });
     }
 
-    // End the listing on eBay
-    const endResponse = await fetch(
-      `https://api.ebay.com/sell/inventory/v1/inventory_item/${encodeURIComponent(product.id)}/offer/${encodeURIComponent(ebayItemId)}`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    // End the listing on eBay using Trading API
+    const endItemXml = `<?xml version="1.0" encoding="utf-8"?>
+<EndItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <ItemID>${ebayItemId}</ItemID>
+  <EndingReason>NotAvailable</EndingReason>
+</EndItemRequest>`;
 
-    // eBay returns 204 No Content on success
-    if (endResponse.status !== 204 && !endResponse.ok) {
+    const endResponse = await fetch('https://api.ebay.com/ws/api.dll', {
+      method: 'POST',
+      headers: {
+        'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+        'X-EBAY-API-CALL-NAME': 'EndItem',
+        'X-EBAY-API-SITEID': '0',
+        'X-EBAY-API-IAF-TOKEN': accessToken,
+        'Content-Type': 'text/xml'
+      },
+      body: endItemXml
+    });
+
+    if (!endResponse.ok) {
       const error = await endResponse.text();
       console.error('eBay end listing error:', error);
       return Response.json({ 
         error: 'Failed to end eBay listing', 
         details: error 
+      }, { status: 500 });
+    }
+
+    const responseText = await endResponse.text();
+    
+    // Check for eBay API errors in XML response
+    if (responseText.includes('<Ack>Failure</Ack>') || responseText.includes('<Ack>Error</Ack>')) {
+      console.error('eBay API error:', responseText);
+      return Response.json({ 
+        error: 'Failed to end eBay listing', 
+        details: responseText 
       }, { status: 500 });
     }
 
