@@ -509,6 +509,7 @@ Deno.serve(async (req) => {
       current_retail_price: pass4Result.final_base_market_value,
       original_msrp: product.msrp || null,
       market_research_summary: [
+        `Base Market Value (BMV): $${(pass4Result.final_base_market_value || 0).toFixed(2)}`,
         typeof pass2Result.market_positioning === 'object' ? JSON.stringify(pass2Result.market_positioning) : pass2Result.market_positioning,
         `Demand: ${typeof pass3Result.market_demand_indicators === 'object' ? JSON.stringify(pass3Result.market_demand_indicators) : pass3Result.market_demand_indicators}`,
         typeof pass4Result.market_insights === 'object' ? JSON.stringify(pass4Result.market_insights) : pass4Result.market_insights,
