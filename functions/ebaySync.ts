@@ -231,9 +231,9 @@ Deno.serve(async (req) => {
                     
                     await base44.entities.Product.update(watch.id, updateData);
 
-                    // Create Alert
+                    // Create Alert (using regular client, not service role, for proper RLS)
                     try {
-                        await base44.asServiceRole.entities.Alert.create({
+                        await base44.entities.Alert.create({
                             company_id: user.company_id,
                             user_id: user.id,
                             type: "success",
@@ -318,14 +318,14 @@ Deno.serve(async (req) => {
                 const ordersToShipList = shipmentData.orders || [];
                 
                 // First, delete all existing "to ship" alerts
-                const existingShipAlerts = await base44.asServiceRole.entities.Alert.filter({
+                const existingShipAlerts = await base44.entities.Alert.filter({
                     company_id: user.company_id,
                     type: "info",
                     title: "eBay Order to Ship"
                 });
-                
+
                 for (const alert of existingShipAlerts) {
-                    await base44.asServiceRole.entities.Alert.delete(alert.id);
+                    await base44.entities.Alert.delete(alert.id);
                 }
                 
                 // Create new alerts for current orders to ship
@@ -422,7 +422,7 @@ Deno.serve(async (req) => {
                                 }
                             }
                             
-                            const alert = await base44.asServiceRole.entities.Alert.create({
+                            const alert = await base44.entities.Alert.create({
                                 company_id: user.company_id,
                                 user_id: user.id,
                                 type: "info",
