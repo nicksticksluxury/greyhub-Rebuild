@@ -5,9 +5,31 @@ async function saveToastNotification(type, message) {
   try {
     const user = await base44.auth.me();
     if (user && user.company_id) {
+      const companyId = user.company_id;
+      const userId = user.id;
+      
+      // Get current count of notifications for this user
+      const existingToasts = await base44.entities.ToastNotification.filter({
+        company_id: companyId,
+        user_id: userId
+      });
+      
+      // If we have 100 or more, delete the oldest ones
+      if (existingToasts.length >= 100) {
+        const sortedToasts = existingToasts.sort((a, b) => 
+          new Date(a.timestamp) - new Date(b.timestamp)
+        );
+        
+        const toDelete = sortedToasts.slice(0, existingToasts.length - 99);
+        await Promise.all(
+          toDelete.map(toast => base44.entities.ToastNotification.delete(toast.id))
+        );
+      }
+      
+      // Create new notification
       await base44.entities.ToastNotification.create({
-        company_id: user.company_id,
-        user_id: user.id,
+        company_id: companyId,
+        user_id: userId,
         timestamp: new Date().toISOString(),
         type,
         message,
