@@ -264,22 +264,6 @@ Deno.serve(async (req) => {
                     
                     await base44.entities.Product.update(watch.id, updateData);
 
-                    // Create Alert (using regular client, not service role, for proper RLS)
-                    try {
-                        await base44.entities.Alert.create({
-                            company_id: user.company_id,
-                            user_id: user.id,
-                            type: "success",
-                            title: "Item Sold on eBay",
-                            message: `Sold ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice} ($${pricePerUnit.toFixed(2)} each)${remainingQuantity > 0 ? `. ${remainingQuantity} remaining.` : ''}`,
-                            link: `ProductDetail?id=${watch.id}`,
-                            read: false,
-                            metadata: { watch_id: watch.id, platform: 'ebay', price: soldPrice, quantity: quantitySold }
-                        });
-                    } catch (alertErr) {
-                        console.error("Failed to create alert", alertErr);
-                    }
-
                     syncedCount++;
                     syncedItems.push(`${quantitySold}x ${watch.brand} ${watch.model}`);
                     
