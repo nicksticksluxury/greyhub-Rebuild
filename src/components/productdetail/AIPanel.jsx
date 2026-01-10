@@ -483,17 +483,17 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
 
           {/* Pricing Logic */}
           {aiAnalysis.pricing_recommendations && Object.keys(aiAnalysis.pricing_recommendations).length > 0 && aiAnalysis.final_base_market_value > 0 && (
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 space-y-2">
+              <div className="flex items-center gap-2">
                 <Info className="w-4 h-4 text-blue-600" />
                 <span className="text-xs font-semibold text-blue-900 uppercase">Pricing Logic</span>
               </div>
-              <div className="text-sm text-blue-800 space-y-1">
-                <p><strong>Base Market Value (BMV):</strong> ${aiAnalysis.final_base_market_value?.toLocaleString()}</p>
-                <p><strong>Source:</strong> {aiAnalysis.num_comparables_found || 0} sold comparables</p>
-                <p className="text-xs text-blue-700 mt-2 leading-relaxed">
-                  eBay prices = BMV × 0.95 + cost floor protection. Whatnot = BMV at listing, cost × 1.10 for auctions. All prices enforced above break-even after fees.
-                </p>
+              <div className="text-xs text-blue-800 space-y-2 font-mono bg-white rounded p-2 border border-blue-100">
+                <p><strong>BMV:</strong> ${aiAnalysis.final_base_market_value?.toLocaleString()} ({aiAnalysis.num_comparables_found || 0} comps)</p>
+                <p><strong>eBay BIN:</strong> MAX(BMV × 0.95, Cost × 1.25, Cost ÷ 0.82)</p>
+                <p><strong>eBay Best Offer:</strong> Accept = BIN × 0.92 | Counter = BIN × 0.88</p>
+                <p><strong>Whatnot Display:</strong> MAX(BMV × 1.00, Cost × 1.30)</p>
+                <p><strong>Whatnot Auction:</strong> MAX(Cost ÷ 0.88, Cost × 1.10)</p>
               </div>
             </div>
           )}
