@@ -329,27 +329,86 @@ Deno.serve(async (req) => {
                 }
                 
                 // Create new alerts for current orders to ship
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "info",
+                    category: "ebay",
+                    message: `Processing ${ordersToShipList.length} orders for ship alerts`,
+                    details: { orderCount: ordersToShipList.length }
+                });
+                
                 for (const order of ordersToShipList) {
                     for (const item of order.lineItems || []) {
                         const sku = item.sku;
                         const legacyItemId = item.legacyItemId;
+                        
+                        await base44.asServiceRole.entities.Log.create({
+                            company_id: user.company_id,
+                            user_id: user.id,
+                            timestamp: new Date().toISOString(),
+                            level: "debug",
+                            category: "ebay",
+                            message: `Processing order item: SKU=${sku}, legacyItemId=${legacyItemId}, orderId=${order.orderId}`,
+                            details: { sku, legacyItemId, orderId: order.orderId, itemTitle: item.title }
+                        });
                         
                         try {
                             // Try to find product by SKU first, then by eBay item ID
                             let products = [];
                             if (sku) {
                                 products = await base44.entities.Product.filter({ id: sku });
+                                await base44.asServiceRole.entities.Log.create({
+                                    company_id: user.company_id,
+                                    user_id: user.id,
+                                    timestamp: new Date().toISOString(),
+                                    level: "debug",
+                                    category: "ebay",
+                                    message: `SKU search result: found ${products.length} products`,
+                                    details: { sku, foundCount: products.length }
+                                });
                             }
                             
                             // If not found by SKU, try to find by eBay item ID
                             if (products.length === 0 && legacyItemId) {
                                 const allProducts = await base44.entities.Product.list();
                                 products = allProducts.filter(p => p.platform_ids?.ebay === legacyItemId);
+                                await base44.asServiceRole.entities.Log.create({
+                                    company_id: user.company_id,
+                                    user_id: user.id,
+                                    timestamp: new Date().toISOString(),
+                                    level: "debug",
+                                    category: "ebay",
+                                    message: `eBay ID search result: found ${products.length} products`,
+                                    details: { legacyItemId, foundCount: products.length, totalProducts: allProducts.length }
+                                });
                             }
                             
-                            if (products.length === 0) continue;
+                            if (products.length === 0) {
+                                await base44.asServiceRole.entities.Log.create({
+                                    company_id: user.company_id,
+                                    user_id: user.id,
+                                    timestamp: new Date().toISOString(),
+                                    level: "warning",
+                                    category: "ebay",
+                                    message: `No product found for order item`,
+                                    details: { sku, legacyItemId, orderId: order.orderId }
+                                });
+                                continue;
+                            }
                             
                             const product = products[0];
+                            
+                            await base44.asServiceRole.entities.Log.create({
+                                company_id: user.company_id,
+                                user_id: user.id,
+                                timestamp: new Date().toISOString(),
+                                level: "info",
+                                category: "ebay",
+                                message: `Matched product: ${product.brand} ${product.model}`,
+                                details: { productId: product.id, sku, legacyItemId }
+                            });
                             
                             // Try to get eBay listing URL from item's legacyItemId or lineItemId
                             let ebayItemUrl = null;
@@ -363,7 +422,7 @@ Deno.serve(async (req) => {
                                 }
                             }
                             
-                            await base44.asServiceRole.entities.Alert.create({
+                            const alert = await base44.asServiceRole.entities.Alert.create({
                                 company_id: user.company_id,
                                 user_id: user.id,
                                 type: "info",
@@ -377,8 +436,27 @@ Deno.serve(async (req) => {
                                     order_id: order.orderId 
                                 }
                             });
+                            
+                            await base44.asServiceRole.entities.Log.create({
+                                company_id: user.company_id,
+                                user_id: user.id,
+                                timestamp: new Date().toISOString(),
+                                level: "success",
+                                category: "ebay",
+                                message: `Created ship alert for ${product.brand} ${product.model}`,
+                                details: { alertId: alert.id, productId: product.id, orderId: order.orderId }
+                            });
                         } catch (err) {
                             console.error("Failed to create ship alert:", err);
+                            await base44.asServiceRole.entities.Log.create({
+                                company_id: user.company_id,
+                                user_id: user.id,
+                                timestamp: new Date().toISOString(),
+                                level: "error",
+                                category: "ebay",
+                                message: `Failed to create ship alert: ${err.message}`,
+                                details: { error: err.message, stack: err.stack, sku, legacyItemId }
+                            });
                         }
                     }
                 }
