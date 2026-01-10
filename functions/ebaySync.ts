@@ -305,9 +305,23 @@ Deno.serve(async (req) => {
                 ordersToShip = shipmentData.total || 0;
             }
 
+            // Get active listings count (eligible to send offers)
+            const inventoryResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item?limit=1`, {
+                headers: {
+                    'Authorization': `Bearer ${ebayToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (inventoryResponse.ok) {
+                const inventoryData = await inventoryResponse.json();
+                eligibleOffers = inventoryData.total || 0;
+            }
+
             // Store stats in Company entity
             await base44.asServiceRole.entities.Company.update(user.company_id, {
-                ebay_orders_to_ship: ordersToShip
+                ebay_orders_to_ship: ordersToShip,
+                ebay_eligible_offers: eligibleOffers
             });
 
             await base44.asServiceRole.entities.Log.create({
@@ -316,8 +330,8 @@ Deno.serve(async (req) => {
                 timestamp: new Date().toISOString(),
                 level: "info",
                 category: "ebay",
-                message: `eBay Stats: ${ordersToShip} orders to ship`,
-                details: { ordersToShip }
+                message: `eBay Stats: ${ordersToShip} orders to ship, ${eligibleOffers} eligible offers`,
+                details: { ordersToShip, eligibleOffers }
             });
         } catch (statsErr) {
             console.error("Failed to fetch eBay stats:", statsErr);

@@ -215,7 +215,7 @@ export default function Dashboard() {
             <ShoppingBag className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-bold text-blue-900">eBay Seller Dashboard</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg p-4 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
                 <Package className="w-5 h-5 text-orange-600" />
@@ -234,6 +234,14 @@ export default function Dashboard() {
             </div>
             <div className="bg-white rounded-lg p-4 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
+                <ShoppingBag className="w-5 h-5 text-purple-600" />
+                <Badge className="bg-purple-600 text-white">{company?.ebay_eligible_offers || 0}</Badge>
+              </div>
+              <p className="text-sm text-slate-600 font-semibold">Eligible to Send Offers</p>
+              <p className="text-xs text-slate-500 mt-1">Active listings</p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
                 <DollarSign className="w-5 h-5 text-green-600" />
                 <Badge className="bg-green-600 text-white">{products.filter(p => p.exported_to?.ebay && !p.sold).length}</Badge>
               </div>
@@ -241,6 +249,35 @@ export default function Dashboard() {
               <p className="text-xs text-slate-500 mt-1">Currently on eBay</p>
             </div>
           </div>
+          
+          {company?.ebay_orders_to_ship > 0 && (
+            <div className="mt-4 bg-white rounded-lg p-4 border border-orange-200">
+              <h3 className="text-sm font-bold text-slate-900 mb-3">Items Awaiting Shipment</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {products
+                  .filter(p => p.sold && p.sold_platform === 'ebay' && p.platform_ids?.ebay && p.listing_urls?.ebay)
+                  .slice(0, 10)
+                  .map(product => (
+                    <div key={product.id} className="flex items-center justify-between p-2 bg-orange-50 rounded border border-orange-200">
+                      <div className="flex-1">
+                        <Link to={createPageUrl(`ProductDetail?id=${product.id}`)} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
+                          {product.brand} {product.model}
+                        </Link>
+                        <p className="text-xs text-slate-500">${product.sold_price?.toFixed(2) || 'N/A'}</p>
+                      </div>
+                      <a 
+                        href={product.listing_urls.ebay} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        eBay Listing →
+                      </a>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </Card>
 
 
