@@ -190,24 +190,42 @@ Deno.serve(async (req) => {
                     const watch = watches[0];
 
                     if (watch.sold && watch.quantity === 0) continue; // Already fully processed
-                    
+
                     // Check if this specific order has already been synced
                     const soldDate = new Date(order.creationDate).toISOString().split('T')[0];
+                    const soldPrice = parseFloat(item.total.value);
+                    const pricePerUnit = soldPrice / quantitySold;
+
                     const existingSoldProducts = await base44.entities.Product.filter({ 
                         sold: true, 
                         sold_platform: 'ebay',
                         sold_date: soldDate,
                         original_watch_id: watch.id
                     });
-                    
+
+                    await base44.asServiceRole.entities.Log.create({
+                        company_id: user.company_id,
+                        user_id: user.id,
+                        timestamp: new Date().toISOString(),
+                        level: "debug",
+                        category: "ebay",
+                        message: `Checking for existing sold products: watch_id=${watch.id}, sold_date=${soldDate}, found=${existingSoldProducts.length}`,
+                        details: { watch_id: watch.id, sold_date: soldDate, found_count: existingSoldProducts.length, order_id: order.orderId }
+                    });
+
                     if (existingSoldProducts.length > 0) {
                         // Order already synced, skip it
+                        await base44.asServiceRole.entities.Log.create({
+                            company_id: user.company_id,
+                            user_id: user.id,
+                            timestamp: new Date().toISOString(),
+                            level: "info",
+                            category: "ebay",
+                            message: `Skipping already synced order: ${order.orderId}`,
+                            details: { order_id: order.orderId, watch_id: watch.id }
+                        });
                         continue;
                     }
-
-                    const soldDate = new Date(order.creationDate).toISOString().split('T')[0];
-                    const soldPrice = parseFloat(item.total.value);
-                    const pricePerUnit = soldPrice / quantitySold;
 
                     const currentQuantity = watch.quantity || 1;
                     const remainingQuantity = Math.max(0, currentQuantity - quantitySold);
