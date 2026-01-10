@@ -516,7 +516,7 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                 </span>
               </div>
               <div className="space-y-2">
-                {platform === 'ebay' && aiAnalysis.pricing_recommendations.ebay_bin && (
+                {aiAnalysis.pricing_recommendations.ebay_bin && (
                   <div 
                     className={`p-2 rounded cursor-pointer border transition-colors ${selectedKeys.has('price_ebay') ? 'bg-white border-amber-300 shadow-sm' : 'bg-white/50 border-transparent hover:bg-white/80'}`}
                     onClick={() => toggleSelection('price_ebay')}
