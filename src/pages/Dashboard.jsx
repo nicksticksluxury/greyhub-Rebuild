@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, TrendingUp, DollarSign, Package, Bell, ShoppingBag, AlertCircle, Check } from "lucide-react";
+import { LayoutDashboard, TrendingUp, DollarSign, Package, Bell, ShoppingBag, AlertCircle, Check, RefreshCw, Plus } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { toast } from "../components/utils/toast";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -19,6 +22,40 @@ export default function Dashboard() {
     };
     loadUser();
   }, []);
+
+  const handleSyncEbay = async () => {
+    setSyncing(true);
+    try {
+      const result = await base44.functions.invoke("ebaySync");
+      if (result.data.success) {
+        const messages = [];
+        if (result.data.syncedCount > 0) {
+          messages.push(`Imported ${result.data.syncedCount} sales`);
+        }
+        if (result.data.updatedCount > 0) {
+          messages.push(`Updated ${result.data.updatedCount} quantities`);
+        }
+        if (result.data.endedCount > 0) {
+          messages.push(`Ended ${result.data.endedCount} listings`);
+        }
+        
+        if (messages.length > 0) {
+          toast.success(messages.join(" | "));
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+          queryClient.invalidateQueries({ queryKey: ['alerts'] });
+        } else {
+          toast.info("Sync complete. No changes needed.");
+        }
+      } else {
+        toast.error("Sync failed: " + (result.data.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sync with eBay");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
@@ -93,9 +130,28 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <LayoutDashboard className="w-8 h-8 text-slate-800" />
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <LayoutDashboard className="w-8 h-8 text-slate-800" />
+            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              onClick={handleSyncEbay}
+              disabled={syncing}
+              variant="outline"
+              className="border-slate-300 hover:bg-slate-50"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing...' : 'Sync Sales'}
+            </Button>
+            <Link to={createPageUrl("AddProduct")}>
+              <Button className="bg-slate-800 hover:bg-slate-900 shadow-md">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Product
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Key Metrics */}

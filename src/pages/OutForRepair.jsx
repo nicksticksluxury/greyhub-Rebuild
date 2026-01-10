@@ -108,7 +108,7 @@ export default function OutForRepair() {
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-[1800px] mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-amber-900">Out for Repair</h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-slate-500">
@@ -125,6 +125,40 @@ export default function OutForRepair() {
                     </button>
                   </span>
                 )}
+              </div>
+              
+              {/* Financial Summary */}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 border border-orange-200">
+                  <p className="text-xs text-orange-600 font-semibold uppercase mb-1">Total Cost</p>
+                  <p className="text-2xl font-bold text-orange-900">
+                    ${filteredProducts.reduce((sum, p) => {
+                      const cost = (p.cost || 0);
+                      const repairCost = (p.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
+                      return sum + (cost + repairCost) * (p.quantity || 1);
+                    }, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                  <p className="text-xs text-purple-600 font-semibold uppercase mb-1">Potential Value</p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    ${filteredProducts.reduce((sum, p) => sum + (p.retail_price || 0) * (p.quantity || 1), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-3 border border-emerald-200">
+                  <p className="text-xs text-emerald-600 font-semibold uppercase mb-1">Potential Profit</p>
+                  <p className="text-2xl font-bold text-emerald-900">
+                    ${(() => {
+                      const totalCost = filteredProducts.reduce((sum, p) => {
+                        const cost = (p.cost || 0);
+                        const repairCost = (p.repair_costs || []).reduce((s, r) => s + (r.cost || 0), 0);
+                        return sum + (cost + repairCost) * (p.quantity || 1);
+                      }, 0);
+                      const totalValue = filteredProducts.reduce((sum, p) => sum + (p.retail_price || 0) * (p.quantity || 1), 0);
+                      return (totalValue - totalCost).toLocaleString(undefined, { maximumFractionDigits: 0 });
+                    })()}
+                  </p>
+                </div>
               </div>
             </div>
             <div className="flex gap-3">
