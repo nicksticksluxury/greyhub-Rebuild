@@ -328,33 +328,12 @@ Deno.serve(async (req) => {
     console.log('Pass 4 completed - BMV:', pass4Result.final_base_market_value);
 
     // ============================================================================
-    // PASS 5: PRICING FORMULAS (JSON CONFIG - CALCULATION, NOT LLM)
+    // PASS 5: PRICING FORMULAS (BACKEND CALCULATION - NOT AI)
     // ============================================================================
     console.log('\n=== PASS 5: PRICING FORMULAS ===');
     
-    const pass5Prompt = getPrompt('ai_pricing_formulas_pass5');
-    if (!pass5Prompt) {
-      return Response.json({ 
-        error: 'AI prompt configuration missing: ai_pricing_formulas_pass5' 
-      }, { status: 500 });
-    }
-
-    // Parse the pricing formulas JSON config
-    let pricingConfig;
-    try {
-      pricingConfig = JSON.parse(pass5Prompt.prompt_content);
-    } catch (e) {
-      return Response.json({ 
-        error: 'Invalid pricing formulas JSON configuration' 
-      }, { status: 500 });
-    }
-
     const bmv = pass4Result.final_base_market_value || 0;
     const cost = product.cost || 0;
-
-    // Calculate pricing floor
-    const pricingFloorMultiplier = pricingConfig.pricing_floor?.cost_multiplier || 1.2;
-    const pricingFloor = cost * pricingFloorMultiplier;
 
     // Check for zero cost handling
     const hasZeroCost = cost === 0 || cost === null || cost === undefined;
@@ -362,34 +341,60 @@ Deno.serve(async (req) => {
     // Calculate platform prices based on formulas
     const platformPrices = {};
 
-    if (hasZeroCost && pricingConfig.zero_cost_handling?.enabled) {
+    if (hasZeroCost) {
       // Return all zeros with note
-      platformPrices.ebay = 0;
-      platformPrices.whatnot = 0;
-      platformPrices.square = 0;
-      platformPrices.etsy = 0;
-      platformPrices.poshmark = 0;
-      platformPrices.mercari = 0;
-      platformPrices.pricing_note = "Cost is Empty";
+      platformPrices.ebay_bin = 0;
+      platformPrices.ebay_best_offer_auto_decline = 0;
+      platformPrices.ebay_best_offer_auto_accept = 0;
+      platformPrices.ebay_best_offer_counter = 0;
+      platformPrices.whatnot_display = 0;
+      platformPrices.whatnot_auction_start = 0;
+      platformPrices.bmv = bmv;
+      platformPrices.pricing_notes = "Cost is Empty - Cannot Calculate Prices";
       console.log('Pass 5 - Zero cost detected, all prices set to $0');
     } else {
-      // eBay BIN pricing
-      const ebayBmvPrice = bmv * (pricingConfig.ebay_bin_multipliers?.bmv_multiplier || 0.95);
-      const ebayCostMinimum = cost * (pricingConfig.ebay_bin_multipliers?.cost_multiplier || 1.25);
-      platformPrices.ebay = Math.max(ebayBmvPrice, ebayCostMinimum, pricingFloor);
+      // Fee-safe floors
+      const ebayFeeSafeFloor = cost / (1 - 0.18); // 18% fee rate
+      const whatnotFeeSafeFloor = cost / (1 - 0.12); // 12% fee rate
 
-      // Whatnot pricing
-      const whatnotBmvDisplay = bmv * (pricingConfig.whatnot?.display_bmv_multiplier || 1.00);
-      const whatnotCostDisplay = cost * (pricingConfig.whatnot?.display_cost_multiplier || 1.30);
-      platformPrices.whatnot = Math.round(Math.max(whatnotBmvDisplay, whatnotCostDisplay, pricingFloor));
+      // eBay BIN: MAX(BMV × 0.95, Cost × 1.25, eBay_FeeSafe)
+      const ebayBinPrice = Math.max(
+        bmv * 0.95,           // 5% below median (competitive)
+        cost * 1.25,          // 25% margin target
+        ebayFeeSafeFloor      // Never lose money to fees
+      );
+      platformPrices.ebay_bin = Math.round(ebayBinPrice * 100) / 100;
 
-      // Simple percentage-based for other platforms - enforce floor on all
-      platformPrices.square = Math.max(bmv, pricingFloor);
-      platformPrices.etsy = Math.max(bmv * 0.90, pricingFloor);
-      platformPrices.poshmark = Math.max(bmv * 0.80, pricingFloor);
-      platformPrices.mercari = Math.max(bmv * 0.75, pricingFloor);
+      // eBay Best Offer prices
+      platformPrices.ebay_best_offer_auto_decline = Math.max(ebayFeeSafeFloor, cost * 1.15);
+      platformPrices.ebay_best_offer_auto_accept = Math.round(ebayBinPrice * 0.92 * 100) / 100;
+      platformPrices.ebay_best_offer_counter = Math.round(ebayBinPrice * 0.88 * 100) / 100;
 
-      console.log(`Pass 5 completed - Platform prices calculated (Floor: $${pricingFloor.toFixed(2)})`);
+      // Whatnot Display: MAX(BMV × 1.00, Cost × 1.30) - anchoring price
+      platformPrices.whatnot_display = Math.max(
+        bmv * 1.00,           // At or above median
+        cost * 1.30           // 30% minimum margin
+      );
+      platformPrices.whatnot_display = Math.round(platformPrices.whatnot_display * 100) / 100;
+
+      // Whatnot Auction Start: MAX(Whatnot_FeeSafe, Cost × 1.10) - for loss leaders only
+      platformPrices.whatnot_auction_start = Math.max(
+        whatnotFeeSafeFloor,  // Never lose money to fees
+        cost * 1.10           // 10% minimum margin for auctions
+      );
+      platformPrices.whatnot_auction_start = Math.round(platformPrices.whatnot_auction_start * 100) / 100;
+
+      // Store BMV and calculation details
+      platformPrices.bmv = bmv;
+      platformPrices.cost = cost;
+      platformPrices.ebay_fee_safe = Math.round(ebayFeeSafeFloor * 100) / 100;
+      platformPrices.whatnot_fee_safe = Math.round(whatnotFeeSafeFloor * 100) / 100;
+      platformPrices.pricing_notes = `Pricing based on ${pass3Result.num_comparables_found} sold comps. BMV: $${bmv.toFixed(2)}`;
+
+      console.log(`Pass 5 completed - Platform prices calculated from BMV: $${bmv.toFixed(2)}`);
+      console.log(`  eBay BIN: $${platformPrices.ebay_bin}`);
+      console.log(`  Whatnot Display: $${platformPrices.whatnot_display}`);
+      console.log(`  Whatnot Auction Start: $${platformPrices.whatnot_auction_start}`);
     }
 
     // ============================================================================
