@@ -172,11 +172,21 @@ Deno.serve(async (req) => {
                 // Get quantity sold from eBay order
                 const quantitySold = item.quantity || 1;
 
-                // Find watch by ID (SKU)
+                // Find product by ID (SKU) or eBay item ID
                 try {
-                    const watches = await base44.entities.Product.filter({ id: sku });
+                    let watches = [];
+                    if (sku) {
+                        watches = await base44.entities.Product.filter({ id: sku });
+                    }
+
+                    // If not found by SKU, try to find by eBay item ID
+                    if (watches.length === 0 && item.legacyItemId) {
+                        const allProducts = await base44.entities.Product.list();
+                        watches = allProducts.filter(p => p.platform_ids?.ebay === item.legacyItemId);
+                    }
+
                     if (watches.length === 0) continue;
-                    
+
                     const watch = watches[0];
 
                     if (watch.sold && watch.quantity === 0) continue; // Already fully processed
