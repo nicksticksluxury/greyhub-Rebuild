@@ -129,7 +129,7 @@ Whatnot Profile: ${formData.whatnotLink}
                             Right now, most of our platform is private — it's where the real work happens: managing inventory, analyzing markets, and connecting with other watch dealers.
                             But the storefront is almost ready to open its doors.
                         </p>
-                        <Link to={createPageUrl("Inventory")}>
+                        <Link to={createPageUrl("Dashboard")}>
                             <Button variant="outline" className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white">
                                 Dealer Login <ArrowRight className="w-4 h-4 ml-2" />
                             </Button>
