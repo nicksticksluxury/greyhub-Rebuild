@@ -352,6 +352,18 @@ Deno.serve(async (req) => {
       platformPrices.bmv = bmv;
       platformPrices.pricing_notes = "Cost is Empty - Cannot Calculate Prices";
       console.log('Pass 5 - Zero cost detected, all prices set to $0');
+    } else if (!bmv || bmv === 0) {
+      // If no BMV from comps, use cost-based fallback
+      platformPrices.ebay_bin = Math.round(cost * 1.25 * 100) / 100;
+      platformPrices.ebay_best_offer_auto_decline = Math.round(cost * 1.15 * 100) / 100;
+      platformPrices.ebay_best_offer_auto_accept = Math.round(cost * 1.15 * 100) / 100;
+      platformPrices.ebay_best_offer_counter = Math.round(cost * 1.10 * 100) / 100;
+      platformPrices.whatnot_display = Math.round(cost * 1.30 * 100) / 100;
+      platformPrices.whatnot_auction_start = Math.round(cost * 1.10 * 100) / 100;
+      platformPrices.bmv = bmv;
+      platformPrices.cost = cost;
+      platformPrices.pricing_notes = `No comps found. Using cost-based pricing. Cost: $${cost.toFixed(2)}`;
+      console.log('Pass 5 - No BMV, using cost-based fallback pricing');
     } else {
       // Fee-safe floors
       const ebayFeeSafeFloor = cost / (1 - 0.18); // 18% fee rate
