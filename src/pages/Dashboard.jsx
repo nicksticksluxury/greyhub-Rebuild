@@ -243,71 +243,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* eBay Offers */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-orange-600" />
-                <h2 className="text-lg font-bold text-slate-900">Open eBay Offers</h2>
-              </div>
-              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
-                {ebayOffers.length}
-              </Badge>
-            </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {ebayOffers.length === 0 ? (
-                <p className="text-sm text-slate-500 py-4 text-center">No pending offers</p>
-              ) : (
-                ebayOffers.map(alert => (
-                  <div key={alert.id} className="flex items-start justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                    <div className="flex-1">
-                      <Link to={alert.link ? createPageUrl(alert.link) : "#"} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
-                        {typeof alert.message === 'object' ? JSON.stringify(alert.message) : alert.message}
-                      </Link>
-                      <p className="text-xs text-slate-500 mt-1">{new Date(alert.created_date).toLocaleDateString()}</p>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={() => handleDismissAlert(alert.id)}>
-                      <Check className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
 
-          {/* eBay Sales to Ship */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-green-600" />
-                <h2 className="text-lg font-bold text-slate-900">eBay Sales to Ship</h2>
-              </div>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-                {ebaySales.length}
-              </Badge>
-            </div>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {ebaySales.length === 0 ? (
-                <p className="text-sm text-slate-500 py-4 text-center">No pending shipments</p>
-              ) : (
-                ebaySales.map(alert => (
-                  <div key={alert.id} className="flex items-start justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex-1">
-                      <Link to={alert.link ? createPageUrl(alert.link) : "#"} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
-                        {typeof alert.message === 'object' ? JSON.stringify(alert.message) : alert.message}
-                      </Link>
-                      <p className="text-xs text-slate-500 mt-1">{new Date(alert.created_date).toLocaleDateString()}</p>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={() => handleDismissAlert(alert.id)}>
-                      <Check className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
-        </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
