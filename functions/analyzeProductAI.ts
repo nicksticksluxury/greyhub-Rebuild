@@ -348,26 +348,45 @@ Deno.serve(async (req) => {
     const bmv = pass4Result.final_base_market_value || 0;
     const cost = product.cost || 0;
 
+    // Calculate pricing floor
+    const pricingFloorMultiplier = pricingConfig.pricing_floor?.cost_multiplier || 1.2;
+    const pricingFloor = cost * pricingFloorMultiplier;
+
+    // Check for zero cost handling
+    const hasZeroCost = cost === 0 || cost === null || cost === undefined;
+    
     // Calculate platform prices based on formulas
     const platformPrices = {};
 
-    // eBay BIN pricing
-    const ebayBmvPrice = bmv * (pricingConfig.ebay_bin_multipliers?.bmv_multiplier || 0.95);
-    const ebayCostMinimum = cost * (pricingConfig.ebay_bin_multipliers?.cost_multiplier || 1.25);
-    platformPrices.ebay = Math.max(ebayBmvPrice, ebayCostMinimum);
+    if (hasZeroCost && pricingConfig.zero_cost_handling?.enabled) {
+      // Return all zeros with note
+      platformPrices.ebay = 0;
+      platformPrices.whatnot = 0;
+      platformPrices.square = 0;
+      platformPrices.etsy = 0;
+      platformPrices.poshmark = 0;
+      platformPrices.mercari = 0;
+      platformPrices.pricing_note = "Cost is Empty";
+      console.log('Pass 5 - Zero cost detected, all prices set to $0');
+    } else {
+      // eBay BIN pricing
+      const ebayBmvPrice = bmv * (pricingConfig.ebay_bin_multipliers?.bmv_multiplier || 0.95);
+      const ebayCostMinimum = cost * (pricingConfig.ebay_bin_multipliers?.cost_multiplier || 1.25);
+      platformPrices.ebay = Math.max(ebayBmvPrice, ebayCostMinimum, pricingFloor);
 
-    // Whatnot pricing
-    const whatnotBmvDisplay = bmv * (pricingConfig.whatnot?.display_bmv_multiplier || 1.00);
-    const whatnotCostDisplay = cost * (pricingConfig.whatnot?.display_cost_multiplier || 1.30);
-    platformPrices.whatnot = Math.round(Math.max(whatnotBmvDisplay, whatnotCostDisplay));
+      // Whatnot pricing
+      const whatnotBmvDisplay = bmv * (pricingConfig.whatnot?.display_bmv_multiplier || 1.00);
+      const whatnotCostDisplay = cost * (pricingConfig.whatnot?.display_cost_multiplier || 1.30);
+      platformPrices.whatnot = Math.round(Math.max(whatnotBmvDisplay, whatnotCostDisplay, pricingFloor));
 
-    // Simple percentage-based for other platforms
-    platformPrices.square = bmv; // 100%
-    platformPrices.etsy = bmv * 0.90;
-    platformPrices.poshmark = bmv * 0.80;
-    platformPrices.mercari = bmv * 0.75;
+      // Simple percentage-based for other platforms - enforce floor on all
+      platformPrices.square = Math.max(bmv, pricingFloor);
+      platformPrices.etsy = Math.max(bmv * 0.90, pricingFloor);
+      platformPrices.poshmark = Math.max(bmv * 0.80, pricingFloor);
+      platformPrices.mercari = Math.max(bmv * 0.75, pricingFloor);
 
-    console.log('Pass 5 completed - Platform prices calculated');
+      console.log(`Pass 5 completed - Platform prices calculated (Floor: $${pricingFloor.toFixed(2)})`);
+    }
 
     // ============================================================================
     // PASS 6: PLATFORM PLACEMENT DECISION
