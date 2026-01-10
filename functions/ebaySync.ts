@@ -300,6 +300,7 @@ Deno.serve(async (req) => {
         let ordersToShip = 0;
         let unreadMessages = 0;
         let eligibleOffers = 0;
+        let unreadMemberMessages = 0;
 
         try {
             // Get orders awaiting shipment
@@ -475,10 +476,28 @@ Deno.serve(async (req) => {
                 eligibleOffers = inventoryData.total || 0;
             }
 
+            // Get unread member messages count
+            try {
+                const messagesResponse = await fetch(`https://api.ebay.com/post-order/v2/inquiry/search?inquiry_status=UNREAD`, {
+                    headers: {
+                        'Authorization': `Bearer ${ebayToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (messagesResponse.ok) {
+                    const messagesData = await messagesResponse.json();
+                    unreadMemberMessages = messagesData.total || 0;
+                }
+            } catch (msgErr) {
+                console.error("Failed to fetch unread messages:", msgErr);
+            }
+
             // Store stats in Company entity
             await base44.asServiceRole.entities.Company.update(user.company_id, {
                 ebay_orders_to_ship: ordersToShip,
-                ebay_eligible_offers: eligibleOffers
+                ebay_eligible_offers: eligibleOffers,
+                ebay_unread_messages: unreadMemberMessages
             });
 
             await base44.asServiceRole.entities.Log.create({
@@ -487,8 +506,8 @@ Deno.serve(async (req) => {
                 timestamp: new Date().toISOString(),
                 level: "info",
                 category: "ebay",
-                message: `eBay Stats: ${ordersToShip} orders to ship, ${eligibleOffers} eligible offers`,
-                details: { ordersToShip, eligibleOffers }
+                message: `eBay Stats: ${ordersToShip} orders to ship, ${eligibleOffers} eligible offers, ${unreadMemberMessages} unread messages`,
+                details: { ordersToShip, eligibleOffers, unreadMemberMessages }
             });
         } catch (statsErr) {
             console.error("Failed to fetch eBay stats:", statsErr);

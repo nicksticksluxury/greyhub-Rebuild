@@ -216,7 +216,7 @@ export default function Dashboard() {
             <ShoppingBag className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-bold text-blue-900">eBay Seller Dashboard</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="bg-white rounded-lg p-4 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
                 <Package className="w-5 h-5 text-orange-600" />
@@ -224,6 +224,21 @@ export default function Dashboard() {
               </div>
               <p className="text-sm text-slate-600 font-semibold">Orders to Ship</p>
               <p className="text-xs text-slate-500 mt-1">Awaiting fulfillment</p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <a 
+                href="https://www.ebay.com/cnt/viewMessage?group_type=CORE&conversation_type=FROM_MEMBERS&status=UNREAD" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Bell className="w-5 h-5 text-indigo-600" />
+                  <Badge className="bg-indigo-600 text-white">{company?.ebay_unread_messages || 0}</Badge>
+                </div>
+                <p className="text-sm text-slate-600 font-semibold">Unread Member Messages</p>
+                <p className="text-xs text-slate-500 mt-1">From buyers</p>
+              </a>
             </div>
             <div className="bg-white rounded-lg p-4 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
