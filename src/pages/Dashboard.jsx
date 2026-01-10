@@ -231,14 +231,19 @@ export default function Dashboard() {
             </a>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <a 
+              href="https://www.ebay.com/sh/ord/?filter=status:AWAITING_SHIPMENT" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-white rounded-lg p-4 border border-blue-200 hover:bg-blue-50 transition-colors block"
+            >
               <div className="flex items-center justify-between mb-2">
                 <Package className="w-5 h-5 text-orange-600" />
                 <Badge className="bg-orange-600 text-white">{company?.ebay_orders_to_ship || 0}</Badge>
               </div>
               <p className="text-sm text-slate-600 font-semibold">Orders to Ship</p>
               <p className="text-xs text-slate-500 mt-1">Awaiting fulfillment</p>
-            </div>
+            </a>
             <div className="bg-white rounded-lg p-4 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
                 <Bell className="w-5 h-5 text-blue-600" />
