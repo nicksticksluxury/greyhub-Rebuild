@@ -145,14 +145,14 @@ export default function Layout({ children, currentPageName }) {
         try {
           const currentUser = await base44.auth.me();
           if (!currentUser) {
-            base44.auth.redirectToLogin();
+            base44.auth.redirectToLogin(createPageUrl("Dashboard"));
           } else {
             setUser(currentUser);
             const companyId = currentUser.data?.company_id || currentUser.company_id;
             setIsImpersonating(currentUser.role === 'admin' && !!companyId);
           }
         } catch (error) {
-          base44.auth.redirectToLogin();
+          base44.auth.redirectToLogin(createPageUrl("Dashboard"));
         }
       };
       checkAuth();
