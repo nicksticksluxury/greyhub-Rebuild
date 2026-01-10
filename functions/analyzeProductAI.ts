@@ -541,8 +541,10 @@ Deno.serve(async (req) => {
     if (pass6Result.primary_channel) {
       productUpdate.ai_platform_recommendation = pass6Result.primary_channel;
     }
-    if (pass3Result.comparable_listings && Array.isArray(pass3Result.comparable_listings)) {
-      const urls = pass3Result.comparable_listings.map(c => c?.url).filter(Boolean);
+    // Handle both old and new format
+    const comparables = pass3Result.comparables || pass3Result.comparable_listings || [];
+    if (comparables && Array.isArray(comparables)) {
+      const urls = comparables.map(c => c?.url).filter(Boolean);
       if (urls.length > 0) {
         productUpdate.comparable_listings_links = urls;
       }
