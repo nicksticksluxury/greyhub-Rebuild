@@ -165,10 +165,10 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
     const isSelected = selectedKeys.has(id);
     return (
       <div 
-        className={`p-3 rounded-lg transition-colors cursor-pointer border ${isSelected ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-transparent hover:bg-slate-100'} ${className}`}
+        className={`p-3 rounded-lg transition-colors cursor-pointer border overflow-hidden ${isSelected ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-transparent hover:bg-slate-100'} ${className}`}
         onClick={() => toggleSelection(id)}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 min-w-0">
           <div className={`mt-0.5 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`}>
             {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
           </div>
@@ -180,7 +180,7 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                         {label}
                     </span>
                  </div>
-                 <p className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-slate-900'} break-words`}>
+                 <p className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-slate-900'} break-words truncate`}>
                     {value}
                  </p>
               </>
