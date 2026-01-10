@@ -223,8 +223,8 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
 
   const selectAllPricing = () => {
     const newSet = new Set(selectedKeys);
-    ['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].forEach(platform => {
-      if (aiAnalysis.pricing_recommendations?.[platform]) {
+    ['ebay', 'etsy', 'poshmark', 'mercari', 'whatnot', 'shopify'].forEach(platform => {
+      if (aiAnalysis.pricing_recommendations?.[`${platform}_bin`] || aiAnalysis.pricing_recommendations?.[platform]) {
         newSet.add(`price_${platform}`);
       }
     });
