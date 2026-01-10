@@ -363,6 +363,9 @@ Deno.serve(async (req) => {
       platformPrices.bmv = bmv;
       platformPrices.cost = cost;
       platformPrices.pricing_notes = `No comps found. Using cost-based pricing. Cost: $${cost.toFixed(2)}`;
+      // Add simple platform keys for UI display
+      platformPrices.ebay = platformPrices.ebay_bin;
+      platformPrices.whatnot = platformPrices.whatnot_display;
       console.log('Pass 5 - No BMV, using cost-based fallback pricing');
     } else {
       // Fee-safe floors
