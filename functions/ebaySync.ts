@@ -503,7 +503,7 @@ Deno.serve(async (req) => {
                       <DetailLevel>ReturnHeaders</DetailLevel>
                       <MailMessageType>All</MailMessageType>
                       <MessageStatus>Unanswered</MessageStatus>
-                      <MemberMessageID>0</MemberMessageID>
+                      <DisplayToPublic>false</DisplayToPublic>
                     </GetMemberMessagesRequest>`
                 });
 
@@ -531,24 +531,9 @@ Deno.serve(async (req) => {
                 });
 
                 if (messagesResponse.ok) {
-                    // Try multiple parsing approaches
-                    // 1. Try PaginationResult > TotalNumberOfEntries
-                    let countMatch = messagesText.match(/<PaginationResult>[\s\S]*?<TotalNumberOfEntries>(\d+)<\/TotalNumberOfEntries>/);
-                    if (countMatch) {
-                        unreadMemberMessages = parseInt(countMatch[1]) || 0;
-                    } else {
-                        // 2. Try direct TotalNumberOfEntries
-                        countMatch = messagesText.match(/<TotalNumberOfEntries>(\d+)<\/TotalNumberOfEntries>/);
-                        if (countMatch) {
-                            unreadMemberMessages = parseInt(countMatch[1]) || 0;
-                        } else {
-                            // 3. Count MemberMessageExchange elements
-                            const messageMatches = messagesText.match(/<MemberMessageExchange>/g);
-                            if (messageMatches) {
-                                unreadMemberMessages = messageMatches.length;
-                            }
-                        }
-                    }
+                    // Count only messages that have <Read>false</Read>
+                    const readFalseMatches = messagesText.match(/<Read>false<\/Read>/gi);
+                    unreadMemberMessages = readFalseMatches ? readFalseMatches.length : 0;
 
                     await base44.asServiceRole.entities.Log.create({
                         company_id: user.company_id,
@@ -556,7 +541,7 @@ Deno.serve(async (req) => {
                         timestamp: new Date().toISOString(),
                         level: "info",
                         category: "ebay",
-                        message: `Parsed unread messages count: ${unreadMemberMessages}`,
+                        message: `Parsed unread messages count (Read=false): ${unreadMemberMessages}`,
                         details: { count: unreadMemberMessages }
                     });
                 }
