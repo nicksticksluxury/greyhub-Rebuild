@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
-import { Search, Filter, Download, TrendingUp } from "lucide-react";
+import { Search, Filter, Download, TrendingUp, Trash2 } from "lucide-react";
+import { toast } from "../components/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,7 +18,9 @@ export default function SoldInventory() {
   const [showExport, setShowExport] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedPlatform, setSelectedPlatform] = useState("ebay");
+  const [selectedIds, setSelectedIds] = useState([]);
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     auction: "all",
     source: "all",
@@ -78,6 +81,34 @@ export default function SoldInventory() {
   const totalCost = filteredProducts.reduce((sum, product) => sum + (product.cost || 0), 0);
   const totalProfit = totalRevenue - totalCost;
 
+  const deleteMutation = useMutation({
+    mutationFn: async (productIds) => {
+      for (const id of productIds) {
+        await base44.entities.Product.delete(id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setSelectedIds([]);
+      toast.success('Selected products deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete products: ${error.message}`);
+    }
+  });
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectedIds.length} sold product${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.`
+    );
+    
+    if (confirmed) {
+      deleteMutation.mutate(selectedIds);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-200 shadow-sm">
@@ -107,6 +138,16 @@ export default function SoldInventory() {
               </div>
             </div>
             <div className="flex gap-3">
+              {selectedIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={handleBulkDelete}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete ({selectedIds.length})
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => setShowExport(true)}
@@ -203,6 +244,8 @@ export default function SoldInventory() {
           sourceOrders={sourceOrders}
           auctions={auctions}
           selectedPlatform={selectedPlatform}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
         />
       </div>
 
