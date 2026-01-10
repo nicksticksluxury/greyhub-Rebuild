@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
                             type: "success",
                             title: "Item Sold on eBay",
                             message: `Sold ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice} ($${pricePerUnit.toFixed(2)} each)${remainingQuantity > 0 ? `. ${remainingQuantity} remaining.` : ''}`,
-                            link: `WatchDetail?id=${watch.id}`,
+                            link: `ProductDetail?id=${watch.id}`,
                             read: false,
                             metadata: { watch_id: watch.id, platform: 'ebay', price: soldPrice, quantity: quantitySold }
                         });
@@ -329,19 +329,30 @@ Deno.serve(async (req) => {
                             if (products.length === 0) continue;
                             
                             const product = products[0];
-                            const listingUrl = `https://www.ebay.com/itm/${order.lineItems[0].legacyItemId}`;
+                            
+                            // Try to get eBay listing URL from item's legacyItemId or lineItemId
+                            let ebayItemUrl = null;
+                            if (item.legacyItemId) {
+                                ebayItemUrl = `https://www.ebay.com/itm/${item.legacyItemId}`;
+                            } else if (item.lineItemId) {
+                                // lineItemId format is typically orderId-lineItemId, extract the item part
+                                const itemIdMatch = item.lineItemId.match(/-(\d+)$/);
+                                if (itemIdMatch) {
+                                    ebayItemUrl = `https://www.ebay.com/itm/${itemIdMatch[1]}`;
+                                }
+                            }
                             
                             await base44.asServiceRole.entities.Alert.create({
                                 company_id: user.company_id,
                                 user_id: user.id,
                                 type: "info",
                                 title: "eBay Order to Ship",
-                                message: `${product.brand} ${product.model} - $${item.total.value}`,
+                                message: `${product.brand} ${product.model} (Order ${order.orderId}, $${item.total.value})`,
                                 link: `ProductDetail?id=${product.id}`,
                                 read: false,
                                 metadata: { 
                                     product_id: product.id, 
-                                    ebay_listing_url: listingUrl,
+                                    ebay_listing_url: ebayItemUrl,
                                     order_id: order.orderId 
                                 }
                             });
