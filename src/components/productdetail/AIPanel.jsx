@@ -516,32 +516,49 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                 </span>
               </div>
               <div className="space-y-2">
-                {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map((platform) => {
-                  const price = aiAnalysis.pricing_recommendations[platform];
-                  if (!price) return null;
-                  const displayPrice = platform === 'whatnot' ? Math.round(price) : price;
-                  const isSelected = selectedKeys.has(`price_${platform}`);
-
-                  return (
-                    <div 
-                        key={platform} 
-                        className={`p-2 rounded cursor-pointer border transition-colors ${isSelected ? 'bg-white border-amber-300 shadow-sm' : 'bg-white/50 border-transparent hover:bg-white/80'}`}
-                        onClick={() => toggleSelection(`price_${platform}`)}
-                    >
-                        <div className="flex items-center gap-3">
-                             <div className={`mt-0.5 shrink-0 ${isSelected ? 'text-amber-600' : 'text-slate-300'}`}>
-                                {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                             </div>
-                             <div className="flex-1">
-                                 <div className="flex items-center gap-2">
-                                    <span className="capitalize font-semibold text-amber-900 w-20">{platform}:</span>
-                                    <span className="font-bold text-amber-800">${displayPrice?.toLocaleString()}</span>
-                                 </div>
-                             </div>
+                {platform === 'ebay' && aiAnalysis.pricing_recommendations.ebay_bin && (
+                  <div 
+                    className={`p-2 rounded cursor-pointer border transition-colors ${selectedKeys.has('price_ebay') ? 'bg-white border-amber-300 shadow-sm' : 'bg-white/50 border-transparent hover:bg-white/80'}`}
+                    onClick={() => toggleSelection('price_ebay')}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-0.5 shrink-0 ${selectedKeys.has('price_ebay') ? 'text-amber-600' : 'text-slate-300'}`}>
+                        {selectedKeys.has('price_ebay') ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="capitalize font-semibold text-amber-900">eBay</span>
                         </div>
+                        <div className="text-xs text-amber-700 space-y-0.5">
+                          <p>BIN: <span className="font-bold text-amber-900">${aiAnalysis.pricing_recommendations.ebay_bin?.toLocaleString()}</span></p>
+                          {aiAnalysis.pricing_recommendations.ebay_best_offer_auto_accept && <p>Accept: <span className="font-bold">${aiAnalysis.pricing_recommendations.ebay_best_offer_auto_accept?.toLocaleString()}</span></p>}
+                          {aiAnalysis.pricing_recommendations.ebay_best_offer_counter && <p>Counter: <span className="font-bold">${aiAnalysis.pricing_recommendations.ebay_best_offer_counter?.toLocaleString()}</span></p>}
+                        </div>
+                      </div>
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+                {aiAnalysis.pricing_recommendations.whatnot_display && (
+                  <div 
+                    className={`p-2 rounded cursor-pointer border transition-colors ${selectedKeys.has('price_whatnot') ? 'bg-white border-amber-300 shadow-sm' : 'bg-white/50 border-transparent hover:bg-white/80'}`}
+                    onClick={() => toggleSelection('price_whatnot')}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-0.5 shrink-0 ${selectedKeys.has('price_whatnot') ? 'text-amber-600' : 'text-slate-300'}`}>
+                        {selectedKeys.has('price_whatnot') ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="capitalize font-semibold text-amber-900">Whatnot</span>
+                        </div>
+                        <div className="text-xs text-amber-700 space-y-0.5">
+                          <p>Display: <span className="font-bold text-amber-900">${aiAnalysis.pricing_recommendations.whatnot_display?.toLocaleString()}</span></p>
+                          {aiAnalysis.pricing_recommendations.whatnot_auction_start && <p>Auction: <span className="font-bold">${aiAnalysis.pricing_recommendations.whatnot_auction_start?.toLocaleString()}</span></p>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
