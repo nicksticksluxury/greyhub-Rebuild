@@ -278,6 +278,7 @@ export default function Dashboard() {
                 <Tooltip />
                 <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenue" />
                 <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} name="Profit" />
+                <Line type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2} name="Num. of Sales" />
               </LineChart>
             </ResponsiveContainer>
           </Card>
