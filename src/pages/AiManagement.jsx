@@ -114,6 +114,10 @@ Return:
     type: "json_config",
     variables_documentation: "Available variables:\n{pass1_output} - Results from Pass 1\n{pass2_output} - Results from Pass 2\n{pass3_output} - Results from Pass 3\n{pass4_output} - Results from Pass 4\n{cost} - Product cost\n{BMV} - Base Market Value from Pass 4\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{movement} - Movement type\n{case_size} - Case size\n{condition} - Product condition\n{box_papers} - Box and papers availability\n{existing_listing_links} - Array of links to identical existing listings\n{msrp_link} - MSRP source link\n{velocity} - Market demand velocity\n{saturation} - Market saturation level",
     prompt_content: JSON.stringify({
+      pricing_floor: {
+        cost_multiplier: 1.2,
+        description: "Minimum price floor - never price below this multiplier of cost"
+      },
       ebay_fee_rate: 0.18,
       whatnot_fee_rate: 0.12,
       ebay_bin_multipliers: {
