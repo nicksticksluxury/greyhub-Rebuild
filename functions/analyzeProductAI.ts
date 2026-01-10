@@ -403,6 +403,10 @@ Deno.serve(async (req) => {
       platformPrices.whatnot_fee_safe = Math.round(whatnotFeeSafeFloor * 100) / 100;
       platformPrices.pricing_notes = `Pricing based on ${pass3Result.num_comparables_found} sold comps. BMV: $${bmv.toFixed(2)}`;
 
+      // Add simple platform keys for UI display
+      platformPrices.ebay = platformPrices.ebay_bin;
+      platformPrices.whatnot = platformPrices.whatnot_display;
+
       console.log(`Pass 5 completed - Platform prices calculated from BMV: $${bmv.toFixed(2)}`);
       console.log(`  eBay BIN: $${platformPrices.ebay_bin}`);
       console.log(`  Whatnot Display: $${platformPrices.whatnot_display}`);
