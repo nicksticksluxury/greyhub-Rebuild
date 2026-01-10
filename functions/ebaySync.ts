@@ -322,10 +322,21 @@ Deno.serve(async (req) => {
                 for (const order of ordersToShipList) {
                     for (const item of order.lineItems || []) {
                         const sku = item.sku;
-                        if (!sku) continue;
+                        const legacyItemId = item.legacyItemId;
                         
                         try {
-                            const products = await base44.entities.Product.filter({ id: sku });
+                            // Try to find product by SKU first, then by eBay item ID
+                            let products = [];
+                            if (sku) {
+                                products = await base44.entities.Product.filter({ id: sku });
+                            }
+                            
+                            // If not found by SKU, try to find by eBay item ID
+                            if (products.length === 0 && legacyItemId) {
+                                const allProducts = await base44.entities.Product.list();
+                                products = allProducts.filter(p => p.platform_ids?.ebay === legacyItemId);
+                            }
+                            
                             if (products.length === 0) continue;
                             
                             const product = products[0];
