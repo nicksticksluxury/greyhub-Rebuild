@@ -303,6 +303,53 @@ Deno.serve(async (req) => {
             if (shipmentResponse.ok) {
                 const shipmentData = await shipmentResponse.json();
                 ordersToShip = shipmentData.total || 0;
+                
+                // Create/update alerts for orders to ship
+                const ordersToShipList = shipmentData.orders || [];
+                
+                // First, delete all existing "to ship" alerts
+                const existingShipAlerts = await base44.asServiceRole.entities.Alert.filter({
+                    company_id: user.company_id,
+                    type: "info",
+                    title: "eBay Order to Ship"
+                });
+                
+                for (const alert of existingShipAlerts) {
+                    await base44.asServiceRole.entities.Alert.delete(alert.id);
+                }
+                
+                // Create new alerts for current orders to ship
+                for (const order of ordersToShipList) {
+                    for (const item of order.lineItems || []) {
+                        const sku = item.sku;
+                        if (!sku) continue;
+                        
+                        try {
+                            const products = await base44.entities.Product.filter({ id: sku });
+                            if (products.length === 0) continue;
+                            
+                            const product = products[0];
+                            const listingUrl = `https://www.ebay.com/itm/${order.lineItems[0].legacyItemId}`;
+                            
+                            await base44.asServiceRole.entities.Alert.create({
+                                company_id: user.company_id,
+                                user_id: user.id,
+                                type: "info",
+                                title: "eBay Order to Ship",
+                                message: `${product.brand} ${product.model} - $${item.total.value}`,
+                                link: `ProductDetail?id=${product.id}`,
+                                read: false,
+                                metadata: { 
+                                    product_id: product.id, 
+                                    ebay_listing_url: listingUrl,
+                                    order_id: order.orderId 
+                                }
+                            });
+                        } catch (err) {
+                            console.error("Failed to create ship alert:", err);
+                        }
+                    }
+                }
             }
 
             // Get active listings count (eligible to send offers)

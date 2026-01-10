@@ -104,6 +104,7 @@ export default function Dashboard() {
   // eBay specific alerts
   const ebayOffers = alerts.filter(a => a.title?.includes("Best Offer"));
   const ebaySales = alerts.filter(a => a.title?.includes("Sold on eBay"));
+  const ebayOrdersToShip = alerts.filter(a => a.title === "eBay Order to Ship");
 
   // Sales trend data (last 30 days)
   const salesByDay = soldProducts.reduce((acc, p) => {
@@ -250,31 +251,30 @@ export default function Dashboard() {
             </div>
           </div>
           
-          {company?.ebay_orders_to_ship > 0 && (
+          {ebayOrdersToShip.length > 0 && (
             <div className="mt-4 bg-white rounded-lg p-4 border border-orange-200">
               <h3 className="text-sm font-bold text-slate-900 mb-3">Items Awaiting Shipment</h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {products
-                  .filter(p => p.sold && p.sold_platform === 'ebay' && p.platform_ids?.ebay && p.listing_urls?.ebay)
-                  .slice(0, 10)
-                  .map(product => (
-                    <div key={product.id} className="flex items-center justify-between p-2 bg-orange-50 rounded border border-orange-200">
-                      <div className="flex-1">
-                        <Link to={createPageUrl(`ProductDetail?id=${product.id}`)} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
-                          {product.brand} {product.model}
-                        </Link>
-                        <p className="text-xs text-slate-500">${product.sold_price?.toFixed(2) || 'N/A'}</p>
-                      </div>
+                {ebayOrdersToShip.map(alert => (
+                  <div key={alert.id} className="flex items-center justify-between p-2 bg-orange-50 rounded border border-orange-200">
+                    <div className="flex-1">
+                      <Link to={createPageUrl(alert.link)} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
+                        {alert.message}
+                      </Link>
+                      <p className="text-xs text-slate-500">{new Date(alert.created_date).toLocaleDateString()}</p>
+                    </div>
+                    {alert.metadata?.ebay_listing_url && (
                       <a 
-                        href={product.listing_urls.ebay} 
+                        href={alert.metadata.ebay_listing_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:text-blue-800 underline"
                       >
                         eBay Listing →
                       </a>
-                    </div>
-                  ))}
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
