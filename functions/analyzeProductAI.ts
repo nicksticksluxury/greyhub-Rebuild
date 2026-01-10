@@ -368,52 +368,43 @@ Deno.serve(async (req) => {
       platformPrices.whatnot = platformPrices.whatnot_display;
       console.log('Pass 5 - No BMV, using cost-based fallback pricing');
     } else {
-      // Fee-safe floors
-      const ebayFeeSafeFloor = cost / (1 - 0.18); // 18% fee rate
-      const whatnotFeeSafeFloor = cost / (1 - 0.12); // 12% fee rate
+      // Define fee rates and multipliers for each platform
+      const platformConfigs = {
+        ebay: { feeRate: 0.18, binMultiplier: 0.95, costMultiplier: 1.25 },
+        etsy: { feeRate: 0.065, binMultiplier: 0.95, costMultiplier: 1.25 },
+        poshmark: { feeRate: 0.20, binMultiplier: 0.95, costMultiplier: 1.25 },
+        mercari: { feeRate: 0.10, binMultiplier: 0.95, costMultiplier: 1.25 },
+        whatnot: { feeRate: 0.12, binMultiplier: 1.00, costMultiplier: 1.30 },
+        shopify: { feeRate: 0.029, binMultiplier: 0.95, costMultiplier: 1.25 }
+      };
 
-      // eBay BIN: MAX(BMV × 0.95, Cost × 1.25, eBay_FeeSafe)
-      const ebayBinPrice = Math.max(
-        bmv * 0.95,           // 5% below median (competitive)
-        cost * 1.25,          // 25% margin target
-        ebayFeeSafeFloor      // Never lose money to fees
-      );
-      platformPrices.ebay_bin = Math.round(ebayBinPrice * 100) / 100;
+      // Calculate prices for each platform using same formula
+      Object.entries(platformConfigs).forEach(([platform, config]) => {
+        const feeSafeFloor = cost / (1 - config.feeRate);
+        const binPrice = Math.max(
+          bmv * config.binMultiplier,
+          cost * config.costMultiplier,
+          feeSafeFloor
+        );
 
-      // eBay Best Offer prices
-      platformPrices.ebay_best_offer_auto_decline = Math.max(ebayFeeSafeFloor, cost * 1.15);
-      platformPrices.ebay_best_offer_auto_accept = Math.round(ebayBinPrice * 0.92 * 100) / 100;
-      platformPrices.ebay_best_offer_counter = Math.round(ebayBinPrice * 0.88 * 100) / 100;
+        platformPrices[`${platform}_bin`] = Math.round(binPrice * 100) / 100;
+        platformPrices[`${platform}_accept`] = Math.round(binPrice * 0.92 * 100) / 100;
+        platformPrices[`${platform}_counter`] = Math.round(binPrice * 0.88 * 100) / 100;
+        platformPrices[`${platform}_fee_safe`] = Math.round(feeSafeFloor * 100) / 100;
 
-      // Whatnot Display: MAX(BMV × 1.00, Cost × 1.30) - anchoring price
-      platformPrices.whatnot_display = Math.max(
-        bmv * 1.00,           // At or above median
-        cost * 1.30           // 30% minimum margin
-      );
-      platformPrices.whatnot_display = Math.round(platformPrices.whatnot_display * 100) / 100;
-
-      // Whatnot Auction Start: MAX(Whatnot_FeeSafe, Cost × 1.10) - for loss leaders only
-      platformPrices.whatnot_auction_start = Math.max(
-        whatnotFeeSafeFloor,  // Never lose money to fees
-        cost * 1.10           // 10% minimum margin for auctions
-      );
-      platformPrices.whatnot_auction_start = Math.round(platformPrices.whatnot_auction_start * 100) / 100;
+        // Add simple platform key for UI
+        platformPrices[platform] = platformPrices[`${platform}_bin`];
+      });
 
       // Store BMV and calculation details
       platformPrices.bmv = bmv;
       platformPrices.cost = cost;
-      platformPrices.ebay_fee_safe = Math.round(ebayFeeSafeFloor * 100) / 100;
-      platformPrices.whatnot_fee_safe = Math.round(whatnotFeeSafeFloor * 100) / 100;
       platformPrices.pricing_notes = `Pricing based on ${pass3Result.num_comparables_found} sold comps. BMV: $${bmv.toFixed(2)}`;
 
-      // Add simple platform keys for UI display
-      platformPrices.ebay = platformPrices.ebay_bin;
-      platformPrices.whatnot = platformPrices.whatnot_display;
-
       console.log(`Pass 5 completed - Platform prices calculated from BMV: $${bmv.toFixed(2)}`);
-      console.log(`  eBay BIN: $${platformPrices.ebay_bin}`);
-      console.log(`  Whatnot Display: $${platformPrices.whatnot_display}`);
-      console.log(`  Whatnot Auction Start: $${platformPrices.whatnot_auction_start}`);
+      Object.entries(platformConfigs).forEach(([platform, _]) => {
+        console.log(`  ${platform.charAt(0).toUpperCase() + platform.slice(1)}: $${platformPrices[`${platform}_bin`]}`);
+      });
     }
 
     // ============================================================================
