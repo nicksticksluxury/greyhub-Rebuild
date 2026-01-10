@@ -481,6 +481,23 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
             </div>
           )}
 
+          {/* Pricing Logic */}
+          {aiAnalysis.pricing_recommendations && Object.keys(aiAnalysis.pricing_recommendations).length > 0 && aiAnalysis.final_base_market_value > 0 && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-semibold text-blue-900 uppercase">Pricing Logic</span>
+              </div>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p><strong>Base Market Value (BMV):</strong> ${aiAnalysis.final_base_market_value?.toLocaleString()}</p>
+                <p><strong>Source:</strong> {aiAnalysis.num_comparables_found || 0} sold comparables</p>
+                <p className="text-xs text-blue-700 mt-2 leading-relaxed">
+                  eBay prices = BMV × 0.95 + cost floor protection. Whatnot = BMV at listing, cost × 1.10 for auctions. All prices enforced above break-even after fees.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Pricing Recommendations */}
           {aiAnalysis.pricing_recommendations && Object.keys(aiAnalysis.pricing_recommendations).length > 0 && (
             <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg p-3 border border-amber-100">
