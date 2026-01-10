@@ -188,105 +188,93 @@ Deno.serve(async (req) => {
                     if (watches.length === 0) continue;
 
                     const watch = watches[0];
-
-                    if (watch.sold && watch.quantity === 0) continue; // Already fully processed
-
-                    // Check if this specific order has already been synced
                     const soldDate = new Date(order.creationDate).toISOString().split('T')[0];
                     const soldPrice = parseFloat(item.total.value);
-                    const pricePerUnit = soldPrice / quantitySold;
+                    const lineItemId = item.lineItemId || `${order.orderId}-${item.sku}`;
 
+                    // Check if this specific order line item has already been synced
                     const existingSoldProducts = await base44.entities.Product.filter({ 
-                        sold: true, 
-                        sold_platform: 'ebay',
-                        sold_date: soldDate,
-                        original_watch_id: watch.id
-                    });
-
-                    await base44.asServiceRole.entities.Log.create({
-                        company_id: user.company_id,
-                        user_id: user.id,
-                        timestamp: new Date().toISOString(),
-                        level: "debug",
-                        category: "ebay",
-                        message: `Checking for existing sold products: watch_id=${watch.id}, sold_date=${soldDate}, found=${existingSoldProducts.length}`,
-                        details: { watch_id: watch.id, sold_date: soldDate, found_count: existingSoldProducts.length, order_id: order.orderId }
+                        ebay_order_id: order.orderId,
+                        ebay_line_item_id: lineItemId
                     });
 
                     if (existingSoldProducts.length > 0) {
-                        // Order already synced, skip it
                         await base44.asServiceRole.entities.Log.create({
                             company_id: user.company_id,
                             user_id: user.id,
                             timestamp: new Date().toISOString(),
                             level: "info",
                             category: "ebay",
-                            message: `Skipping already synced order: ${order.orderId}`,
-                            details: { order_id: order.orderId, watch_id: watch.id }
+                            message: `Skipping already synced order: ${order.orderId} line item: ${lineItemId}`,
+                            details: { order_id: order.orderId, line_item_id: lineItemId, watch_id: watch.id }
                         });
                         continue;
                     }
 
                     const currentQuantity = watch.quantity || 1;
-                    const remainingQuantity = Math.max(0, currentQuantity - quantitySold);
 
-                    // Create sold watch record(s)
-                    const soldWatchData = {
-                        ...watch,
-                        quantity: quantitySold,
-                        sold: true,
-                        sold_date: soldDate,
-                        sold_price: soldPrice,
-                        sold_platform: 'ebay',
-                        original_watch_id: watch.id  // Track which original product this came from
-                    };
-                    
-                    // Remove id and timestamps so new record is created
-                    delete soldWatchData.id;
-                    delete soldWatchData.created_date;
-                    delete soldWatchData.updated_date;
-                    delete soldWatchData.created_by;
-                    
-                    await base44.entities.Product.create(soldWatchData);
+                    // If single quantity, update the original product directly
+                    if (currentQuantity === 1) {
+                        await base44.entities.Product.update(watch.id, {
+                            quantity: 0,
+                            sold: true,
+                            sold_date: soldDate,
+                            sold_price: soldPrice,
+                            sold_platform: 'ebay',
+                            ebay_order_id: order.orderId,
+                            ebay_line_item_id: lineItemId
+                        });
 
-                    // Update original watch
-                    const updateData = {
-                        quantity: remainingQuantity,
-                        sold: remainingQuantity === 0 ? true : false
-                    };
-                    
-                    // If fully sold, mark the original as sold too
-                    if (remainingQuantity === 0) {
-                        updateData.sold_date = soldDate;
-                        updateData.sold_price = soldPrice;
-                        updateData.sold_platform = 'ebay';
-                    }
-                    
-                    await base44.entities.Product.update(watch.id, updateData);
-
-                    syncedCount++;
-                    syncedItems.push(`${quantitySold}x ${watch.brand} ${watch.model}`);
-                    
-                    // Log successful sync
-                    await Promise.all([
-                        base44.asServiceRole.entities.EbayLog.create({
-                            company_id: user.company_id,
-                            timestamp: new Date().toISOString(),
-                            level: "success",
-                            operation: "sync",
-                            message: `Synced sale: ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice}`,
-                            details: { watch_id: watch.id, quantity: quantitySold, price: soldPrice, remaining: remainingQuantity }
-                        }),
-                        base44.asServiceRole.entities.Log.create({
+                        await base44.asServiceRole.entities.Log.create({
                             company_id: user.company_id,
                             user_id: user.id,
                             timestamp: new Date().toISOString(),
                             level: "success",
                             category: "ebay",
-                            message: `eBay Sale Synced: ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice}`,
-                            details: { watch_id: watch.id, quantity: quantitySold, price: soldPrice, remaining: remainingQuantity }
-                        })
-                    ]);
+                            message: `Marked original product as sold: ${watch.brand} ${watch.model} for $${soldPrice}`,
+                            details: { watch_id: watch.id, order_id: order.orderId, line_item_id: lineItemId }
+                        });
+                    } else {
+                        // Multi-quantity: create new sold record and reduce original quantity
+                        const remainingQuantity = Math.max(0, currentQuantity - quantitySold);
+
+                        const soldWatchData = {
+                            ...watch,
+                            quantity: quantitySold,
+                            sold: true,
+                            sold_date: soldDate,
+                            sold_price: soldPrice,
+                            sold_platform: 'ebay',
+                            original_watch_id: watch.id,
+                            ebay_order_id: order.orderId,
+                            ebay_line_item_id: lineItemId
+                        };
+                        
+                        delete soldWatchData.id;
+                        delete soldWatchData.created_date;
+                        delete soldWatchData.updated_date;
+                        delete soldWatchData.created_by;
+                        
+                        await base44.entities.Product.create(soldWatchData);
+
+                        await base44.entities.Product.update(watch.id, {
+                            quantity: remainingQuantity,
+                            sold: remainingQuantity === 0
+                        });
+
+                        await base44.asServiceRole.entities.Log.create({
+                            company_id: user.company_id,
+                            user_id: user.id,
+                            timestamp: new Date().toISOString(),
+                            level: "success",
+                            category: "ebay",
+                            message: `Created sold record: ${quantitySold}x ${watch.brand} ${watch.model} for $${soldPrice}, ${remainingQuantity} remaining`,
+                            details: { watch_id: watch.id, quantity: quantitySold, remaining: remainingQuantity, order_id: order.orderId }
+                        });
+                    }
+
+                    syncedCount++;
+                    syncedItems.push(`${quantitySold}x ${watch.brand} ${watch.model}`);
 
                 } catch (e) {
                     console.error(`Error syncing item SKU ${sku}:`, e);
@@ -549,9 +537,12 @@ Deno.serve(async (req) => {
                 });
 
                 if (messagesResponse.ok) {
-                    // Count only messages that have <Read>false</Read>
-                    const readFalseMatches = messagesText.match(/<Read>false<\/Read>/gi);
-                    unreadMemberMessages = readFalseMatches ? readFalseMatches.length : 0;
+                    // Count messages with both <Read>false</Read> AND <MessageStatus>Unanswered</MessageStatus>
+                    const messages = messagesText.match(/<MemberMessage>[\s\S]*?<\/MemberMessage>/gi) || [];
+                    unreadMemberMessages = messages.filter(msg => 
+                        msg.includes('<Read>false</Read>') && 
+                        msg.includes('<MessageStatus>Unanswered</MessageStatus>')
+                    ).length;
 
                     await base44.asServiceRole.entities.Log.create({
                         company_id: user.company_id,
@@ -559,8 +550,8 @@ Deno.serve(async (req) => {
                         timestamp: new Date().toISOString(),
                         level: "info",
                         category: "ebay",
-                        message: `Parsed unread messages count (Read=false): ${unreadMemberMessages}`,
-                        details: { count: unreadMemberMessages }
+                        message: `Parsed unread unanswered messages: ${unreadMemberMessages}`,
+                        details: { count: unreadMemberMessages, totalMessages: messages.length }
                     });
                 }
             } catch (msgErr) {
