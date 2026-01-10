@@ -190,6 +190,20 @@ Deno.serve(async (req) => {
                     const watch = watches[0];
 
                     if (watch.sold && watch.quantity === 0) continue; // Already fully processed
+                    
+                    // Check if this specific order has already been synced
+                    const soldDate = new Date(order.creationDate).toISOString().split('T')[0];
+                    const existingSoldProducts = await base44.entities.Product.filter({ 
+                        sold: true, 
+                        sold_platform: 'ebay',
+                        sold_date: soldDate,
+                        original_watch_id: watch.id
+                    });
+                    
+                    if (existingSoldProducts.length > 0) {
+                        // Order already synced, skip it
+                        continue;
+                    }
 
                     const soldDate = new Date(order.creationDate).toISOString().split('T')[0];
                     const soldPrice = parseFloat(item.total.value);
@@ -205,7 +219,8 @@ Deno.serve(async (req) => {
                         sold: true,
                         sold_date: soldDate,
                         sold_price: soldPrice,
-                        sold_platform: 'ebay'
+                        sold_platform: 'ebay',
+                        original_watch_id: watch.id  // Track which original product this came from
                     };
                     
                     // Remove id and timestamps so new record is created
@@ -504,6 +519,7 @@ Deno.serve(async (req) => {
                       <MailMessageType>All</MailMessageType>
                       <MessageStatus>Unanswered</MessageStatus>
                       <DisplayToPublic>false</DisplayToPublic>
+                      <StartCreationTime>${new Date(Date.now() - 30*24*60*60*1000).toISOString()}</StartCreationTime>
                     </GetMemberMessagesRequest>`
                 });
 
