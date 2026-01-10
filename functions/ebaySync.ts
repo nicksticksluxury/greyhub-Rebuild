@@ -477,6 +477,16 @@ Deno.serve(async (req) => {
             }
 
             // Get unread member messages count
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "info",
+                category: "ebay",
+                message: `STARTING member messages fetch`,
+                details: { tokenLength: ebayToken?.length }
+            });
+
             try {
                 // Try Member Messages API
                 const messagesResponse = await fetch(`https://api.ebay.com/ws/api.dll`, {
@@ -501,71 +511,54 @@ Deno.serve(async (req) => {
                     company_id: user.company_id,
                     user_id: user.id,
                     timestamp: new Date().toISOString(),
-                    level: "debug",
+                    level: "info",
                     category: "ebay",
                     message: `Messages API response status: ${messagesResponse.status}`,
-                    details: { status: messagesResponse.status }
+                    details: { status: messagesResponse.status, ok: messagesResponse.ok }
+                });
+
+                const messagesText = await messagesResponse.text();
+
+                // Log FULL response regardless of status
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "info",
+                    category: "ebay",
+                    message: `Messages API FULL response`,
+                    details: { fullBody: messagesText }
                 });
 
                 if (messagesResponse.ok) {
-                    const messagesText = await messagesResponse.text();
-
-                    // Log FULL response for debugging
-                    await base44.asServiceRole.entities.Log.create({
-                        company_id: user.company_id,
-                        user_id: user.id,
-                        timestamp: new Date().toISOString(),
-                        level: "debug",
-                        category: "ebay",
-                        message: `Messages API FULL response`,
-                        details: { fullBody: messagesText }
-                    });
-
                     // Try multiple parsing approaches
                     // 1. Try PaginationResult > TotalNumberOfEntries
                     let countMatch = messagesText.match(/<PaginationResult>[\s\S]*?<TotalNumberOfEntries>(\d+)<\/TotalNumberOfEntries>/);
                     if (countMatch) {
                         unreadMemberMessages = parseInt(countMatch[1]) || 0;
-                        await base44.asServiceRole.entities.Log.create({
-                            company_id: user.company_id,
-                            user_id: user.id,
-                            timestamp: new Date().toISOString(),
-                            level: "info",
-                            category: "ebay",
-                            message: `Found unread messages via PaginationResult: ${unreadMemberMessages}`,
-                            details: { count: unreadMemberMessages }
-                        });
                     } else {
                         // 2. Try direct TotalNumberOfEntries
                         countMatch = messagesText.match(/<TotalNumberOfEntries>(\d+)<\/TotalNumberOfEntries>/);
                         if (countMatch) {
                             unreadMemberMessages = parseInt(countMatch[1]) || 0;
-                            await base44.asServiceRole.entities.Log.create({
-                                company_id: user.company_id,
-                                user_id: user.id,
-                                timestamp: new Date().toISOString(),
-                                level: "info",
-                                category: "ebay",
-                                message: `Found unread messages via direct TotalNumberOfEntries: ${unreadMemberMessages}`,
-                                details: { count: unreadMemberMessages }
-                            });
                         } else {
                             // 3. Count MemberMessageExchange elements
                             const messageMatches = messagesText.match(/<MemberMessageExchange>/g);
                             if (messageMatches) {
                                 unreadMemberMessages = messageMatches.length;
-                                await base44.asServiceRole.entities.Log.create({
-                                    company_id: user.company_id,
-                                    user_id: user.id,
-                                    timestamp: new Date().toISOString(),
-                                    level: "info",
-                                    category: "ebay",
-                                    message: `Found unread messages by counting elements: ${unreadMemberMessages}`,
-                                    details: { count: unreadMemberMessages }
-                                });
                             }
                         }
                     }
+
+                    await base44.asServiceRole.entities.Log.create({
+                        company_id: user.company_id,
+                        user_id: user.id,
+                        timestamp: new Date().toISOString(),
+                        level: "info",
+                        category: "ebay",
+                        message: `Parsed unread messages count: ${unreadMemberMessages}`,
+                        details: { count: unreadMemberMessages }
+                    });
                 }
             } catch (msgErr) {
                 console.error("Failed to fetch unread messages:", msgErr);
@@ -575,8 +568,8 @@ Deno.serve(async (req) => {
                     timestamp: new Date().toISOString(),
                     level: "error",
                     category: "ebay",
-                    message: `Failed to fetch member messages: ${msgErr.message}`,
-                    details: { error: msgErr.message }
+                    message: `EXCEPTION fetching member messages: ${msgErr.message}`,
+                    details: { error: msgErr.message, stack: msgErr.stack }
                 });
             }
 
