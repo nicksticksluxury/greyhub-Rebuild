@@ -258,7 +258,7 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
       </Button>
 
       <ScrollArea className="flex-1 -mr-4 pr-4">
-        <div className="space-y-4 pb-4">
+         <div className="space-y-4 pb-4 max-w-full overflow-hidden">
           
           {aiAnalysis.listing_title && (
             <SelectableItem id="listing_title" label="Listing Title" value={aiAnalysis.listing_title} className="bg-emerald-50/50" />
