@@ -106,7 +106,23 @@ Deno.serve(async (req) => {
         const date = new Date();
         date.setDate(date.getDate() - 60);
         const dateStr = date.toISOString();
-        let response = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=creationdate:[${dateStr}..]`, {
+        const ordersUrl = `https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=creationdate:[${dateStr}..]`;
+
+        await base44.asServiceRole.entities.Log.create({
+            company_id: user.company_id,
+            user_id: user.id,
+            timestamp: new Date().toISOString(),
+            level: "debug",
+            category: "ebay",
+            message: `Fetching orders from eBay`,
+            details: { 
+                url: ordersUrl,
+                method: "GET",
+                tokenLength: ebayToken?.length
+            }
+        });
+
+        let response = await fetch(ordersUrl, {
             headers: {
                 'Authorization': `Bearer ${ebayToken}`,
                 'Content-Type': 'application/json'
@@ -309,7 +325,23 @@ Deno.serve(async (req) => {
 
         try {
             // Get orders awaiting shipment and track their status
-            const shipmentResponse = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=100&filter=orderfulfillmentstatus:{NOT_STARTED|IN_PROGRESS|FULFILLED}`, {
+            const shipmentUrl = `https://api.ebay.com/sell/fulfillment/v1/order?limit=100&filter=orderfulfillmentstatus:{NOT_STARTED|IN_PROGRESS|FULFILLED}`;
+
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "debug",
+                category: "ebay",
+                message: `Fetching orders to ship`,
+                details: { 
+                    url: shipmentUrl,
+                    method: "GET",
+                    tokenLength: ebayToken?.length
+                }
+            });
+
+            const shipmentResponse = await fetch(shipmentUrl, {
                 headers: {
                     'Authorization': `Bearer ${ebayToken}`,
                     'Content-Type': 'application/json'
@@ -398,7 +430,12 @@ Deno.serve(async (req) => {
                                     level: "debug",
                                     category: "ebay",
                                     message: `Fetching fulfillment from href: ${href}`,
-                                    details: { orderId: order.orderId, href }
+                                    details: { 
+                                        orderId: order.orderId, 
+                                        url: href,
+                                        method: "GET",
+                                        tokenLength: ebayToken?.length
+                                    }
                                 });
 
                                 const fulfillmentResponse = await fetch(href, {
@@ -604,7 +641,23 @@ Deno.serve(async (req) => {
             }
 
             // Get active listings count (eligible to send offers)
-            const inventoryResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item?limit=1`, {
+            const inventoryUrl = `https://api.ebay.com/sell/inventory/v1/inventory_item?limit=1`;
+
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: "debug",
+                category: "ebay",
+                message: `Fetching inventory count`,
+                details: { 
+                    url: inventoryUrl,
+                    method: "GET",
+                    tokenLength: ebayToken?.length
+                }
+            });
+
+            const inventoryResponse = await fetch(inventoryUrl, {
                 headers: {
                     'Authorization': `Bearer ${ebayToken}`,
                     'Content-Type': 'application/json'
@@ -629,6 +682,31 @@ Deno.serve(async (req) => {
 
             try {
                 // Try Member Messages API
+                const messagesBody = `<?xml version="1.0" encoding="utf-8"?>
+                    <GetMemberMessagesRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+                      <DetailLevel>ReturnHeaders</DetailLevel>
+                      <MailMessageType>All</MailMessageType>
+                      <MessageStatus>Unanswered</MessageStatus>
+                      <DisplayToPublic>false</DisplayToPublic>
+                      <StartCreationTime>${new Date(Date.now() - 30*24*60*60*1000).toISOString()}</StartCreationTime>
+                    </GetMemberMessagesRequest>`;
+
+                await base44.asServiceRole.entities.Log.create({
+                    company_id: user.company_id,
+                    user_id: user.id,
+                    timestamp: new Date().toISOString(),
+                    level: "debug",
+                    category: "ebay",
+                    message: `Fetching member messages`,
+                    details: { 
+                        url: "https://api.ebay.com/ws/api.dll",
+                        method: "POST",
+                        apiCallName: "GetMemberMessages",
+                        requestBody: messagesBody,
+                        tokenLength: ebayToken?.length
+                    }
+                });
+
                 const messagesResponse = await fetch(`https://api.ebay.com/ws/api.dll`, {
                     method: 'POST',
                     headers: {
@@ -638,14 +716,7 @@ Deno.serve(async (req) => {
                         'X-EBAY-API-IAF-TOKEN': ebayToken,
                         'Content-Type': 'text/xml'
                     },
-                    body: `<?xml version="1.0" encoding="utf-8"?>
-                    <GetMemberMessagesRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-                      <DetailLevel>ReturnHeaders</DetailLevel>
-                      <MailMessageType>All</MailMessageType>
-                      <MessageStatus>Unanswered</MessageStatus>
-                      <DisplayToPublic>false</DisplayToPublic>
-                      <StartCreationTime>${new Date(Date.now() - 30*24*60*60*1000).toISOString()}</StartCreationTime>
-                    </GetMemberMessagesRequest>`
+                    body: messagesBody
                 });
 
                 await base44.asServiceRole.entities.Log.create({
