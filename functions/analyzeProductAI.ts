@@ -335,6 +335,11 @@ Deno.serve(async (req) => {
     const bmv = pass4Result.final_base_market_value || 0;
     const cost = product.cost || 0;
 
+    // Fetch target profit margin from pricing prompt config
+    const pricingPrompt = getPrompt('ai_pricing_formulas_pass5');
+    const TARGET_PROFIT_MARGIN = pricingPrompt?.target_profit_margin || 0.25;
+    console.log('Using target profit margin:', TARGET_PROFIT_MARGIN);
+
     // Check for zero cost handling
     const hasZeroCost = cost === 0 || cost === null || cost === undefined;
     
@@ -356,17 +361,16 @@ Deno.serve(async (req) => {
     } else if (!bmv || bmv === 0) {
       // If no BMV from comps, use cost-based fallback for all platforms
       const platformConfigs = {
-        ebay: { feeRate: 0.18, costMultiplier: 1.25 },
-        etsy: { feeRate: 0.065, costMultiplier: 1.25 },
-        poshmark: { feeRate: 0.20, costMultiplier: 1.25 },
-        mercari: { feeRate: 0.10, costMultiplier: 1.25 },
-        whatnot: { feeRate: 0.12, costMultiplier: 1.30 },
-        shopify: { feeRate: 0.029, costMultiplier: 1.25 }
+        ebay: { feeRate: 0.18 },
+        etsy: { feeRate: 0.065 },
+        poshmark: { feeRate: 0.20 },
+        mercari: { feeRate: 0.10 },
+        whatnot: { feeRate: 0.12 },
+        shopify: { feeRate: 0.029 }
       };
 
       Object.entries(platformConfigs).forEach(([platform, config]) => {
-        const feeSafeFloor = cost / (1 - config.feeRate);
-        const binPrice = Math.max(cost * config.costMultiplier, feeSafeFloor);
+        const binPrice = cost / (1 - config.feeRate - TARGET_PROFIT_MARGIN);
         
         // Apply platform-specific formatting
         if (platform === 'whatnot') {
@@ -388,21 +392,19 @@ Deno.serve(async (req) => {
     } else {
       // Define fee rates and multipliers for each platform
       const platformConfigs = {
-        ebay: { feeRate: 0.18, binMultiplier: 0.95, costMultiplier: 1.25 },
-        etsy: { feeRate: 0.065, binMultiplier: 0.95, costMultiplier: 1.25 },
-        poshmark: { feeRate: 0.20, binMultiplier: 0.95, costMultiplier: 1.25 },
-        mercari: { feeRate: 0.10, binMultiplier: 0.95, costMultiplier: 1.25 },
-        whatnot: { feeRate: 0.12, binMultiplier: 1.00, costMultiplier: 1.30 },
-        shopify: { feeRate: 0.029, binMultiplier: 0.95, costMultiplier: 1.25 }
+        ebay: { feeRate: 0.18, binMultiplier: 0.95 },
+        etsy: { feeRate: 0.065, binMultiplier: 0.95 },
+        poshmark: { feeRate: 0.20, binMultiplier: 0.95 },
+        mercari: { feeRate: 0.10, binMultiplier: 0.95 },
+        whatnot: { feeRate: 0.12, binMultiplier: 1.00 },
+        shopify: { feeRate: 0.029, binMultiplier: 0.95 }
       };
 
       // Calculate prices for each platform using same formula
       Object.entries(platformConfigs).forEach(([platform, config]) => {
-        const feeSafeFloor = cost / (1 - config.feeRate);
         const binPrice = Math.max(
           bmv * config.binMultiplier,
-          cost * config.costMultiplier,
-          feeSafeFloor
+          cost / (1 - config.feeRate - TARGET_PROFIT_MARGIN)
         );
 
         // Apply platform-specific formatting
@@ -410,12 +412,10 @@ Deno.serve(async (req) => {
           platformPrices[`${platform}_bin`] = Math.ceil(binPrice);
           platformPrices[`${platform}_accept`] = Math.ceil(binPrice * 0.92);
           platformPrices[`${platform}_counter`] = Math.ceil(binPrice * 0.88);
-          platformPrices[`${platform}_fee_safe`] = Math.ceil(feeSafeFloor);
         } else {
           platformPrices[`${platform}_bin`] = Math.floor(binPrice) + 0.99;
           platformPrices[`${platform}_accept`] = Math.floor(binPrice * 0.92) + 0.99;
           platformPrices[`${platform}_counter`] = Math.floor(binPrice * 0.88) + 0.99;
-          platformPrices[`${platform}_fee_safe`] = Math.floor(feeSafeFloor) + 0.99;
         }
 
         // Add simple platform key for UI

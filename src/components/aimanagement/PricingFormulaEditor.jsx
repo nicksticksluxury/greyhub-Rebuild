@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function PricingFormulaEditor({ value, onChange }) {
+export default function PricingFormulaEditor({ value, onChange, targetProfitMargin, onTargetProfitMarginChange }) {
   const [config, setConfig] = useState({
     ebay_fee_rate: 0.18,
     whatnot_fee_rate: 0.12,
@@ -60,6 +60,25 @@ export default function PricingFormulaEditor({ value, onChange }) {
 
   return (
     <div className="space-y-6">
+      {/* Target Profit Margin Section */}
+      <div className="space-y-3 bg-amber-50 p-4 rounded-lg border border-amber-200">
+        <h3 className="font-semibold text-slate-900">Target Profit Margin</h3>
+        <div>
+          <Label className="text-sm">Profit Margin After Fees</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={targetProfitMargin || 0.25}
+            onChange={(e) => onTargetProfitMarginChange(parseFloat(e.target.value) || 0.25)}
+            className="mt-1 max-w-xs"
+          />
+          <p className="text-xs text-slate-500 mt-1">Decimal format (0.25 = 25% profit after fees)</p>
+          <p className="text-xs text-amber-700 mt-2 font-medium">
+            Price = Cost ÷ (1 - Fee Rate - Target Profit Margin)
+          </p>
+        </div>
+      </div>
+
       {/* Fee Rates Section */}
       <div className="space-y-3">
         <h3 className="font-semibold text-slate-900">Platform Fee Rates</h3>
