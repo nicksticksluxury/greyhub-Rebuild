@@ -272,28 +272,57 @@ export default function Dashboard() {
           
           {ebayOrdersToShip.length > 0 && (
             <div className="mt-4 bg-white rounded-lg p-4 border border-orange-200">
-              <h3 className="text-sm font-bold text-slate-900 mb-3">Items Awaiting Shipment</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {ebayOrdersToShip.map(alert => (
-                  <div key={alert.id} className="flex items-center justify-between p-2 bg-orange-50 rounded border border-orange-200">
-                    <div className="flex-1">
-                      <Link to={createPageUrl(alert.link)} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
-                        {alert.message}
-                      </Link>
-                      <p className="text-xs text-slate-500">{new Date(alert.created_date).toLocaleDateString()}</p>
+              <h3 className="text-sm font-bold text-slate-900 mb-3">Order Tracking</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {ebayOrdersToShip.map(alert => {
+                  const trackingStatus = alert.metadata?.tracking_status || 'CREATED';
+                  const statusColors = {
+                    'CREATED': 'bg-orange-50 border-orange-200',
+                    'IN_TRANSIT': 'bg-blue-50 border-blue-200',
+                    'DELIVERED': 'bg-green-50 border-green-200'
+                  };
+                  const statusLabels = {
+                    'CREATED': 'Awaiting Shipment',
+                    'IN_TRANSIT': 'In Transit',
+                    'DELIVERED': 'Delivered'
+                  };
+                  
+                  return (
+                    <div key={alert.id} className={`flex items-center justify-between p-2 rounded border ${statusColors[trackingStatus]}`}>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge className="text-xs">{statusLabels[trackingStatus]}</Badge>
+                          <Link to={createPageUrl(alert.link)} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
+                            {alert.message}
+                          </Link>
+                        </div>
+                        <p className="text-xs text-slate-500">{new Date(alert.created_date).toLocaleDateString()}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {alert.metadata?.ebay_listing_url && (
+                          <a 
+                            href={alert.metadata.ebay_listing_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          >
+                            eBay →
+                          </a>
+                        )}
+                        {trackingStatus === 'DELIVERED' && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => handleDismissAlert(alert.id)}
+                            className="text-green-600 hover:text-green-800"
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    {alert.metadata?.ebay_listing_url && (
-                      <a 
-                        href={alert.metadata.ebay_listing_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 hover:text-blue-800 underline"
-                      >
-                        eBay Listing →
-                      </a>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
