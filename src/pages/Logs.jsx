@@ -57,11 +57,17 @@ export default function Logs() {
   // Filter logs
   const filteredLogs = logs.filter(log => {
     const matchesCategory = categoryFilter === "all" || log.category === categoryFilter;
-    const matchesLevel = levelFilter === "all" || log.level === levelFilter;
+    const matchesLevel = levelFilter === "all" || log.level === levelLevel;
     const matchesSearch = !searchTerm || 
       log.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.category?.toLowerCase().includes(searchTerm.toLowerCase());
-    const isAccountDeletion = log.message?.toLowerCase().includes("account deletion");
+    
+    // Check for account deletion notifications
+    const isAccountDeletion = 
+      log.message?.toLowerCase().includes("account deletion") ||
+      log.message?.includes('"metadata":{"topic":"MARKETPLACE_ACCOUNT_DELETION"') ||
+      (log.details && JSON.stringify(log.details).includes('"metadata":{"topic":"MARKETPLACE_ACCOUNT_DELETION"'));
+    
     const showAccountDeletion = !hideAccountDeletion || !isAccountDeletion;
     return matchesCategory && matchesLevel && matchesSearch && showAccountDeletion;
   });
