@@ -342,31 +342,42 @@ Deno.serve(async (req) => {
     const platformPrices = {};
 
     if (hasZeroCost) {
-      // Return all zeros with note
-      platformPrices.ebay_bin = 0;
-      platformPrices.ebay_best_offer_auto_decline = 0;
-      platformPrices.ebay_best_offer_auto_accept = 0;
-      platformPrices.ebay_best_offer_counter = 0;
-      platformPrices.whatnot_display = 0;
-      platformPrices.whatnot_auction_start = 0;
+      // Return all zeros with note for all platforms
+      const platforms = ['ebay', 'etsy', 'poshmark', 'mercari', 'whatnot', 'shopify'];
+      platforms.forEach(platform => {
+        platformPrices[`${platform}_bin`] = 0;
+        platformPrices[`${platform}_accept`] = 0;
+        platformPrices[`${platform}_counter`] = 0;
+        platformPrices[platform] = 0;
+      });
       platformPrices.bmv = bmv;
       platformPrices.pricing_notes = "Cost is Empty - Cannot Calculate Prices";
       console.log('Pass 5 - Zero cost detected, all prices set to $0');
     } else if (!bmv || bmv === 0) {
-      // If no BMV from comps, use cost-based fallback
-      platformPrices.ebay_bin = Math.round(cost * 1.25 * 100) / 100;
-      platformPrices.ebay_best_offer_auto_decline = Math.round(cost * 1.15 * 100) / 100;
-      platformPrices.ebay_best_offer_auto_accept = Math.round(cost * 1.15 * 100) / 100;
-      platformPrices.ebay_best_offer_counter = Math.round(cost * 1.10 * 100) / 100;
-      platformPrices.whatnot_display = Math.round(cost * 1.30 * 100) / 100;
-      platformPrices.whatnot_auction_start = Math.round(cost * 1.10 * 100) / 100;
+      // If no BMV from comps, use cost-based fallback for all platforms
+      const platformConfigs = {
+        ebay: { feeRate: 0.18, costMultiplier: 1.25 },
+        etsy: { feeRate: 0.065, costMultiplier: 1.25 },
+        poshmark: { feeRate: 0.20, costMultiplier: 1.25 },
+        mercari: { feeRate: 0.10, costMultiplier: 1.25 },
+        whatnot: { feeRate: 0.12, costMultiplier: 1.30 },
+        shopify: { feeRate: 0.029, costMultiplier: 1.25 }
+      };
+
+      Object.entries(platformConfigs).forEach(([platform, config]) => {
+        const feeSafeFloor = cost / (1 - config.feeRate);
+        const binPrice = Math.max(cost * config.costMultiplier, feeSafeFloor);
+        
+        platformPrices[`${platform}_bin`] = Math.round(binPrice * 100) / 100;
+        platformPrices[`${platform}_accept`] = Math.round(binPrice * 0.92 * 100) / 100;
+        platformPrices[`${platform}_counter`] = Math.round(binPrice * 0.88 * 100) / 100;
+        platformPrices[platform] = platformPrices[`${platform}_bin`];
+      });
+
       platformPrices.bmv = bmv;
       platformPrices.cost = cost;
       platformPrices.pricing_notes = `No comps found. Using cost-based pricing. Cost: $${cost.toFixed(2)}`;
-      // Add simple platform keys for UI display
-      platformPrices.ebay = platformPrices.ebay_bin;
-      platformPrices.whatnot = platformPrices.whatnot_display;
-      console.log('Pass 5 - No BMV, using cost-based fallback pricing');
+      console.log('Pass 5 - No BMV, using cost-based fallback pricing for all platforms');
     } else {
       // Define fee rates and multipliers for each platform
       const platformConfigs = {
