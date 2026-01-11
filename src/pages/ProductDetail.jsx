@@ -646,14 +646,14 @@ Return ONLY the HTML description, no wrapper text.`;
     setBeautifySelectedProgress({ current: 0, total: selectedImages.length });
 
     try {
-      const beautifiedPhotos = [...editedData.photos];
+      let currentPhotos = [...editedData.photos];
 
       for (let i = 0; i < selectedImages.length; i++) {
         const imageIndex = selectedImages[i];
         setBeautifySelectedProgress({ current: i + 1, total: selectedImages.length });
         toast.loading(`Beautifying image ${i + 1} of ${selectedImages.length}...`, { id: 'beautify-selected' });
 
-        const photo = editedData.photos[imageIndex];
+        const photo = currentPhotos[imageIndex];
         const imageUrl = photo.full || photo.medium || photo.original || photo;
 
         try {
@@ -676,14 +676,21 @@ Return ONLY the HTML description, no wrapper text.`;
             file_url: uploadResult.file_url 
           });
 
-          beautifiedPhotos[imageIndex] = optimizeResult.data;
+          // Create a new array with the updated image
+          currentPhotos = [
+            ...currentPhotos.slice(0, imageIndex),
+            optimizeResult.data,
+            ...currentPhotos.slice(imageIndex + 1)
+          ];
+          
+          // Update state immediately after each image
+          setEditedData({ ...editedData, photos: currentPhotos });
         } catch (error) {
           console.error(`Failed to beautify image ${imageIndex + 1}:`, error);
           // Keep original if beautification fails
         }
       }
 
-      setEditedData({ ...editedData, photos: beautifiedPhotos });
       setHasUnsavedChanges(true);
       setSelectedImages([]);
       toast.success(`Successfully beautified ${selectedImages.length} image(s)!`, { id: 'beautify-selected' });
