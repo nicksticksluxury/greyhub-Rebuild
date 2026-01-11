@@ -349,17 +349,39 @@ Deno.serve(async (req) => {
                 });
 
                 for (const order of ordersToShipList) {
-                    // Determine tracking status
+                    // Get tracking information
                     const fulfillmentStatus = order.orderFulfillmentStatus;
-                    const shippingFulfillments = order.fulfillmentStartInstructions?.[0]?.shippingStep?.shipTo;
-                    const hasTracking = order.fulfillmentStartInstructions?.[0]?.shippingStep?.shippingCarrierCode || false;
+                    const lineItems = order.lineItems || [];
 
-                    let trackingStatus = 'CREATED'; // Default
+                    // Extract tracking number from fulfillment details
+                    let trackingNumber = null;
+                    let shippingCarrier = null;
 
+                    if (order.fulfillmentHrefs && order.fulfillmentHrefs.length > 0) {
+                        // Tracking info is in fulfillment details
+                        const fulfillmentHref = order.fulfillmentHrefs[0];
+                        try {
+                            const fulfillmentResponse = await fetch(fulfillmentHref, {
+                                headers: {
+                                    'Authorization': `Bearer ${ebayToken}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            if (fulfillmentResponse.ok) {
+                                const fulfillmentData = await fulfillmentResponse.json();
+                                trackingNumber = fulfillmentData.shipmentTrackingNumber;
+                                shippingCarrier = fulfillmentData.shippingCarrierCode;
+                            }
+                        } catch (e) {
+                            // Continue without tracking
+                        }
+                    }
+
+                    let trackingStatus = 'NEED_TO_SHIP';
                     if (fulfillmentStatus === 'NOT_STARTED') {
-                        trackingStatus = 'CREATED';
-                    } else if (fulfillmentStatus === 'IN_PROGRESS' && hasTracking) {
-                        trackingStatus = 'IN_TRANSIT';
+                        trackingStatus = 'NEED_TO_SHIP';
+                    } else if (fulfillmentStatus === 'IN_PROGRESS' || (fulfillmentStatus === 'FULFILLED' && trackingNumber)) {
+                        trackingStatus = trackingNumber ? 'IN_TRANSIT' : 'NEED_TO_SHIP';
                     } else if (fulfillmentStatus === 'FULFILLED') {
                         trackingStatus = 'DELIVERED';
                     }
@@ -449,9 +471,7 @@ Deno.serve(async (req) => {
                                 company_id: user.company_id,
                                 user_id: user.id,
                                 type: trackingStatus === 'DELIVERED' ? "success" : "info",
-                                title: trackingStatus === 'DELIVERED' ? "eBay Order Delivered" : 
-                                       trackingStatus === 'IN_TRANSIT' ? "eBay Order In Transit" : 
-                                       "eBay Order to Ship",
+                                title: "eBay Order Status",
                                 message: `${product.brand} ${product.model} (Order ${order.orderId}, $${item.total.value})`,
                                 link: `ProductDetail?id=${product.id}`,
                                 read: false,
@@ -460,7 +480,9 @@ Deno.serve(async (req) => {
                                     ebay_listing_url: ebayItemUrl,
                                     order_id: order.orderId,
                                     tracking_status: trackingStatus,
-                                    fulfillment_status: fulfillmentStatus
+                                    fulfillment_status: fulfillmentStatus,
+                                    tracking_number: trackingNumber,
+                                    shipping_carrier: shippingCarrier
                                 }
                             });
                             

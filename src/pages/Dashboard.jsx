@@ -272,53 +272,65 @@ export default function Dashboard() {
           
           {ebayOrdersToShip.length > 0 && (
             <div className="mt-4 bg-white rounded-lg p-4 border border-orange-200">
-              <h3 className="text-sm font-bold text-slate-900 mb-3">Order Tracking</h3>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <h3 className="text-sm font-bold text-slate-900 mb-3">Order Status</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {ebayOrdersToShip.map(alert => {
-                  const trackingStatus = alert.metadata?.tracking_status || 'CREATED';
+                  const trackingStatus = alert.metadata?.tracking_status || 'NEED_TO_SHIP';
+                  const trackingNumber = alert.metadata?.tracking_number;
+                  const fulfillmentStatus = alert.metadata?.fulfillment_status;
+                  
                   const statusColors = {
-                    'CREATED': 'bg-orange-50 border-orange-200',
+                    'NEED_TO_SHIP': 'bg-orange-50 border-orange-200',
                     'IN_TRANSIT': 'bg-blue-50 border-blue-200',
                     'DELIVERED': 'bg-green-50 border-green-200'
                   };
                   const statusLabels = {
-                    'CREATED': 'Awaiting Shipment',
-                    'IN_TRANSIT': 'In Transit',
+                    'NEED_TO_SHIP': 'Need to Ship',
+                    'IN_TRANSIT': 'Shipped / In Transit',
                     'DELIVERED': 'Delivered'
                   };
                   
+                  const ebayStatusLabels = {
+                    'NOT_STARTED': 'Awaiting Shipment',
+                    'IN_PROGRESS': 'In Progress',
+                    'FULFILLED': 'Fulfilled'
+                  };
+                  
                   return (
-                    <div key={alert.id} className={`flex items-center justify-between p-2 rounded border ${statusColors[trackingStatus]}`}>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge className="text-xs">{statusLabels[trackingStatus]}</Badge>
-                          <Link to={createPageUrl(alert.link)} className="text-sm font-semibold text-slate-900 hover:text-slate-700">
+                    <div key={alert.id} className={`p-3 rounded border ${statusColors[trackingStatus]}`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge className="text-xs font-semibold">{statusLabels[trackingStatus]}</Badge>
+                          </div>
+                          <Link to={createPageUrl(alert.link)} className="text-sm font-semibold text-slate-900 hover:text-slate-700 block mb-1">
                             {alert.message}
                           </Link>
+                          {fulfillmentStatus && (
+                            <p className="text-xs text-slate-600">eBay Status: {ebayStatusLabels[fulfillmentStatus]}</p>
+                          )}
+                          {trackingNumber && (
+                            <a 
+                              href={`https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 inline-block"
+                            >
+                              Track: {trackingNumber}
+                            </a>
+                          )}
                         </div>
-                        <p className="text-xs text-slate-500">{new Date(alert.created_date).toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {alert.metadata?.ebay_listing_url && (
-                          <a 
-                            href={alert.metadata.ebay_listing_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:text-blue-800 underline"
-                          >
-                            eBay →
-                          </a>
-                        )}
-                        {trackingStatus === 'DELIVERED' && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onClick={() => handleDismissAlert(alert.id)}
-                            className="text-green-600 hover:text-green-800"
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {trackingStatus === 'DELIVERED' && (
+                            <Button 
+                              size="sm"
+                              onClick={() => handleDismissAlert(alert.id)}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              Confirmed
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
