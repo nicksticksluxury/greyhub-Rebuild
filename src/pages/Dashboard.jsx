@@ -301,22 +301,40 @@ export default function Dashboard() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge className="text-xs font-semibold">{statusLabels[trackingStatus]}</Badge>
+                            <Badge className={`text-xs font-bold ${
+                              trackingStatus === 'NEED_TO_SHIP' ? 'bg-orange-600 text-white' :
+                              trackingStatus === 'IN_TRANSIT' ? 'bg-blue-600 text-white' :
+                              'bg-green-600 text-white'
+                            }`}>
+                              {statusLabels[trackingStatus]}
+                            </Badge>
                           </div>
                           <Link to={createPageUrl(alert.link)} className="text-sm font-semibold text-slate-900 hover:text-slate-700 block mb-1">
                             {alert.message}
                           </Link>
-                          {fulfillmentStatus && (
-                            <p className="text-xs text-slate-600">eBay Status: {ebayStatusLabels[fulfillmentStatus]}</p>
-                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            {fulfillmentStatus && (
+                              <p className="text-xs text-slate-600">eBay: {ebayStatusLabels[fulfillmentStatus]}</p>
+                            )}
+                            {alert.metadata?.ebay_listing_url && (
+                              <a 
+                                href={alert.metadata.ebay_listing_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              >
+                                View Listing
+                              </a>
+                            )}
+                          </div>
                           {trackingNumber && (
                             <a 
                               href={`https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 inline-block"
+                              className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 inline-block font-semibold"
                             >
-                              Track: {trackingNumber}
+                              📦 Track: {trackingNumber}
                             </a>
                           )}
                         </div>

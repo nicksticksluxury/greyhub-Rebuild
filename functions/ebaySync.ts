@@ -349,19 +349,24 @@ Deno.serve(async (req) => {
                 });
 
                 for (const order of ordersToShipList) {
-                    // Get tracking information
+                    // Get tracking information from fulfillment details
                     const fulfillmentStatus = order.orderFulfillmentStatus;
-                    const lineItems = order.lineItems || [];
-
-                    // Extract tracking number from fulfillment details
                     let trackingNumber = null;
                     let shippingCarrier = null;
 
-                    if (order.fulfillmentHrefs && order.fulfillmentHrefs.length > 0) {
-                        // Tracking info is in fulfillment details
-                        const fulfillmentHref = order.fulfillmentHrefs[0];
+                    // Check if order has fulfillment info with tracking
+                    if (order.fulfillmentStartInstructions && order.fulfillmentStartInstructions.length > 0) {
+                        const fulfillment = order.fulfillmentStartInstructions[0];
+                        if (fulfillment.shippingStep) {
+                            trackingNumber = fulfillment.shippingStep.shipmentTrackingNumber;
+                            shippingCarrier = fulfillment.shippingStep.shippingCarrierCode;
+                        }
+                    }
+
+                    // If not found, try fetching from fulfillment href
+                    if (!trackingNumber && order.fulfillmentHrefs && order.fulfillmentHrefs.length > 0) {
                         try {
-                            const fulfillmentResponse = await fetch(fulfillmentHref, {
+                            const fulfillmentResponse = await fetch(order.fulfillmentHrefs[0], {
                                 headers: {
                                     'Authorization': `Bearer ${ebayToken}`,
                                     'Content-Type': 'application/json'
@@ -380,8 +385,8 @@ Deno.serve(async (req) => {
                     let trackingStatus = 'NEED_TO_SHIP';
                     if (fulfillmentStatus === 'NOT_STARTED') {
                         trackingStatus = 'NEED_TO_SHIP';
-                    } else if (fulfillmentStatus === 'IN_PROGRESS' || (fulfillmentStatus === 'FULFILLED' && trackingNumber)) {
-                        trackingStatus = trackingNumber ? 'IN_TRANSIT' : 'NEED_TO_SHIP';
+                    } else if (trackingNumber) {
+                        trackingStatus = 'IN_TRANSIT';
                     } else if (fulfillmentStatus === 'FULFILLED') {
                         trackingStatus = 'DELIVERED';
                     }
