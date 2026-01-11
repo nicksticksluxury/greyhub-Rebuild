@@ -324,8 +324,8 @@ Deno.serve(async (req) => {
         let unreadMemberMessages = 0;
 
         try {
-            // Get orders awaiting shipment and track their status
-            const shipmentUrl = `https://api.ebay.com/sell/fulfillment/v1/order?limit=100&filter=orderfulfillmentstatus:{NOT_STARTED|IN_PROGRESS|FULFILLED}`;
+            // Get ALL recent orders (including shipped) to track their status
+            const allOrdersUrl = `https://api.ebay.com/sell/fulfillment/v1/order?limit=100&filter=creationdate:[${dateStr}..]`;
 
             await base44.asServiceRole.entities.Log.create({
                 company_id: user.company_id,
@@ -333,15 +333,15 @@ Deno.serve(async (req) => {
                 timestamp: new Date().toISOString(),
                 level: "debug",
                 category: "ebay",
-                message: `Fetching orders to ship`,
+                message: `Fetching all recent orders for tracking`,
                 details: { 
-                    url: shipmentUrl,
+                    url: allOrdersUrl,
                     method: "GET",
                     tokenLength: ebayToken?.length
                 }
             });
 
-            const shipmentResponse = await fetch(shipmentUrl, {
+            const shipmentResponse = await fetch(allOrdersUrl, {
                 headers: {
                     'Authorization': `Bearer ${ebayToken}`,
                     'Content-Type': 'application/json'
@@ -350,13 +350,16 @@ Deno.serve(async (req) => {
 
             if (shipmentResponse.ok) {
                 const shipmentData = await shipmentResponse.json();
-                ordersToShip = (shipmentData.orders || []).filter(o => 
+                const allOrders = shipmentData.orders || [];
+
+                // Count orders that need shipping
+                ordersToShip = allOrders.filter(o => 
                     o.orderFulfillmentStatus === 'NOT_STARTED' || 
                     o.orderFulfillmentStatus === 'IN_PROGRESS'
                 ).length;
-                
-                // Create/update alerts for orders to ship
-                const ordersToShipList = shipmentData.orders || [];
+
+                // Process ALL orders for tracking alerts (not just pending shipment)
+                const ordersToShipList = allOrders;
                 
                 // First, delete all existing "to ship" alerts
                 const existingShipAlerts = await base44.entities.Alert.filter({
