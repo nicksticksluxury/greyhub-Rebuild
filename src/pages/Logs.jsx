@@ -66,7 +66,9 @@ export default function Logs() {
     const isAccountDeletion = 
       log.message?.toLowerCase().includes("account deletion") ||
       log.message?.includes('"metadata":{"topic":"MARKETPLACE_ACCOUNT_DELETION"') ||
-      (log.details && JSON.stringify(log.details).includes('"metadata":{"topic":"MARKETPLACE_ACCOUNT_DELETION"'));
+      (log.details && JSON.stringify(log.details).includes('"metadata":{"topic":"MARKETPLACE_ACCOUNT_DELETION"')) ||
+      (log.category === "ebay_webhook" && log.message?.includes("Received POST notification") && 
+       log.details?.bodyPreview?.includes("MARKETPLACE_ACCOUNT_DELETION"));
     
     const showAccountDeletion = !hideAccountDeletion || !isAccountDeletion;
     return matchesCategory && matchesLevel && matchesSearch && showAccountDeletion;
