@@ -361,11 +361,10 @@ Deno.serve(async (req) => {
                 // Process ALL orders for tracking alerts (not just pending shipment)
                 const ordersToShipList = allOrders;
                 
-                // First, delete all existing "to ship" alerts
+                // First, delete all existing order status alerts
                 const existingShipAlerts = await base44.entities.Alert.filter({
                     company_id: user.company_id,
-                    type: "info",
-                    title: "eBay Order to Ship"
+                    title: "eBay Order Status"
                 });
 
                 for (const alert of existingShipAlerts) {
