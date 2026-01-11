@@ -25,13 +25,20 @@ export default function Logs() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['systemLogs'],
     queryFn: async () => {
-      const allLogs = await base44.asServiceRole.entities.Log.list("-timestamp", 500);
-      return allLogs;
+      if (user.company_id) {
+        // Tenant admin - show only their company's logs
+        const allLogs = await base44.entities.Log.list("-timestamp", 500);
+        return allLogs;
+      } else {
+        // System admin - show all logs
+        const allLogs = await base44.asServiceRole.entities.Log.list("-timestamp", 500);
+        return allLogs;
+      }
     },
-    enabled: !!user && user.role === 'admin' && !user.company_id,
+    enabled: !!user && user.role === 'admin',
   });
 
-  if (!user || user.role !== 'admin' || user.company_id) {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <Card className="p-8 text-center max-w-md">

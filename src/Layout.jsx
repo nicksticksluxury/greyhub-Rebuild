@@ -129,6 +129,11 @@ export default function Layout({ children, currentPageName }) {
             title: "Restore Data",
             url: createPageUrl("RestoreData"),
             icon: UploadIcon,
+          },
+          {
+            title: "Logs",
+            url: createPageUrl("Logs"),
+            icon: Settings,
           }
         ]
       });
