@@ -9,11 +9,20 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { optimizeImages } from "../utils/imageOptimizer";
 
-export default function ImageGallery({ photos, onPhotosChange }) {
+export default function ImageGallery({ photos, onPhotosChange, selectedImages = [], onSelectedImagesChange }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState(null);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, stage: '' });
+
+  const toggleImageSelection = (index) => {
+    if (!onSelectedImagesChange) return;
+    if (selectedImages.includes(index)) {
+      onSelectedImagesChange(selectedImages.filter(i => i !== index));
+    } else {
+      onSelectedImagesChange([...selectedImages, index]);
+    }
+  };
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files);
@@ -103,6 +112,17 @@ export default function ImageGallery({ photos, onPhotosChange }) {
                       >
                         <GripVertical className="w-4 h-4 text-white" />
                       </div>
+                      {onSelectedImagesChange && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedImages.includes(index)}
+                            onChange={() => toggleImageSelection(index)}
+                            className="w-5 h-5 cursor-pointer accent-purple-600"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      )}
                       <div className="relative">
                         <img
                           src={typeof photo === 'string' ? photo : (photo.thumbnail || photo.medium || photo.full)}
@@ -113,7 +133,7 @@ export default function ImageGallery({ photos, onPhotosChange }) {
                         <Button
                           size="icon"
                           variant="destructive"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg h-8 w-8"
+                          className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg h-8 w-8"
                           onClick={() => removePhoto(index)}
                         >
                           <X className="w-4 h-4" />
