@@ -154,7 +154,7 @@ export default function Dashboard() {
               className="border-slate-300 hover:bg-slate-50"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing...' : 'Sync Sales'}
+              {syncing ? 'Syncing...' : 'Sync eBay'}
             </Button>
             <Link to={createPageUrl("AddProduct")}>
               <Button className="bg-slate-800 hover:bg-slate-900 shadow-md">
