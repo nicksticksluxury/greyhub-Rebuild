@@ -13,6 +13,7 @@ export default function Logs() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [hideAccountDeletion, setHideAccountDeletion] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -60,7 +61,9 @@ export default function Logs() {
     const matchesSearch = !searchTerm || 
       log.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.category?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesLevel && matchesSearch;
+    const isAccountDeletion = log.message?.toLowerCase().includes("account deletion");
+    const showAccountDeletion = !hideAccountDeletion || !isAccountDeletion;
+    return matchesCategory && matchesLevel && matchesSearch && showAccountDeletion;
   });
 
   const getLevelIcon = (level) => {
@@ -134,6 +137,18 @@ export default function Logs() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              id="hideAccountDeletion" 
+              checked={hideAccountDeletion}
+              onChange={(e) => setHideAccountDeletion(e.target.checked)}
+              className="rounded"
+            />
+            <label htmlFor="hideAccountDeletion" className="text-sm text-slate-600 cursor-pointer">
+              Hide account deletion notifications
+            </label>
           </div>
         </Card>
 
