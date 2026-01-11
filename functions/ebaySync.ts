@@ -511,12 +511,12 @@ Deno.serve(async (req) => {
                     });
 
                     let trackingStatus = 'NEED_TO_SHIP';
-                    if (fulfillmentStatus === 'NOT_STARTED') {
-                        trackingStatus = 'NEED_TO_SHIP';
+                    if (fulfillmentStatus === 'FULFILLED') {
+                        trackingStatus = 'DELIVERED';
                     } else if (trackingNumber) {
                         trackingStatus = 'IN_TRANSIT';
-                    } else if (fulfillmentStatus === 'FULFILLED') {
-                        trackingStatus = 'DELIVERED';
+                    } else if (fulfillmentStatus === 'NOT_STARTED') {
+                        trackingStatus = 'NEED_TO_SHIP';
                     }
 
                     for (const item of order.lineItems || []) {

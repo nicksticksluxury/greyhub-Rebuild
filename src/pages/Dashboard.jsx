@@ -270,11 +270,11 @@ export default function Dashboard() {
             </div>
           </div>
           
-          {ebayOrdersToShip.length > 0 && (
+          {ebayOrdersToShip.filter(alert => alert.metadata?.tracking_status !== 'DELIVERED').length > 0 && (
             <div className="mt-4 bg-white rounded-lg p-4 border border-orange-200">
-              <h3 className="text-sm font-bold text-slate-900 mb-3">Order Status</h3>
+              <h3 className="text-sm font-bold text-slate-900 mb-3">Active Orders (Not Delivered)</h3>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {ebayOrdersToShip.map(alert => {
+                {ebayOrdersToShip.filter(alert => alert.metadata?.tracking_status !== 'DELIVERED').map(alert => {
                   const trackingStatus = alert.metadata?.tracking_status || 'NEED_TO_SHIP';
                   const trackingNumber = alert.metadata?.tracking_number;
                   const fulfillmentStatus = alert.metadata?.fulfillment_status;
