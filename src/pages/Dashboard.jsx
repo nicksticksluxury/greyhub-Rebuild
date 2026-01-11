@@ -104,7 +104,7 @@ export default function Dashboard() {
   // eBay specific alerts
   const ebayOffers = alerts.filter(a => a.title?.includes("Best Offer"));
   const ebaySales = alerts.filter(a => a.title?.includes("Sold on eBay"));
-  const ebayOrdersToShip = alerts.filter(a => a.title === "eBay Order to Ship");
+  const ebayOrdersToShip = alerts.filter(a => a.title === "eBay Order Status");
 
   // Sales trend data (last 30 days)
   const salesByDay = soldProducts.reduce((acc, p) => {
