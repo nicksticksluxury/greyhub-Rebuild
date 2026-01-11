@@ -193,6 +193,11 @@ export default function Layout({ children, currentPageName }) {
       icon: DollarSign,
     },
     {
+      title: "Logs",
+      url: createPageUrl("Logs"),
+      icon: Settings,
+    },
+    {
       title: "System Settings",
       url: createPageUrl("Settings"),
       icon: Settings,

@@ -301,15 +301,15 @@ Deno.serve(async (req) => {
             }
         }
 
-        // STEP 1.5: Fetch eBay seller stats (orders to ship, messages, offers)
+        // STEP 1.5: Fetch eBay seller stats (orders to ship, messages, offers) + Order Tracking
         let ordersToShip = 0;
         let unreadMessages = 0;
         let eligibleOffers = 0;
         let unreadMemberMessages = 0;
 
         try {
-            // Get orders awaiting shipment
-            const shipmentResponse = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=100&filter=orderfulfillmentstatus:{NOT_STARTED|IN_PROGRESS}`, {
+            // Get orders awaiting shipment and track their status
+            const shipmentResponse = await fetch(`https://api.ebay.com/sell/fulfillment/v1/order?limit=100&filter=orderfulfillmentstatus:{NOT_STARTED|IN_PROGRESS|FULFILLED}`, {
                 headers: {
                     'Authorization': `Bearer ${ebayToken}`,
                     'Content-Type': 'application/json'
@@ -318,7 +318,10 @@ Deno.serve(async (req) => {
 
             if (shipmentResponse.ok) {
                 const shipmentData = await shipmentResponse.json();
-                ordersToShip = shipmentData.total || 0;
+                ordersToShip = (shipmentData.orders || []).filter(o => 
+                    o.orderFulfillmentStatus === 'NOT_STARTED' || 
+                    o.orderFulfillmentStatus === 'IN_PROGRESS'
+                ).length;
                 
                 // Create/update alerts for orders to ship
                 const ordersToShipList = shipmentData.orders || [];
@@ -334,18 +337,32 @@ Deno.serve(async (req) => {
                     await base44.entities.Alert.delete(alert.id);
                 }
                 
-                // Create new alerts for current orders to ship
+                // Create new alerts for current orders to ship (including tracking status)
                 await base44.asServiceRole.entities.Log.create({
                     company_id: user.company_id,
                     user_id: user.id,
                     timestamp: new Date().toISOString(),
                     level: "info",
                     category: "ebay",
-                    message: `Processing ${ordersToShipList.length} orders for ship alerts`,
+                    message: `Processing ${ordersToShipList.length} orders for tracking alerts`,
                     details: { orderCount: ordersToShipList.length }
                 });
-                
+
                 for (const order of ordersToShipList) {
+                    // Determine tracking status
+                    const fulfillmentStatus = order.orderFulfillmentStatus;
+                    const shippingFulfillments = order.fulfillmentStartInstructions?.[0]?.shippingStep?.shipTo;
+                    const hasTracking = order.fulfillmentStartInstructions?.[0]?.shippingStep?.shippingCarrierCode || false;
+
+                    let trackingStatus = 'CREATED'; // Default
+
+                    if (fulfillmentStatus === 'NOT_STARTED') {
+                        trackingStatus = 'CREATED';
+                    } else if (fulfillmentStatus === 'IN_PROGRESS' && hasTracking) {
+                        trackingStatus = 'IN_TRANSIT';
+                    } else if (fulfillmentStatus === 'FULFILLED') {
+                        trackingStatus = 'DELIVERED';
+                    }
                     for (const item of order.lineItems || []) {
                         const sku = item.sku;
                         const legacyItemId = item.legacyItemId;
@@ -431,15 +448,19 @@ Deno.serve(async (req) => {
                             const alert = await base44.entities.Alert.create({
                                 company_id: user.company_id,
                                 user_id: user.id,
-                                type: "info",
-                                title: "eBay Order to Ship",
+                                type: trackingStatus === 'DELIVERED' ? "success" : "info",
+                                title: trackingStatus === 'DELIVERED' ? "eBay Order Delivered" : 
+                                       trackingStatus === 'IN_TRANSIT' ? "eBay Order In Transit" : 
+                                       "eBay Order to Ship",
                                 message: `${product.brand} ${product.model} (Order ${order.orderId}, $${item.total.value})`,
                                 link: `ProductDetail?id=${product.id}`,
                                 read: false,
                                 metadata: { 
                                     product_id: product.id, 
                                     ebay_listing_url: ebayItemUrl,
-                                    order_id: order.orderId 
+                                    order_id: order.orderId,
+                                    tracking_status: trackingStatus,
+                                    fulfillment_status: fulfillmentStatus
                                 }
                             });
                             
