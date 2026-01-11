@@ -44,6 +44,7 @@ export default function ProductDetail() {
   const [generatingHero, setGeneratingHero] = useState(false);
   const [beautifyingAll, setBeautifyingAll] = useState(false);
   const [beautifyProgress, setBeautifyProgress] = useState({ current: 0, total: 0 });
+  const [selectedImages, setSelectedImages] = useState([]);
 
   const { data: product, isLoading, error: productError } = useQuery({
     queryKey: ['product', productId],
@@ -571,37 +572,43 @@ Return ONLY the HTML description, no wrapper text.`;
     }
   };
 
-  const beautifyAllImages = async () => {
-    if (!editedData.photos || editedData.photos.length === 0) {
-      toast.error("No photos to beautify");
+  const beautifySelectedImages = async () => {
+    if (selectedImages.length === 0) {
+      toast.error("Please select at least one image to beautify");
       return;
     }
 
-    if (!confirm(`This will beautify all ${editedData.photos.length} images. This may take several minutes. Continue?`)) {
+    if (!confirm(`This will beautify ${selectedImages.length} selected image(s). This may take several minutes. Continue?`)) {
       return;
     }
 
     setBeautifyingAll(true);
-    setBeautifyProgress({ current: 0, total: editedData.photos.length });
+    setBeautifyProgress({ current: 0, total: selectedImages.length });
 
     try {
-      const beautifiedPhotos = [];
+      const beautifiedPhotos = [...editedData.photos];
 
-      for (let i = 0; i < editedData.photos.length; i++) {
-        setBeautifyProgress({ current: i + 1, total: editedData.photos.length });
-        toast.loading(`Beautifying image ${i + 1} of ${editedData.photos.length}...`, { id: 'beautify' });
+      for (let i = 0; i < selectedImages.length; i++) {
+        const imageIndex = selectedImages[i];
+        setBeautifyProgress({ current: i + 1, total: selectedImages.length });
+        toast.loading(`Beautifying image ${i + 1} of ${selectedImages.length}...`, { id: 'beautify' });
 
-        const photo = editedData.photos[i];
+        const photo = editedData.photos[imageIndex];
         const imageUrl = photo.full || photo.medium || photo.original || photo;
 
         try {
+          // Fetch AI beautify prompt
+          const aiPrompts = await base44.entities.AiPrompt.list();
+          const beautifyPrompt = aiPrompts.find(p => p.key === 'ai_beautify_image_prompt');
+          const promptText = beautifyPrompt?.prompt_content || heroImagePrompt;
+
           const result = await base44.integrations.Core.GenerateImage({
-            prompt: heroImagePrompt,
+            prompt: promptText.replace('{product_photo}', imageUrl),
             existing_image_urls: [imageUrl]
           });
 
           const imageBlob = await fetch(result.url).then(r => r.blob());
-          const file = new File([imageBlob], `beautified_${i}.png`, { type: 'image/png' });
+          const file = new File([imageBlob], `beautified_${imageIndex}.png`, { type: 'image/png' });
           
           const uploadResult = await base44.integrations.Core.UploadFile({ file });
           
@@ -609,19 +616,19 @@ Return ONLY the HTML description, no wrapper text.`;
             file_url: uploadResult.file_url 
           });
 
-          beautifiedPhotos.push(optimizeResult.data);
+          beautifiedPhotos[imageIndex] = optimizeResult.data;
         } catch (error) {
-          console.error(`Failed to beautify image ${i + 1}:`, error);
+          console.error(`Failed to beautify image ${imageIndex + 1}:`, error);
           // Keep original if beautification fails
-          beautifiedPhotos.push(photo);
         }
       }
 
       setEditedData({ ...editedData, photos: beautifiedPhotos });
       setHasUnsavedChanges(true);
-      toast.success(`Successfully beautified ${editedData.photos.length} images!`, { id: 'beautify' });
+      setSelectedImages([]);
+      toast.success(`Successfully beautified ${selectedImages.length} image(s)!`, { id: 'beautify' });
     } catch (error) {
-      console.error("Beautify all failed:", error);
+      console.error("Beautify failed:", error);
       toast.error("Failed to beautify images: " + error.message, { id: 'beautify' });
     } finally {
       setBeautifyingAll(false);
@@ -877,8 +884,8 @@ Return ONLY the HTML description, no wrapper text.`;
                   )}
                 </Button>
                 <Button
-                  onClick={beautifyAllImages}
-                  disabled={beautifyingAll || !editedData.photos?.length}
+                  onClick={beautifySelectedImages}
+                  disabled={beautifyingAll || selectedImages.length === 0}
                   variant="outline"
                   className="border-purple-300 text-purple-700 hover:bg-purple-50"
                 >
@@ -890,7 +897,7 @@ Return ONLY the HTML description, no wrapper text.`;
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Beautify All Images
+                      Beautify Selected Images ({selectedImages.length})
                     </>
                   )}
                 </Button>
@@ -1028,6 +1035,8 @@ Return ONLY the HTML description, no wrapper text.`;
                 <ImageGallery 
                   photos={editedData.photos || []}
                   onPhotosChange={(photos) => setEditedData({...editedData, photos})}
+                  selectedImages={selectedImages}
+                  onSelectedImagesChange={setSelectedImages}
                 />
                 
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
