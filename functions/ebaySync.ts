@@ -354,42 +354,109 @@ Deno.serve(async (req) => {
                     let trackingNumber = null;
                     let shippingCarrier = null;
 
+                    // Log full order structure for debugging
+                    await base44.asServiceRole.entities.Log.create({
+                        company_id: user.company_id,
+                        user_id: user.id,
+                        timestamp: new Date().toISOString(),
+                        level: "debug",
+                        category: "ebay",
+                        message: `Full order structure for ${order.orderId}`,
+                        details: { 
+                            orderId: order.orderId,
+                            fulfillmentStatus: fulfillmentStatus,
+                            fullOrder: order
+                        }
+                    });
+
                     // Method 1: Check fulfillmentStartInstructions
                     if (order.fulfillmentStartInstructions && order.fulfillmentStartInstructions.length > 0) {
                         const fulfillment = order.fulfillmentStartInstructions[0];
                         if (fulfillment.shippingStep) {
                             trackingNumber = fulfillment.shippingStep.shipmentTrackingNumber;
                             shippingCarrier = fulfillment.shippingStep.shippingCarrierCode;
-                        }
-                    }
-
-                    // Method 2: Check fulfillmentHrefs
-                    if (!trackingNumber && order.fulfillmentHrefs && order.fulfillmentHrefs.length > 0) {
-                        try {
-                            const fulfillmentResponse = await fetch(order.fulfillmentHrefs[0], {
-                                headers: {
-                                    'Authorization': `Bearer ${ebayToken}`,
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-                            if (fulfillmentResponse.ok) {
-                                const fulfillmentData = await fulfillmentResponse.json();
-                                const lineItems = fulfillmentData.lineItems || [];
-                                if (lineItems.length > 0 && lineItems[0].shipmentTrackingNumber) {
-                                    trackingNumber = lineItems[0].shipmentTrackingNumber;
-                                    shippingCarrier = lineItems[0].shippingCarrierCode;
-                                }
-                            }
-                        } catch (e) {
                             await base44.asServiceRole.entities.Log.create({
                                 company_id: user.company_id,
                                 user_id: user.id,
                                 timestamp: new Date().toISOString(),
-                                level: "error",
+                                level: "debug",
                                 category: "ebay",
-                                message: `Failed to fetch fulfillment details: ${e.message}`,
-                                details: { orderId: order.orderId }
+                                message: `Found tracking in fulfillmentStartInstructions for ${order.orderId}`,
+                                details: { orderId: order.orderId, trackingNumber, shippingCarrier }
                             });
+                        }
+                    }
+
+                    // Method 2: Check fulfillmentHrefs - iterate through ALL
+                    if (!trackingNumber && order.fulfillmentHrefs && order.fulfillmentHrefs.length > 0) {
+                        for (const href of order.fulfillmentHrefs) {
+                            try {
+                                await base44.asServiceRole.entities.Log.create({
+                                    company_id: user.company_id,
+                                    user_id: user.id,
+                                    timestamp: new Date().toISOString(),
+                                    level: "debug",
+                                    category: "ebay",
+                                    message: `Fetching fulfillment from href: ${href}`,
+                                    details: { orderId: order.orderId, href }
+                                });
+
+                                const fulfillmentResponse = await fetch(href, {
+                                    headers: {
+                                        'Authorization': `Bearer ${ebayToken}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                                
+                                if (fulfillmentResponse.ok) {
+                                    const fulfillmentData = await fulfillmentResponse.json();
+                                    
+                                    await base44.asServiceRole.entities.Log.create({
+                                        company_id: user.company_id,
+                                        user_id: user.id,
+                                        timestamp: new Date().toISOString(),
+                                        level: "debug",
+                                        category: "ebay",
+                                        message: `Fulfillment data received for ${href}`,
+                                        details: { orderId: order.orderId, href, fulfillmentData }
+                                    });
+
+                                    // Check multiple locations for tracking
+                                    if (fulfillmentData.shipmentTrackingNumber) {
+                                        trackingNumber = fulfillmentData.shipmentTrackingNumber;
+                                        shippingCarrier = fulfillmentData.shippingCarrierCode;
+                                        break;
+                                    } else if (fulfillmentData.lineItems && fulfillmentData.lineItems.length > 0) {
+                                        const lineItem = fulfillmentData.lineItems[0];
+                                        if (lineItem.shipmentTrackingNumber) {
+                                            trackingNumber = lineItem.shipmentTrackingNumber;
+                                            shippingCarrier = lineItem.shippingCarrierCode;
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    const errorText = await fulfillmentResponse.text();
+                                    await base44.asServiceRole.entities.Log.create({
+                                        company_id: user.company_id,
+                                        user_id: user.id,
+                                        timestamp: new Date().toISOString(),
+                                        level: "error",
+                                        category: "ebay",
+                                        message: `Failed to fetch fulfillment: ${errorText}`,
+                                        details: { orderId: order.orderId, href, error: errorText }
+                                    });
+                                }
+                            } catch (e) {
+                                await base44.asServiceRole.entities.Log.create({
+                                    company_id: user.company_id,
+                                    user_id: user.id,
+                                    timestamp: new Date().toISOString(),
+                                    level: "error",
+                                    category: "ebay",
+                                    message: `Exception fetching fulfillment: ${e.message}`,
+                                    details: { orderId: order.orderId, href, error: e.message }
+                                });
+                            }
                         }
                     }
 
