@@ -337,7 +337,7 @@ Deno.serve(async (req) => {
                     await base44.entities.Alert.delete(alert.id);
                 }
                 
-                // Create new alerts for current orders to ship (including tracking status)
+                // Create/update alerts for current orders with tracking status
                 await base44.asServiceRole.entities.Log.create({
                     company_id: user.company_id,
                     user_id: user.id,
@@ -349,12 +349,12 @@ Deno.serve(async (req) => {
                 });
 
                 for (const order of ordersToShipList) {
-                    // Get tracking information from fulfillment details
+                    // Get tracking information - check multiple locations
                     const fulfillmentStatus = order.orderFulfillmentStatus;
                     let trackingNumber = null;
                     let shippingCarrier = null;
 
-                    // Check if order has fulfillment info with tracking
+                    // Method 1: Check fulfillmentStartInstructions
                     if (order.fulfillmentStartInstructions && order.fulfillmentStartInstructions.length > 0) {
                         const fulfillment = order.fulfillmentStartInstructions[0];
                         if (fulfillment.shippingStep) {
@@ -363,7 +363,7 @@ Deno.serve(async (req) => {
                         }
                     }
 
-                    // If not found, try fetching from fulfillment href
+                    // Method 2: Check fulfillmentHrefs
                     if (!trackingNumber && order.fulfillmentHrefs && order.fulfillmentHrefs.length > 0) {
                         try {
                             const fulfillmentResponse = await fetch(order.fulfillmentHrefs[0], {
@@ -374,13 +374,34 @@ Deno.serve(async (req) => {
                             });
                             if (fulfillmentResponse.ok) {
                                 const fulfillmentData = await fulfillmentResponse.json();
-                                trackingNumber = fulfillmentData.shipmentTrackingNumber;
-                                shippingCarrier = fulfillmentData.shippingCarrierCode;
+                                const lineItems = fulfillmentData.lineItems || [];
+                                if (lineItems.length > 0 && lineItems[0].shipmentTrackingNumber) {
+                                    trackingNumber = lineItems[0].shipmentTrackingNumber;
+                                    shippingCarrier = lineItems[0].shippingCarrierCode;
+                                }
                             }
                         } catch (e) {
-                            // Continue without tracking
+                            await base44.asServiceRole.entities.Log.create({
+                                company_id: user.company_id,
+                                user_id: user.id,
+                                timestamp: new Date().toISOString(),
+                                level: "error",
+                                category: "ebay",
+                                message: `Failed to fetch fulfillment details: ${e.message}`,
+                                details: { orderId: order.orderId }
+                            });
                         }
                     }
+
+                    await base44.asServiceRole.entities.Log.create({
+                        company_id: user.company_id,
+                        user_id: user.id,
+                        timestamp: new Date().toISOString(),
+                        level: "info",
+                        category: "ebay",
+                        message: `Order ${order.orderId}: status=${fulfillmentStatus}, tracking=${trackingNumber || 'none'}`,
+                        details: { orderId: order.orderId, fulfillmentStatus, trackingNumber, shippingCarrier }
+                    });
 
                     let trackingStatus = 'NEED_TO_SHIP';
                     if (fulfillmentStatus === 'NOT_STARTED') {
@@ -390,6 +411,7 @@ Deno.serve(async (req) => {
                     } else if (fulfillmentStatus === 'FULFILLED') {
                         trackingStatus = 'DELIVERED';
                     }
+
                     for (const item of order.lineItems || []) {
                         const sku = item.sku;
                         const legacyItemId = item.legacyItemId;
@@ -409,32 +431,14 @@ Deno.serve(async (req) => {
                             let products = [];
                             if (sku) {
                                 products = await base44.entities.Product.filter({ id: sku });
-                                await base44.asServiceRole.entities.Log.create({
-                                    company_id: user.company_id,
-                                    user_id: user.id,
-                                    timestamp: new Date().toISOString(),
-                                    level: "debug",
-                                    category: "ebay",
-                                    message: `SKU search result: found ${products.length} products`,
-                                    details: { sku, foundCount: products.length }
-                                });
                             }
-                            
+
                             // If not found by SKU, try to find by eBay item ID
                             if (products.length === 0 && legacyItemId) {
                                 const allProducts = await base44.entities.Product.list();
                                 products = allProducts.filter(p => p.platform_ids?.ebay === legacyItemId);
-                                await base44.asServiceRole.entities.Log.create({
-                                    company_id: user.company_id,
-                                    user_id: user.id,
-                                    timestamp: new Date().toISOString(),
-                                    level: "debug",
-                                    category: "ebay",
-                                    message: `eBay ID search result: found ${products.length} products`,
-                                    details: { legacyItemId, foundCount: products.length, totalProducts: allProducts.length }
-                                });
                             }
-                            
+
                             if (products.length === 0) {
                                 await base44.asServiceRole.entities.Log.create({
                                     company_id: user.company_id,
@@ -447,32 +451,32 @@ Deno.serve(async (req) => {
                                 });
                                 continue;
                             }
-                            
+
                             const product = products[0];
-                            
-                            await base44.asServiceRole.entities.Log.create({
-                                company_id: user.company_id,
-                                user_id: user.id,
-                                timestamp: new Date().toISOString(),
-                                level: "info",
-                                category: "ebay",
-                                message: `Matched product: ${product.brand} ${product.model}`,
-                                details: { productId: product.id, sku, legacyItemId }
-                            });
-                            
-                            // Try to get eBay listing URL from item's legacyItemId or lineItemId
+
+                            // Try to get eBay listing URL from item's legacyItemId
                             let ebayItemUrl = null;
                             if (item.legacyItemId) {
                                 ebayItemUrl = `https://www.ebay.com/itm/${item.legacyItemId}`;
                             } else if (item.lineItemId) {
-                                // lineItemId format is typically orderId-lineItemId, extract the item part
                                 const itemIdMatch = item.lineItemId.match(/-(\d+)$/);
                                 if (itemIdMatch) {
                                     ebayItemUrl = `https://www.ebay.com/itm/${itemIdMatch[1]}`;
                                 }
                             }
-                            
-                            const alert = await base44.entities.Alert.create({
+
+                            // Check if alert already exists for this order
+                            const existingAlerts = await base44.entities.Alert.filter({
+                                company_id: user.company_id,
+                                title: "eBay Order Status"
+                            });
+
+                            const existingAlert = existingAlerts.find(a => 
+                                a.metadata?.order_id === order.orderId && 
+                                a.metadata?.product_id === product.id
+                            );
+
+                            const alertData = {
                                 company_id: user.company_id,
                                 user_id: user.id,
                                 type: trackingStatus === 'DELIVERED' ? "success" : "info",
@@ -489,17 +493,33 @@ Deno.serve(async (req) => {
                                     tracking_number: trackingNumber,
                                     shipping_carrier: shippingCarrier
                                 }
-                            });
-                            
-                            await base44.asServiceRole.entities.Log.create({
-                                company_id: user.company_id,
-                                user_id: user.id,
-                                timestamp: new Date().toISOString(),
-                                level: "success",
-                                category: "ebay",
-                                message: `Created ship alert for ${product.brand} ${product.model}`,
-                                details: { alertId: alert.id, productId: product.id, orderId: order.orderId }
-                            });
+                            };
+
+                            if (existingAlert) {
+                                // Update existing alert with new tracking info
+                                await base44.entities.Alert.update(existingAlert.id, alertData);
+                                await base44.asServiceRole.entities.Log.create({
+                                    company_id: user.company_id,
+                                    user_id: user.id,
+                                    timestamp: new Date().toISOString(),
+                                    level: "success",
+                                    category: "ebay",
+                                    message: `Updated order alert with tracking: ${product.brand} ${product.model}`,
+                                    details: { alertId: existingAlert.id, trackingNumber, trackingStatus }
+                                });
+                            } else {
+                                // Create new alert
+                                const alert = await base44.entities.Alert.create(alertData);
+                                await base44.asServiceRole.entities.Log.create({
+                                    company_id: user.company_id,
+                                    user_id: user.id,
+                                    timestamp: new Date().toISOString(),
+                                    level: "success",
+                                    category: "ebay",
+                                    message: `Created order alert for ${product.brand} ${product.model}`,
+                                    details: { alertId: alert.id, productId: product.id, orderId: order.orderId }
+                                });
+                            }
                         } catch (err) {
                             console.error("Failed to create ship alert:", err);
                             await base44.asServiceRole.entities.Log.create({
