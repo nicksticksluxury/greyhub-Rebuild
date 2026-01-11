@@ -45,6 +45,8 @@ export default function ProductDetail() {
   const [beautifyingAll, setBeautifyingAll] = useState(false);
   const [beautifyProgress, setBeautifyProgress] = useState({ current: 0, total: 0 });
   const [selectedImages, setSelectedImages] = useState([]);
+  const [beautifyingSelected, setBeautifyingSelected] = useState(false);
+  const [beautifySelectedProgress, setBeautifySelectedProgress] = useState({ current: 0, total: 0 });
 
   const { data: product, isLoading, error: productError } = useQuery({
     queryKey: ['product', productId],
@@ -572,6 +574,64 @@ Return ONLY the HTML description, no wrapper text.`;
     }
   };
 
+  const beautifyAllImages = async () => {
+    if (!editedData.photos || editedData.photos.length === 0) {
+      toast.error("No photos to beautify");
+      return;
+    }
+
+    if (!confirm(`This will beautify all ${editedData.photos.length} images. This may take several minutes. Continue?`)) {
+      return;
+    }
+
+    setBeautifyingAll(true);
+    setBeautifyProgress({ current: 0, total: editedData.photos.length });
+
+    try {
+      const beautifiedPhotos = [];
+
+      for (let i = 0; i < editedData.photos.length; i++) {
+        setBeautifyProgress({ current: i + 1, total: editedData.photos.length });
+        toast.loading(`Beautifying image ${i + 1} of ${editedData.photos.length}...`, { id: 'beautify' });
+
+        const photo = editedData.photos[i];
+        const imageUrl = photo.full || photo.medium || photo.original || photo;
+
+        try {
+          const result = await base44.integrations.Core.GenerateImage({
+            prompt: heroImagePrompt,
+            existing_image_urls: [imageUrl]
+          });
+
+          const imageBlob = await fetch(result.url).then(r => r.blob());
+          const file = new File([imageBlob], `beautified_${i}.png`, { type: 'image/png' });
+          
+          const uploadResult = await base44.integrations.Core.UploadFile({ file });
+          
+          const optimizeResult = await base44.functions.invoke('optimizeImage', { 
+            file_url: uploadResult.file_url 
+          });
+
+          beautifiedPhotos.push(optimizeResult.data);
+        } catch (error) {
+          console.error(`Failed to beautify image ${i + 1}:`, error);
+          // Keep original if beautification fails
+          beautifiedPhotos.push(photo);
+        }
+      }
+
+      setEditedData({ ...editedData, photos: beautifiedPhotos });
+      setHasUnsavedChanges(true);
+      toast.success(`Successfully beautified ${editedData.photos.length} images!`, { id: 'beautify' });
+    } catch (error) {
+      console.error("Beautify all failed:", error);
+      toast.error("Failed to beautify images: " + error.message, { id: 'beautify' });
+    } finally {
+      setBeautifyingAll(false);
+      setBeautifyProgress({ current: 0, total: 0 });
+    }
+  };
+
   const beautifySelectedImages = async () => {
     if (selectedImages.length === 0) {
       toast.error("Please select at least one image to beautify");
@@ -582,16 +642,16 @@ Return ONLY the HTML description, no wrapper text.`;
       return;
     }
 
-    setBeautifyingAll(true);
-    setBeautifyProgress({ current: 0, total: selectedImages.length });
+    setBeautifyingSelected(true);
+    setBeautifySelectedProgress({ current: 0, total: selectedImages.length });
 
     try {
       const beautifiedPhotos = [...editedData.photos];
 
       for (let i = 0; i < selectedImages.length; i++) {
         const imageIndex = selectedImages[i];
-        setBeautifyProgress({ current: i + 1, total: selectedImages.length });
-        toast.loading(`Beautifying image ${i + 1} of ${selectedImages.length}...`, { id: 'beautify' });
+        setBeautifySelectedProgress({ current: i + 1, total: selectedImages.length });
+        toast.loading(`Beautifying image ${i + 1} of ${selectedImages.length}...`, { id: 'beautify-selected' });
 
         const photo = editedData.photos[imageIndex];
         const imageUrl = photo.full || photo.medium || photo.original || photo;
@@ -626,13 +686,13 @@ Return ONLY the HTML description, no wrapper text.`;
       setEditedData({ ...editedData, photos: beautifiedPhotos });
       setHasUnsavedChanges(true);
       setSelectedImages([]);
-      toast.success(`Successfully beautified ${selectedImages.length} image(s)!`, { id: 'beautify' });
+      toast.success(`Successfully beautified ${selectedImages.length} image(s)!`, { id: 'beautify-selected' });
     } catch (error) {
-      console.error("Beautify failed:", error);
-      toast.error("Failed to beautify images: " + error.message, { id: 'beautify' });
+      console.error("Beautify selected failed:", error);
+      toast.error("Failed to beautify images: " + error.message, { id: 'beautify-selected' });
     } finally {
-      setBeautifyingAll(false);
-      setBeautifyProgress({ current: 0, total: 0 });
+      setBeautifyingSelected(false);
+      setBeautifySelectedProgress({ current: 0, total: 0 });
     }
   };
 
@@ -866,26 +926,26 @@ Return ONLY the HTML description, no wrapper text.`;
                   )}
                 </Button>
                 <Button
-                  onClick={generateHeroImage}
-                  disabled={generatingHero || !editedData.photos?.length}
+                  onClick={beautifySelectedImages}
+                  disabled={beautifyingSelected || selectedImages.length === 0}
                   variant="outline"
                   className="border-purple-300 text-purple-700 hover:bg-purple-50"
                 >
-                  {generatingHero ? (
+                  {beautifyingSelected ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
+                      {beautifySelectedProgress.current}/{beautifySelectedProgress.total}...
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Hero Image
+                      Beautify Selected Images ({selectedImages.length})
                     </>
                   )}
                 </Button>
                 <Button
-                  onClick={beautifySelectedImages}
-                  disabled={beautifyingAll || selectedImages.length === 0}
+                  onClick={beautifyAllImages}
+                  disabled={beautifyingAll || !editedData.photos?.length}
                   variant="outline"
                   className="border-purple-300 text-purple-700 hover:bg-purple-50"
                 >
@@ -897,7 +957,7 @@ Return ONLY the HTML description, no wrapper text.`;
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Beautify Selected Images ({selectedImages.length})
+                      Beautify All Images
                     </>
                   )}
                 </Button>
