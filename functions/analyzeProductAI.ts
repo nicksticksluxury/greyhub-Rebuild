@@ -368,9 +368,16 @@ Deno.serve(async (req) => {
         const feeSafeFloor = cost / (1 - config.feeRate);
         const binPrice = Math.max(cost * config.costMultiplier, feeSafeFloor);
         
-        platformPrices[`${platform}_bin`] = Math.round(binPrice * 100) / 100;
-        platformPrices[`${platform}_accept`] = Math.round(binPrice * 0.92 * 100) / 100;
-        platformPrices[`${platform}_counter`] = Math.round(binPrice * 0.88 * 100) / 100;
+        // Apply platform-specific formatting
+        if (platform === 'whatnot') {
+          platformPrices[`${platform}_bin`] = Math.ceil(binPrice);
+          platformPrices[`${platform}_accept`] = Math.ceil(binPrice * 0.92);
+          platformPrices[`${platform}_counter`] = Math.ceil(binPrice * 0.88);
+        } else {
+          platformPrices[`${platform}_bin`] = Math.floor(binPrice) + 0.99;
+          platformPrices[`${platform}_accept`] = Math.floor(binPrice * 0.92) + 0.99;
+          platformPrices[`${platform}_counter`] = Math.floor(binPrice * 0.88) + 0.99;
+        }
         platformPrices[platform] = platformPrices[`${platform}_bin`];
       });
 
@@ -398,10 +405,18 @@ Deno.serve(async (req) => {
           feeSafeFloor
         );
 
-        platformPrices[`${platform}_bin`] = Math.round(binPrice * 100) / 100;
-        platformPrices[`${platform}_accept`] = Math.round(binPrice * 0.92 * 100) / 100;
-        platformPrices[`${platform}_counter`] = Math.round(binPrice * 0.88 * 100) / 100;
-        platformPrices[`${platform}_fee_safe`] = Math.round(feeSafeFloor * 100) / 100;
+        // Apply platform-specific formatting
+        if (platform === 'whatnot') {
+          platformPrices[`${platform}_bin`] = Math.ceil(binPrice);
+          platformPrices[`${platform}_accept`] = Math.ceil(binPrice * 0.92);
+          platformPrices[`${platform}_counter`] = Math.ceil(binPrice * 0.88);
+          platformPrices[`${platform}_fee_safe`] = Math.ceil(feeSafeFloor);
+        } else {
+          platformPrices[`${platform}_bin`] = Math.floor(binPrice) + 0.99;
+          platformPrices[`${platform}_accept`] = Math.floor(binPrice * 0.92) + 0.99;
+          platformPrices[`${platform}_counter`] = Math.floor(binPrice * 0.88) + 0.99;
+          platformPrices[`${platform}_fee_safe`] = Math.floor(feeSafeFloor) + 0.99;
+        }
 
         // Add simple platform key for UI
         platformPrices[platform] = platformPrices[`${platform}_bin`];
