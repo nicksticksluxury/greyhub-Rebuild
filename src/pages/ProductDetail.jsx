@@ -710,7 +710,13 @@ Return ONLY the HTML description, no wrapper text.`;
       }
 
       // Update state once after all processing
-      setEditedData(prevData => ({ ...prevData, photos: currentPhotos }));
+      console.log('Final currentPhotos array before state update:', currentPhotos);
+      setEditedData(prevData => {
+        console.log('Previous photos in state:', prevData.photos);
+        const newData = { ...prevData, photos: currentPhotos };
+        console.log('New photos in state:', newData.photos);
+        return newData;
+      });
 
       setHasUnsavedChanges(successCount > 0);
       setSelectedImages([]);
@@ -1128,6 +1134,7 @@ Return ONLY the HTML description, no wrapper text.`;
             <div className="grid lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2 space-y-4">
                 <ImageGallery 
+                  key={JSON.stringify(editedData.photos?.map(p => p.full || p.original || p))}
                   photos={editedData.photos || []}
                   onPhotosChange={(photos) => setEditedData({...editedData, photos})}
                   selectedImages={selectedImages}
