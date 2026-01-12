@@ -54,35 +54,38 @@ Deno.serve(async (req) => {
 
     if (!removeBgResponse.ok) {
       const errorText = await removeBgResponse.text();
-      console.error('remove.bg API error:', removeBgResponse.status, errorText);
+      console.error('ERROR: remove.bg API error:', removeBgResponse.status, errorText);
       return Response.json({ 
         error: `remove.bg API failed: ${removeBgResponse.status} - ${errorText}` 
       }, { status: 500 });
     }
 
-    console.log('Background removed successfully');
+    console.log('Step 6: Background removed successfully, reading response...');
     
     const noBackgroundBlob = await removeBgResponse.blob();
-    console.log('Background-removed blob size:', noBackgroundBlob.size, 'bytes');
+    console.log('Step 7: Background-removed blob size:', noBackgroundBlob.size, 'bytes');
     
     if (noBackgroundBlob.size === 0) {
+      console.error('ERROR: remove.bg returned empty response');
       return Response.json({ 
         error: 'remove.bg returned empty response' 
       }, { status: 500 });
     }
     
+    console.log('Step 8: Uploading background-removed image...');
     // Upload the result
     const file = new File([noBackgroundBlob], 'background-removed.png', { type: 'image/png' });
     const uploadResult = await base44.integrations.Core.UploadFile({ file });
     
-    console.log('Uploaded to:', uploadResult.file_url);
+    console.log('Step 9: Uploaded to:', uploadResult.file_url);
     
+    console.log('Step 10: Optimizing image...');
     // Optimize the uploaded image
     const optimizeResult = await base44.functions.invoke('optimizeImage', { 
       file_url: uploadResult.file_url 
     });
     
-    console.log('Final optimized image:', optimizeResult.data);
+    console.log('Step 11: Complete! Final optimized image:', optimizeResult.data);
     
     return Response.json({
       success: true,
