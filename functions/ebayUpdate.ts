@@ -442,37 +442,40 @@ Deno.serve(async (req) => {
 });
 
 function getEbayCondition(condition) {
-    switch (condition) {
-        // New with box and papers
-        case 'new':
-        case 'new_full_set':
-        case 'new_with_box':
-        case 'New - With Box & Papers': 
-            return 'NEW';
-        
-        // New without box or papers
-        case 'new_no_box':
-        case 'New (No Box/Papers)':
-        case 'New (No Box)':
-        case 'New (Box Only)':
-            return 'NEW_OTHER';
-        
-        // Pre-owned conditions
-        case 'mint': 
-        case 'excellent': 
-            return 'USED_EXCELLENT';
-        
-        case 'very_good': 
-        case 'good': 
-            return 'USED_GOOD';
-        
-        case 'fair': 
-            return 'USED_ACCEPTABLE';
-        
-        case 'parts_repair': 
-            return 'FOR_PARTS_OR_NOT_WORKING';
-        
-        default: 
-            return 'USED_EXCELLENT';
+    const conditionStr = String(condition).toLowerCase().trim();
+    
+    // New with box and papers (1000)
+    if (conditionStr.includes('new - with box') || conditionStr === 'new - with box & papers' || 
+        conditionStr === 'new' || conditionStr === 'new_full_set' || conditionStr === 'new_with_box') {
+        return 'NEW';
     }
+    
+    // New other - no box/papers, box only, no box (1500)
+    if (conditionStr.includes('new - no box') || conditionStr.includes('new - box only') || 
+        conditionStr === 'new_no_box' || conditionStr === 'new (no box/papers)' || 
+        conditionStr === 'new (no box)' || conditionStr === 'new (box only)') {
+        return 'NEW_OTHER';
+    }
+    
+    // Mint, Excellent, Very Good (2990 - Pre-owned Excellent)
+    if (conditionStr === 'mint' || conditionStr === 'excellent' || 
+        conditionStr === 'very_good' || conditionStr === 'very good') {
+        return 'USED_EXCELLENT';
+    }
+    
+    // Good, Fair (3010 - Pre-owned Fair)
+    if (conditionStr === 'good' || conditionStr === 'fair') {
+        return 'USED_GOOD';
+    }
+    
+    // Parts/Repair (3000 - Broadest Used category)
+    if (conditionStr === 'parts/repair' || conditionStr === 'parts_repair' || 
+        conditionStr === 'parts' || conditionStr === 'repair' || 
+        conditionStr === 'for parts' || conditionStr === 'not working' ||
+        conditionStr === 'parts or repair' || conditionStr === 'parts and repair') {
+        return 'USED';
+    }
+    
+    // Default fallback
+    return 'USED_EXCELLENT';
 }
