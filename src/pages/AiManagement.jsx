@@ -188,7 +188,7 @@ Return:
     category: "Image Enhancement",
     order: 7,
     type: "text_prompt",
-    variables_documentation: "Available variables:\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{product_photo} - URL of the main product photo",
+    variables_documentation: "Available variables:\n{product_type_name} - Type of product (e.g., Watch, Handbag)\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{product_photo} - URL of the main product photo",
     prompt_content: `You are creating a professional hero product photograph by ONLY changing the background and lighting. The product itself must remain completely unmodified.
 
     Brand: {brand}
@@ -224,7 +224,7 @@ Return:
     category: "Image Enhancement",
     order: 8,
     type: "text_prompt",
-    variables_documentation: "Available variables:\n{product_photo} - URL of the product photo to enhance",
+    variables_documentation: "Available variables:\n{product_type_name} - Type of product (e.g., Watch, Handbag)\n{product_photo} - URL of the product photo to enhance",
     prompt_content: `You are creating a professional product photograph by ONLY changing the background and lighting. The product itself must remain completely unmodified.
 
     Image URL: {product_photo}
