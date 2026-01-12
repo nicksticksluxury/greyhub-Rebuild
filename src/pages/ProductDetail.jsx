@@ -700,17 +700,18 @@ Return ONLY the HTML description, no wrapper text.`;
           failCount++;
           toast.error(`Image ${i + 1} failed: ${error.message}`, { id: `fail-${i}`, duration: 5000 });
         }
-      }
+        }
 
-      setHasUnsavedChanges(successCount > 0);
-      setSelectedImages([]);
+        setHasUnsavedChanges(successCount > 0);
+        setSelectedImages([]);
 
-      if (successCount > 0 && failCount === 0) {
+        if (successCount > 0 && failCount === 0) {
         toast.success(`Successfully beautified ${successCount} image(s)!`, { id: 'beautify-selected' });
-      } else if (successCount > 0 && failCount > 0) {
+        } else if (successCount > 0 && failCount > 0) {
         toast.warning(`Beautified ${successCount}, failed ${failCount}`, { id: 'beautify-selected' });
-      } else {
+        } else {
         toast.error(`All ${failCount} images failed to beautify`, { id: 'beautify-selected' });
+        }
     } catch (error) {
       console.error("Beautify selected failed:", error);
       toast.error("Failed to beautify images: " + error.message, { id: 'beautify-selected' });
