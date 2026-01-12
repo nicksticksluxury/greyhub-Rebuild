@@ -4,9 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, AlertCircle, CheckCircle, Info, XCircle, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, AlertCircle, CheckCircle, Info, XCircle, Filter, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function Logs() {
   const [user, setUser] = useState(null);
@@ -14,6 +16,8 @@ export default function Logs() {
   const [levelFilter, setLevelFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [hideAccountDeletion, setHideAccountDeletion] = useState(true);
+  const [fetchingEbayConditions, setFetchingEbayConditions] = useState(false);
+  const [ebayConditionsResult, setEbayConditionsResult] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -94,6 +98,20 @@ export default function Logs() {
     }
   };
 
+  const fetchEbayConditionPolicies = async () => {
+    setFetchingEbayConditions(true);
+    try {
+      const result = await base44.functions.invoke('getEbayConditionPolicies');
+      setEbayConditionsResult(result.data);
+      toast.success('eBay condition policies fetched');
+    } catch (error) {
+      toast.error('Failed to fetch eBay condition policies');
+      setEbayConditionsResult({ error: error.message });
+    } finally {
+      setFetchingEbayConditions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -102,8 +120,37 @@ export default function Logs() {
           <h1 className="text-3xl font-bold text-slate-900">System Logs</h1>
         </div>
 
+        {/* eBay Condition Policies Section */}
+        <Card className="p-4 mb-6 bg-blue-50 border-blue-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-slate-900">eBay Condition Policies (Category 31387)</h2>
+            <Button 
+              onClick={fetchEbayConditionPolicies} 
+              disabled={fetchingEbayConditions}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {fetchingEbayConditions ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Fetching...
+                </>
+              ) : (
+                'Fetch Conditions from eBay'
+              )}
+            </Button>
+          </div>
+          {ebayConditionsResult && (
+            <div className="mt-4 p-4 bg-white rounded border border-blue-200">
+              <pre className="text-xs overflow-x-auto max-h-96">
+                {JSON.stringify(ebayConditionsResult, null, 2)}
+              </pre>
+            </div>
+          )}
+        </Card>
+
         {/* Filters */}
-        <Card className="p-4 mb-6">
+         <Card className="p-4 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="w-4 h-4 text-slate-600" />
             <h2 className="text-sm font-semibold text-slate-900">Filters</h2>
