@@ -441,7 +441,8 @@ export default function AiManagement() {
                               const defaultPrompt = DEFAULT_PROMPTS.find(p => p.key === prompt.key);
                               if (defaultPrompt) {
                                 handleChange(prompt.key, 'prompt_content', defaultPrompt.prompt_content);
-                                toast.success("Restored default prompt");
+                                handleChange(prompt.key, 'variables_documentation', defaultPrompt.variables_documentation);
+                                toast.success("Restored default prompt and variables");
                               }
                             }}
                             className="text-xs"
