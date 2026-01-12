@@ -106,8 +106,12 @@ export default function ProductDetail() {
   });
 
   const { data: aiPrompts = [] } = useQuery({
-    queryKey: ['aiPrompts'],
-    queryFn: () => base44.entities.AiPrompt.list(),
+    queryKey: ['aiPrompts', product?.company_id],
+    queryFn: async () => {
+      if (!product?.company_id) return [];
+      return await base44.entities.AiPrompt.filter({ company_id: product.company_id });
+    },
+    enabled: !!product?.company_id,
   });
 
   console.log("=== AI PROMPTS DEBUG ===");
