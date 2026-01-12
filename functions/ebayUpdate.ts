@@ -303,10 +303,14 @@ Deno.serve(async (req) => {
                 });
 
                 if (!inventoryResponse.ok) {
-                    const errorText = await inventoryResponse.text();
-                    console.error(`[${sku}] Inventory Update Error Response:`, errorText);
-                    throw new Error(`Inventory Item Update Error: ${inventoryResponse.status} - ${errorText}`);
-                }
+                     const errorText = await inventoryResponse.text();
+                     console.error(`[${sku}] Inventory Update Error Response:`, errorText);
+                     let errorDetails = { raw: errorText };
+                     try {
+                         errorDetails = JSON.parse(errorText);
+                     } catch (e) {}
+                     throw new Error(JSON.stringify({ message: `Inventory Item Update Error: ${inventoryResponse.status}`, details: errorDetails }));
+                 }
 
                 // 2. Get and Update Offer
                 const apiHeaders = {
