@@ -423,17 +423,33 @@ export default function AiManagement() {
                   </AccordionTrigger>
                   <AccordionContent className="px-6 pb-6">
                     <div className="space-y-6 pt-4">
-                      {categoryPrompts.sort((a, b) => a.order - b.order).map((prompt) => (
-                        <div key={prompt.key} className={`space-y-3 p-4 bg-slate-50 rounded-lg border-2 ${changes[prompt.key] ? 'border-amber-400' : 'border-transparent'}`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <Label className="text-base font-semibold text-slate-900">{prompt.name}</Label>
-                              <p className="text-sm text-slate-600 mt-1">{prompt.description}</p>
-                              {changes[prompt.key] && (
-                                <p className="text-xs text-amber-600 mt-1 font-medium">● Unsaved changes</p>
-                              )}
-                            </div>
-                          </div>
+                    {categoryPrompts.sort((a, b) => a.order - b.order).map((prompt) => (
+                    <div key={prompt.key} className={`space-y-3 p-4 bg-slate-50 rounded-lg border-2 ${changes[prompt.key] ? 'border-amber-400' : 'border-transparent'}`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <Label className="text-base font-semibold text-slate-900">{prompt.name}</Label>
+                          <p className="text-sm text-slate-600 mt-1">{prompt.description}</p>
+                          {changes[prompt.key] && (
+                            <p className="text-xs text-amber-600 mt-1 font-medium">● Unsaved changes</p>
+                          )}
+                        </div>
+                        {category === "Image Enhancement" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const defaultPrompt = DEFAULT_PROMPTS.find(p => p.key === prompt.key);
+                              if (defaultPrompt) {
+                                handleChange(prompt.key, 'prompt_content', defaultPrompt.prompt_content);
+                                toast.success("Restored default prompt");
+                              }
+                            }}
+                            className="text-xs"
+                          >
+                            Restore Default
+                          </Button>
+                        )}
+                      </div>
 
                           <div className="space-y-2">
                             <Label className="text-sm font-medium">Available Variables (Documentation)</Label>
