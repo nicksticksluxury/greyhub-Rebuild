@@ -84,8 +84,11 @@ Deno.serve(async (req) => {
     
   } catch (error) {
     console.error('Background replacement error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     return Response.json({ 
-      error: error.message,
+      error: error.message || 'Unknown error',
+      details: error.toString(),
       stack: error.stack 
     }, { status: 500 });
   }
