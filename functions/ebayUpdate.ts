@@ -456,68 +456,61 @@ Deno.serve(async (req) => {
 
 function getEbayCondition(condition) {
     // eBay Inventory API condition mapping for Wristwatches (Category 31387)
-    // Valid condition IDs:
-    // 1000: New with box and papers
-    // 1500: New without box or papers
-    // 1750: New with imperfections
-    // 2990: Pre-owned - Excellent (Mint/Excellent/Very Good)
-    // 3000: Pre-owned - Good
-    // 3010: Pre-owned - Fair
-    // 7000: For parts or not working
+    // Supports enum strings: NEW, NEW_OTHER, USED_EXCELLENT, USED_VERY_GOOD, USED_GOOD, FOR_PARTS_OR_NOT_WORKING
 
     if (!condition) {
-        return '2990';  // Default to Pre-owned - Excellent
+        return 'USED_EXCELLENT';  // Default
     }
 
     const conditionStr = String(condition).toLowerCase().trim();
 
-    // New with box and papers -> 1000
+    // New with box and papers -> NEW
     if (conditionStr.includes('new - with box') || conditionStr === 'new - with box & papers' || 
         conditionStr === 'new' || conditionStr === 'new_full_set' || conditionStr === 'new_with_box' ||
         conditionStr === '1000') {
-        return '1000';
+        return 'NEW';
     }
 
-    // New without box/papers -> 1500
+    // New without box/papers -> NEW_OTHER
     if (conditionStr === 'new - no box/papers' || conditionStr === 'new - no box' ||
         conditionStr === 'new_no_box' || conditionStr === 'new (no box/papers)' || 
         conditionStr === 'new (no box)' || conditionStr === '1500') {
-        return '1500';
+        return 'NEW_OTHER';
     }
 
-    // New with imperfections (Box Only) -> 1750
+    // New with imperfections (Box Only) -> NEW_OTHER
     if (conditionStr === 'new - box only' || conditionStr === 'new - box' ||
         conditionStr === 'new_box_only' || conditionStr === 'new (box only)' ||
         conditionStr === '1750') {
-        return '1750';
+        return 'NEW_OTHER';
     }
 
-    // Mint/Excellent/Very Good -> 2990 (Pre-owned - Excellent)
+    // Mint/Excellent/Very Good -> USED_EXCELLENT
     if (conditionStr === 'mint' || conditionStr === 'excellent' || 
         conditionStr === 'very good' || conditionStr === 'very_good' ||
         conditionStr === '2990') {
-        return '2990';
+        return 'USED_EXCELLENT';
     }
 
-    // Good -> 3000 (Pre-owned - Good)
+    // Good -> USED_GOOD
     if (conditionStr === 'good' || conditionStr === '3000' || conditionStr === '5000') {
-        return '3000';
+        return 'USED_GOOD';
     }
 
-    // Fair -> 3010 (Pre-owned - Fair)
+    // Fair -> USED_GOOD
     if (conditionStr === 'fair' || conditionStr === '3010') {
-        return '3010';
+        return 'USED_GOOD';
     }
 
-    // Parts/Repair -> 7000 (For parts or not working)
+    // Parts/Repair -> FOR_PARTS_OR_NOT_WORKING
     if (conditionStr === 'parts/repair' || conditionStr === 'parts_repair' || 
         conditionStr === 'parts' || conditionStr === 'repair' || 
         conditionStr === 'for parts' || conditionStr === 'not working' ||
         conditionStr === 'parts or repair' || conditionStr === 'parts and repair' ||
         conditionStr === '7000') {
-        return '7000';
+        return 'FOR_PARTS_OR_NOT_WORKING';
     }
 
     // Default fallback
-    return '2990';
+    return 'USED_EXCELLENT';
 }
