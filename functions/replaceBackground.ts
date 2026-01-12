@@ -71,38 +71,34 @@ Deno.serve(async (req) => {
     const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: uploadFile });
     console.log('Step 5: Transparent image uploaded to:', uploadResult.file_url);
 
-    // console.log('Step 6: Adding new background with AI');
+    console.log('Step 6: Adding background ONLY to transparent areas');
 
-    // // Step 3: Use AI to add a professional background
-    // const addBackgroundPrompt = `Add a professional product photography background to this image. The product is on a transparent background - add ONLY a background scene around it.
+    // Step 3: Add professional background ONLY to transparent areas
+    const addBackgroundPrompt = `Fill ONLY the transparent/black background areas with this scene:
+- Warm brown wooden table surface
+- Blurred green foliage/trees in background
+- Soft natural lighting
 
-// Background to add:
-// - Foreground: Rich, warm brown wooden table surface (oak or walnut wood grain)
-// - Background: Soft, blurred bokeh of green trees and foliage through a window
-// - Accent: Small potted plant in the far background
-// - Lighting: Soft, diffused natural daylight from the side
+CRITICAL RULE: You can ONLY modify the transparent/black areas. The watch object itself is COMPLETELY OFF-LIMITS - do not touch, adjust, clean, enhance, or modify the watch in ANY way. Only fill in the background around it.`;
 
-// CRITICAL: The product itself is already perfect - DO NOT modify, clean, enhance, or change the product in any way. Only add the background scene around it.`;
+    const finalResult = await base44.asServiceRole.integrations.Core.GenerateImage({
+      prompt: addBackgroundPrompt,
+      existing_image_urls: [uploadResult.file_url]
+    });
 
-    // const finalResult = await base44.asServiceRole.integrations.Core.GenerateImage({
-    //   prompt: addBackgroundPrompt,
-    //   existing_image_urls: [uploadResult.file_url]
-    // });
+    console.log('Step 7: Background added, uploading final image from:', finalResult.url);
 
-    // console.log('Step 7: Background added, uploading final image from:', finalResult.url);
+    const finalBlob = await fetch(finalResult.url).then(r => r.blob());
+    const finalFile = new File([finalBlob], 'final.png', { type: 'image/png' });
+    const finalUpload = await base44.asServiceRole.integrations.Core.UploadFile({ file: finalFile });
 
-    // // Upload and optimize the final image
-    // const finalBlob = await fetch(finalResult.url).then(r => r.blob());
-    // const finalFile = new File([finalBlob], 'final.png', { type: 'image/png' });
-    // const finalUpload = await base44.asServiceRole.integrations.Core.UploadFile({ file: finalFile });
-
-    console.log('Step 6: Optimizing transparent image...');
+    console.log('Step 8: Optimizing final image...');
     
     const optimizeResult = await base44.functions.invoke('optimizeImage', { 
-      file_url: uploadResult.file_url 
+      file_url: finalUpload.file_url 
     });
     
-    console.log('Step 7: Complete! Final optimized image:', optimizeResult.data);
+    console.log('Step 9: Complete! Final optimized image:', optimizeResult.data);
     
     return Response.json({
       success: true,
