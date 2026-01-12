@@ -443,41 +443,39 @@ Deno.serve(async (req) => {
 
 function getEbayCondition(condition) {
     const conditionStr = String(condition).toLowerCase().trim();
-    
+
     // New with box and papers (1000)
     if (conditionStr.includes('new - with box') || conditionStr === 'new - with box & papers' || 
         conditionStr === 'new' || conditionStr === 'new_full_set' || conditionStr === 'new_with_box') {
-        return 'NEW';
+        return 1000;
     }
-    
+
     // New other - no box/papers, box only, no box (1500)
     if (conditionStr.includes('new - no box') || conditionStr.includes('new - box only') || 
         conditionStr === 'new_no_box' || conditionStr === 'new (no box/papers)' || 
         conditionStr === 'new (no box)' || conditionStr === 'new (box only)') {
-        return 'NEW_OTHER';
+        return 1500;
     }
-    
-    // Mint, Excellent, Very Good (2990 - Pre-owned Excellent)
+
+    // Mint, Excellent, Very Good (2990)
     if (conditionStr === 'mint' || conditionStr === 'excellent' || 
-        conditionStr === 'very_good' || conditionStr === 'very good' ||
-        conditionStr === '2990') {
-        return 'USED_EXCELLENT';
+        conditionStr === 'very_good' || conditionStr === 'very good') {
+        return 2990;
     }
-    
-    // Good, Fair (3010 - Pre-owned Fair)
-    if (conditionStr === 'good' || conditionStr === 'fair' ||
-        conditionStr === '3010') {
-        return 'USED_GOOD';
+
+    // Good, Fair (3010)
+    if (conditionStr === 'good' || conditionStr === 'fair') {
+        return 3010;
     }
-    
+
     // Parts/Repair (3000 - Broadest Used category)
     if (conditionStr === 'parts/repair' || conditionStr === 'parts_repair' || 
         conditionStr === 'parts' || conditionStr === 'repair' || 
         conditionStr === 'for parts' || conditionStr === 'not working' ||
         conditionStr === 'parts or repair' || conditionStr === 'parts and repair') {
-        return 'USED';
+        return 3000;
     }
-    
+
     // Default fallback
-    return 'USED_EXCELLENT';
+    return 2990;
 }
