@@ -189,24 +189,31 @@ Return:
     order: 7,
     type: "text_prompt",
     variables_documentation: "Available variables:\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{product_photo} - URL of the main product photo",
-    prompt_content: `Create a professional hero image for this product:
+    prompt_content: `BACKGROUND REPLACEMENT ONLY - DO NOT MODIFY THE PRODUCT IN ANY WAY.
+
+  Replace the background of this product photo with a professional setting while keeping the product 100% identical to the original.
 
   Brand: {brand}
   Model: {model}
   Reference: {reference_number}
 
-  Base Image: {product_photo}
+  Image URL: {product_photo}
 
-  CRITICAL REQUIREMENTS:
-  - Place the product on a wooden table with a blurred natural outdoor background (trees, greenery)
-  - Add a small decorative plant in the background for ambiance
-  - MAINTAIN EXACT PRODUCT ORIENTATION: If the product is upright in the original, keep it upright. If laying down, keep it laying down.
-  - DO NOT alter the product's appearance in any way - keep all scratches, wear, dirt, and imperfections exactly as shown
-  - Only improve lighting quality and reduce glare/reflections
-  - DO NOT clean, repair, or enhance the product itself
-  - Keep the product in the exact same angle and position as the original photo
-  - Natural, soft lighting from windows
-  - Professional e-commerce aesthetic similar to luxury product photography`
+  WHAT TO CHANGE (BACKGROUND ONLY):
+  - Replace background with: wooden table surface, blurred natural outdoor scene with trees and greenery visible through window, small decorative plant on table
+  - Improve overall lighting to be soft, natural window light
+  - Reduce harsh shadows, glare, or reflections on the product surface
+
+  WHAT MUST NOT CHANGE (PRODUCT):
+  - CRITICAL: The product itself must remain PIXEL-FOR-PIXEL IDENTICAL to the original
+  - DO NOT change the watch face, dial, hands, numbers, markers, or any details
+  - DO NOT remove scratches, dirt, wear, scuffs, or imperfections
+  - DO NOT change colors, materials, or finishes of the product
+  - DO NOT change the product's position, angle, or orientation (if upright keep upright, if flat keep flat)
+  - DO NOT add or remove product features
+  - DO NOT make the product look cleaner or newer
+
+  The product should look like someone took the exact same item and just moved it to a nicer location with better lighting. The product's condition and appearance must be preserved exactly as-is.`
   },
   {
     key: "ai_beautify_image_prompt",
@@ -216,20 +223,27 @@ Return:
     order: 8,
     type: "text_prompt",
     variables_documentation: "Available variables:\n{product_photo} - URL of the product photo to enhance",
-    prompt_content: `Enhance this product photo with a professional setting:
+    prompt_content: `BACKGROUND REPLACEMENT ONLY - DO NOT MODIFY THE PRODUCT IN ANY WAY.
+
+  Replace the background of this product photo with a professional setting while keeping the product 100% identical to the original.
 
   Image URL: {product_photo}
 
-  CRITICAL REQUIREMENTS:
-  - Place the product on a wooden table with a blurred natural outdoor background (trees, greenery)
-  - Add a small decorative plant for ambiance
-  - MAINTAIN EXACT PRODUCT ORIENTATION: Keep the same angle and position as the original (upright stays upright, laying down stays laying down)
-  - DO NOT alter the product itself - preserve all scratches, wear, dirt, and imperfections exactly as shown
-  - Only improve lighting quality and reduce glare/reflections
-  - DO NOT clean, repair, or enhance the product appearance
-  - Natural, soft lighting similar to window light
-  - Professional e-commerce aesthetic
-  - The product must look exactly as it does in the original photo, just with better lighting and background`
+  WHAT TO CHANGE (BACKGROUND ONLY):
+  - Replace background with: wooden table surface, blurred natural outdoor scene with trees and greenery visible through window, small decorative plant on table
+  - Improve overall lighting to be soft, natural window light
+  - Reduce harsh shadows, glare, or reflections on the product surface
+
+  WHAT MUST NOT CHANGE (PRODUCT):
+  - CRITICAL: The product itself must remain PIXEL-FOR-PIXEL IDENTICAL to the original
+  - DO NOT change the watch face, dial, hands, numbers, markers, or any details
+  - DO NOT remove scratches, dirt, wear, scuffs, or imperfections
+  - DO NOT change colors, materials, or finishes of the product
+  - DO NOT change the product's position, angle, or orientation (if upright keep upright, if flat keep flat)
+  - DO NOT add or remove product features
+  - DO NOT make the product look cleaner or newer
+
+  The product should look like someone took the exact same item and just moved it to a nicer location with better lighting. The product's condition and appearance must be preserved exactly as-is.`
   }
 ];
 
