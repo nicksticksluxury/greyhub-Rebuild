@@ -189,20 +189,24 @@ Return:
     order: 7,
     type: "text_prompt",
     variables_documentation: "Available variables:\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{product_photo} - URL of the main product photo",
-    prompt_content: `Create a professional, eye-catching hero image for this product listing:
+    prompt_content: `Create a professional hero image for this product:
 
-Brand: {brand}
-Model: {model}
-Reference: {reference_number}
+  Brand: {brand}
+  Model: {model}
+  Reference: {reference_number}
 
-Base Image: {product_photo}
+  Base Image: {product_photo}
 
-Requirements:
-- Enhance the product photo while maintaining authenticity
-- Professional lighting and presentation
-- Clean, minimal background
-- Highlight key product features
-- Maintain accurate colors and details`
+  CRITICAL REQUIREMENTS:
+  - Place the product on a wooden table with a blurred natural outdoor background (trees, greenery)
+  - Add a small decorative plant in the background for ambiance
+  - MAINTAIN EXACT PRODUCT ORIENTATION: If the product is upright in the original, keep it upright. If laying down, keep it laying down.
+  - DO NOT alter the product's appearance in any way - keep all scratches, wear, dirt, and imperfections exactly as shown
+  - Only improve lighting quality and reduce glare/reflections
+  - DO NOT clean, repair, or enhance the product itself
+  - Keep the product in the exact same angle and position as the original photo
+  - Natural, soft lighting from windows
+  - Professional e-commerce aesthetic similar to luxury product photography`
   },
   {
     key: "ai_beautify_image_prompt",
@@ -212,17 +216,20 @@ Requirements:
     order: 8,
     type: "text_prompt",
     variables_documentation: "Available variables:\n{product_photo} - URL of the product photo to enhance",
-    prompt_content: `Enhance this product photo while preserving authenticity:
+    prompt_content: `Enhance this product photo with a professional setting:
 
-Image URL: {product_photo}
+  Image URL: {product_photo}
 
-Requirements:
-- Improve lighting and color balance
-- Remove distracting backgrounds or blemishes
-- Sharpen details and clarity
-- Maintain product authenticity
-- Professional e-commerce quality
-- Do not alter the actual product appearance`
+  CRITICAL REQUIREMENTS:
+  - Place the product on a wooden table with a blurred natural outdoor background (trees, greenery)
+  - Add a small decorative plant for ambiance
+  - MAINTAIN EXACT PRODUCT ORIENTATION: Keep the same angle and position as the original (upright stays upright, laying down stays laying down)
+  - DO NOT alter the product itself - preserve all scratches, wear, dirt, and imperfections exactly as shown
+  - Only improve lighting quality and reduce glare/reflections
+  - DO NOT clean, repair, or enhance the product appearance
+  - Natural, soft lighting similar to window light
+  - Professional e-commerce aesthetic
+  - The product must look exactly as it does in the original photo, just with better lighting and background`
   }
 ];
 
