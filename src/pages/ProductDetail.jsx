@@ -677,13 +677,22 @@ Return ONLY the HTML description, no wrapper text.`;
         const imageUrl = photo.full || photo.medium || photo.original || photo;
 
         try {
+          console.log(`Processing image ${i + 1}, index ${imageIndex}, URL:`, imageUrl);
           const result = await base44.functions.invoke('replaceBackground', { 
             image_url: imageUrl 
           });
 
+          console.log(`Backend response for image ${i + 1}:`, result.data);
+
           if (result.data.error) {
             throw new Error(result.data.error);
           }
+
+          if (!result.data.image) {
+            throw new Error('Backend returned success but no image data');
+          }
+
+          console.log(`Replacing image at index ${imageIndex} with:`, result.data.image);
 
           // Create a new array with the updated image
           currentPhotos = [
