@@ -56,6 +56,13 @@ Deno.serve(async (req) => {
     console.log('Background removed successfully');
     
     const noBackgroundBlob = await removeBgResponse.blob();
+    console.log('Background-removed blob size:', noBackgroundBlob.size, 'bytes');
+    
+    if (noBackgroundBlob.size === 0) {
+      return Response.json({ 
+        error: 'remove.bg returned empty response' 
+      }, { status: 500 });
+    }
     
     // Upload the result
     const file = new File([noBackgroundBlob], 'background-removed.png', { type: 'image/png' });
@@ -67,6 +74,8 @@ Deno.serve(async (req) => {
     const optimizeResult = await base44.functions.invoke('optimizeImage', { 
       file_url: uploadResult.file_url 
     });
+    
+    console.log('Final optimized image:', optimizeResult.data);
     
     return Response.json({
       success: true,
