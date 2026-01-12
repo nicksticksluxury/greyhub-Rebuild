@@ -201,6 +201,7 @@ Return:
 
   WHAT TO CHANGE (BACKGROUND ONLY):
   - Replace background with: wooden table surface, blurred natural outdoor scene with trees and greenery visible through window, small decorative plant on table
+  - Remove any hands, fingers, or body parts holding or touching the product
   - Improve overall lighting to be soft, natural window light
   - Reduce harsh shadows, glare, or reflections on the product surface
 
@@ -231,6 +232,7 @@ Return:
 
   WHAT TO CHANGE (BACKGROUND ONLY):
   - Replace background with: wooden table surface, blurred natural outdoor scene with trees and greenery visible through window, small decorative plant on table
+  - Remove any hands, fingers, or body parts holding or touching the product
   - Improve overall lighting to be soft, natural window light
   - Reduce harsh shadows, glare, or reflections on the product surface
 
