@@ -267,13 +267,16 @@ Deno.serve(async (req) => {
                 }
 
                 // 1. Update Inventory Item
+                const ebayCondition = getEbayCondition(watch.condition);
+                console.log(`[${sku}] Condition mapping: "${watch.condition}" -> "${ebayCondition}"`);
+
                 const inventoryItem = {
-                    availability: {
-                        shipToLocationAvailability: {
-                            quantity: watch.quantity || 1
-                        }
-                    },
-                    condition: getEbayCondition(watch.condition),
+                     availability: {
+                         shipToLocationAvailability: {
+                             quantity: watch.quantity || 1
+                         }
+                     },
+                     condition: ebayCondition,
                     packageWeightAndSize: {
                         packageType: "PACKAGE_THICK_ENVELOPE",
                         weight: {
