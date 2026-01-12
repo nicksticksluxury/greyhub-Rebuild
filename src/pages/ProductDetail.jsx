@@ -105,9 +105,18 @@ export default function ProductDetail() {
     queryFn: () => base44.entities.Setting.list(),
   });
 
+  const { data: aiPrompts = [] } = useQuery({
+    queryKey: ['aiPrompts'],
+    queryFn: () => base44.entities.AiPrompt.list(),
+  });
+
   const ebayFooter = companySettings.find(s => s.key === 'ebay_listing_footer')?.value || '';
-  const heroImagePrompt = companySettings.find(s => s.key === 'hero_image_prompt')?.value || 
-    "Place this product on a wooden table with a blurred natural background, soft lighting, and a small green plant in the corner, similar to a studio product shot.";
+  
+  const heroImagePrompt = aiPrompts.find(p => p.key === 'ai_hero_image_prompt')?.prompt_content || 
+    "Create a professional, eye-catching hero image for this product listing";
+  
+  const beautifyImagePrompt = aiPrompts.find(p => p.key === 'ai_beautify_image_prompt')?.prompt_content ||
+    "Enhance this product photo while preserving authenticity";
 
   useEffect(() => {
     if (product && !editedData) {
@@ -545,7 +554,11 @@ Return ONLY the HTML description, no wrapper text.`;
       toast.loading("Generating hero image (takes 5-10 seconds)...", { id: 'hero' });
 
       const result = await base44.integrations.Core.GenerateImage({
-        prompt: heroImagePrompt,
+        prompt: heroImagePrompt
+          .replace('{brand}', editedData.brand || '')
+          .replace('{model}', editedData.model || '')
+          .replace('{reference_number}', editedData.reference_number || '')
+          .replace('{product_photo}', imageUrl),
         existing_image_urls: [imageUrl]
       });
 
@@ -599,7 +612,7 @@ Return ONLY the HTML description, no wrapper text.`;
 
         try {
           const result = await base44.integrations.Core.GenerateImage({
-            prompt: heroImagePrompt,
+            prompt: beautifyImagePrompt.replace('{product_photo}', imageUrl),
             existing_image_urls: [imageUrl]
           });
 
@@ -657,13 +670,8 @@ Return ONLY the HTML description, no wrapper text.`;
         const imageUrl = photo.full || photo.medium || photo.original || photo;
 
         try {
-          // Fetch AI beautify prompt
-          const aiPrompts = await base44.entities.AiPrompt.list();
-          const beautifyPrompt = aiPrompts.find(p => p.key === 'ai_beautify_image_prompt');
-          const promptText = beautifyPrompt?.prompt_content || heroImagePrompt;
-
           const result = await base44.integrations.Core.GenerateImage({
-            prompt: promptText.replace('{product_photo}', imageUrl),
+            prompt: beautifyImagePrompt.replace('{product_photo}', imageUrl),
             existing_image_urls: [imageUrl]
           });
 
