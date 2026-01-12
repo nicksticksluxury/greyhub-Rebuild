@@ -665,6 +665,9 @@ Return ONLY the HTML description, no wrapper text.`;
     try {
       let currentPhotos = [...editedData.photos];
 
+      let successCount = 0;
+      let failCount = 0;
+
       for (let i = 0; i < selectedImages.length; i++) {
         const imageIndex = selectedImages[i];
         setBeautifySelectedProgress({ current: i + 1, total: selectedImages.length });
@@ -678,6 +681,10 @@ Return ONLY the HTML description, no wrapper text.`;
             image_url: imageUrl 
           });
 
+          if (result.data.error) {
+            throw new Error(result.data.error);
+          }
+
           // Create a new array with the updated image
           currentPhotos = [
             ...currentPhotos.slice(0, imageIndex),
@@ -687,15 +694,23 @@ Return ONLY the HTML description, no wrapper text.`;
 
           // Update state immediately after each image
           setEditedData({ ...editedData, photos: currentPhotos });
+          successCount++;
         } catch (error) {
           console.error(`Failed to remove background ${imageIndex + 1}:`, error);
-          // Keep original if fails
+          failCount++;
+          toast.error(`Image ${i + 1} failed: ${error.message}`, { id: `fail-${i}`, duration: 5000 });
         }
       }
 
-      setHasUnsavedChanges(true);
+      setHasUnsavedChanges(successCount > 0);
       setSelectedImages([]);
-      toast.success(`Successfully beautified ${selectedImages.length} image(s)!`, { id: 'beautify-selected' });
+
+      if (successCount > 0 && failCount === 0) {
+        toast.success(`Successfully beautified ${successCount} image(s)!`, { id: 'beautify-selected' });
+      } else if (successCount > 0 && failCount > 0) {
+        toast.warning(`Beautified ${successCount}, failed ${failCount}`, { id: 'beautify-selected' });
+      } else {
+        toast.error(`All ${failCount} images failed to beautify`, { id: 'beautify-selected' });
     } catch (error) {
       console.error("Beautify selected failed:", error);
       toast.error("Failed to beautify images: " + error.message, { id: 'beautify-selected' });
