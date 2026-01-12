@@ -611,10 +611,16 @@ Return ONLY the HTML description, no wrapper text.`;
         const imageUrl = photo.full || photo.medium || photo.original || photo;
 
         try {
+          console.log("=== BEAUTIFY IMAGE DEBUG ===");
+          console.log("Prompt being sent:", beautifyImagePrompt);
+          console.log("Image URL:", imageUrl);
+          
           const result = await base44.integrations.Core.GenerateImage({
             prompt: beautifyImagePrompt.replace('{product_photo}', imageUrl),
             existing_image_urls: [imageUrl]
           });
+          
+          console.log("Result received:", result);
 
           const imageBlob = await fetch(result.url).then(r => r.blob());
           const file = new File([imageBlob], `beautified_${i}.png`, { type: 'image/png' });
