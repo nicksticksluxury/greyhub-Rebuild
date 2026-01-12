@@ -710,7 +710,7 @@ Return ONLY the HTML description, no wrapper text.`;
       }
 
       // Update state once after all processing
-      setEditedData({ ...editedData, photos: currentPhotos });
+      setEditedData(prevData => ({ ...prevData, photos: currentPhotos }));
 
       setHasUnsavedChanges(successCount > 0);
       setSelectedImages([]);
