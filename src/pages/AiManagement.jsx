@@ -189,30 +189,29 @@ Return:
     order: 7,
     type: "text_prompt",
     variables_documentation: "Available variables:\n{product_type_name} - Type of product (e.g., Watch, Handbag)\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{product_photo} - URL of the main product photo",
-    prompt_content: `CRITICAL: You are ONLY allowed to change the background and improve lighting. The product must remain in the EXACT same position, angle, and condition as the original photo.
+    prompt_content: `ABSOLUTE RULE: The product must remain 100% UNTOUCHED - identical to the original in every way. You are ONLY replacing the background.
 
-    Brand: {brand}
-    Model: {model}
-    Reference: {reference_number}
     Image URL: {product_photo}
 
-    WHAT YOU CAN DO:
-    ✓ Replace the background with: Rich brown wooden table surface + soft blurred green foliage bokeh background + small potted plant accent
-    ✓ Improve lighting to be soft, natural daylight from the side
-    ✓ Remove hands/fingers if present (product rests on table by itself)
+    STEP 1: IDENTIFY THE PRODUCT
+    - Determine what the product is (watch, bag, wallet, etc.)
+    - Note its exact position, angle, orientation, size, and placement in the frame
 
-    ABSOLUTE RESTRICTIONS - DO NOT:
-    ✗ Change the camera angle or viewing perspective AT ALL
-    ✗ Rotate, tilt, or reposition the product in any way
-    ✗ Move the product to a different location in the frame
-    ✗ Change the orientation or facing direction
-    ✗ Alter the size or scale of the product
-    ✗ Modify any product details (dial, hands, markers, crown, bezel, strap, etc.)
-    ✗ Remove or hide scratches, wear marks, scuffs, or imperfections
-    ✗ Change materials, colors, finishes, or condition
-    ✗ Make it look cleaner, newer, or more polished
+    STEP 2: KEEP THE PRODUCT PIXEL-PERFECT IDENTICAL
+    - DO NOT touch the product in ANY way
+    - DO NOT adjust lighting on the product itself
+    - DO NOT change colors, materials, finishes, or condition
+    - DO NOT modify dial, hands, markers, crown, bezel, strap, or ANY details
+    - DO NOT remove scratches, scuffs, wear marks, or imperfections
+    - DO NOT rotate, tilt, move, or reposition the product
+    - DO NOT change the camera angle or perspective
+    - The product must look EXACTLY like the original photo
 
-    The product must be in the EXACT SAME position and angle as the original - only the background and lighting should change.`
+    STEP 3: ONLY CHANGE THE BACKGROUND
+    - Remove hands/fingers if present (product rests on table)
+    - Replace background with: Rich brown wooden table + soft blurred green foliage bokeh + small potted plant accent
+
+    The product is UNTOUCHABLE. Only the background changes.`
   },
   {
     key: "ai_beautify_image_prompt",
@@ -222,27 +221,29 @@ Return:
     order: 8,
     type: "text_prompt",
     variables_documentation: "Available variables:\n{product_type_name} - Type of product (e.g., Watch, Handbag)\n{product_photo} - URL of the product photo to enhance",
-    prompt_content: `CRITICAL: You are ONLY allowed to change the background and improve lighting. The product must remain in the EXACT same position, angle, and condition as the original photo.
+    prompt_content: `ABSOLUTE RULE: The product must remain 100% UNTOUCHED - identical to the original in every way. You are ONLY replacing the background.
 
     Image URL: {product_photo}
 
-    WHAT YOU CAN DO:
-    ✓ Replace the background with: Rich brown wooden table surface + soft blurred green foliage bokeh background + small potted plant accent
-    ✓ Improve lighting to be soft, natural daylight from the side
-    ✓ Remove hands/fingers if present (product rests on table by itself)
+    STEP 1: IDENTIFY THE PRODUCT
+    - Determine what the product is (watch, bag, wallet, etc.)
+    - Note its exact position, angle, orientation, size, and placement in the frame
 
-    ABSOLUTE RESTRICTIONS - DO NOT:
-    ✗ Change the camera angle or viewing perspective AT ALL
-    ✗ Rotate, tilt, or reposition the product in any way
-    ✗ Move the product to a different location in the frame
-    ✗ Change the orientation or facing direction
-    ✗ Alter the size or scale of the product
-    ✗ Modify any product details (dial, hands, markers, crown, bezel, strap, etc.)
-    ✗ Remove or hide scratches, wear marks, scuffs, or imperfections
-    ✗ Change materials, colors, finishes, or condition
-    ✗ Make it look cleaner, newer, or more polished
+    STEP 2: KEEP THE PRODUCT PIXEL-PERFECT IDENTICAL
+    - DO NOT touch the product in ANY way
+    - DO NOT adjust lighting on the product itself
+    - DO NOT change colors, materials, finishes, or condition
+    - DO NOT modify dial, hands, markers, crown, bezel, strap, or ANY details
+    - DO NOT remove scratches, scuffs, wear marks, or imperfections
+    - DO NOT rotate, tilt, move, or reposition the product
+    - DO NOT change the camera angle or perspective
+    - The product must look EXACTLY like the original photo
 
-    The product must be in the EXACT SAME position and angle as the original - only the background and lighting should change.`
+    STEP 3: ONLY CHANGE THE BACKGROUND
+    - Remove hands/fingers if present (product rests on table)
+    - Replace background with: Rich brown wooden table + soft blurred green foliage bokeh + small potted plant accent
+
+    The product is UNTOUCHABLE. Only the background changes.`
   }
 ];
 
