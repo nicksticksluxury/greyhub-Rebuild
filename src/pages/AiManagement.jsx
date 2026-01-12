@@ -189,33 +189,30 @@ Return:
     order: 7,
     type: "text_prompt",
     variables_documentation: "Available variables:\n{product_type_name} - Type of product (e.g., Watch, Handbag)\n{brand} - Product brand\n{model} - Product model\n{reference_number} - Reference number\n{product_photo} - URL of the main product photo",
-    prompt_content: `You are creating a professional hero product photograph by ONLY changing the background and lighting. The product itself must remain completely unmodified.
+    prompt_content: `CRITICAL: You are ONLY allowed to change the background and improve lighting. The product must remain in the EXACT same position, angle, and condition as the original photo.
 
     Brand: {brand}
     Model: {model}
     Reference: {reference_number}
-
     Image URL: {product_photo}
 
-    STEP 1 - REMOVE HANDS/FINGERS:
-    If any hands, fingers, arms, or body parts are visible holding or touching the product, remove them completely. The product should appear to be resting on the table surface by itself.
+    WHAT YOU CAN DO:
+    ✓ Replace the background with: Rich brown wooden table surface + soft blurred green foliage bokeh background + small potted plant accent
+    ✓ Improve lighting to be soft, natural daylight from the side
+    ✓ Remove hands/fingers if present (product rests on table by itself)
 
-    STEP 2 - REPLACE BACKGROUND WITH THIS EXACT SCENE:
-    - Foreground: Rich, warm brown wooden table surface (similar to oak or walnut wood grain)
-    - Background: Soft, blurred bokeh of green trees and foliage visible through a window - NOT out-of-focus lights, but actual greenery/nature
-    - Accent: Small potted plant (like a succulent or small leafy plant) placed tastefully in the far background
-    - Lighting: Soft, diffused natural daylight from the side/window - gentle and even, no harsh shadows
+    ABSOLUTE RESTRICTIONS - DO NOT:
+    ✗ Change the camera angle or viewing perspective AT ALL
+    ✗ Rotate, tilt, or reposition the product in any way
+    ✗ Move the product to a different location in the frame
+    ✗ Change the orientation or facing direction
+    ✗ Alter the size or scale of the product
+    ✗ Modify any product details (dial, hands, markers, crown, bezel, strap, etc.)
+    ✗ Remove or hide scratches, wear marks, scuffs, or imperfections
+    ✗ Change materials, colors, finishes, or condition
+    ✗ Make it look cleaner, newer, or more polished
 
-    STEP 3 - PRESERVE THE PRODUCT 100% IDENTICALLY:
-    THE WATCH/PRODUCT MUST LOOK EXACTLY THE SAME:
-    - DO NOT change the dial, hands, numbers, markers, crown, bezel, or ANY watch details
-    - DO NOT remove scratches, scuffs, dirt, wear marks, or any imperfections
-    - DO NOT change the strap/bracelet condition or appearance
-    - DO NOT alter colors, materials, or finishes
-    - DO NOT change the angle, position, or orientation
-    - DO NOT make it look cleaner, newer, or more polished
-
-    REFERENCE STYLE: Make this look like a professional e-commerce photo with natural wood table and blurred green outdoor background - similar to luxury product photography but keeping the product's actual condition visible.`
+    The product must be in the EXACT SAME position and angle as the original - only the background and lighting should change.`
   },
   {
     key: "ai_beautify_image_prompt",
@@ -225,29 +222,27 @@ Return:
     order: 8,
     type: "text_prompt",
     variables_documentation: "Available variables:\n{product_type_name} - Type of product (e.g., Watch, Handbag)\n{product_photo} - URL of the product photo to enhance",
-    prompt_content: `You are creating a professional product photograph by ONLY changing the background and lighting. The product itself must remain completely unmodified.
+    prompt_content: `CRITICAL: You are ONLY allowed to change the background and improve lighting. The product must remain in the EXACT same position, angle, and condition as the original photo.
 
     Image URL: {product_photo}
 
-    STEP 1 - REMOVE HANDS/FINGERS:
-    If any hands, fingers, arms, or body parts are visible holding or touching the product, remove them completely. The product should appear to be resting on the table surface by itself.
+    WHAT YOU CAN DO:
+    ✓ Replace the background with: Rich brown wooden table surface + soft blurred green foliage bokeh background + small potted plant accent
+    ✓ Improve lighting to be soft, natural daylight from the side
+    ✓ Remove hands/fingers if present (product rests on table by itself)
 
-    STEP 2 - REPLACE BACKGROUND WITH THIS EXACT SCENE:
-    - Foreground: Rich, warm brown wooden table surface (similar to oak or walnut wood grain)
-    - Background: Soft, blurred bokeh of green trees and foliage visible through a window - NOT out-of-focus lights, but actual greenery/nature
-    - Accent: Small potted plant (like a succulent or small leafy plant) placed tastefully in the far background
-    - Lighting: Soft, diffused natural daylight from the side/window - gentle and even, no harsh shadows
+    ABSOLUTE RESTRICTIONS - DO NOT:
+    ✗ Change the camera angle or viewing perspective AT ALL
+    ✗ Rotate, tilt, or reposition the product in any way
+    ✗ Move the product to a different location in the frame
+    ✗ Change the orientation or facing direction
+    ✗ Alter the size or scale of the product
+    ✗ Modify any product details (dial, hands, markers, crown, bezel, strap, etc.)
+    ✗ Remove or hide scratches, wear marks, scuffs, or imperfections
+    ✗ Change materials, colors, finishes, or condition
+    ✗ Make it look cleaner, newer, or more polished
 
-    STEP 3 - PRESERVE THE PRODUCT 100% IDENTICALLY:
-    THE WATCH/PRODUCT MUST LOOK EXACTLY THE SAME:
-    - DO NOT change the dial, hands, numbers, markers, crown, bezel, or ANY watch details
-    - DO NOT remove scratches, scuffs, dirt, wear marks, or any imperfections
-    - DO NOT change the strap/bracelet condition or appearance
-    - DO NOT alter colors, materials, or finishes
-    - DO NOT change the angle, position, or orientation
-    - DO NOT make it look cleaner, newer, or more polished
-
-    REFERENCE STYLE: Make this look like a professional e-commerce photo with natural wood table and blurred green outdoor background - similar to luxury product photography but keeping the product's actual condition visible.`
+    The product must be in the EXACT SAME position and angle as the original - only the background and lighting should change.`
   }
 ];
 
