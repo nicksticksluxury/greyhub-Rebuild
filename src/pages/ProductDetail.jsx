@@ -110,6 +110,13 @@ export default function ProductDetail() {
     queryFn: () => base44.entities.AiPrompt.list(),
   });
 
+  console.log("=== AI PROMPTS DEBUG ===");
+  console.log("Total prompts loaded:", aiPrompts.length);
+  console.log("All prompt keys:", aiPrompts.map(p => p.key));
+  const beautifyPromptObj = aiPrompts.find(p => p.key === 'ai_beautify_image_prompt');
+  console.log("Beautify prompt object found:", beautifyPromptObj);
+  console.log("Beautify prompt_content:", beautifyPromptObj?.prompt_content);
+
   const ebayFooter = companySettings.find(s => s.key === 'ebay_listing_footer')?.value || '';
   
   const heroImagePrompt = aiPrompts.find(p => p.key === 'ai_hero_image_prompt')?.prompt_content || 
@@ -117,6 +124,9 @@ export default function ProductDetail() {
   
   const beautifyImagePrompt = aiPrompts.find(p => p.key === 'ai_beautify_image_prompt')?.prompt_content ||
     "Enhance this product photo while preserving authenticity";
+    
+  console.log("Final beautifyImagePrompt length:", beautifyImagePrompt?.length);
+  console.log("Final beautifyImagePrompt first 100 chars:", beautifyImagePrompt?.substring(0, 100));
 
   useEffect(() => {
     if (product && !editedData) {
