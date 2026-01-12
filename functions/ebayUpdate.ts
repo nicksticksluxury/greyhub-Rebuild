@@ -268,7 +268,8 @@ Deno.serve(async (req) => {
 
                 // 1. Update Inventory Item
                 const ebayCondition = getEbayCondition(watch.condition);
-                console.log(`[${sku}] Condition mapping: "${watch.condition}" -> "${ebayCondition}"`);
+                console.log(`[${sku}] Raw condition from DB: "${watch.condition}" (type: ${typeof watch.condition})`);
+                console.log(`[${sku}] Mapped condition: "${ebayCondition}" (type: ${typeof ebayCondition})`);
 
                 const inventoryItem = {
                      availability: {
@@ -277,22 +278,23 @@ Deno.serve(async (req) => {
                          }
                      },
                      condition: ebayCondition,
-                    packageWeightAndSize: {
-                        packageType: "PACKAGE_THICK_ENVELOPE",
-                        weight: {
-                            value: 0.5,
-                            unit: "POUND"
-                        }
-                    },
-                    product: {
-                        title: title.substring(0, 80),
-                        description: fullDescription,
-                        aspects: aspects,
-                        imageUrls: photoUrls
-                    }
-                };
+                     packageWeightAndSize: {
+                         packageType: "PACKAGE_THICK_ENVELOPE",
+                         weight: {
+                             value: 0.5,
+                             unit: "POUND"
+                         }
+                     },
+                     product: {
+                         title: title.substring(0, 80),
+                         description: fullDescription,
+                         aspects: aspects,
+                         imageUrls: photoUrls
+                     }
+                 };
 
-                console.log(`[${sku}] Inventory Item Payload:`, JSON.stringify(inventoryItem, null, 2));
+                console.log(`[${sku}] Full Inventory Item Payload:`, JSON.stringify(inventoryItem, null, 2));
+                console.log(`[${sku}] Condition field in payload:`, inventoryItem.condition);
 
                 const inventoryResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${sku}`, {
                     method: 'PUT',
