@@ -692,8 +692,6 @@ Return ONLY the HTML description, no wrapper text.`;
             ...currentPhotos.slice(imageIndex + 1)
           ];
 
-          // Update state immediately after each image
-          setEditedData({ ...editedData, photos: currentPhotos });
           successCount++;
         } catch (error) {
           console.error(`Failed to remove background ${imageIndex + 1}:`, error);
@@ -701,6 +699,9 @@ Return ONLY the HTML description, no wrapper text.`;
           toast.error(`Image ${i + 1} failed: ${error.message}`, { id: `fail-${i}`, duration: 5000 });
         }
       }
+
+      // Update state once after all processing
+      setEditedData({ ...editedData, photos: currentPhotos });
 
       setHasUnsavedChanges(successCount > 0);
       setSelectedImages([]);
