@@ -459,12 +459,14 @@ function getEbayCondition(condition) {
     
     // Mint, Excellent, Very Good (2990 - Pre-owned Excellent)
     if (conditionStr === 'mint' || conditionStr === 'excellent' || 
-        conditionStr === 'very_good' || conditionStr === 'very good') {
+        conditionStr === 'very_good' || conditionStr === 'very good' ||
+        conditionStr === '2990') {
         return 'USED_EXCELLENT';
     }
     
     // Good, Fair (3010 - Pre-owned Fair)
-    if (conditionStr === 'good' || conditionStr === 'fair') {
+    if (conditionStr === 'good' || conditionStr === 'fair' ||
+        conditionStr === '3010') {
         return 'USED_GOOD';
     }
     
