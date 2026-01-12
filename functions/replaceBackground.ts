@@ -20,30 +20,37 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'REMOVEBG_API_KEY not configured' }, { status: 500 });
     }
 
-    console.log('Fetching image from:', image_url);
+    console.log('Step 1: Fetching image from:', image_url);
     
     // Fetch the original image
     const imageResponse = await fetch(image_url);
-    const imageBlob = await imageResponse.blob();
-    const imageBuffer = await imageBlob.arrayBuffer();
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
+    }
     
-    console.log('Sending to remove.bg API...');
+    console.log('Step 2: Image fetched, reading as blob...');
+    const imageBlob = await imageResponse.blob();
+    console.log('Image blob:', imageBlob.size, 'bytes, type:', imageBlob.type);
+    
+    console.log('Step 3: Creating FormData for remove.bg API...');
     
     // Call remove.bg API to remove background
     const formData = new FormData();
-    formData.append('image_file', new Blob([imageBuffer], { type: imageBlob.type }));
-    formData.append('format', 'PNG');
-    formData.append('type', 'product');
+    formData.append('image_file', imageBlob, 'image.png');
+    formData.append('size', 'auto');
     
-    console.log('Calling remove.bg API with:', { imageSize: imageBuffer.byteLength, type: imageBlob.type });
+    console.log('Step 4: Calling remove.bg API...');
+    console.log('API Key present:', !!apiKey, 'API Key length:', apiKey?.length);
     
     const removeBgResponse = await fetch('https://api.remove.bg/v1.0/removebg', {
       method: 'POST',
       headers: {
-        'X-API-Key': apiKey,
+        'X-Api-Key': apiKey,
       },
       body: formData,
     });
+    
+    console.log('Step 5: remove.bg responded with status:', removeBgResponse.status);
 
     if (!removeBgResponse.ok) {
       const errorText = await removeBgResponse.text();
