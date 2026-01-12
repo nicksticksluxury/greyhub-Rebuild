@@ -462,38 +462,51 @@ eBay SEO Title Requirements:
 Return ONLY the title, nothing else.`;
 
       // Generate description
+      const isPartsRepair = editedData.condition && 
+        (editedData.condition.toLowerCase().includes('parts') || 
+         editedData.condition.toLowerCase().includes('repair'));
+
+      const partsRepairWarning = isPartsRepair ? 
+        `\n\nIMPORTANT: This ${productTypeName.toLowerCase()} is being sold FOR PARTS OR REPAIR. Please emphasize at the top that:
+         - This item is NOT functional and sold as-is
+         - It requires professional repair/restoration
+         - It is NOT guaranteed to work
+         - Returns are NOT accepted
+         - Buyers should be experienced with ${productTypeName.toLowerCase()} repair` : '';
+
       const descriptionPrompt = `Create an eBay SEO-optimized HTML product description for this ${productTypeName}:
 
-CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
+      CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
 
-Brand: ${editedData.brand}
-Model: ${editedData.model || ""}
-Reference: ${editedData.reference_number || ""}
-Year: ${editedData.year || ""}
-Condition: ${editedData.condition || ""}
-Gender: ${editedData.gender || ""}${attributesText}${conditionContext}
+      Brand: ${editedData.brand}
+      Model: ${editedData.model || ""}
+      Reference: ${editedData.reference_number || ""}
+      Year: ${editedData.year || ""}
+      Condition: ${editedData.condition || ""}
+      Gender: ${editedData.gender || ""}${attributesText}${conditionContext}${partsRepairWarning}
 
-Product Type Context: ${aiResearchPrompt}
+      Product Type Context: ${aiResearchPrompt}
 
-eBay SEO Description Requirements:
-- Format in clean, simple HTML (use <h3>, <ul>, <li>, <p>, <strong>, <br>)
-- Include relevant keywords naturally throughout
-- Highlight key features and selling points
-- Be specific about materials, condition, measurements
-- NO generic filler words like "unknown", "blank", "N/A", "undefined"
-- If information is missing, don't mention that field at all
-- Use bullet points for features and specifications
-- Be honest about condition - state any flaws clearly
-- Keep it scannable and easy to read
-- Focus on what buyers search for
+      eBay SEO Description Requirements:
+      - Format in clean, simple HTML (use <h3>, <ul>, <li>, <p>, <strong>, <br>)
+      - Include relevant keywords naturally throughout
+      - Highlight key features and selling points
+      - Be specific about materials, condition, measurements
+      - NO generic filler words like "unknown", "blank", "N/A", "undefined"
+      - If information is missing, don't mention that field at all
+      - Use bullet points for features and specifications
+      - Be honest about condition - state any flaws clearly
+      - Keep it scannable and easy to read
+      - Focus on what buyers search for
+      ${isPartsRepair ? `- CRITICAL: Start with a prominent "FOR PARTS OR REPAIR" section warning\n      - Make it absolutely clear this item does NOT work and requires professional repair` : ''}
 
-Structure:
-1. Opening paragraph with key features
-2. Detailed specifications in bullet points
-3. Condition details (be honest about wear/damage)
-4. Any additional relevant information
+      Structure:
+      1. ${isPartsRepair ? 'Prominent warning that this is FOR PARTS OR REPAIR (use <strong> tags)' : 'Opening paragraph with key features'}
+      2. ${isPartsRepair ? 'Key details about what can be salvaged/repaired' : 'Detailed specifications in bullet points'}
+      3. Condition details (be honest about wear/damage)
+      4. Any additional relevant information
 
-Return ONLY the HTML description, no wrapper text.`;
+      Return ONLY the HTML description, no wrapper text.`;
 
       // Generate both
       const [title, description] = await Promise.all([
