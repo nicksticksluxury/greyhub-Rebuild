@@ -617,41 +617,25 @@ Return ONLY the HTML description, no wrapper text.`;
     try {
       const beautifiedPhotos = [];
 
-      for (let i = 0; i < editedData.photos.length; i++) {
-        setBeautifyProgress({ current: i + 1, total: editedData.photos.length });
-        toast.loading(`Beautifying image ${i + 1} of ${editedData.photos.length}...`, { id: 'beautify' });
+        for (let i = 0; i < editedData.photos.length; i++) {
+          setBeautifyProgress({ current: i + 1, total: editedData.photos.length });
+          toast.loading(`Replacing background ${i + 1} of ${editedData.photos.length}...`, { id: 'beautify' });
 
-        const photo = editedData.photos[i];
-        const imageUrl = photo.full || photo.medium || photo.original || photo;
+          const photo = editedData.photos[i];
+          const imageUrl = photo.full || photo.medium || photo.original || photo;
 
-        try {
-          console.log("=== BEAUTIFY IMAGE DEBUG ===");
-          console.log("Prompt being sent:", beautifyImagePrompt);
-          console.log("Image URL:", imageUrl);
-          
-          const result = await base44.integrations.Core.GenerateImage({
-            prompt: beautifyImagePrompt.replace('{product_photo}', imageUrl),
-            existing_image_urls: [imageUrl]
-          });
-          
-          console.log("Result received:", result);
+          try {
+            const result = await base44.functions.invoke('replaceBackground', { 
+              image_url: imageUrl 
+            });
 
-          const imageBlob = await fetch(result.url).then(r => r.blob());
-          const file = new File([imageBlob], `beautified_${i}.png`, { type: 'image/png' });
-          
-          const uploadResult = await base44.integrations.Core.UploadFile({ file });
-          
-          const optimizeResult = await base44.functions.invoke('optimizeImage', { 
-            file_url: uploadResult.file_url 
-          });
-
-          beautifiedPhotos.push(optimizeResult.data);
-        } catch (error) {
-          console.error(`Failed to beautify image ${i + 1}:`, error);
-          // Keep original if beautification fails
-          beautifiedPhotos.push(photo);
+            beautifiedPhotos.push(result.data.image);
+          } catch (error) {
+            console.error(`Failed to replace background ${i + 1}:`, error);
+            // Keep original if beautification fails
+            beautifiedPhotos.push(photo);
+          }
         }
-      }
 
       setEditedData({ ...editedData, photos: beautifiedPhotos });
       setHasUnsavedChanges(true);
@@ -690,37 +674,21 @@ Return ONLY the HTML description, no wrapper text.`;
         const imageUrl = photo.full || photo.medium || photo.original || photo;
 
         try {
-          console.log("=== BEAUTIFY SELECTED IMAGE DEBUG ===");
-          console.log("Prompt being sent:", beautifyImagePrompt);
-          console.log("Image URL:", imageUrl);
-          
-          const result = await base44.integrations.Core.GenerateImage({
-            prompt: beautifyImagePrompt.replace('{product_photo}', imageUrl),
-            existing_image_urls: [imageUrl]
-          });
-          
-          console.log("Result received:", result);
-
-          const imageBlob = await fetch(result.url).then(r => r.blob());
-          const file = new File([imageBlob], `beautified_${imageIndex}.png`, { type: 'image/png' });
-          
-          const uploadResult = await base44.integrations.Core.UploadFile({ file });
-          
-          const optimizeResult = await base44.functions.invoke('optimizeImage', { 
-            file_url: uploadResult.file_url 
+          const result = await base44.functions.invoke('replaceBackground', { 
+            image_url: imageUrl 
           });
 
           // Create a new array with the updated image
           currentPhotos = [
             ...currentPhotos.slice(0, imageIndex),
-            optimizeResult.data,
+            result.data.image,
             ...currentPhotos.slice(imageIndex + 1)
           ];
-          
+
           // Update state immediately after each image
           setEditedData({ ...editedData, photos: currentPhotos });
         } catch (error) {
-          console.error(`Failed to beautify image ${imageIndex + 1}:`, error);
+          console.error(`Failed to replace background ${imageIndex + 1}:`, error);
           // Keep original if beautification fails
         }
       }
