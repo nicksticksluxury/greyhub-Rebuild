@@ -367,10 +367,14 @@ Deno.serve(async (req) => {
                 });
 
                 if (!updateRes.ok) {
-                    const err = await updateRes.text();
-                    console.error(`[${sku}] Offer Update Error Response:`, err);
-                    throw new Error(`Failed to update offer ${offerId}: ${err}`);
-                }
+                     const err = await updateRes.text();
+                     console.error(`[${sku}] Offer Update Error Response:`, err);
+                     let errorDetails = { raw: err };
+                     try {
+                         errorDetails = JSON.parse(err);
+                     } catch (e) {}
+                     throw new Error(JSON.stringify({ message: `Failed to update offer ${offerId}`, details: errorDetails }));
+                 }
 
                 // 3. Re-publish to apply changes
                 const publishResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}/publish`, {
