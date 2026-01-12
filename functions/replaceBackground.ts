@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { removeBackground } from 'npm:@imgly/background-removal@1.4.5';
 
 Deno.serve(async (req) => {
   try {
@@ -16,60 +15,46 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'image_url is required' }, { status: 400 });
     }
 
-    console.log('Fetching image:', image_url);
+    const apiKey = Deno.env.get('REMOVEBG_API_KEY');
+    if (!apiKey) {
+      return Response.json({ error: 'REMOVEBG_API_KEY not configured' }, { status: 500 });
+    }
+
+    console.log('Fetching image from:', image_url);
     
     // Fetch the original image
     const imageResponse = await fetch(image_url);
     const imageBlob = await imageResponse.blob();
+    const imageBuffer = await imageBlob.arrayBuffer();
     
-    console.log('Removing background...');
+    console.log('Sending to remove.bg API...');
     
-    // Remove background using ML model
-    const foregroundBlob = await removeBackground(imageBlob);
-    
-    console.log('Background removed, creating composite...');
-    
-    // Create canvas and composite onto new background
-    const canvas = new OffscreenCanvas(2000, 2000);
-    const ctx = canvas.getContext('2d');
-    
-    // Draw wooden table background
-    ctx.fillStyle = '#8B4513';
-    ctx.fillRect(0, 0, 2000, 2000);
-    
-    // Add wood grain texture effect
-    for (let i = 0; i < 100; i++) {
-      ctx.strokeStyle = `rgba(101, 67, 33, ${Math.random() * 0.3})`;
-      ctx.lineWidth = Math.random() * 3;
-      ctx.beginPath();
-      ctx.moveTo(Math.random() * 2000, 0);
-      ctx.lineTo(Math.random() * 2000, 2000);
-      ctx.stroke();
+    // Call remove.bg API to remove background
+    const removeBgResponse = await fetch('https://api.remove.bg/v1.0/removebg', {
+      method: 'POST',
+      headers: {
+        'X-API-Key': apiKey,
+      },
+      body: imageBuffer,
+    });
+
+    if (!removeBgResponse.ok) {
+      const errorText = await removeBgResponse.text();
+      console.error('remove.bg API error:', removeBgResponse.status, errorText);
+      return Response.json({ 
+        error: `remove.bg API failed: ${removeBgResponse.status} ${errorText}` 
+      }, { status: 500 });
     }
+
+    console.log('Background removed successfully');
     
-    // Add gradient for depth
-    const gradient = ctx.createLinearGradient(0, 0, 0, 2000);
-    gradient.addColorStop(0, 'rgba(139, 69, 19, 0.2)');
-    gradient.addColorStop(1, 'rgba(101, 67, 33, 0.3)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 2000, 2000);
-    
-    // Load and draw the foreground (product with no background)
-    const foregroundImage = await createImageBitmap(foregroundBlob);
-    
-    // Center the product
-    const x = (2000 - foregroundImage.width) / 2;
-    const y = (2000 - foregroundImage.height) / 2;
-    ctx.drawImage(foregroundImage, x, y);
-    
-    // Convert canvas to blob
-    const resultBlob = await canvas.convertToBlob({ type: 'image/png' });
-    
-    console.log('Uploading result...');
+    const noBackgroundBlob = await removeBgResponse.blob();
     
     // Upload the result
-    const file = new File([resultBlob], 'background-replaced.png', { type: 'image/png' });
+    const file = new File([noBackgroundBlob], 'background-removed.png', { type: 'image/png' });
     const uploadResult = await base44.integrations.Core.UploadFile({ file });
+    
+    console.log('Uploaded to:', uploadResult.file_url);
     
     // Optimize the uploaded image
     const optimizeResult = await base44.functions.invoke('optimizeImage', { 
