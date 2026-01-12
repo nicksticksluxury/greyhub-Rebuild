@@ -30,19 +30,26 @@ Deno.serve(async (req) => {
     console.log('Sending to remove.bg API...');
     
     // Call remove.bg API to remove background
+    const formData = new FormData();
+    formData.append('image_file', new Blob([imageBuffer], { type: imageBlob.type }));
+    formData.append('format', 'PNG');
+    formData.append('type', 'product');
+    
+    console.log('Calling remove.bg API with:', { imageSize: imageBuffer.byteLength, type: imageBlob.type });
+    
     const removeBgResponse = await fetch('https://api.remove.bg/v1.0/removebg', {
       method: 'POST',
       headers: {
         'X-API-Key': apiKey,
       },
-      body: imageBuffer,
+      body: formData,
     });
 
     if (!removeBgResponse.ok) {
       const errorText = await removeBgResponse.text();
       console.error('remove.bg API error:', removeBgResponse.status, errorText);
       return Response.json({ 
-        error: `remove.bg API failed: ${removeBgResponse.status} ${errorText}` 
+        error: `remove.bg API failed: ${removeBgResponse.status} - ${errorText}` 
       }, { status: 500 });
     }
 
