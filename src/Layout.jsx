@@ -198,6 +198,11 @@ export default function Layout({ children, currentPageName }) {
       icon: DollarSign,
     },
     {
+      title: "eBay Management",
+      url: createPageUrl("EbayManagement"),
+      icon: Settings,
+    },
+    {
       title: "Logs",
       url: createPageUrl("Logs"),
       icon: Settings,
