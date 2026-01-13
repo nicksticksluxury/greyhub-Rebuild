@@ -601,6 +601,16 @@ Deno.serve(async (req) => {
                                 ? 'DELIVERED' 
                                 : trackingStatus;
 
+                            // If we detect Delivered now, update ALL matching existing alerts for this order/product to Delivered
+                            if (finalTrackingStatus === 'DELIVERED' && existingAlerts?.length) {
+                                const toUpdate = existingAlerts.filter(a => a.metadata?.order_id === order.orderId && a.metadata?.product_id === product.id && a.metadata?.tracking_status !== 'DELIVERED');
+                                for (const a of toUpdate) {
+                                    await base44.entities.Alert.update(a.id, {
+                                        metadata: { ...(a.metadata || {}), tracking_status: 'DELIVERED' }
+                                    });
+                                }
+                            }
+
                             const alertData = {
                                 company_id: user.company_id,
                                 user_id: user.id,
