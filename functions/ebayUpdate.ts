@@ -308,6 +308,7 @@ Deno.serve(async (req) => {
                 
                 console.log(`[${sku}] RAW CONDITION FROM DB:`, JSON.stringify(rawCondition), `TYPE:`, typeof rawCondition);
                 console.log(`[${sku}] MAPPED TO EBAY CONDITION:`, ebayCondition);
+                console.log(`[${sku}] CATEGORY_SPECIFIC_ATTRIBUTES:`, JSON.stringify(watch.category_specific_attributes || {}));
 
                 const inventoryItem = {
                      availability: {
@@ -493,4 +494,4 @@ Deno.serve(async (req) => {
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
-});  
+});
