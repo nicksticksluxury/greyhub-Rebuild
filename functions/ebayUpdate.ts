@@ -287,7 +287,7 @@ Deno.serve(async (req) => {
                     } else if (condStr === '2990' || condStr.includes('mint') || condStr.includes('excellent')) {
                         ebayCondition = 'USED_EXCELLENT';
                     } else if (condStr.includes('very good') || condStr.includes('very_good')) {
-                        ebayCondition = 'USED_VERY_GOOD';
+                        ebayCondition = 'USED_EXCELLENT';
                     } else if (condStr === '3000' || condStr.includes('good')) {
                         ebayCondition = 'USED_GOOD';
                     } else if (condStr === '3010' || condStr.includes('fair')) {
