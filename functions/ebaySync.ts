@@ -456,20 +456,55 @@ Deno.serve(async (req) => {
                                     });
 
                                     // Check multiple locations for tracking
-                                    if (fulfillmentData.shipmentTrackingNumber) {
-                                        trackingNumber = fulfillmentData.shipmentTrackingNumber;
-                                        shippingCarrier = fulfillmentData.shippingCarrierCode;
-                                        shipmentStatus = fulfillmentData.shipmentStatus || shipmentStatus;
-                                        break;
-                                    } else if (fulfillmentData.lineItems && fulfillmentData.lineItems.length > 0) {
-                                        const lineItem = fulfillmentData.lineItems[0];
-                                        if (lineItem.shipmentTrackingNumber) {
-                                            trackingNumber = lineItem.shipmentTrackingNumber;
-                                            shippingCarrier = lineItem.shippingCarrierCode;
-                                            shipmentStatus = lineItem.shipmentStatus || shipmentStatus;
-                                            break;
+                                    // Case A: Newer API shape - array of fulfillments
+                                    if (Array.isArray(fulfillmentData.fulfillments) && fulfillmentData.fulfillments.length > 0) {
+                                        for (const f of fulfillmentData.fulfillments) {
+                                            // Prefer a Delivered/Picked status if present
+                                            const fStatus = (f.shipmentStatus || '').toUpperCase();
+                                            if (!trackingNumber && f.shipmentTrackingNumber) {
+                                                trackingNumber = f.shipmentTrackingNumber;
+                                                shippingCarrier = f.shippingCarrierCode || shippingCarrier;
+                                            }
+                                            if (fStatus) {
+                                                shipmentStatus = f.shipmentStatus;
+                                            }
+                                            // Line-level fallback
+                                            if ((!trackingNumber || !shipmentStatus) && Array.isArray(f.lineItems)) {
+                                                for (const li of f.lineItems) {
+                                                    if (!trackingNumber && li.shipmentTrackingNumber) {
+                                                        trackingNumber = li.shipmentTrackingNumber;
+                                                        shippingCarrier = li.shippingCarrierCode || shippingCarrier;
+                                                    }
+                                                    if (!shipmentStatus && li.shipmentStatus) {
+                                                        shipmentStatus = li.shipmentStatus;
+                                                    }
+                                                }
+                                            }
+                                            if (fStatus.includes('DELIVERED') || fStatus.includes('PICKED')) break;
                                         }
                                     }
+                                    // Case B: Flat object (older shape)
+                                    if (!trackingNumber && fulfillmentData.shipmentTrackingNumber) {
+                                        trackingNumber = fulfillmentData.shipmentTrackingNumber;
+                                        shippingCarrier = fulfillmentData.shippingCarrierCode || shippingCarrier;
+                                    }
+                                    if (!shipmentStatus && fulfillmentData.shipmentStatus) {
+                                        shipmentStatus = fulfillmentData.shipmentStatus;
+                                    }
+                                    // Case C: lineItems on the root
+                                    if ((!trackingNumber || !shipmentStatus) && Array.isArray(fulfillmentData.lineItems) && fulfillmentData.lineItems.length > 0) {
+                                        for (const li of fulfillmentData.lineItems) {
+                                            if (!trackingNumber && li.shipmentTrackingNumber) {
+                                                trackingNumber = li.shipmentTrackingNumber;
+                                                shippingCarrier = li.shippingCarrierCode || shippingCarrier;
+                                            }
+                                            if (!shipmentStatus && li.shipmentStatus) {
+                                                shipmentStatus = li.shipmentStatus;
+                                            }
+                                        }
+                                    }
+                                    // If we have at least a tracking number, consider we fetched something useful; continue to next href
+                                    if (trackingNumber || shipmentStatus) { break; }
                                 } else {
                                     const errorText = await fulfillmentResponse.text();
                                     await base44.asServiceRole.entities.Log.create({
@@ -508,7 +543,7 @@ Deno.serve(async (req) => {
 
                     let trackingStatus = 'NEED_TO_SHIP';
                     const shipmentStatusUpper = String(shipmentStatus || '').toUpperCase();
-                    const deliveredFlag = shipmentStatusUpper.includes('DELIVERED') || shipmentStatusUpper.includes('PICKED') || fulfillmentStatus === 'FULFILLED';
+                    const deliveredFlag = shipmentStatusUpper.includes('DELIVERED') || shipmentStatusUpper.includes('PICKED');
                     if (deliveredFlag) {
                         // Only treat explicit Delivered or Picked Up as delivered
                         trackingStatus = 'DELIVERED';
