@@ -299,7 +299,8 @@ Deno.serve(async (req) => {
                     }
                 }
                 
-                console.log(`[${sku}] Condition mapping: "${rawCondition}" -> "${ebayCondition}"`);
+                console.log(`[${sku}] RAW CONDITION FROM DB:`, JSON.stringify(rawCondition), `TYPE:`, typeof rawCondition);
+                console.log(`[${sku}] MAPPED TO EBAY CONDITION:`, ebayCondition);
 
                 const inventoryItem = {
                      availability: {
@@ -323,8 +324,11 @@ Deno.serve(async (req) => {
                      }
                  };
 
-                console.log(`[${sku}] Full Inventory Item Payload:`, JSON.stringify(inventoryItem, null, 2));
-                console.log(`[${sku}] Condition field in payload:`, inventoryItem.condition);
+                console.log(`[${sku}] ========== FULL INVENTORY PAYLOAD ==========`);
+                console.log(JSON.stringify(inventoryItem, null, 2));
+                console.log(`[${sku}] CONDITION IN PAYLOAD:`, inventoryItem.condition, `TYPE:`, typeof inventoryItem.condition);
+                console.log(`[${sku}] ASPECTS IN PAYLOAD:`, JSON.stringify(inventoryItem.product.aspects, null, 2));
+                console.log(`[${sku}] ========== END PAYLOAD ==========`);
 
                 const inventoryResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${sku}`, {
                     method: 'PUT',
