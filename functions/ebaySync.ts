@@ -621,7 +621,7 @@ Deno.serve(async (req) => {
                                 }
                             };
 
-                            if (existingAlert?.read && trackingStatus === 'DELIVERED') {
+                            if (existingAlert?.read && finalTrackingStatus === 'DELIVERED') {
                                 // Delivered and acknowledged – skip to avoid reprocessing
                                 await base44.asServiceRole.entities.Log.create({
                                     company_id: user.company_id,
@@ -642,7 +642,7 @@ Deno.serve(async (req) => {
                                     level: "success",
                                     category: "ebay",
                                     message: `Updated order alert with tracking: ${product.brand} ${product.model}`,
-                                    details: { alertId: existingAlert.id, trackingNumber, trackingStatus }
+                                    details: { alertId: existingAlert.id, trackingNumber, trackingStatus: finalTrackingStatus }
                                 });
                             } else {
                                 // Create new alert
