@@ -293,7 +293,7 @@ Deno.serve(async (req) => {
                                 aspectName = 'Features';
                             }
                             
-                            if (String(aspectName).toLowerCase() !== 'condition') {
+                            if (!String(aspectName).toLowerCase().includes('condition')) {
                                 aspects[aspectName] = [String(value)];
                             }
                         }
