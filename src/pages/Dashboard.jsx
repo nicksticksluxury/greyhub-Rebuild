@@ -105,8 +105,8 @@ export default function Dashboard() {
   const ebayOffers = alerts.filter(a => a.title?.includes("Best Offer"));
   const ebaySales = alerts.filter(a => a.title?.includes("Sold on eBay"));
   const ebayOrdersToShip = alerts.filter(a => a.title === "eBay Order Status");
-  const activeEbayOrders = ebayOrdersToShip.filter(a => a.metadata?.tracking_status !== 'DELIVERED');
-  const deliveredAwaitingAck = ebayOrdersToShip.filter(a => a.metadata?.tracking_status === 'DELIVERED');
+  const activeEbayOrders = ebayOrdersToShip.filter(a => a.metadata?.tracking_status !== 'DELIVERED' && !a.read);
+  const deliveredAwaitingAck = ebayOrdersToShip.filter(a => a.metadata?.tracking_status === 'DELIVERED' && !a.read);
 
   // Sales trend data (last 30 days)
   const salesByDay = soldProducts.reduce((acc, p) => {
