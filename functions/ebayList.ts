@@ -319,7 +319,15 @@ Deno.serve(async (req) => {
                 }
 
                 // Get condition and log it for debugging
-                const ebayCondition = getEbayCondition(product.condition);
+                const categoryIdForCondition = productType?.ebay_category_id || getEbayCategoryId(product.product_type_code, productTypeName);
+                let ebayCondition = getEbayCondition(product.condition);
+                if (categoryIdForCondition === '31387') {
+                    const usedVariants = new Set(['USED_EXCELLENT','USED_GOOD','USED_ACCEPTABLE','USED_VERY_GOOD']);
+                    if (usedVariants.has(ebayCondition)) {
+                        console.log(`[${sku}] Category 31387: coercing ${ebayCondition} -> USED`);
+                        ebayCondition = 'USED';
+                    }
+                }
                 console.log(`[${sku}] Product condition: "${product.condition}" -> eBay condition: "${ebayCondition}"`);
 
                 const inventoryItem = {
@@ -585,7 +593,7 @@ function getEbayCondition(condition) {
     if (s === '1500') return 'NEW_OTHER';
     if (s === '1750') return 'NEW_WITH_DEFECTS';
     if (s === '2990') return 'USED_EXCELLENT';
-    if (s === '3000') return 'USED_GOOD';
+    if (s === '3000') return 'USED';
     if (s === '5000') return 'USED_GOOD';
     if (s === '3010') return 'USED_ACCEPTABLE';
     if (s === '7000') return 'FOR_PARTS_OR_NOT_WORKING';

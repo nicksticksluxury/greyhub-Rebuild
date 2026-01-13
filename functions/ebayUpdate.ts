@@ -295,8 +295,10 @@ Deno.serve(async (req) => {
                         ebayCondition = 'USED_EXCELLENT';
                     } else if (condStr.includes('very good') || condStr.includes('very_good')) {
                         ebayCondition = 'USED_EXCELLENT';
-                    } else if (condStr === '3000' || condStr === '5000' || condStr.includes('good')) {
-                        ebayCondition = 'USED_GOOD';
+                    } else if (condStr === '3000') {
+                            ebayCondition = 'USED';
+                        } else if (condStr === '5000' || condStr.includes('good')) {
+                            ebayCondition = 'USED_GOOD';
                     } else if (condStr === '3010' || condStr.includes('fair')) {
                         ebayCondition = 'USED_ACCEPTABLE';
                     } else if (condStr === '7000' || condStr.includes('parts') || condStr.includes('repair') || condStr.includes('not working')) {
@@ -309,10 +311,19 @@ Deno.serve(async (req) => {
                 console.log(`[${sku}] RAW CONDITION FROM DB:`, JSON.stringify(rawCondition), `TYPE:`, typeof rawCondition);
                 console.log(`[${sku}] MAPPED TO EBAY CONDITION ENUM:`, ebayCondition);
                 // Safety: enforce allowed eBay Inventory condition enums only
-                const allowedConditions = new Set(['NEW','NEW_OTHER','NEW_WITH_DEFECTS','USED_EXCELLENT','USED_GOOD','USED_ACCEPTABLE','FOR_PARTS_OR_NOT_WORKING']);
+                const allowedConditions = new Set(['NEW','NEW_OTHER','NEW_WITH_DEFECTS','USED','USED_EXCELLENT','USED_GOOD','USED_ACCEPTABLE','FOR_PARTS_OR_NOT_WORKING']);
                 if (!allowedConditions.has(ebayCondition)) {
                     console.log(`[${sku}] Non-allowed condition detected ("${ebayCondition}"), forcing USED_EXCELLENT`);
                     ebayCondition = 'USED_EXCELLENT';
+                }
+
+                // Category-specific condition coercion for Wristwatches (31387)
+                if (categoryId === '31387') {
+                    const usedVariants = new Set(['USED_EXCELLENT','USED_GOOD','USED_ACCEPTABLE','USED_VERY_GOOD']);
+                    if (usedVariants.has(ebayCondition)) {
+                        console.log(`[${sku}] Category 31387: coercing ${ebayCondition} -> USED`);
+                        ebayCondition = 'USED';
+                    }
                 }
 
                 const inventoryItem = {
