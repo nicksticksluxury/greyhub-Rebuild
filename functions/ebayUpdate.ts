@@ -493,7 +493,7 @@ Deno.serve(async (req) => {
                     }
                 } catch (e) {}
                 
-                // Log update error.
+                // Log update error
                 await base44.asServiceRole.entities.Log.create({
                     company_id: user.company_id,
                     user_id: user.id,
