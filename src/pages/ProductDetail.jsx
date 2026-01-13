@@ -1044,6 +1044,25 @@ Return ONLY the title, nothing else.`;
                     </>
                   )}
                 </Button>
+                {editedData.exported_to?.ebay && (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const result = await base44.functions.invoke('debugEbayListing', { productId });
+                        console.log('eBay Debug Result:', result.data);
+                        toast.success('Debug info logged to console');
+                      } catch (error) {
+                        console.error('Debug error:', error);
+                        toast.error('Debug failed: ' + error.message);
+                      }
+                    }}
+                    variant="outline"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                    title="Debug eBay listing data"
+                  >
+                    Debug eBay
+                  </Button>
+                )}
                 <Button
                     variant="outline"
                     onClick={() => {
