@@ -463,61 +463,78 @@ Deno.serve(async (req) => {
 
 function getEbayCondition(condition) {
     // eBay Inventory API condition mapping for Wristwatches (Category 31387)
-    // Supports enum strings: NEW, NEW_OTHER, USED_EXCELLENT, USED_VERY_GOOD, USED_GOOD, FOR_PARTS_OR_NOT_WORKING
+    // Must return enum strings: NEW, NEW_OTHER, USED_EXCELLENT, USED_VERY_GOOD, USED_GOOD, FOR_PARTS_OR_NOT_WORKING
+
+    console.log(`[getEbayCondition] Input: "${condition}" (type: ${typeof condition})`);
 
     if (!condition) {
-        return 'USED_EXCELLENT';  // Default
-    }
-
-    const conditionStr = String(condition).toLowerCase().trim();
-
-    // New with box and papers -> NEW
-    if (conditionStr.includes('new - with box') || conditionStr === 'new - with box & papers' || 
-        conditionStr === 'new' || conditionStr === 'new_full_set' || conditionStr === 'new_with_box' ||
-        conditionStr === '1000') {
-        return 'NEW';
-    }
-
-    // New without box/papers -> NEW_OTHER
-    if (conditionStr === 'new - no box/papers' || conditionStr === 'new - no box' ||
-        conditionStr === 'new_no_box' || conditionStr === 'new (no box/papers)' || 
-        conditionStr === 'new (no box)' || conditionStr === '1500') {
-        return 'NEW_OTHER';
-    }
-
-    // New with imperfections (Box Only) -> NEW_OTHER
-    if (conditionStr === 'new - box only' || conditionStr === 'new - box' ||
-        conditionStr === 'new_box_only' || conditionStr === 'new (box only)' ||
-        conditionStr === '1750') {
-        return 'NEW_OTHER';
-    }
-
-    // Mint/Excellent/Very Good -> USED_EXCELLENT
-    if (conditionStr === 'mint' || conditionStr === 'excellent' || 
-        conditionStr === 'very good' || conditionStr === 'very_good' ||
-        conditionStr === '2990') {
+        console.log(`[getEbayCondition] No condition provided, returning USED_EXCELLENT`);
         return 'USED_EXCELLENT';
     }
 
-    // Good -> USED_GOOD
-    if (conditionStr === 'good' || conditionStr === '3000' || conditionStr === '5000') {
+    const conditionStr = String(condition).toLowerCase().trim();
+    console.log(`[getEbayCondition] After String conversion: "${conditionStr}"`);
+
+    // Check for numeric condition codes first (old eBay format)
+    if (conditionStr === '1000') {
+        console.log(`[getEbayCondition] Matched 1000 -> NEW`);
+        return 'NEW';
+    }
+    if (conditionStr === '1500' || conditionStr === '1750') {
+        console.log(`[getEbayCondition] Matched ${conditionStr} -> NEW_OTHER`);
+        return 'NEW_OTHER';
+    }
+    if (conditionStr === '2990') {
+        console.log(`[getEbayCondition] Matched 2990 -> USED_EXCELLENT`);
+        return 'USED_EXCELLENT';
+    }
+    if (conditionStr === '3000' || conditionStr === '5000') {
+        console.log(`[getEbayCondition] Matched ${conditionStr} -> USED_GOOD`);
         return 'USED_GOOD';
     }
-
-    // Fair -> USED_GOOD
-    if (conditionStr === 'fair' || conditionStr === '3010') {
+    if (conditionStr === '3010') {
+        console.log(`[getEbayCondition] Matched 3010 -> USED_GOOD`);
         return 'USED_GOOD';
     }
-
-    // Parts/Repair -> FOR_PARTS_OR_NOT_WORKING
-    if (conditionStr === 'parts/repair' || conditionStr === 'parts_repair' || 
-        conditionStr === 'parts' || conditionStr === 'repair' || 
-        conditionStr === 'for parts' || conditionStr === 'not working' ||
-        conditionStr === 'parts or repair' || conditionStr === 'parts and repair' ||
-        conditionStr === '7000') {
+    if (conditionStr === '7000') {
+        console.log(`[getEbayCondition] Matched 7000 -> FOR_PARTS_OR_NOT_WORKING`);
         return 'FOR_PARTS_OR_NOT_WORKING';
     }
 
-    // Default fallback
+    // Text-based conditions
+    if (conditionStr.includes('new - with box') || conditionStr === 'new - with box & papers' || 
+        conditionStr === 'new' || conditionStr === 'new_full_set' || conditionStr === 'new_with_box') {
+        console.log(`[getEbayCondition] Matched new with box -> NEW`);
+        return 'NEW';
+    }
+
+    if (conditionStr === 'new - no box/papers' || conditionStr === 'new - no box' ||
+        conditionStr === 'new_no_box' || conditionStr === 'new (no box/papers)' || 
+        conditionStr === 'new (no box)' || conditionStr === 'new - box only' || 
+        conditionStr === 'new_box_only' || conditionStr === 'new (box only)') {
+        console.log(`[getEbayCondition] Matched new without box -> NEW_OTHER`);
+        return 'NEW_OTHER';
+    }
+
+    if (conditionStr === 'mint' || conditionStr === 'excellent' || 
+        conditionStr === 'very good' || conditionStr === 'very_good') {
+        console.log(`[getEbayCondition] Matched ${conditionStr} -> USED_EXCELLENT`);
+        return 'USED_EXCELLENT';
+    }
+
+    if (conditionStr === 'good' || conditionStr === 'fair') {
+        console.log(`[getEbayCondition] Matched ${conditionStr} -> USED_GOOD`);
+        return 'USED_GOOD';
+    }
+
+    if (conditionStr === 'parts/repair' || conditionStr === 'parts_repair' || 
+        conditionStr === 'parts' || conditionStr === 'repair' || 
+        conditionStr === 'for parts' || conditionStr === 'not working' ||
+        conditionStr === 'parts or repair' || conditionStr === 'parts and repair') {
+        console.log(`[getEbayCondition] Matched parts/repair -> FOR_PARTS_OR_NOT_WORKING`);
+        return 'FOR_PARTS_OR_NOT_WORKING';
+    }
+
+    console.log(`[getEbayCondition] No match found, returning USED_EXCELLENT`);
     return 'USED_EXCELLENT';
 }
