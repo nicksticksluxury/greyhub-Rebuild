@@ -100,7 +100,7 @@ export default function Layout({ children, currentPageName }) {
             title: "eBay Debug",
             url: createPageUrl("EbayDebug"),
             icon: Settings,
-          }
+          },
           {
             title: "Settings",
             url: createPageUrl("TenantSettings"),
