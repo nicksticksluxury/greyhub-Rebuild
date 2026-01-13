@@ -512,7 +512,7 @@ Deno.serve(async (req) => {
                     if (deliveredFlag) {
                         // Only treat explicit Delivered or Picked Up as delivered
                         trackingStatus = 'DELIVERED';
-                    } else if (trackingNumber || fulfillmentStatus === 'IN_PROGRESS' || fulfillmentStatus === 'FULFILLED') {
+                    } else if (shipmentStatusUpper.includes('SHIPPED') || trackingNumber || fulfillmentStatus === 'IN_PROGRESS' || fulfillmentStatus === 'FULFILLED') {
                         // Anything shipped but not explicitly delivered is In Transit ("Shipped")
                         trackingStatus = 'IN_TRANSIT';
                     } else if (fulfillmentStatus === 'NOT_STARTED') {
