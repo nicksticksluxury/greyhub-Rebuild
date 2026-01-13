@@ -202,10 +202,8 @@ Deno.serve(async (req) => {
                 
                 // Add category-specific attributes from product
                 if (watch.category_specific_attributes) {
-                    console.log(`[${sku}] Category Specific Attributes:`, JSON.stringify(watch.category_specific_attributes, null, 2));
                     productTypeFields.forEach(field => {
                         const value = watch.category_specific_attributes[field.field_name];
-                        console.log(`[${sku}] Processing field: ${field.field_name} = ${JSON.stringify(value)}`);
                         if (value !== undefined && value !== null && value !== '') {
                             // Map field names to eBay's expected names
                             let aspectName = field.field_label;
@@ -339,12 +337,6 @@ Deno.serve(async (req) => {
                 console.log(`[${sku}] ASPECTS IN PAYLOAD:`, JSON.stringify(inventoryItem.product.aspects, null, 2));
                 console.log(`[${sku}] ========== END PAYLOAD ==========`);
 
-                const bodyToSend = JSON.stringify(inventoryItem);
-                console.log(`[${sku}] ========== ACTUAL BODY BEING SENT TO EBAY ==========`);
-                console.log(bodyToSend);
-                console.log(`[${sku}] Condition in stringified body:`, JSON.parse(bodyToSend).condition);
-                console.log(`[${sku}] ========== END BODY ==========`);
-
                 const inventoryResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${sku}`, {
                     method: 'PUT',
                     headers: {
@@ -353,7 +345,7 @@ Deno.serve(async (req) => {
                         'Content-Language': 'en-US',
                         'Accept-Language': 'en-US'
                     },
-                    body: bodyToSend
+                    body: JSON.stringify(inventoryItem)
                 });
 
                 if (!inventoryResponse.ok) {
@@ -501,4 +493,4 @@ Deno.serve(async (req) => {
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
-});
+});  
