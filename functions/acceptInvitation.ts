@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -44,10 +44,9 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Link user to company
+    // Link user to company (do not change role here)
     await base44.asServiceRole.entities.User.update(user.id, {
-      company_id: invitation.company_id,
-      role: invitation.role
+      company_id: invitation.company_id
     });
 
     // Mark invitation as accepted
