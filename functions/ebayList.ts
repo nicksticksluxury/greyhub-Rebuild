@@ -293,7 +293,9 @@ Deno.serve(async (req) => {
                                 aspectName = 'Features';
                             }
                             
-                            aspects[aspectName] = [String(value)];
+                            if (String(aspectName).toLowerCase() !== 'condition') {
+                                aspects[aspectName] = [String(value)];
+                            }
                         }
                     });
                 }
@@ -596,6 +598,7 @@ function getEbayCondition(condition) {
 
     return 'USED_EXCELLENT';
 }
+
 
 function getEbayCategoryId(productTypeCode, productTypeName) {
     // Map product types to eBay category IDs

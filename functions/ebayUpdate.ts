@@ -252,7 +252,9 @@ Deno.serve(async (req) => {
                                 aspectName = 'Features';
                             }
                             
-                            aspects[aspectName] = [String(value)];
+                            if (String(aspectName).toLowerCase() !== 'condition') {
+                                aspects[aspectName] = [String(value)];
+                            }
                         }
                     });
                 }
@@ -301,6 +303,12 @@ Deno.serve(async (req) => {
 
                 console.log(`[${sku}] RAW CONDITION FROM DB:`, JSON.stringify(rawCondition), `TYPE:`, typeof rawCondition);
                 console.log(`[${sku}] MAPPED TO EBAY CONDITION ENUM:`, ebayCondition);
+                // Safety: enforce allowed eBay Inventory condition enums only
+                const allowedConditions = new Set(['NEW','NEW_OTHER','NEW_WITH_DEFECTS','USED_EXCELLENT','USED_GOOD','USED_ACCEPTABLE','FOR_PARTS_OR_NOT_WORKING']);
+                if (!allowedConditions.has(ebayCondition)) {
+                    console.log(`[${sku}] Non-allowed condition detected ("${ebayCondition}"), forcing USED_EXCELLENT`);
+                    ebayCondition = 'USED_EXCELLENT';
+                }
 
                 const inventoryItem = {
                     availability: {
