@@ -56,14 +56,16 @@ Deno.serve(async (req) => {
         }
 
         console.log("Calling eBay metadata API for category 31387...");
-        
+
         // Call eBay metadata API to get item condition policies for category 31387
         const response = await fetch(
             'https://api.ebay.com/sell/metadata/v1/marketplace/EBAY_US/get_item_condition_policies?filter=categoryIds:31387',
             {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Language': 'en-US',
+                    'Accept-Language': 'en-US'
                 }
             }
         );
