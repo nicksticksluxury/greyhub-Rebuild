@@ -613,7 +613,7 @@ Deno.serve(async (req) => {
                                     product_id: product.id, 
                                     ebay_listing_url: ebayItemUrl,
                                     order_id: order.orderId,
-                                    tracking_status: trackingStatus,
+                                    tracking_status: finalTrackingStatus,
                                     fulfillment_status: fulfillmentStatus,
                                     tracking_number: trackingNumber,
                                     shipping_carrier: shippingCarrier,
