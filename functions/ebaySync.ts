@@ -593,10 +593,7 @@ Deno.serve(async (req) => {
                                 "metadata.product_id": product.id
                             });
 
-                            const existingAlert = existingAlerts.find(a => 
-                                a.metadata?.order_id === order.orderId && 
-                                a.metadata?.product_id === product.id
-                            );
+                            const existingAlert = existingAlerts[0];
 
                             // Never downgrade a Delivered status back to In Transit
                             const finalTrackingStatus = (existingAlert?.metadata?.tracking_status === 'DELIVERED' && trackingStatus !== 'DELIVERED') 
