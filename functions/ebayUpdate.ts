@@ -267,9 +267,16 @@ Deno.serve(async (req) => {
                 }
 
                 // 1. Update Inventory Item
-                const ebayCondition = getEbayCondition(watch.condition);
-                console.log(`[${sku}] Raw condition from DB: "${watch.condition}" (type: ${typeof watch.condition})`);
-                console.log(`[${sku}] Mapped condition: "${ebayCondition}" (type: ${typeof ebayCondition})`);
+                const rawCondition = watch.condition;
+                console.log(`[${sku}] Raw condition from DB: "${rawCondition}" (type: ${typeof rawCondition})`);
+                
+                const ebayCondition = getEbayCondition(rawCondition);
+                console.log(`[${sku}] After getEbayCondition: "${ebayCondition}" (type: ${typeof ebayCondition})`);
+                
+                // Force validation - ensure we're not sending numeric values
+                const validConditions = ['NEW', 'NEW_OTHER', 'USED_EXCELLENT', 'USED_VERY_GOOD', 'USED_GOOD', 'FOR_PARTS_OR_NOT_WORKING'];
+                const finalCondition = validConditions.includes(ebayCondition) ? ebayCondition : 'USED_EXCELLENT';
+                console.log(`[${sku}] Final validated condition: "${finalCondition}"`);
 
                 const inventoryItem = {
                      availability: {
@@ -277,7 +284,7 @@ Deno.serve(async (req) => {
                              quantity: watch.quantity || 1
                          }
                      },
-                     condition: ebayCondition,
+                     condition: finalCondition,
                      packageWeightAndSize: {
                          packageType: "PACKAGE_THICK_ENVELOPE",
                          weight: {
