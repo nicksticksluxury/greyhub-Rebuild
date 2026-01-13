@@ -565,53 +565,33 @@ Deno.serve(async (req) => {
 });
 
 function getEbayCondition(condition) {
-    // eBay Inventory API condition mapping for Wristwatches (Category 31387)
-    // Must use enum strings: NEW, NEW_OTHER, USED_EXCELLENT, USED_VERY_GOOD, USED_GOOD, FOR_PARTS_OR_NOT_WORKING
+    // Category 31387 mapping per your list; send Inventory ConditionEnum strings
+    if (!condition) return 'USED_EXCELLENT';
+    const s = String(condition).toLowerCase().trim();
 
-    if (!condition) {
-        return 'USED_EXCELLENT';
-    }
+    // Direct numeric ID mapping
+    if (s === '1000') return 'NEW';
+    if (s === '1500') return 'NEW_OTHER';
+    if (s === '1750') return 'NEW_WITH_DEFECTS';
+    if (s === '2990') return 'USED_EXCELLENT';
+    if (s === '3000') return 'USED_GOOD';
+    if (s === '3010') return 'USED_ACCEPTABLE';
+    if (s === '7000') return 'FOR_PARTS_OR_NOT_WORKING';
 
-    const conditionStr = String(condition).toLowerCase().trim();
+    // Text mappings
+    if ((s.includes('new with box') && s.includes('papers')) || s === 'new' || s === 'new_full_set' || s === 'new_with_box') return 'NEW';
 
-    // New with box and papers -> NEW
-    if (conditionStr.includes('new - with box') || conditionStr === 'new - with box & papers' || 
-        conditionStr === 'new' || conditionStr === 'new_full_set' || conditionStr === 'new_with_box' ||
-        conditionStr === '1000') {
-        return 'NEW';
-    }
+    if (s.includes('new - no box/papers') || (s.includes('no box') && s.includes('papers'))) return 'NEW_OTHER';
 
-    // New without box -> NEW_OTHER
-    if (conditionStr.includes('new - no box') || conditionStr.includes('new - box only') || 
-        conditionStr === 'new_no_box' || conditionStr === 'new (no box/papers)' || 
-        conditionStr === 'new (no box)' || conditionStr === 'new (box only)' ||
-        conditionStr === '1500') {
-        return 'NEW_OTHER';
-    }
+    if (s.includes('new - box only') || (s.includes('no box') && !s.includes('papers')) || s.includes('new with imperfections')) return 'NEW_WITH_DEFECTS';
 
-    // Mint/Excellent -> USED_EXCELLENT
-    if (conditionStr === 'mint' || conditionStr === 'excellent' || conditionStr === '3000') {
-        return 'USED_EXCELLENT';
-    }
+    if (s === 'mint' || s === 'excellent' || s.includes('very good') || s.includes('very_good')) return 'USED_EXCELLENT';
 
-    // Very Good -> USED_VERY_GOOD
-    if (conditionStr === 'very good' || conditionStr === 'very_good' || conditionStr === '4000') {
-        return 'USED_VERY_GOOD';
-    }
+    if (s === 'good') return 'USED_GOOD';
 
-    // Good/Fair -> USED_GOOD
-    if (conditionStr === 'good' || conditionStr === 'fair' || conditionStr === '3000' || conditionStr === '5000') {
-        return 'USED_GOOD';
-    }
+    if (s === 'fair') return 'USED_ACCEPTABLE';
 
-    // Parts/Repair -> FOR_PARTS_OR_NOT_WORKING
-    if (conditionStr === 'parts/repair' || conditionStr === 'parts_repair' || 
-        conditionStr === 'parts' || conditionStr === 'repair' || 
-        conditionStr === 'for parts' || conditionStr === 'not working' ||
-        conditionStr === 'parts or repair' || conditionStr === 'parts and repair' ||
-        conditionStr === '7000') {
-        return 'FOR_PARTS_OR_NOT_WORKING';
-    }
+    if (s.includes('parts') || s.includes('repair') || s.includes('not working')) return 'FOR_PARTS_OR_NOT_WORKING';
 
     return 'USED_EXCELLENT';
 }

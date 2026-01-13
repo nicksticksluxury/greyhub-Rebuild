@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
                         ebayCondition = 'NEW';
                     } else if (condStr === '1500' || condStr.includes('new - no box/papers') || condStr.includes('new without box')) {
                         ebayCondition = 'NEW_OTHER';
-                    } else if (condStr === '1750' || condStr.includes('new with imperfections')) {
+                    } else if (condStr === '1750' || condStr.includes('new with imperfections') || condStr.includes('box only') || (condStr.includes('no box') && !condStr.includes('papers'))) {
                         ebayCondition = 'NEW_WITH_DEFECTS';
                     } else if (condStr === '2990' || condStr.includes('mint') || condStr.includes('excellent')) {
                         ebayCondition = 'USED_EXCELLENT';
