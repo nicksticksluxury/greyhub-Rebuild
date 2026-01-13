@@ -176,7 +176,10 @@ Deno.serve(async (req) => {
                     aspects.Department = [watch.gender === 'womens' ? 'Women' : watch.gender === 'mens' ? 'Men' : 'Unisex'];
                 }
                 
-                // DO NOT add condition to aspects - it's sent separately in the condition field
+                // Add condition description if available
+                if (watch.condition) {
+                    aspects.Condition = [watch.condition.replace(/_/g, ' ')];
+                }
                 
                 // Add year/vintage if available
                 if (watch.year) {
