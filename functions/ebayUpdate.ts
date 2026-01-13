@@ -339,6 +339,12 @@ Deno.serve(async (req) => {
                 console.log(`[${sku}] ASPECTS IN PAYLOAD:`, JSON.stringify(inventoryItem.product.aspects, null, 2));
                 console.log(`[${sku}] ========== END PAYLOAD ==========`);
 
+                const bodyToSend = JSON.stringify(inventoryItem);
+                console.log(`[${sku}] ========== ACTUAL BODY BEING SENT TO EBAY ==========`);
+                console.log(bodyToSend);
+                console.log(`[${sku}] Condition in stringified body:`, JSON.parse(bodyToSend).condition);
+                console.log(`[${sku}] ========== END BODY ==========`);
+
                 const inventoryResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${sku}`, {
                     method: 'PUT',
                     headers: {
@@ -347,7 +353,7 @@ Deno.serve(async (req) => {
                         'Content-Language': 'en-US',
                         'Accept-Language': 'en-US'
                     },
-                    body: JSON.stringify(inventoryItem)
+                    body: bodyToSend
                 });
 
                 if (!inventoryResponse.ok) {
