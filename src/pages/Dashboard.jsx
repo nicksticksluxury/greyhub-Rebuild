@@ -105,6 +105,8 @@ export default function Dashboard() {
   const ebayOffers = alerts.filter(a => a.title?.includes("Best Offer"));
   const ebaySales = alerts.filter(a => a.title?.includes("Sold on eBay"));
   const ebayOrdersToShip = alerts.filter(a => a.title === "eBay Order Status");
+  const activeEbayOrders = ebayOrdersToShip.filter(a => a.metadata?.tracking_status !== 'DELIVERED');
+  const deliveredAwaitingAck = ebayOrdersToShip.filter(a => a.metadata?.tracking_status === 'DELIVERED');
 
   // Sales trend data (last 30 days)
   const salesByDay = soldProducts.reduce((acc, p) => {
@@ -270,11 +272,11 @@ export default function Dashboard() {
             </div>
           </div>
           
-          {ebayOrdersToShip.filter(alert => alert.metadata?.tracking_status !== 'DELIVERED').length > 0 && (
+          {activeEbayOrders.length > 0 && (
             <div className="mt-4 bg-white rounded-lg p-4 border border-orange-200">
-              <h3 className="text-sm font-bold text-slate-900 mb-3">Active Orders (Not Delivered)</h3>
+              <h3 className="text-sm font-bold text-slate-900 mb-3">Active Sales (Waiting Shipment / In Transit)</h3>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {ebayOrdersToShip.filter(alert => alert.metadata?.tracking_status !== 'DELIVERED').map(alert => {
+                {activeEbayOrders.map(alert => {
                   const trackingStatus = alert.metadata?.tracking_status || 'NEED_TO_SHIP';
                   const trackingNumber = alert.metadata?.tracking_number;
                   const fulfillmentStatus = alert.metadata?.fulfillment_status;
@@ -329,7 +331,7 @@ export default function Dashboard() {
                           </div>
                           {trackingNumber && (
                             <a 
-                              href={`https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`}
+                              href={alert.metadata?.tracking_url || `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 inline-block font-semibold"
@@ -349,6 +351,43 @@ export default function Dashboard() {
                             </Button>
                           )}
                         </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {deliveredAwaitingAck.length > 0 && (
+            <div className="mt-4 bg-white rounded-lg p-4 border border-green-200">
+              <h3 className="text-sm font-bold text-slate-900 mb-3">Delivered (Awaiting Confirmation)</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {deliveredAwaitingAck.map(alert => {
+                  const trackingNumber = alert.metadata?.tracking_number;
+                  const trackingUrl = alert.metadata?.tracking_url;
+                  return (
+                    <div key={alert.id} className="p-3 rounded border bg-green-50 border-green-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <Badge className="bg-green-600 text-white text-xs font-bold">Delivered</Badge>
+                          <Link to={createPageUrl(alert.link)} className="text-sm font-semibold text-slate-900 hover:text-slate-700 block mb-1 ml-2">
+                            {alert.message}
+                          </Link>
+                          {trackingNumber && (
+                            <a 
+                              href={trackingUrl || `https://www.google.com/search?q=${encodeURIComponent(trackingNumber + ' tracking')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 inline-block font-semibold"
+                            >
+                              📦 Track: {trackingNumber}
+                            </a>
+                          )}
+                        </div>
+                        <Button size="sm" onClick={() => handleDismissAlert(alert.id)} className="bg-green-600 hover:bg-green-700 text-white">
+                          Confirmed
+                        </Button>
                       </div>
                     </div>
                   );

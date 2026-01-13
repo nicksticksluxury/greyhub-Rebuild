@@ -102,9 +102,9 @@ Deno.serve(async (req) => {
 
         // fetch recent orders from eBay
         // Using Fulfillment API
-        // Filter by creation date (last 60 days) to capture recent sales
+        // Filter by creation date (last 90 days) to capture recent sales
         const date = new Date();
-        date.setDate(date.getDate() - 60);
+        date.setDate(date.getDate() - 90);
         const dateStr = date.toISOString();
         const ordersUrl = `https://api.ebay.com/sell/fulfillment/v1/order?limit=50&filter=creationdate:[${dateStr}..]`;
 
@@ -361,15 +361,8 @@ Deno.serve(async (req) => {
                 // Process ALL orders for tracking alerts (not just pending shipment)
                 const ordersToShipList = allOrders;
                 
-                // First, delete all existing order status alerts
-                const existingShipAlerts = await base44.entities.Alert.filter({
-                    company_id: user.company_id,
-                    title: "eBay Order Status"
-                });
-
-                for (const alert of existingShipAlerts) {
-                    await base44.entities.Alert.delete(alert.id);
-                }
+                // Preserve existing alerts so acknowledgments (read=true) persist across syncs
+                // We will update existing alerts or create new ones without deleting acknowledged ones.
                 
                 // Create/update alerts for current orders with tracking status
                 await base44.asServiceRole.entities.Log.create({
@@ -571,6 +564,21 @@ Deno.serve(async (req) => {
                                 }
                             }
 
+                            // Build tracking URL by carrier
+                            const carrierUpper = String(shippingCarrier || '').toUpperCase();
+                            let trackingUrl = null;
+                            if (trackingNumber) {
+                                if (carrierUpper.includes('USPS')) {
+                                    trackingUrl = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`;
+                                } else if (carrierUpper.includes('UPS')) {
+                                    trackingUrl = `https://www.ups.com/track?tracknum=${trackingNumber}`;
+                                } else if (carrierUpper.includes('FEDEX')) {
+                                    trackingUrl = `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`;
+                                } else {
+                                    trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(trackingNumber + ' tracking')}`;
+                                }
+                            }
+
                             // Check if alert already exists for this order
                             const existingAlerts = await base44.entities.Alert.filter({
                                 company_id: user.company_id,
@@ -589,7 +597,7 @@ Deno.serve(async (req) => {
                                 title: "eBay Order Status",
                                 message: `${product.brand} ${product.model} (Order ${order.orderId}, $${item.total.value})`,
                                 link: `ProductDetail?id=${product.id}`,
-                                read: false,
+                                read: existingAlert?.read ?? false,
                                 metadata: { 
                                     product_id: product.id, 
                                     ebay_listing_url: ebayItemUrl,
@@ -597,7 +605,8 @@ Deno.serve(async (req) => {
                                     tracking_status: trackingStatus,
                                     fulfillment_status: fulfillmentStatus,
                                     tracking_number: trackingNumber,
-                                    shipping_carrier: shippingCarrier
+                                    shipping_carrier: shippingCarrier,
+                                    tracking_url: trackingUrl
                                 }
                             };
 
