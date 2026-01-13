@@ -270,35 +270,35 @@ Deno.serve(async (req) => {
                     fullDescription = `${fullDescription}\n\n${ebayFooter}`;
                 }
 
-                // 1. Update Inventory Item - Map to eBay's numeric condition IDs
-                let ebayCondition = '2990'; // Safe default: Pre-owned - Excellent
+                // 1. Update Inventory Item - Map to eBay's condition descriptions
+                let ebayCondition = 'Pre-owned - Excellent'; // Safe default
 
                 const rawCondition = watch.condition;
                 if (rawCondition) {
                     const condStr = String(rawCondition).toLowerCase().trim();
 
-                    // Map to eBay's actual numeric condition IDs
+                    // Map to eBay's condition descriptions (what they actually accept in the API)
                     if (condStr === 'new with box and papers' || condStr === 'new with box' || condStr === '1000') {
-                        ebayCondition = '1000'; // New with box and papers
+                        ebayCondition = 'New with box and papers';
                     } else if (condStr === 'new - no box/papers' || condStr === 'new without box' || condStr === '1500') {
-                        ebayCondition = '1500'; // New without box or papers
+                        ebayCondition = 'New without box or papers';
                     } else if (condStr === 'new - box only' || condStr === 'new - no box' || condStr === 'new with imperfections' || condStr === '1750') {
-                        ebayCondition = '1750'; // New with imperfections
+                        ebayCondition = 'New with imperfections';
                     } else if (condStr === 'mint' || condStr === 'excellent' || condStr === 'very good' || condStr === 'very_good' || condStr === '2990') {
-                        ebayCondition = '2990'; // Pre-owned - Excellent
+                        ebayCondition = 'Pre-owned - Excellent';
                     } else if (condStr === 'good' || condStr === '3000') {
-                        ebayCondition = '3000'; // Pre-owned - Good
+                        ebayCondition = 'Pre-owned - Good';
                     } else if (condStr === 'fair' || condStr === '3010') {
-                        ebayCondition = '3010'; // Pre-owned - Fair
+                        ebayCondition = 'Pre-owned - Fair';
                     } else if (condStr === 'parts/repair' || condStr.includes('parts') || condStr.includes('repair') || condStr.includes('not working') || condStr === '7000') {
-                        ebayCondition = '7000'; // For parts or not working
+                        ebayCondition = 'For parts or not working';
                     } else if (condStr.includes('new')) {
-                        ebayCondition = '1000'; // Default new
+                        ebayCondition = 'New with box and papers';
                     }
                 }
 
                 console.log(`[${sku}] RAW CONDITION FROM DB:`, JSON.stringify(rawCondition), `TYPE:`, typeof rawCondition);
-                console.log(`[${sku}] MAPPED TO EBAY CONDITION ID:`, ebayCondition);
+                console.log(`[${sku}] MAPPED TO EBAY CONDITION DESCRIPTION:`, ebayCondition);
 
                 const inventoryItem = {
                     availability: {
@@ -306,7 +306,7 @@ Deno.serve(async (req) => {
                             quantity: watch.quantity || 1
                         }
                     },
-                    condition: ebayCondition, // Now using numeric condition ID
+                    condition: ebayCondition, // Using condition description string
                      packageWeightAndSize: {
                          packageType: "PACKAGE_THICK_ENVELOPE",
                          weight: {
