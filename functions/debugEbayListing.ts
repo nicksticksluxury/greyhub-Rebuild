@@ -28,7 +28,9 @@ Deno.serve(async (req) => {
 
         const headers = {
             'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
+            'Content-Type': 'application/json',
+            'Content-Language': 'en-US',
+            'Accept-Language': 'en-US'
         };
 
         // Get inventory item
