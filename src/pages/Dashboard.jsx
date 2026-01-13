@@ -138,6 +138,7 @@ export default function Dashboard() {
 
   const handleDismissAlert = async (alertId) => {
     await base44.entities.Alert.update(alertId, { read: true });
+    queryClient.invalidateQueries({ queryKey: ['alerts'] });
   };
 
   return (

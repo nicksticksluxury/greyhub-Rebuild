@@ -610,7 +610,18 @@ Deno.serve(async (req) => {
                                 }
                             };
 
-                            if (existingAlert) {
+                            if (existingAlert?.read && trackingStatus === 'DELIVERED') {
+                                // Delivered and acknowledged – skip to avoid reprocessing
+                                await base44.asServiceRole.entities.Log.create({
+                                    company_id: user.company_id,
+                                    user_id: user.id,
+                                    timestamp: new Date().toISOString(),
+                                    level: "info",
+                                    category: "ebay",
+                                    message: `Skipping acknowledged delivered order ${order.orderId}`,
+                                    details: { alertId: existingAlert.id, productId: product.id }
+                                });
+                            } else if (existingAlert) {
                                 // Update existing alert with new tracking info
                                 await base44.entities.Alert.update(existingAlert.id, alertData);
                                 await base44.asServiceRole.entities.Log.create({
