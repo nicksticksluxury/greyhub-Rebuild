@@ -137,6 +137,13 @@ Deno.serve(async (req) => {
         };
 
         for (const watch of watches) {
+            // DEBUG: Log the entire watch object
+            console.log(`========== WATCH ${watch.id} FROM DATABASE ==========`);
+            console.log(`Condition value: ${JSON.stringify(watch.condition)}`);
+            console.log(`Condition type: ${typeof watch.condition}`);
+            console.log(`Full watch object:`, JSON.stringify(watch, null, 2));
+            console.log(`========== END WATCH DATA ==========`);
+
             // Skip if not listed on eBay
             if (!watch.exported_to?.ebay) {
                 results.errors.push(`Watch ${watch.brand} ${watch.model} is not listed on eBay`);
