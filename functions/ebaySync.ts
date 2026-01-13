@@ -588,7 +588,9 @@ Deno.serve(async (req) => {
                             // Check if alert already exists for this order
                             const existingAlerts = await base44.entities.Alert.filter({
                                 company_id: user.company_id,
-                                title: "eBay Order Status"
+                                title: "eBay Order Status",
+                                "metadata.order_id": order.orderId,
+                                "metadata.product_id": product.id
                             });
 
                             const existingAlert = existingAlerts.find(a => 
