@@ -508,7 +508,7 @@ Deno.serve(async (req) => {
 
                     let trackingStatus = 'NEED_TO_SHIP';
                     const shipmentStatusUpper = String(shipmentStatus || '').toUpperCase();
-                    const deliveredFlag = shipmentStatusUpper.includes('DELIVERED') || shipmentStatusUpper.includes('PICKED');
+                    const deliveredFlag = shipmentStatusUpper.includes('DELIVERED') || shipmentStatusUpper.includes('PICKED') || fulfillmentStatus === 'FULFILLED';
                     if (deliveredFlag) {
                         // Only treat explicit Delivered or Picked Up as delivered
                         trackingStatus = 'DELIVERED';
