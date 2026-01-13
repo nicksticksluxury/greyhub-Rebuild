@@ -303,6 +303,11 @@ Deno.serve(async (req) => {
                 // Add Type field (required by eBay)
                 aspects.Type = [product.product_type_code === 'watch' ? 'Wristwatch' : productTypeName];
 
+                // Final sanitize: remove any aspect whose key mentions condition
+                const inventoryAspects = Object.fromEntries(
+                    Object.entries(aspects).filter(([k]) => !String(k).toLowerCase().includes('condition'))
+                );
+
                 // Fetch company settings for eBay footer
                 const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: user.company_id });
                 const ebayFooter = settings.find(s => s.key === 'ebay_listing_footer')?.value || '';
@@ -334,7 +339,7 @@ Deno.serve(async (req) => {
                     product: {
                         title: title.substring(0, 80),
                         description: fullDescription,
-                        aspects: aspects,
+                        aspects: inventoryAspects,
                         imageUrls: photoUrls
                     }
                 };
@@ -421,7 +426,11 @@ Deno.serve(async (req) => {
                 }
 
                 // Log payloads for debugging
-                console.log(`[${sku}] Inventory Item Payload:`, JSON.stringify(inventoryItem, null, 2));
+                const invStr = JSON.stringify(inventoryItem, null, 2);
+                console.log(`[${sku}] Inventory Item Payload:`, invStr);
+                if (invStr.includes('"5000"')) {
+                    console.warn(`[${sku}] WARNING: Payload contains string "5000"; investigate aspects/condition mapping.`);
+                }
                 console.log(`[${sku}] Offer Payload:`, JSON.stringify(offer, null, 2));
 
                 const apiHeaders = {
