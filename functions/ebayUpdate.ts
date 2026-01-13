@@ -202,8 +202,10 @@ Deno.serve(async (req) => {
                 
                 // Add category-specific attributes from product
                 if (watch.category_specific_attributes) {
+                    console.log(`[${sku}] Category Specific Attributes:`, JSON.stringify(watch.category_specific_attributes, null, 2));
                     productTypeFields.forEach(field => {
                         const value = watch.category_specific_attributes[field.field_name];
+                        console.log(`[${sku}] Processing field: ${field.field_name} = ${JSON.stringify(value)}`);
                         if (value !== undefined && value !== null && value !== '') {
                             // Map field names to eBay's expected names
                             let aspectName = field.field_label;
@@ -493,4 +495,4 @@ Deno.serve(async (req) => {
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
-}); 
+});
