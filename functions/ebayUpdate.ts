@@ -267,16 +267,28 @@ Deno.serve(async (req) => {
                 }
 
                 // 1. Update Inventory Item
+                // CRITICAL: Always map to string enum, never send numeric codes
+                let ebayCondition = 'USED_EXCELLENT'; // Safe default
+                
                 const rawCondition = watch.condition;
-                console.log(`[${sku}] Raw condition from DB: "${rawCondition}" (type: ${typeof rawCondition})`);
+                if (rawCondition) {
+                    const condStr = String(rawCondition).toLowerCase().trim();
+                    
+                    // Direct string matching for text conditions
+                    if (condStr === 'good' || condStr === 'fair') {
+                        ebayCondition = 'USED_GOOD';
+                    } else if (condStr === 'excellent' || condStr === 'mint' || condStr === 'very good' || condStr === 'very_good') {
+                        ebayCondition = 'USED_EXCELLENT';
+                    } else if (condStr.includes('new') && (condStr.includes('no box') || condStr.includes('box only'))) {
+                        ebayCondition = 'NEW_OTHER';
+                    } else if (condStr.includes('new')) {
+                        ebayCondition = 'NEW';
+                    } else if (condStr.includes('parts') || condStr.includes('repair') || condStr.includes('not working')) {
+                        ebayCondition = 'FOR_PARTS_OR_NOT_WORKING';
+                    }
+                }
                 
-                const ebayCondition = getEbayCondition(rawCondition);
-                console.log(`[${sku}] After getEbayCondition: "${ebayCondition}" (type: ${typeof ebayCondition})`);
-                
-                // Force validation - ensure we're not sending numeric values
-                const validConditions = ['NEW', 'NEW_OTHER', 'USED_EXCELLENT', 'USED_VERY_GOOD', 'USED_GOOD', 'FOR_PARTS_OR_NOT_WORKING'];
-                const finalCondition = validConditions.includes(ebayCondition) ? ebayCondition : 'USED_EXCELLENT';
-                console.log(`[${sku}] Final validated condition: "${finalCondition}"`);
+                console.log(`[${sku}] Condition mapping: "${rawCondition}" -> "${ebayCondition}"`);
 
                 const inventoryItem = {
                      availability: {
@@ -284,7 +296,7 @@ Deno.serve(async (req) => {
                              quantity: watch.quantity || 1
                          }
                      },
-                     condition: finalCondition,
+                     condition: ebayCondition,
                      packageWeightAndSize: {
                          packageType: "PACKAGE_THICK_ENVELOPE",
                          weight: {
