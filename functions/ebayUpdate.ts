@@ -270,35 +270,37 @@ Deno.serve(async (req) => {
                     fullDescription = `${fullDescription}\n\n${ebayFooter}`;
                 }
 
-                // 1. Update Inventory Item - Map to eBay's condition descriptions
-                let ebayCondition = 'Pre-owned - Excellent'; // Safe default
+                // 1. Update Inventory Item - Map to eBay's ConditionEnum values
+                let ebayCondition = 'USED_EXCELLENT'; // Safe default
 
                 const rawCondition = watch.condition;
                 if (rawCondition) {
                     const condStr = String(rawCondition).toLowerCase().trim();
 
-                    // Map to eBay's condition descriptions (what they actually accept in the API)
-                    if (condStr === 'new with box and papers' || condStr === 'new with box' || condStr === '1000') {
-                        ebayCondition = 'New with box and papers';
-                    } else if (condStr === 'new - no box/papers' || condStr === 'new without box' || condStr === '1500') {
-                        ebayCondition = 'New without box or papers';
-                    } else if (condStr === 'new - box only' || condStr === 'new - no box' || condStr === 'new with imperfections' || condStr === '1750') {
-                        ebayCondition = 'New with imperfections';
-                    } else if (condStr === 'mint' || condStr === 'excellent' || condStr === 'very good' || condStr === 'very_good' || condStr === '2990') {
-                        ebayCondition = 'Pre-owned - Excellent';
-                    } else if (condStr === 'good' || condStr === '3000') {
-                        ebayCondition = 'Pre-owned - Good';
-                    } else if (condStr === 'fair' || condStr === '3010') {
-                        ebayCondition = 'Pre-owned - Fair';
-                    } else if (condStr === 'parts/repair' || condStr.includes('parts') || condStr.includes('repair') || condStr.includes('not working') || condStr === '7000') {
-                        ebayCondition = 'For parts or not working';
+                    // Map to eBay's Inventory API ConditionEnum values
+                    if (condStr === '1000' || condStr.includes('new with box')) {
+                        ebayCondition = 'NEW';
+                    } else if (condStr === '1500' || condStr.includes('new - no box/papers') || condStr.includes('new without box')) {
+                        ebayCondition = 'NEW_OTHER';
+                    } else if (condStr === '1750' || condStr.includes('new with imperfections')) {
+                        ebayCondition = 'NEW_WITH_DEFECTS';
+                    } else if (condStr === '2990' || condStr.includes('mint') || condStr.includes('excellent')) {
+                        ebayCondition = 'USED_EXCELLENT';
+                    } else if (condStr.includes('very good') || condStr.includes('very_good')) {
+                        ebayCondition = 'USED_VERY_GOOD';
+                    } else if (condStr === '3000' || condStr.includes('good')) {
+                        ebayCondition = 'USED_GOOD';
+                    } else if (condStr === '3010' || condStr.includes('fair')) {
+                        ebayCondition = 'USED_ACCEPTABLE';
+                    } else if (condStr === '7000' || condStr.includes('parts') || condStr.includes('repair') || condStr.includes('not working')) {
+                        ebayCondition = 'FOR_PARTS_OR_NOT_WORKING';
                     } else if (condStr.includes('new')) {
-                        ebayCondition = 'New with box and papers';
+                        ebayCondition = 'NEW';
                     }
                 }
 
                 console.log(`[${sku}] RAW CONDITION FROM DB:`, JSON.stringify(rawCondition), `TYPE:`, typeof rawCondition);
-                console.log(`[${sku}] MAPPED TO EBAY CONDITION DESCRIPTION:`, ebayCondition);
+                console.log(`[${sku}] MAPPED TO EBAY CONDITION ENUM:`, ebayCondition);
 
                 const inventoryItem = {
                     availability: {
@@ -306,7 +308,7 @@ Deno.serve(async (req) => {
                             quantity: watch.quantity || 1
                         }
                     },
-                    condition: ebayCondition, // Using condition description string
+                    condition: ebayCondition, // Using eBay's ConditionEnum string
                      packageWeightAndSize: {
                          packageType: "PACKAGE_THICK_ENVELOPE",
                          weight: {
