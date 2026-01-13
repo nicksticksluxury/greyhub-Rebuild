@@ -508,10 +508,12 @@ Deno.serve(async (req) => {
 
                     let trackingStatus = 'NEED_TO_SHIP';
                     const shipmentStatusUpper = String(shipmentStatus || '').toUpperCase();
-                    const deliveredFlag = shipmentStatusUpper.includes('DELIVERED') || fulfillmentStatus === 'FULFILLED';
+                    const deliveredFlag = shipmentStatusUpper.includes('DELIVERED') || shipmentStatusUpper.includes('PICKED');
                     if (deliveredFlag) {
+                        // Only treat explicit Delivered or Picked Up as delivered
                         trackingStatus = 'DELIVERED';
-                    } else if (trackingNumber || fulfillmentStatus === 'IN_PROGRESS') {
+                    } else if (trackingNumber || fulfillmentStatus === 'IN_PROGRESS' || fulfillmentStatus === 'FULFILLED') {
+                        // Anything shipped but not explicitly delivered is In Transit ("Shipped")
                         trackingStatus = 'IN_TRANSIT';
                     } else if (fulfillmentStatus === 'NOT_STARTED') {
                         trackingStatus = 'NEED_TO_SHIP';
@@ -603,7 +605,7 @@ Deno.serve(async (req) => {
                             const alertData = {
                                 company_id: user.company_id,
                                 user_id: user.id,
-                                type: trackingStatus === 'DELIVERED' ? "success" : "info",
+                                type: finalTrackingStatus === 'DELIVERED' ? "success" : "info",
                                 title: "eBay Order Status",
                                 message: `${product.brand} ${product.model} (Order ${order.orderId}, $${item.total.value})`,
                                 link: `ProductDetail?id=${product.id}`,
