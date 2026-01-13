@@ -38,6 +38,8 @@ Deno.serve(async (req) => {
         const inventoryRes = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${sku}`, { headers });
         const inventoryData = await inventoryRes.json();
 
+        // Log the condition and type to verify it's an enum value
+        console.log('Inventory Item Condition:', inventoryData?.condition, typeof inventoryData?.condition);
         console.log('Inventory Item Response:', JSON.stringify(inventoryData, null, 2));
 
         // Get offer
