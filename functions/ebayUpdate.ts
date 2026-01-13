@@ -536,5 +536,5 @@ function getEbayCondition(condition) {
     }
 
     console.log(`[getEbayCondition] No match found, returning USED_EXCELLENT`);
-    return 'USED_EXCELLENT';
+    return 'USED_EXCELLENT'; 
 }
