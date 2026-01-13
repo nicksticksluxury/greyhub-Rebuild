@@ -271,8 +271,22 @@ Deno.serve(async (req) => {
                 if (rawCondition) {
                     const condStr = String(rawCondition).toLowerCase().trim();
                     
-                    // Direct string matching for text conditions
-                    if (condStr === 'good' || condStr === 'fair') {
+                    // Handle numeric condition codes first
+                    if (condStr === '1000') {
+                        ebayCondition = 'NEW';
+                    } else if (condStr === '1500') {
+                        ebayCondition = 'NEW_OTHER';
+                    } else if (condStr === '3000') {
+                        ebayCondition = 'USED_EXCELLENT';
+                    } else if (condStr === '4000') {
+                        ebayCondition = 'USED_VERY_GOOD';
+                    } else if (condStr === '5000') {
+                        ebayCondition = 'USED_GOOD';
+                    } else if (condStr === '7000') {
+                        ebayCondition = 'FOR_PARTS_OR_NOT_WORKING';
+                    }
+                    // Text-based conditions
+                    else if (condStr === 'good' || condStr === 'fair') {
                         ebayCondition = 'USED_GOOD';
                     } else if (condStr === 'excellent' || condStr === 'mint' || condStr === 'very good' || condStr === 'very_good') {
                         ebayCondition = 'USED_EXCELLENT';
