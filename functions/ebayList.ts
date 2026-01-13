@@ -221,10 +221,10 @@ Deno.serve(async (req) => {
                     aspects.Department = [product.gender === 'womens' ? 'Women' : product.gender === 'mens' ? 'Men' : 'Unisex'];
                 }
                 
-                // Add condition description if available
-                if (product.condition) {
-                    aspects.Condition = [product.condition.replace(/_/g, ' ')];
-                }
+                // Do not send Condition as an aspect; condition is controlled by top-level InventoryItem.condition
+                // if (product.condition) {
+                //     aspects.Condition = [product.condition.replace(/_/g, ' ')];
+                // }
                 
                 // Add year/vintage if available
                 if (product.year) {
@@ -575,6 +575,7 @@ function getEbayCondition(condition) {
     if (s === '1750') return 'NEW_WITH_DEFECTS';
     if (s === '2990') return 'USED_EXCELLENT';
     if (s === '3000') return 'USED_GOOD';
+    if (s === '5000') return 'USED_GOOD';
     if (s === '3010') return 'USED_ACCEPTABLE';
     if (s === '7000') return 'FOR_PARTS_OR_NOT_WORKING';
 
