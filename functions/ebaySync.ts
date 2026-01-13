@@ -553,6 +553,13 @@ Deno.serve(async (req) => {
                     } else if (fulfillmentStatus === 'NOT_STARTED') {
                         trackingStatus = 'NEED_TO_SHIP';
                     }
+                    // Fallback: if the raw order payload contains a Delivered shipmentStatus anywhere, respect it
+                    if (trackingStatus !== 'DELIVERED') {
+                        const rawOrderUpper = JSON.stringify(order).toUpperCase();
+                        if (rawOrderUpper.includes('"SHIPMENTSTATUS":"DELIVERED"') || rawOrderUpper.includes('>DELIVERED<') || rawOrderUpper.includes('DELIVERED')) {
+                            trackingStatus = 'DELIVERED';
+                        }
+                    }
 
                     for (const item of order.lineItems || []) {
                         const sku = item.sku;
