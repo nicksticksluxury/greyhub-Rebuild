@@ -507,11 +507,11 @@ Deno.serve(async (req) => {
                     });
 
                     let trackingStatus = 'NEED_TO_SHIP';
-                    const deliveredFlag = String(shipmentStatus || '').toUpperCase().includes('DELIVERED');
+                    const shipmentStatusUpper = String(shipmentStatus || '').toUpperCase();
+                    const deliveredFlag = shipmentStatusUpper.includes('DELIVERED') || fulfillmentStatus === 'FULFILLED';
                     if (deliveredFlag) {
                         trackingStatus = 'DELIVERED';
-                    } else if (trackingNumber || fulfillmentStatus === 'IN_PROGRESS' || fulfillmentStatus === 'FULFILLED') {
-                        // Treat shipped/fulfilled as In Transit unless explicit delivered signal exists
+                    } else if (trackingNumber || fulfillmentStatus === 'IN_PROGRESS') {
                         trackingStatus = 'IN_TRANSIT';
                     } else if (fulfillmentStatus === 'NOT_STARTED') {
                         trackingStatus = 'NEED_TO_SHIP';
