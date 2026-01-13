@@ -380,6 +380,7 @@ Deno.serve(async (req) => {
                     const fulfillmentStatus = order.orderFulfillmentStatus;
                     let trackingNumber = null;
                     let shippingCarrier = null;
+                    let shipmentStatus = null;
 
                     // Log full order structure for debugging
                     await base44.asServiceRole.entities.Log.create({
@@ -402,6 +403,7 @@ Deno.serve(async (req) => {
                         if (fulfillment.shippingStep) {
                             trackingNumber = fulfillment.shippingStep.shipmentTrackingNumber;
                             shippingCarrier = fulfillment.shippingStep.shippingCarrierCode;
+                            shipmentStatus = fulfillment.shippingStep.shipmentStatus || shipmentStatus;
                             await base44.asServiceRole.entities.Log.create({
                                 company_id: user.company_id,
                                 user_id: user.id,
@@ -457,12 +459,14 @@ Deno.serve(async (req) => {
                                     if (fulfillmentData.shipmentTrackingNumber) {
                                         trackingNumber = fulfillmentData.shipmentTrackingNumber;
                                         shippingCarrier = fulfillmentData.shippingCarrierCode;
+                                        shipmentStatus = fulfillmentData.shipmentStatus || shipmentStatus;
                                         break;
                                     } else if (fulfillmentData.lineItems && fulfillmentData.lineItems.length > 0) {
                                         const lineItem = fulfillmentData.lineItems[0];
                                         if (lineItem.shipmentTrackingNumber) {
                                             trackingNumber = lineItem.shipmentTrackingNumber;
                                             shippingCarrier = lineItem.shippingCarrierCode;
+                                            shipmentStatus = lineItem.shipmentStatus || shipmentStatus;
                                             break;
                                         }
                                     }
@@ -498,14 +502,16 @@ Deno.serve(async (req) => {
                         timestamp: new Date().toISOString(),
                         level: "info",
                         category: "ebay",
-                        message: `Order ${order.orderId}: status=${fulfillmentStatus}, tracking=${trackingNumber || 'none'}`,
-                        details: { orderId: order.orderId, fulfillmentStatus, trackingNumber, shippingCarrier }
+                        message: `Order ${order.orderId}: status=${fulfillmentStatus}, tracking=${trackingNumber || 'none'}, shipmentStatus=${shipmentStatus || 'none'}`,
+                        details: { orderId: order.orderId, fulfillmentStatus, trackingNumber, shippingCarrier, shipmentStatus }
                     });
 
                     let trackingStatus = 'NEED_TO_SHIP';
-                    if (fulfillmentStatus === 'FULFILLED') {
+                    const deliveredFlag = String(shipmentStatus || '').toUpperCase().includes('DELIVERED');
+                    if (deliveredFlag) {
                         trackingStatus = 'DELIVERED';
-                    } else if (trackingNumber) {
+                    } else if (trackingNumber || fulfillmentStatus === 'IN_PROGRESS' || fulfillmentStatus === 'FULFILLED') {
+                        // Treat shipped/fulfilled as In Transit unless explicit delivered signal exists
                         trackingStatus = 'IN_TRANSIT';
                     } else if (fulfillmentStatus === 'NOT_STARTED') {
                         trackingStatus = 'NEED_TO_SHIP';
