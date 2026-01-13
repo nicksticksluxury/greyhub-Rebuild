@@ -27,8 +27,8 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: 'No company associated with invitation' });
     }
 
-    // Update user with company_id only (role is managed by platform)
-    await base44.asServiceRole.entities.User.update(user.id, {
+    // Update user with company_id only (self-update)
+    await base44.auth.updateMe({
       company_id: companyId
     });
 

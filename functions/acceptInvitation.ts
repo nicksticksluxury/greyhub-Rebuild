@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Link user to company (do not change role here)
-    await base44.asServiceRole.entities.User.update(user.id, {
+    // Link user to company using user-scoped update (allowed for self)
+    await base44.auth.updateMe({
       company_id: invitation.company_id
     });
 
