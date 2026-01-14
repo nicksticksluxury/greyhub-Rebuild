@@ -98,7 +98,29 @@ Deno.serve(async (req) => {
       const res = await fetch('https://api.ebay.com/sell/notification/v1/topic?limit=200', { headers });
       let data = {};
       try { data = await res.json(); } catch (_) { data = {}; }
-      if (!res.ok) return { error: `Failed to fetch topics (${res.status})`, details: data };
+      
+      // Log detailed error if 404
+      if (!res.ok) {
+        await base44.asServiceRole.entities.Log.create({
+          company_id: companyWithToken.id,
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          category: 'ebay',
+          message: `Failed to fetch eBay notification topics - Status ${res.status}`,
+          details: { 
+            status: res.status,
+            response: data,
+            token_used: accessToken ? `${accessToken.substring(0, 20)}...` : 'null',
+            endpoint: 'https://api.ebay.com/sell/notification/v1/topic'
+          }
+        });
+        
+        if (res.status === 404) {
+          return { error: `eBay returned 404 - the access token likely lacks the 'sell.notification' scope. Please re-authorize with all required scopes.`, details: data };
+        }
+        
+        return { error: `Failed to fetch topics (${res.status})`, details: data };
+      }
       return { topics: data.topics || [] };
     };
 
