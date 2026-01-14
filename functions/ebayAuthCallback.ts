@@ -79,17 +79,20 @@ Deno.serve(async (req) => {
 
         const data = await response.json();
 
-        // LOG RESPONSE FROM EBAY (success or failure)
+        // LOG RESPONSE FROM EBAY (success or failure) - INCLUDING SCOPES GRANTED
         await base44.asServiceRole.entities.Log.create({
             company_id: user.company_id,
             user_id: user.id,
             timestamp: new Date().toISOString(),
             level: response.ok ? "success" : "error",
             category: "ebay",
-            message: response.ok ? "✓ eBay token exchange SUCCESS" : "✗ eBay token exchange FAILED",
+            message: response.ok ? "✓ eBay token exchange SUCCESS - CHECK SCOPES GRANTED" : "✗ eBay token exchange FAILED",
             details: { 
                 status: response.status,
                 response_data: data,
+                scopes_granted: data.access_token ? 'Token received (check next log for introspection)' : 'No token',
+                has_refresh_token: !!data.refresh_token,
+                expires_in_seconds: data.expires_in,
                 request_sent: {
                     endpoint: "https://api.ebay.com/identity/v1/oauth2/token",
                     body: params.toString(),
@@ -117,17 +120,35 @@ Deno.serve(async (req) => {
             ebay_refresh_token_expiry: refreshExpiryDate
         });
         
-        // Log token save
+        // Introspect the token to see which scopes were actually granted
+        const introspectRes = await fetch("https://api.ebay.com/identity/v1/oauth2/introspect", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Authorization": `Bearer ${data.access_token}`
+            },
+            body: `token=${data.access_token}`
+        });
+        
+        let introspectData = {};
+        try {
+            introspectData = await introspectRes.json();
+        } catch (_) {}
+        
+        // Log token save with introspection results
         await base44.asServiceRole.entities.Log.create({
             company_id: user.company_id,
             user_id: user.id,
             timestamp: new Date().toISOString(),
             level: "success",
             category: "ebay",
-            message: "eBay tokens saved to Company entity",
+            message: "eBay tokens saved - SCOPES ACTUALLY GRANTED BY EBAY",
             details: { 
                 token_expiry: expiryDate,
-                refresh_token_expiry: refreshExpiryDate
+                refresh_token_expiry: refreshExpiryDate,
+                introspection: introspectData,
+                scopes_granted: introspectData.scope || 'unknown',
+                has_sell_notification_scope: (introspectData.scope || '').includes('sell.notification')
             }
         });
 
