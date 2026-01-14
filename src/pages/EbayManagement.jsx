@@ -70,6 +70,20 @@ export default function EbayManagement() {
     } finally { setLoading(false); }
   };
 
+  const reauthorizeEbay = async () => {
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke('ebayAuthUrl', {});
+      if (res.data?.url) {
+        window.open(res.data.url, '_blank');
+      }
+    } catch (e) {
+      console.error('Failed to get eBay auth URL:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const isAdmin = user?.role === 'admin';
   if (!isAdmin) {
     return (
@@ -104,7 +118,10 @@ export default function EbayManagement() {
             <Server className="w-5 h-5 text-slate-700"/>
             <h2 className="font-semibold text-slate-900">Webhook Destination</h2>
           </div>
-          <Button onClick={ensureDestination} disabled={loading}>Ensure Destination</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={reauthorizeEbay} disabled={loading}>Re-authorize eBay</Button>
+            <Button onClick={ensureDestination} disabled={loading}>Ensure Destination</Button>
+          </div>
         </div>
         {initData.destination ? (
           <div className="text-sm text-slate-700">
@@ -138,7 +155,7 @@ export default function EbayManagement() {
             })}
           </div>
         ) : (
-          <p className="text-sm text-slate-600">No topics returned. Ensure your eBay token has Notifications scope, then click Refresh.</p>
+          <p className="text-sm text-slate-600">No topics returned. Ensure your eBay token has sell.notification scope, then click Refresh. If still empty, use Re-authorize eBay above.</p>
         )
       </Card>
 
