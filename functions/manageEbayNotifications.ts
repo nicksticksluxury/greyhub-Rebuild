@@ -22,23 +22,36 @@ Deno.serve(async (req) => {
 
     const { action, topicId, enable } = (req.method === 'GET') ? { action: 'init' } : await safeJson(req);
 
-    // Resolve an eBay access token (use any connected company)
+    // Get application-level access token for listing topics and managing destinations
+    const appTokenRes = await base44.functions.invoke('getEbayApplicationToken', {});
+    if (!appTokenRes.data?.access_token) {
+      return json({ success: false, error: 'Failed to get eBay application token' });
+    }
+    const appAccessToken = appTokenRes.data.access_token;
+
+    // Also get user access token for subscription management
     const companies = await base44.asServiceRole.entities.Company.list();
     const companyWithToken = companies.find(c => !!c.ebay_access_token);
     if (!companyWithToken) {
       return json({ success: false, error: 'No eBay connection found. Connect eBay in a company first.' });
     }
-    let accessToken = companyWithToken.ebay_access_token;
+    const userAccessToken = companyWithToken.ebay_access_token;
 
-    const headers = {
-      'Authorization': `Bearer ${accessToken}`,
+    const appHeaders = {
+      'Authorization': `Bearer ${appAccessToken}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
 
-    // Helper: get Destination (list only)
+    const userHeaders = {
+      'Authorization': `Bearer ${userAccessToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+
+    // Helper: get Destination (list only) - uses application token
     const getDestination = async () => {
-      const listRes = await fetch('https://api.ebay.com/sell/notification/v1/destination?limit=20', { headers });
+      const listRes = await fetch('https://api.ebay.com/sell/notification/v1/destination?limit=20', { headers: appHeaders });
       let listData = {};
       try { listData = await listRes.json(); } catch (_) { listData = {}; }
       if (!listRes.ok) {
@@ -77,7 +90,7 @@ Deno.serve(async (req) => {
         deliveryConfig: { endpoint, verificationToken }
       };
       const createRes = await fetch('https://api.ebay.com/sell/notification/v1/destination', {
-        method: 'POST', headers, body: JSON.stringify(body)
+        method: 'POST', headers: userHeaders, body: JSON.stringify(body)
       });
       let createData = {};
       try { createData = await createRes.json(); } catch (_) { createData = {}; }
@@ -93,9 +106,9 @@ Deno.serve(async (req) => {
       return { destination };
     };
 
-    // Helper: list topics
+    // Helper: list topics - uses application token
     const getTopics = async () => {
-      const res = await fetch('https://api.ebay.com/sell/notification/v1/topic?limit=200', { headers });
+      const res = await fetch('https://api.ebay.com/commerce/notification/v1/topic?limit=200', { headers: appHeaders });
       let data = {};
       try { data = await res.json(); } catch (_) { data = {}; }
       
@@ -124,9 +137,9 @@ Deno.serve(async (req) => {
       return { topics: data.topics || [] };
     };
 
-    // Helper: list subscriptions
+    // Helper: list subscriptions - uses user token
     const listSubscriptions = async () => {
-      const res = await fetch('https://api.ebay.com/sell/notification/v1/subscription?limit=200', { headers });
+      const res = await fetch('https://api.ebay.com/commerce/notification/v1/subscription?limit=200', { headers: userHeaders });
       let data = {};
       try { data = await res.json(); } catch (_) { data = {}; }
       if (!res.ok) {
@@ -155,8 +168,8 @@ Deno.serve(async (req) => {
         if (existing) {
           // Update status
           const patchBody = { status: 'ENABLED', destinationId };
-          const res = await fetch(`https://api.ebay.com/sell/notification/v1/subscription/${encodeURIComponent(existing.subscriptionId || existing.id)}`, {
-            method: 'PUT', headers, body: JSON.stringify({ ...existing, ...patchBody })
+          const res = await fetch(`https://api.ebay.com/commerce/notification/v1/subscription/${encodeURIComponent(existing.subscriptionId || existing.id)}`, {
+            method: 'PUT', headers: userHeaders, body: JSON.stringify({ ...existing, ...patchBody })
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok) return { error: 'Failed to enable subscription', details: data };
@@ -164,7 +177,7 @@ Deno.serve(async (req) => {
         }
         // Create new subscription
         const body = { topicId: tId, status: 'ENABLED', destinationId };
-        const res = await fetch('https://api.ebay.com/sell/notification/v1/subscription', { method: 'POST', headers, body: JSON.stringify(body) });
+        const res = await fetch('https://api.ebay.com/commerce/notification/v1/subscription', { method: 'POST', headers: userHeaders, body: JSON.stringify(body) });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) return { error: 'Failed to create subscription', details: data };
         return { ok: true, subscription: data };
@@ -173,13 +186,13 @@ Deno.serve(async (req) => {
         const id = existing.subscriptionId || existing.id;
         // Disable (PATCH/PUT) fallback to DELETE if supported
         const patchBody = { status: 'DISABLED' };
-        const res = await fetch(`https://api.ebay.com/sell/notification/v1/subscription/${encodeURIComponent(id)}`, {
-          method: 'PUT', headers, body: JSON.stringify({ ...existing, ...patchBody })
+        const res = await fetch(`https://api.ebay.com/commerce/notification/v1/subscription/${encodeURIComponent(id)}`, {
+          method: 'PUT', headers: userHeaders, body: JSON.stringify({ ...existing, ...patchBody })
         });
         if (!res.ok) {
           // Attempt delete as fallback
-          const del = await fetch(`https://api.ebay.com/sell/notification/v1/subscription/${encodeURIComponent(id)}`, {
-            method: 'DELETE', headers
+          const del = await fetch(`https://api.ebay.com/commerce/notification/v1/subscription/${encodeURIComponent(id)}`, {
+            method: 'DELETE', headers: userHeaders
           });
           if (!del.ok) {
             const err = await del.text();
