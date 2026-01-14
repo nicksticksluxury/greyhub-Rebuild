@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { XMLParser } from 'npm:fast-xml-parser';
 import { crypto } from "jsr:@std/crypto";
 
@@ -34,23 +34,15 @@ Deno.serve(async (req) => {
                     details: { ...logEntry.details, challengeCode }
                 });
                 
-                const settings = await base44.asServiceRole.entities.Setting.list();
-                const tokenSetting = settings.find(s => s.key === 'ebay_verification_token');
-                const verificationToken = tokenSetting ? tokenSetting.value : null;
-                
-                if (!verificationToken) {
-                    await base44.asServiceRole.entities.Log.create({
-                        timestamp: new Date().toISOString(),
-                        level: 'error',
-                        category: 'ebay_webhook',
-                        message: `[${requestId}] Missing eBay verification token`,
-                        details: {}
-                    });
-                    return Response.json({ error: "Configuration missing" }, { status: 500 });
-                }
+                // Deterministic verification token (must match function that created destination)
+                const enc = new TextEncoder();
+                const appId = Deno.env.get("BASE44_APP_ID");
+                const raw = `${appId}:global:ebay`;
+                const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(raw));
+                const verificationToken = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
                 const appId = Deno.env.get("BASE44_APP_ID");
-                const endpoint = `https://nicksluxury.base44.app/api/apps/6916791b25dfec3c1970eb6d/functions/ebayWebhook`;
+                const endpoint = `https://base44.app/api/apps/${appId}/functions/ebayWebhook`;
                 
                 const textToHash = challengeCode + verificationToken + endpoint;
                 const encoder = new TextEncoder();

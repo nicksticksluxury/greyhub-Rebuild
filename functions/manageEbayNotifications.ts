@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
   const json = (data, init = {}) => {
     const headers = init.headers ? { ...corsHeaders, ...init.headers } : corsHeaders;
-    return json(data, { ...init, headers });
+    return Response.json(data, { ...init, headers });
   };
   try {
     const base44 = createClientFromRequest(req);
@@ -65,21 +65,11 @@ Deno.serve(async (req) => {
         return { destination };
       }
 
-      // Get or create verification token scoped to this company
-      let verificationToken = null;
-      try {
-        const existing = await base44.asServiceRole.entities.Setting.filter({ key: 'ebay_verification_token', company_id: companyWithToken.id });
-        verificationToken = existing[0]?.value;
-        if (!verificationToken) {
-          verificationToken = crypto.randomUUID();
-          await base44.asServiceRole.entities.Setting.create({
-            company_id: companyWithToken.id,
-            key: 'ebay_verification_token',
-            value: verificationToken,
-            description: 'Token used to validate eBay notification destination'
-          });
-        }
-      } catch (_) {}
+      // Deterministic verification token (no DB write needed)
+      const enc = new TextEncoder();
+      const raw = `${appId}:global:ebay`;
+      const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(raw));
+      const verificationToken = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
       const body = {
         name: 'Base44 Webhook',
