@@ -152,25 +152,54 @@ Deno.serve(async (req) => {
 
     // Helper: list subscriptions - uses user token
     const listSubscriptions = async () => {
+      // Log the EXACT request being sent
+      await base44.asServiceRole.entities.Log.create({
+        company_id: companyWithToken.id,
+        timestamp: new Date().toISOString(),
+        level: 'debug',
+        category: 'ebay',
+        message: 'EXACT REQUEST being sent to eBay subscriptions endpoint',
+        details: { 
+          endpoint: 'https://api.ebay.com/commerce/notification/v1/subscription?limit=200',
+          method: 'GET',
+          headers_sent: {
+            'Authorization': `Bearer ${userAccessToken.substring(0, 30)}...`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          token_first_30_chars: userAccessToken.substring(0, 30),
+          token_length: userAccessToken.length
+        }
+      });
+
       const res = await fetch('https://api.ebay.com/commerce/notification/v1/subscription?limit=200', { headers: userHeaders });
       let data = {};
-      try { data = await res.json(); } catch (_) { data = {}; }
+      let rawText = '';
+      try { 
+        rawText = await res.text();
+        data = JSON.parse(rawText);
+      } catch (e) { 
+        data = { _parseError: e.message, _rawResponse: rawText }; 
+      }
+      
+      // Log the EXACT response received
+      await base44.asServiceRole.entities.Log.create({
+        company_id: companyWithToken.id,
+        timestamp: new Date().toISOString(),
+        level: res.ok ? 'success' : 'error',
+        category: 'ebay',
+        message: `eBay subscriptions response - Status ${res.status}`,
+        details: { 
+          status: res.status,
+          status_text: res.statusText,
+          response_body: data,
+          raw_text: rawText.substring(0, 500),
+          response_headers: Object.fromEntries(res.headers.entries()),
+          is_json: res.headers.get('content-type')?.includes('application/json')
+        }
+      });
       
       if (!res.ok) {
-        await base44.asServiceRole.entities.Log.create({
-          company_id: companyWithToken.id,
-          timestamp: new Date().toISOString(),
-          level: 'error',
-          category: 'ebay',
-          message: `Failed to fetch subscriptions - Status ${res.status}`,
-          details: { 
-            status: res.status,
-            response: data,
-            token_used: userAccessToken ? `${userAccessToken.substring(0, 20)}...` : 'null',
-            endpoint: 'https://api.ebay.com/commerce/notification/v1/subscription'
-          }
-        });
-        
         if (res.status === 404) {
           return { subscriptions: [] };
         }
