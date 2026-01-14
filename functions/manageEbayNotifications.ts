@@ -30,6 +30,10 @@ Deno.serve(async (req) => {
       let listData = {};
       try { listData = await listRes.json(); } catch (_) { listData = {}; }
       if (!listRes.ok) {
+        if (listRes.status === 404) {
+          // Treat 404 as no destinations configured yet
+          return { destination: null };
+        }
         return { error: `Failed to fetch destinations (${listRes.status})`, details: listData };
       }
       const destination = (listData.destinations || [])[0] || null;
@@ -73,8 +77,14 @@ Deno.serve(async (req) => {
       const createRes = await fetch('https://api.ebay.com/sell/notification/v1/destination', {
         method: 'POST', headers, body: JSON.stringify(body)
       });
-      const createData = await createRes.json().catch(() => ({}));
+      let createData = {};
+      try { createData = await createRes.json(); } catch (_) { createData = {}; }
       if (!createRes.ok) {
+        // If destination already exists (e.g., 409), attempt to re-fetch instead of failing
+        if (createRes.status === 409) {
+          const list = await getDestination();
+          if (!list.error) return { destination: list.destination };
+        }
         return { error: 'Failed to create destination', details: createData };
       }
       destination = createData;
@@ -95,7 +105,13 @@ Deno.serve(async (req) => {
       const res = await fetch('https://api.ebay.com/sell/notification/v1/subscription?limit=200', { headers });
       let data = {};
       try { data = await res.json(); } catch (_) { data = {}; }
-      if (!res.ok) return { error: `Failed to fetch subscriptions (${res.status})`, details: data };
+      if (!res.ok) {
+        if (res.status === 404) {
+          // Some accounts return 404 when there are no subscriptions
+          return { subscriptions: [] };
+        }
+        return { error: `Failed to fetch subscriptions (${res.status})`, details: data };
+      }
       return { subscriptions: data.subscriptions || [] };
     };
 
