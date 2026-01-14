@@ -5,6 +5,7 @@ import Auctions from './pages/Auctions';
 import CompanySettings from './pages/CompanySettings';
 import CompleteSignup from './pages/CompleteSignup';
 import Dashboard from './pages/Dashboard';
+import EbayDebug from './pages/EbayDebug';
 import EbayFooterSettings from './pages/EbayFooterSettings';
 import EbayManagement from './pages/EbayManagement';
 import Home from './pages/Home';
@@ -31,7 +32,6 @@ import WatchSourceDetail from './pages/WatchSourceDetail';
 import WatchSources from './pages/WatchSources';
 import WatchSummary from './pages/WatchSummary';
 import index from './pages/index';
-import EbayDebug from './pages/EbayDebug';
 import __Layout from './Layout.jsx';
 
 
@@ -43,6 +43,7 @@ export const PAGES = {
     "CompanySettings": CompanySettings,
     "CompleteSignup": CompleteSignup,
     "Dashboard": Dashboard,
+    "EbayDebug": EbayDebug,
     "EbayFooterSettings": EbayFooterSettings,
     "EbayManagement": EbayManagement,
     "Home": Home,
@@ -69,7 +70,6 @@ export const PAGES = {
     "WatchSources": WatchSources,
     "WatchSummary": WatchSummary,
     "index": index,
-    "EbayDebug": EbayDebug,
 }
 
 export const pagesConfig = {

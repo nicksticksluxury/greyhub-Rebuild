@@ -30,10 +30,12 @@ export default function EbayManagement() {
     try {
       const res = await base44.functions.invoke('manageEbayNotifications', { action: 'init' });
       setInitData({ topics: res.data.topics || [], subscriptions: res.data.subscriptions || [], destination: res.data.destination || null });
+    } catch (e) {
+      console.error('Failed to initialize eBay notifications:', e);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadInit(); }, []);
+  useEffect(() => { if (user?.role === 'admin') { loadInit(); } }, [user]);
 
   const subMap = useMemo(() => {
     const m = new Map();

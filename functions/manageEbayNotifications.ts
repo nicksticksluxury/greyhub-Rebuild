@@ -27,11 +27,16 @@ Deno.serve(async (req) => {
     // Helper: ensure a Destination for our webhook exists
     const ensureDestination = async () => {
       const listRes = await fetch('https://api.ebay.com/sell/notification/v1/destination?limit=20', { headers });
-      const listData = await listRes.json();
+      let listData = {};
+      try { listData = await listRes.json(); } catch (_) { listData = {}; }
+      if (!listRes.ok) {
+        return { error: `Failed to fetch destinations (${listRes.status})`, details: listData };
+      }
       let destination = (listData.destinations || [])[0] || null;
 
       // Construct webhook endpoint (same URL used in ebayWebhook verification)
-      const endpoint = 'https://nicksluxury.base44.app/api/apps/6916791b25dfec3c1970eb6d/functions/ebayWebhook';
+      const appId = Deno.env.get('BASE44_APP_ID');
+      const endpoint = `https://base44.app/api/apps/${appId}/functions/ebayWebhook`;
 
       if (!destination || destination.deliveryConfig?.endpoint !== endpoint) {
         // Get or create verification token in settings
