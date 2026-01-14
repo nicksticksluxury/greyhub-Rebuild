@@ -1,12 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, content-type'
+  };
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+  const json = (data, init = {}) => {
+    const headers = init.headers ? { ...corsHeaders, ...init.headers } : corsHeaders;
+    return json(data, { ...init, headers });
+  };
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (user.role !== 'admin') return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return json({ error: 'Forbidden: Admin access required' }, { status: 403 });
 
     const { action, topicId, enable } = (req.method === 'GET') ? { action: 'init' } : await safeJson(req);
 
@@ -14,7 +26,7 @@ Deno.serve(async (req) => {
     const companies = await base44.asServiceRole.entities.Company.list();
     const companyWithToken = companies.find(c => !!c.ebay_access_token);
     if (!companyWithToken) {
-      return Response.json({ success: false, error: 'No eBay connection found. Connect eBay in a company first.' });
+      return json({ success: false, error: 'No eBay connection found. Connect eBay in a company first.' });
     }
     let accessToken = companyWithToken.ebay_access_token;
 
@@ -170,25 +182,25 @@ Deno.serve(async (req) => {
       const [dest, topics, subs] = await Promise.all([ensureDestination(), getTopics(), listSubscriptions()]);
       const ok = !dest.error && !topics.error && !subs.error;
       const aggregatedError = ok ? null : [dest.error, topics.error, subs.error].filter(Boolean).join(' | ');
-      return Response.json({ success: ok, error: aggregatedError, ...dest, ...topics, ...subs });
+      return json({ success: ok, error: aggregatedError, ...dest, ...topics, ...subs });
     }
 
     if (action === 'setSubscription' && topicId) {
       const result = await setSubscription(topicId, !!enable);
-      if (result.error) return Response.json({ success: false, ...result });
-      return Response.json({ success: true, ...result });
+      if (result.error) return json({ success: false, ...result });
+      return json({ success: true, ...result });
     }
 
     if (action === 'ensureDestination') {
       const dest = await ensureDestination();
-      if (dest.error) return Response.json({ success: false, ...dest });
-      return Response.json({ success: true, ...dest });
+      if (dest.error) return json({ success: false, ...dest });
+      return json({ success: true, ...dest });
     }
 
-    return Response.json({ error: 'Invalid action' }, { status: 400 });
+    return json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     // Return structured error without throwing 500 to avoid Axios hard-fail on client
-    return Response.json({ success: false, error: error.message || 'Unexpected error' });
+    return json({ success: false, error: error.message || 'Unexpected error' });
   }
 });
 
