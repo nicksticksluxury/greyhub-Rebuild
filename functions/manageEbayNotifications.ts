@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
     const companies = await base44.asServiceRole.entities.Company.list();
     const companyWithToken = companies.find(c => !!c.ebay_access_token);
     if (!companyWithToken) {
-      return Response.json({ error: 'No eBay connection found. Connect eBay in a company first.' }, { status: 400 });
+      return Response.json({ success: false, error: 'No eBay connection found. Connect eBay in a company first.' });
     }
     let accessToken = companyWithToken.ebay_access_token;
 
@@ -24,55 +24,60 @@ Deno.serve(async (req) => {
       'Accept': 'application/json'
     };
 
-    // Helper: ensure a Destination for our webhook exists
-    const ensureDestination = async () => {
+    // Helper: get Destination (list only)
+    const getDestination = async () => {
       const listRes = await fetch('https://api.ebay.com/sell/notification/v1/destination?limit=20', { headers });
       let listData = {};
       try { listData = await listRes.json(); } catch (_) { listData = {}; }
       if (!listRes.ok) {
         return { error: `Failed to fetch destinations (${listRes.status})`, details: listData };
       }
-      let destination = (listData.destinations || [])[0] || null;
+      const destination = (listData.destinations || [])[0] || null;
+      return { destination };
+    };
 
-      // Construct webhook endpoint (same URL used in ebayWebhook verification)
+    // Helper: ensure a Destination for our webhook exists (creates if missing)
+    const ensureDestination = async () => {
       const appId = Deno.env.get('BASE44_APP_ID');
       const endpoint = `https://base44.app/api/apps/${appId}/functions/ebayWebhook`;
 
-      if (!destination || destination.deliveryConfig?.endpoint !== endpoint) {
-        // Get or create verification token in settings
-        let verificationToken = null;
-        try {
-          const existing = await base44.asServiceRole.entities.Setting.filter({ key: 'ebay_verification_token' });
-          verificationToken = existing[0]?.value;
-          if (!verificationToken) {
-            verificationToken = crypto.randomUUID();
-            await base44.asServiceRole.entities.Setting.create({
-              company_id: 'system',
-              key: 'ebay_verification_token',
-              value: verificationToken,
-              description: 'Token used to validate eBay notification destination'
-            });
-          }
-        } catch (_) {}
-
-        const body = {
-          name: 'Base44 Webhook',
-          status: 'ENABLED',
-          deliveryConfig: {
-            endpoint,
-            verificationToken,
-            // Optional fields may vary by eBay API; kept minimal for compatibility
-          }
-        };
-        const createRes = await fetch('https://api.ebay.com/sell/notification/v1/destination', {
-          method: 'POST', headers, body: JSON.stringify(body)
-        });
-        const createData = await createRes.json().catch(() => ({}));
-        if (!createRes.ok) {
-          return { error: 'Failed to create destination', details: createData };
-        }
-        destination = createData;
+      // Try to find an existing destination first
+      const list = await getDestination();
+      if (list.error) return list;
+      let { destination } = list;
+      if (destination && destination.deliveryConfig?.endpoint === endpoint) {
+        return { destination };
       }
+
+      // Get or create verification token scoped to this company
+      let verificationToken = null;
+      try {
+        const existing = await base44.asServiceRole.entities.Setting.filter({ key: 'ebay_verification_token', company_id: companyWithToken.id });
+        verificationToken = existing[0]?.value;
+        if (!verificationToken) {
+          verificationToken = crypto.randomUUID();
+          await base44.asServiceRole.entities.Setting.create({
+            company_id: companyWithToken.id,
+            key: 'ebay_verification_token',
+            value: verificationToken,
+            description: 'Token used to validate eBay notification destination'
+          });
+        }
+      } catch (_) {}
+
+      const body = {
+        name: 'Base44 Webhook',
+        status: 'ENABLED',
+        deliveryConfig: { endpoint, verificationToken }
+      };
+      const createRes = await fetch('https://api.ebay.com/sell/notification/v1/destination', {
+        method: 'POST', headers, body: JSON.stringify(body)
+      });
+      const createData = await createRes.json().catch(() => ({}));
+      if (!createRes.ok) {
+        return { error: 'Failed to create destination', details: createData };
+      }
+      destination = createData;
       return { destination };
     };
 
@@ -144,7 +149,7 @@ Deno.serve(async (req) => {
     };
 
     if (action === 'init' || req.method === 'GET') {
-      const [dest, topics, subs] = await Promise.all([ensureDestination(), getTopics(), listSubscriptions()]);
+      const [dest, topics, subs] = await Promise.all([getDestination(), getTopics(), listSubscriptions()]);
       const ok = !dest.error && !topics.error && !subs.error;
       return Response.json({ success: ok, ...dest, ...topics, ...subs });
     }

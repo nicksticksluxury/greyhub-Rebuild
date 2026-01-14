@@ -12,6 +12,7 @@ export default function EbayManagement() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initData, setInitData] = useState({ topics: [], subscriptions: [], destination: null });
+  const [initError, setInitError] = useState(null);
 
   useEffect(() => { (async () => { setUser(await base44.auth.me()); })(); }, []);
 
@@ -30,8 +31,14 @@ export default function EbayManagement() {
     try {
       const res = await base44.functions.invoke('manageEbayNotifications', { action: 'init' });
       setInitData({ topics: res.data.topics || [], subscriptions: res.data.subscriptions || [], destination: res.data.destination || null });
+      if (res.data && (res.data.success === false || res.data.error)) {
+        setInitError(res.data.error || 'Failed to load eBay notification data');
+      } else {
+        setInitError(null);
+      }
     } catch (e) {
       console.error('Failed to initialize eBay notifications:', e);
+      setInitError('Failed to load eBay notification data');
     } finally { setLoading(false); }
   };
 
@@ -87,6 +94,10 @@ export default function EbayManagement() {
         </Button>
       </div>
 
+      {initError && (
+        <Card className="p-4 bg-red-50 border-red-200 text-red-700 text-sm">{initError}</Card>
+      )}
+
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -111,20 +122,24 @@ export default function EbayManagement() {
           <Bell className="w-5 h-5 text-slate-700"/>
           <h2 className="font-semibold text-slate-900">Notification Topics</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {(initData.topics || []).map(t => {
-            const enabled = !!subMap.get(t.topicId);
-            return (
-              <div key={t.topicId} className="flex items-center justify-between p-3 rounded-lg border bg-white">
-                <div>
-                  <p className="font-medium text-slate-900 text-sm">{t.name || t.topicId}</p>
-                  <p className="text-xs text-slate-500">{t.description || ''}</p>
+        {((initData.topics || []).length > 0) ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {(initData.topics || []).map(t => {
+              const enabled = !!subMap.get(t.topicId);
+              return (
+                <div key={t.topicId} className="flex items-center justify-between p-3 rounded-lg border bg-white">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm">{t.name || t.topicId}</p>
+                    <p className="text-xs text-slate-500">{t.description || ''}</p>
+                  </div>
+                  <Switch checked={enabled} onCheckedChange={(v) => handleToggle(t.topicId, v)} />
                 </div>
-                <Switch checked={enabled} onCheckedChange={(v) => handleToggle(t.topicId, v)} />
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-600">No topics returned. Ensure your eBay token has Notifications scope, then click Refresh.</p>
+        )}
       </Card>
 
       <Card className="p-6">
