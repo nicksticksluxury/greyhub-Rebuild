@@ -19,31 +19,31 @@ Deno.serve(async (req) => {
              return Response.json({ error: 'Missing Secret: EBAY_RU_NAME' }, { status: 500 });
         }
 
-        // Scopes required for listing items and managing inventory
+        // Scopes required for listing items, managing inventory, AND notifications
         const scopes = [
             "https://api.ebay.com/oauth/api_scope/sell.inventory",
             "https://api.ebay.com/oauth/api_scope/sell.marketing",
             "https://api.ebay.com/oauth/api_scope/sell.account",
             "https://api.ebay.com/oauth/api_scope/sell.fulfillment",
             "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly",
-            "https://api.ebay.com/oauth/api_scope/commerce.notification.subscription"
+            "https://api.ebay.com/oauth/api_scope/commerce.notification.subscription",
+            "https://api.ebay.com/oauth/api_scope/sell.reputation",
+            "https://api.ebay.com/oauth/api_scope/sell.reputation.readonly"
         ].join(" ");
 
         // Generate CSRF state token
         const state = crypto.randomUUID();
 
         // Construct eBay Authorization URL
-        // Using 'production' endpoint (auth.ebay.com)
         const url = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scopes)}&state=${state}`;
         
-        // LOG EXACT URL BEING SENT TO EBAY
         await base44.asServiceRole.entities.Log.create({
             company_id: user.company_id,
             user_id: user.id,
             timestamp: new Date().toISOString(),
             level: "info",
             category: "ebay",
-            message: "eBay Authorization URL Generated - EXACT URL being sent to user",
+            message: "eBay Authorization URL Generated with notification scopes",
             details: { 
                 full_url: url,
                 client_id: clientId,
