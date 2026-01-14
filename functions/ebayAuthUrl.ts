@@ -20,13 +20,13 @@ Deno.serve(async (req) => {
         }
 
         // Scopes required for listing items and managing inventory
+        // NOTE: sell.notification removed - may need to be enabled in eBay Developer Portal first
         const scopes = [
             "https://api.ebay.com/oauth/api_scope/sell.inventory",
             "https://api.ebay.com/oauth/api_scope/sell.marketing",
             "https://api.ebay.com/oauth/api_scope/sell.account",
             "https://api.ebay.com/oauth/api_scope/sell.fulfillment",
-            "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly",
-            "https://api.ebay.com/oauth/api_scope/sell.notification"
+            "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly"
         ].join(" ");
 
         // Construct eBay Authorization URL
