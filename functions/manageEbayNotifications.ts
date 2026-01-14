@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
     // Helper: get Destination (list only) - uses application token
     const getDestination = async () => {
-      const listRes = await fetch('https://api.ebay.com/sell/notification/v1/destination?limit=20', { headers: appHeaders });
+      const listRes = await fetch('https://api.ebay.com/commerce/notification/v1/destination?limit=20', { headers: appHeaders });
       let listData = {};
       try { listData = await listRes.json(); } catch (_) { listData = {}; }
       if (!listRes.ok) {
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
         status: 'ENABLED',
         deliveryConfig: { endpoint, verificationToken }
       };
-      const createRes = await fetch('https://api.ebay.com/sell/notification/v1/destination', {
+      const createRes = await fetch('https://api.ebay.com/commerce/notification/v1/destination', {
         method: 'POST', headers: userHeaders, body: JSON.stringify(body)
       });
       let createData = {};
@@ -123,13 +123,13 @@ Deno.serve(async (req) => {
           details: { 
             status: res.status,
             response: data,
-            token_used: accessToken ? `${accessToken.substring(0, 20)}...` : 'null',
-            endpoint: 'https://api.ebay.com/sell/notification/v1/topic'
+            token_used: appAccessToken ? `${appAccessToken.substring(0, 20)}...` : 'null',
+            endpoint: 'https://api.ebay.com/commerce/notification/v1/topic'
           }
         });
         
         if (res.status === 404) {
-          return { error: `eBay returned 404 - the access token likely lacks the 'sell.notification' scope. Please re-authorize with all required scopes.`, details: data };
+          return { error: `eBay returned 404 - the application token may lack the required scope. Please check eBay API configuration.`, details: data };
         }
         
         return { error: `Failed to fetch topics (${res.status})`, details: data };
