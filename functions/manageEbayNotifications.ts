@@ -84,16 +84,18 @@ Deno.serve(async (req) => {
     // Helper: list topics
     const getTopics = async () => {
       const res = await fetch('https://api.ebay.com/sell/notification/v1/topic?limit=200', { headers });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return { error: 'Failed to fetch topics', details: data };
+      let data = {};
+      try { data = await res.json(); } catch (_) { data = {}; }
+      if (!res.ok) return { error: `Failed to fetch topics (${res.status})`, details: data };
       return { topics: data.topics || [] };
     };
 
     // Helper: list subscriptions
     const listSubscriptions = async () => {
       const res = await fetch('https://api.ebay.com/sell/notification/v1/subscription?limit=200', { headers });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return { error: 'Failed to fetch subscriptions', details: data };
+      let data = {};
+      try { data = await res.json(); } catch (_) { data = {}; }
+      if (!res.ok) return { error: `Failed to fetch subscriptions (${res.status})`, details: data };
       return { subscriptions: data.subscriptions || [] };
     };
 
@@ -149,7 +151,7 @@ Deno.serve(async (req) => {
     };
 
     if (action === 'init' || req.method === 'GET') {
-      const [dest, topics, subs] = await Promise.all([getDestination(), getTopics(), listSubscriptions()]);
+      const [dest, topics, subs] = await Promise.all([ensureDestination(), getTopics(), listSubscriptions()]);
       const ok = !dest.error && !topics.error && !subs.error;
       return Response.json({ success: ok, ...dest, ...topics, ...subs });
     }

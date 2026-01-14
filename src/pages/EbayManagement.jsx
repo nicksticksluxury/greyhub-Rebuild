@@ -113,8 +113,8 @@ export default function EbayManagement() {
             <p><span className="font-semibold">Status:</span> <Badge className="bg-green-600 text-white">{initData.destination.status || 'ENABLED'}</Badge></p>
           </div>
         ) : (
-          <p className="text-sm text-slate-600">No destination found yet.</p>
-        )}
+          <p className="text-sm text-slate-600">No destination found yet. Click "Ensure Destination" to create it.</p>
+        )
       </Card>
 
       <Card className="p-6">
@@ -139,7 +139,7 @@ export default function EbayManagement() {
           </div>
         ) : (
           <p className="text-sm text-slate-600">No topics returned. Ensure your eBay token has Notifications scope, then click Refresh.</p>
-        )}
+        )
       </Card>
 
       <Card className="p-6">
