@@ -153,7 +153,8 @@ Deno.serve(async (req) => {
     if (action === 'init' || req.method === 'GET') {
       const [dest, topics, subs] = await Promise.all([ensureDestination(), getTopics(), listSubscriptions()]);
       const ok = !dest.error && !topics.error && !subs.error;
-      return Response.json({ success: ok, ...dest, ...topics, ...subs });
+      const aggregatedError = ok ? null : [dest.error, topics.error, subs.error].filter(Boolean).join(' | ');
+      return Response.json({ success: ok, error: aggregatedError, ...dest, ...topics, ...subs });
     }
 
     if (action === 'setSubscription' && topicId) {
