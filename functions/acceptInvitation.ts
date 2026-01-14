@@ -9,7 +9,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Please login first' }, { status: 401 });
     }
 
-    const { token } = await req.json();
+    let token = null;
+    try {
+      const body = await req.json();
+      token = body?.token || null;
+    } catch (_) {
+      token = null;
+    }
 
     if (!token) {
       return Response.json({ error: 'Token is required' }, { status: 400 });

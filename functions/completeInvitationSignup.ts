@@ -3,14 +3,23 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const body = await req.json();
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (_) {
+      body = {};
+    }
     
-    const { token, plan_id, payment_token, company_name, coupon_code } = body;
+    const { token, plan_id, payment_token, company_name, coupon_code } = body || {};
 
     // Get authenticated user
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ success: false, error: 'User not authenticated' }, { status: 401 });
+    }
+
+    if (!token) {
+      return Response.json({ success: false, error: 'Token is required' }, { status: 400 });
     }
 
     // Validate invitation
