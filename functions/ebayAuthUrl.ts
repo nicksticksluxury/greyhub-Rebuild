@@ -29,9 +29,12 @@ Deno.serve(async (req) => {
             "https://api.ebay.com/oauth/api_scope/commerce.notification.subscription"
         ].join(" ");
 
+        // Generate CSRF state token
+        const state = crypto.randomUUID();
+
         // Construct eBay Authorization URL
         // Using 'production' endpoint (auth.ebay.com)
-        const url = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scopes)}`;
+        const url = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scopes)}&state=${state}`;
         
         // LOG EXACT URL BEING SENT TO EBAY
         await base44.asServiceRole.entities.Log.create({
