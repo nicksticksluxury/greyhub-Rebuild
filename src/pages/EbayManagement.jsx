@@ -131,7 +131,7 @@ export default function EbayManagement() {
           </div>
         ) : (
           <p className="text-sm text-slate-600">No destination found yet. Click "Ensure Destination" to create it.</p>
-        )
+        )}
       </Card>
 
       <Card className="p-6">
@@ -156,7 +156,7 @@ export default function EbayManagement() {
           </div>
         ) : (
           <p className="text-sm text-slate-600">No topics returned. Ensure your eBay token has sell.notification scope, then click Refresh. If still empty, use Re-authorize eBay above.</p>
-        )
+        )}
       </Card>
 
       <Card className="p-6">
