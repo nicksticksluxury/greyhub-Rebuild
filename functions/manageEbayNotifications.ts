@@ -55,8 +55,15 @@ Deno.serve(async (req) => {
       let listData = {};
       try { listData = await listRes.json(); } catch (_) { listData = {}; }
       if (!listRes.ok) {
+        await base44.asServiceRole.entities.Log.create({
+          company_id: companyWithToken.id,
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          category: 'ebay',
+          message: `Failed to fetch destinations - Status ${listRes.status}`,
+          details: { status: listRes.status, response: listData, endpoint: 'https://api.ebay.com/commerce/notification/v1/destination' }
+        });
         if (listRes.status === 404) {
-          // Treat 404 as no destinations configured yet
           return { destination: null };
         }
         return { error: `Failed to fetch destinations (${listRes.status})`, details: listData };
@@ -95,7 +102,14 @@ Deno.serve(async (req) => {
       let createData = {};
       try { createData = await createRes.json(); } catch (_) { createData = {}; }
       if (!createRes.ok) {
-        // If destination already exists (e.g., 409), attempt to re-fetch instead of failing
+        await base44.asServiceRole.entities.Log.create({
+          company_id: companyWithToken.id,
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          category: 'ebay',
+          message: `Failed to create destination - Status ${createRes.status}`,
+          details: { status: createRes.status, response: createData, body, endpoint: 'https://api.ebay.com/commerce/notification/v1/destination' }
+        });
         if (createRes.status === 409) {
           const list = await getDestination();
           if (!list.error) return { destination: list.destination };
@@ -112,7 +126,6 @@ Deno.serve(async (req) => {
       let data = {};
       try { data = await res.json(); } catch (_) { data = {}; }
       
-      // Log detailed error if 404
       if (!res.ok) {
         await base44.asServiceRole.entities.Log.create({
           company_id: companyWithToken.id,
@@ -129,7 +142,7 @@ Deno.serve(async (req) => {
         });
         
         if (res.status === 404) {
-          return { error: `eBay returned 404 - the application token may lack the required scope. Please check eBay API configuration.`, details: data };
+          return { error: `eBay returned 404 - the application token may lack the required scope.`, details: data };
         }
         
         return { error: `Failed to fetch topics (${res.status})`, details: data };
@@ -142,9 +155,23 @@ Deno.serve(async (req) => {
       const res = await fetch('https://api.ebay.com/commerce/notification/v1/subscription?limit=200', { headers: userHeaders });
       let data = {};
       try { data = await res.json(); } catch (_) { data = {}; }
+      
       if (!res.ok) {
+        await base44.asServiceRole.entities.Log.create({
+          company_id: companyWithToken.id,
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          category: 'ebay',
+          message: `Failed to fetch subscriptions - Status ${res.status}`,
+          details: { 
+            status: res.status,
+            response: data,
+            token_used: userAccessToken ? `${userAccessToken.substring(0, 20)}...` : 'null',
+            endpoint: 'https://api.ebay.com/commerce/notification/v1/subscription'
+          }
+        });
+        
         if (res.status === 404) {
-          // Some accounts return 404 when there are no subscriptions
           return { subscriptions: [] };
         }
         return { error: `Failed to fetch subscriptions (${res.status})`, details: data };
