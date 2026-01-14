@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
             "https://api.ebay.com/oauth/api_scope/sell.marketing",
             "https://api.ebay.com/oauth/api_scope/sell.account",
             "https://api.ebay.com/oauth/api_scope/sell.fulfillment",
+            "https://api.ebay.com/oauth/api_scope/sell.notification",
             "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly"
         ].join(" ");
 
