@@ -122,8 +122,8 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
         updates.retail_price = aiAnalysis.current_retail_price || aiAnalysis.average_market_value;
       } else if (key === 'market_research') {
          updates.market_research = aiAnalysis.market_research_summary;
-      } else if (key === 'description') {
-         updates.description = aiAnalysis.condition_assessment;
+      } else if (key === 'market_research_condition') {
+         updates.market_research_condition = aiAnalysis.condition_assessment;
       } else if (key === 'brand') {
          updates.brand = aiAnalysis.identified_brand;
       } else if (key === 'model') {
@@ -321,20 +321,6 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
             </div>
           )}
 
-          {/* Condition / Description */}
-          {aiAnalysis.condition_assessment && (
-             <SelectableItem id="description" label="Condition Assessment">
-                <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs font-semibold uppercase ${selectedKeys.has('description') ? 'text-blue-700' : 'text-slate-500'}`}>
-                        Condition Assessment
-                    </span>
-                 </div>
-                 <p className={`text-sm leading-relaxed ${selectedKeys.has('description') ? 'text-blue-900' : 'text-slate-600'}`}>
-                    {aiAnalysis.condition_assessment}
-                 </p>
-             </SelectableItem>
-          )}
-
           {/* MSRP & Retail */}
           {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
             <div className="space-y-2">
@@ -376,6 +362,20 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                  </div>
                  <p className={`text-sm leading-relaxed whitespace-pre-line ${selectedKeys.has('market_research') ? 'text-blue-900' : 'text-slate-600'}`}>
                     {aiAnalysis.market_research_summary}
+                 </p>
+             </SelectableItem>
+          )}
+
+          {/* Condition Assessment under Market Research */}
+          {aiAnalysis.condition_assessment && (
+             <SelectableItem id="market_research_condition" label="Condition (from AI)">
+                <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs font-semibold uppercase ${selectedKeys.has('market_research_condition') ? 'text-blue-700' : 'text-slate-500'}`}>
+                        Condition (from AI)
+                    </span>
+                 </div>
+                 <p className={`text-sm leading-relaxed ${selectedKeys.has('market_research_condition') ? 'text-blue-900' : 'text-slate-600'}`}>
+                    {aiAnalysis.condition_assessment}
                  </p>
              </SelectableItem>
           )}
