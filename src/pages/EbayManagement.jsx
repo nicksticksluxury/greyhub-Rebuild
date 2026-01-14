@@ -109,7 +109,9 @@ export default function EbayManagement() {
       </div>
 
       {initError && (
-        <Card className="p-4 bg-red-50 border-red-200 text-red-700 text-sm">{initError}</Card>
+       <Card className="p-4 bg-red-50 border-red-200 text-red-700 text-sm">
+         {initError}
+       </Card>
       )}
 
       <Card className="p-6">
