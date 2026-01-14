@@ -145,24 +145,26 @@ Deno.serve(async (req) => {
 
     if (action === 'init' || req.method === 'GET') {
       const [dest, topics, subs] = await Promise.all([ensureDestination(), getTopics(), listSubscriptions()]);
-      return Response.json({ success: true, ...dest, ...topics, ...subs });
+      const ok = !dest.error && !topics.error && !subs.error;
+      return Response.json({ success: ok, ...dest, ...topics, ...subs });
     }
 
     if (action === 'setSubscription' && topicId) {
       const result = await setSubscription(topicId, !!enable);
-      if (result.error) return Response.json(result, { status: 400 });
+      if (result.error) return Response.json({ success: false, ...result });
       return Response.json({ success: true, ...result });
     }
 
     if (action === 'ensureDestination') {
       const dest = await ensureDestination();
-      if (dest.error) return Response.json(dest, { status: 400 });
+      if (dest.error) return Response.json({ success: false, ...dest });
       return Response.json({ success: true, ...dest });
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    // Return structured error without throwing 500 to avoid Axios hard-fail on client
+    return Response.json({ success: false, error: error.message || 'Unexpected error' });
   }
 });
 

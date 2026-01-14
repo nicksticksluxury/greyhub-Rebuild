@@ -48,6 +48,8 @@ export default function EbayManagement() {
     try {
       await base44.functions.invoke('manageEbayNotifications', { action: 'setSubscription', topicId, enable: enabled });
       await loadInit();
+    } catch (e) {
+      console.error('Failed to update eBay subscription:', e);
     } finally { setLoading(false); }
   };
 
@@ -56,6 +58,8 @@ export default function EbayManagement() {
     try {
       await base44.functions.invoke('manageEbayNotifications', { action: 'ensureDestination' });
       await loadInit();
+    } catch (e) {
+      console.error('Failed to ensure eBay destination:', e);
     } finally { setLoading(false); }
   };
 
