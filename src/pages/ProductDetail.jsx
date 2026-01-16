@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { removeBackground } from "@imgly/background-removal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -617,13 +618,58 @@ Return ONLY the title, nothing else.`;
     }
   };
 
+  // Helper function to process a single image using client-side BG removal
+  const processImageBeautification = async (imageUrl, toastId) => {
+    try {
+      // Step 1: Remove Hands (Server)
+      if (toastId) toast.loading("Step 1/3: AI removing hands...", { id: toastId });
+      console.log("Starting Step 1: Remove Hands");
+      
+      const handsResult = await base44.functions.invoke('replaceBackground', { 
+        image_url: imageUrl,
+        mode: 'remove_hands'
+      });
+      
+      if (!handsResult.data.success) throw new Error(handsResult.data.error || 'Failed to remove hands');
+      const handFreeUrl = handsResult.data.url;
+      
+      // Step 2: Remove Background (Client)
+      if (toastId) toast.loading("Step 2/3: Client removing background...", { id: toastId });
+      console.log("Starting Step 2: Client BG Removal on", handFreeUrl);
+      
+      // Use @imgly/background-removal (configured to download assets automatically)
+      const imageBlob = await removeBackground(handFreeUrl);
+      const transparentFile = new File([imageBlob], "transparent.png", { type: "image/png" });
+      
+      // Upload transparent image to use in next step
+      const uploadRes = await base44.integrations.Core.UploadFile({ file: transparentFile });
+      const transparentUrl = uploadRes.file_url;
+      
+      // Step 3: Add Background + Optimize (Server)
+      if (toastId) toast.loading("Step 3/3: Generating scenery...", { id: toastId });
+      console.log("Starting Step 3: Add Background to", transparentUrl);
+      
+      const finalResult = await base44.functions.invoke('replaceBackground', { 
+        image_url: transparentUrl,
+        mode: 'add_background'
+      });
+      
+      if (!finalResult.data.success) throw new Error(finalResult.data.error || 'Failed to add background');
+      
+      return finalResult.data.image;
+    } catch (error) {
+      console.error("Image beautification error:", error);
+      throw error;
+    }
+  };
+
   const beautifyAllImages = async () => {
     if (!editedData.photos || editedData.photos.length === 0) {
       toast.error("No photos to beautify");
       return;
     }
 
-    if (!confirm(`This will beautify all ${editedData.photos.length} images. This may take several minutes. Continue?`)) {
+    if (!confirm(`This will beautify all ${editedData.photos.length} images. This involves downloading AI models to your browser and may take several minutes. Continue?`)) {
       return;
     }
 
@@ -633,29 +679,26 @@ Return ONLY the title, nothing else.`;
     try {
       const beautifiedPhotos = [];
 
-        for (let i = 0; i < editedData.photos.length; i++) {
-          setBeautifyProgress({ current: i + 1, total: editedData.photos.length });
-          toast.loading(`Removing background ${i + 1} of ${editedData.photos.length}...`, { id: 'beautify' });
+      for (let i = 0; i < editedData.photos.length; i++) {
+        setBeautifyProgress({ current: i + 1, total: editedData.photos.length });
+        const toastId = 'beautify';
+        
+        const photo = editedData.photos[i];
+        const imageUrl = photo.full || photo.medium || photo.original || photo;
 
-          const photo = editedData.photos[i];
-          const imageUrl = photo.full || photo.medium || photo.original || photo;
-
-          try {
-            const result = await base44.functions.invoke('replaceBackground', { 
-              image_url: imageUrl 
-            });
-
-            beautifiedPhotos.push(result.data.image);
-          } catch (error) {
-            console.error(`Failed to remove background ${i + 1}:`, error);
-            // Keep original if fails
-            beautifiedPhotos.push(photo);
-          }
+        try {
+          const resultImage = await processImageBeautification(imageUrl, toastId);
+          beautifiedPhotos.push(resultImage);
+        } catch (error) {
+          console.error(`Failed to beautify image ${i + 1}:`, error);
+          toast.error(`Image ${i+1} failed, keeping original`, { duration: 3000 });
+          beautifiedPhotos.push(photo);
         }
+      }
 
       setEditedData({ ...editedData, photos: beautifiedPhotos });
       setHasUnsavedChanges(true);
-      toast.success(`Successfully beautified ${editedData.photos.length} images!`, { id: 'beautify' });
+      toast.success(`Processed ${editedData.photos.length} images!`, { id: 'beautify' });
     } catch (error) {
       console.error("Beautify all failed:", error);
       toast.error("Failed to beautify images: " + error.message, { id: 'beautify' });
@@ -671,82 +714,56 @@ Return ONLY the title, nothing else.`;
       return;
     }
 
-    if (!confirm(`This will beautify ${selectedImages.length} selected image(s). This may take several minutes. Continue?`)) {
+    if (!confirm(`This will beautify ${selectedImages.length} selected image(s). This involves downloading AI models to your browser. Continue?`)) {
       return;
     }
 
     setBeautifyingSelected(true);
     setBeautifySelectedProgress({ current: 0, total: selectedImages.length });
+    const toastId = 'beautify-selected';
 
     try {
       let currentPhotos = [...editedData.photos];
-
       let successCount = 0;
       let failCount = 0;
 
       for (let i = 0; i < selectedImages.length; i++) {
         const imageIndex = selectedImages[i];
         setBeautifySelectedProgress({ current: i + 1, total: selectedImages.length });
-        toast.loading(`Beautifying image ${i + 1} of ${selectedImages.length}...`, { id: 'beautify-selected' });
-
+        
         const photo = currentPhotos[imageIndex];
         const imageUrl = photo.full || photo.medium || photo.original || photo;
 
         try {
-          console.log(`Processing image ${i + 1}, index ${imageIndex}, URL:`, imageUrl);
-          const result = await base44.functions.invoke('replaceBackground', { 
-            image_url: imageUrl 
-          });
-
-          console.log(`Backend response for image ${i + 1}:`, result.data);
-
-          if (result.data.error) {
-            throw new Error(result.data.error);
-          }
-
-          if (!result.data.image) {
-            throw new Error('Backend returned success but no image data');
-          }
-
-          console.log(`Replacing image at index ${imageIndex} with:`, result.data.image);
-
-          // Create a new array with the updated image
+          const resultImage = await processImageBeautification(imageUrl, toastId);
+          
+          // Update the specific image in the array
           currentPhotos = [
             ...currentPhotos.slice(0, imageIndex),
-            result.data.image,
+            resultImage,
             ...currentPhotos.slice(imageIndex + 1)
           ];
-
+          
           successCount++;
         } catch (error) {
-          console.error(`Failed to remove background ${imageIndex + 1}:`, error);
+          console.error(`Failed to beautify image index ${imageIndex}:`, error);
           failCount++;
           toast.error(`Image ${i + 1} failed: ${error.message}`, { id: `fail-${i}`, duration: 5000 });
         }
       }
 
-      // Update state once after all processing
-      console.log('Final currentPhotos array before state update:', currentPhotos);
-      setEditedData(prevData => {
-        console.log('Previous photos in state:', prevData.photos);
-        const newData = { ...prevData, photos: currentPhotos };
-        console.log('New photos in state:', newData.photos);
-        return newData;
-      });
-
+      setEditedData(prevData => ({ ...prevData, photos: currentPhotos }));
       setHasUnsavedChanges(successCount > 0);
       setSelectedImages([]);
 
-      if (successCount > 0 && failCount === 0) {
-        toast.success(`Successfully beautified ${successCount} image(s)!`, { id: 'beautify-selected' });
-      } else if (successCount > 0 && failCount > 0) {
-        toast.warning(`Beautified ${successCount}, failed ${failCount}`, { id: 'beautify-selected' });
+      if (successCount > 0) {
+        toast.success(`Successfully beautified ${successCount} image(s)!`, { id: toastId });
       } else {
-        toast.error(`All ${failCount} images failed to beautify`, { id: 'beautify-selected' });
+        toast.error(`All ${failCount} images failed`, { id: toastId });
       }
     } catch (error) {
       console.error("Beautify selected failed:", error);
-      toast.error("Failed to beautify images: " + error.message, { id: 'beautify-selected' });
+      toast.error("Process failed: " + error.message, { id: toastId });
     } finally {
       setBeautifyingSelected(false);
       setBeautifySelectedProgress({ current: 0, total: 0 });
