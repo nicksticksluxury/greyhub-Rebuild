@@ -577,6 +577,7 @@ Deno.serve(async (req) => {
     // Update pricing and market data (with validation)
     if (pass4Result.final_base_market_value && pass4Result.final_base_market_value > 0) {
       productUpdate.retail_price = pass4Result.final_base_market_value;
+      productUpdate.bmv = pass4Result.final_base_market_value;
     }
     if (platformPrices && Object.keys(platformPrices).length > 0) {
       productUpdate.platform_prices = platformPrices;

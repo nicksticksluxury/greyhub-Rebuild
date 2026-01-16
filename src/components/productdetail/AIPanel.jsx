@@ -120,6 +120,8 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
         updates.msrp = aiAnalysis.original_msrp;
       } else if (key === 'retail_price') {
         updates.retail_price = aiAnalysis.current_retail_price || aiAnalysis.average_market_value;
+      } else if (key === 'bmv') {
+        updates.bmv = aiAnalysis.final_base_market_value;
       } else if (key === 'market_research') {
          updates.market_research = aiAnalysis.market_research_summary;
       } else if (key === 'market_research_condition') {
@@ -235,6 +237,7 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
     const newSet = new Set(selectedKeys);
     if (aiAnalysis.original_msrp > 0) newSet.add('msrp');
     if (aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) newSet.add('retail_price');
+    if (aiAnalysis.final_base_market_value > 0) newSet.add('bmv');
     setSelectedKeys(newSet);
   };
 
@@ -322,7 +325,7 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
           )}
 
           {/* MSRP & Retail */}
-          {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0) && (
+          {(aiAnalysis.original_msrp > 0 || aiAnalysis.current_retail_price > 0 || aiAnalysis.average_market_value > 0 || aiAnalysis.final_base_market_value > 0) && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 <Button
@@ -346,6 +349,15 @@ export default function AIPanel({ aiAnalysis, onImportData, productType }) {
                     label="Market Value" 
                     value={`$${(aiAnalysis.current_retail_price || aiAnalysis.average_market_value).toLocaleString()}`} 
                     className="bg-emerald-50/30"
+                  />
+                )}
+                
+                {aiAnalysis.final_base_market_value > 0 && (
+                  <SelectableItem 
+                    id="bmv" 
+                    label="BMV (Best Market Value)" 
+                    value={`$${aiAnalysis.final_base_market_value.toLocaleString()}`} 
+                    className="bg-purple-50/30"
                   />
                 )}
             </div>

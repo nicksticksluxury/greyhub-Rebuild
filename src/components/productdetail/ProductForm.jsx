@@ -569,6 +569,80 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
             />
           </div>
           <div>
+            <Label className="flex items-center justify-between">
+              <span>BMV (Best Market Value)</span>
+              {data.bmv > 0 && data.cost > 0 && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    // Recalculate pricing using the same formulas from analyzeProductAI
+                    const bmv = data.bmv || 0;
+                    const cost = (data.cost || 0) + getTotalRepairCost();
+                    
+                    if (!bmv || bmv === 0) {
+                      alert('BMV must be set to recalculate pricing');
+                      return;
+                    }
+                    
+                    const TARGET_PROFIT_MARGIN = aiPricingConfig?.target_profit_margin || 0.25;
+                    const platformPrices = {};
+                    
+                    const platformConfigs = {
+                      ebay: { feeRate: 0.18, binMultiplier: 0.95 },
+                      etsy: { feeRate: 0.065, binMultiplier: 0.95 },
+                      poshmark: { feeRate: 0.20, binMultiplier: 0.95 },
+                      mercari: { feeRate: 0.10, binMultiplier: 0.95 },
+                      whatnot: { feeRate: 0.12, binMultiplier: 1.00 },
+                      shopify: { feeRate: 0.029, binMultiplier: 0.95 }
+                    };
+                    
+                    Object.entries(platformConfigs).forEach(([platform, config]) => {
+                      const binPrice = Math.max(
+                        bmv * config.binMultiplier,
+                        cost / (1 - config.feeRate - TARGET_PROFIT_MARGIN)
+                      );
+                      
+                      if (platform === 'whatnot') {
+                        platformPrices[`${platform}_bin`] = Math.ceil(binPrice);
+                        platformPrices[`${platform}_accept`] = Math.ceil(binPrice * 0.92);
+                        platformPrices[`${platform}_counter`] = Math.ceil(binPrice * 0.88);
+                      } else {
+                        platformPrices[`${platform}_bin`] = Math.floor(binPrice) + 0.99;
+                        platformPrices[`${platform}_accept`] = Math.floor(binPrice * 0.92) + 0.99;
+                        platformPrices[`${platform}_counter`] = Math.floor(binPrice * 0.88) + 0.99;
+                      }
+                      platformPrices[platform] = platformPrices[`${platform}_bin`];
+                    });
+                    
+                    platformPrices.bmv = bmv;
+                    platformPrices.cost = cost;
+                    platformPrices.pricing_notes = `Recalculated manually. BMV: $${bmv.toFixed(2)}`;
+                    
+                    // Update the product with new pricing
+                    onChange({
+                      ...data,
+                      platform_prices: platformPrices,
+                      ai_analysis: {
+                        ...(data.ai_analysis || {}),
+                        pricing_recommendations: platformPrices,
+                        final_base_market_value: bmv
+                      }
+                    });
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                >
+                  recalculate
+                </button>
+              )}
+            </Label>
+            <Input
+              type="number"
+              value={data.bmv || ""}
+              onChange={(e) => updateField("bmv", parseFloat(e.target.value))}
+              placeholder="Best Market Value"
+            />
+          </div>
+          <div>
             <Label>Minimum Price</Label>
             <Input
               type="number"
