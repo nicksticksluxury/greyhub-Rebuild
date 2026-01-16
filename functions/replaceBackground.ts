@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { removeBackground } from 'npm:@imgly/background-removal-node@1.4.5';
 
 Deno.serve(async (req) => {
   try {
@@ -15,10 +16,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'image_url is required' }, { status: 400 });
     }
 
-    const apiKey = Deno.env.get('REMOVEBG_API_KEY');
-    if (!apiKey) {
-      return Response.json({ error: 'REMOVEBG_API_KEY not configured' }, { status: 500 });
-    }
+    // REMOVEBG_API_KEY check removed - using local AI library
 
     console.log('Step 1: Remove hands/fingers with AI');
 
@@ -40,30 +38,10 @@ Deno.serve(async (req) => {
     const handFreeBlob = await handFreeResponse.blob();
     console.log('Hand-free image fetched, size:', handFreeBlob.size);
 
-    console.log('Step 3: Removing background with remove.bg');
+    console.log('Step 3: Removing background with local AI (@imgly/background-removal-node)');
 
-    // Step 2: Call remove.bg API to remove background
-    const formData = new FormData();
-    formData.append('image_file', handFreeBlob, 'image.png');
-    formData.append('size', 'auto');
-
-    const removeBgResponse = await fetch('https://api.remove.bg/v1.0/removebg', {
-      method: 'POST',
-      headers: {
-        'X-Api-Key': apiKey,
-      },
-      body: formData,
-    });
-
-    if (!removeBgResponse.ok) {
-      const errorText = await removeBgResponse.text();
-      console.error('remove.bg API error:', errorText);
-      return Response.json({ 
-        error: `remove.bg API failed: ${removeBgResponse.status} - ${errorText}` 
-      }, { status: 500 });
-    }
-
-    const noBgBlob = await removeBgResponse.blob();
+    // Step 2: Use local AI library to remove background
+    const noBgBlob = await removeBackground(handFreeBlob);
     console.log('Step 4: Background removed, uploading transparent image, size:', noBgBlob.size);
 
     // Upload the transparent PNG
