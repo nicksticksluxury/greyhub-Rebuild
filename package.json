@@ -76,7 +76,8 @@
     "vaul": "^1.1.2",
     "zod": "^3.24.2",
     "square": "^37.0.0",
-    "@imgly/background-removal-node": "^1.4.5"
+    "@imgly/background-removal-node": "^1.4.5",
+    "@imgly/background-removal": "^1.5.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
