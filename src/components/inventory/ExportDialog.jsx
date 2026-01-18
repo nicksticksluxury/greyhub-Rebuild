@@ -208,7 +208,8 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
       toast.success(`Exported ${watchesToExport.length} watches for Whatnot!`);
       onClose();
     } catch (error) {
-      toast.error("Export failed: " + error.message);
+      console.error("Export error:", error);
+      toast.error("Export failed (Product Entity): " + error.message);
     } finally {
       setIsGenerating(false);
       setGenerationProgress("");
