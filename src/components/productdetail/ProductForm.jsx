@@ -504,7 +504,7 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
         <div>
           <HTMLDescriptionEditor
             value={data.description || ""}
-            onChange={(html) => onChange({ ...data, description: html })}
+            onChange={(html) => onChange(prev => ({ ...prev, description: html }))}
             companyFooter={ebayFooter}
           />
         </div>
