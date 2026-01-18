@@ -19,10 +19,12 @@ Deno.serve(async (req) => {
     // MODE 1: Remove Hands (Pre-processing)
     if (mode === 'remove_hands') {
       console.log('Step 1: Remove hands/fingers with AI');
-      const removeHandsPrompt = `Remove any visible hands, fingers, arms, or body parts from this image. 
-      The image contains a ${product_description}.
-      Keep the ${product_description} EXACTLY as it is - do NOT modify, clean, or enhance the ${product_description} in any way. 
-      Only remove human body parts holding it.`;
+      // More explicit prompt to STRICTLY preserve the object
+      const removeHandsPrompt = `Edit this image to remove any visible human hands or fingers. 
+      CRITICAL: The main object (the ${product_description}) MUST BE PRESERVED PIXEL-PERFECT. 
+      Do NOT regenerate, clean, or enhance the ${product_description}. 
+      Do NOT change the dial, bezel, or strap. 
+      ONLY mask out the hands/fingers and fill that area with neutral background.`;
       
       const handFreeResult = await base44.asServiceRole.integrations.Core.GenerateImage({
         prompt: removeHandsPrompt,
@@ -39,40 +41,64 @@ Deno.serve(async (req) => {
     }
 
     // MODE 2: Add Background & Optimize (Post-processing)
-    // Expects 'image_url' to be a transparent PNG (uploaded from client)
+    // Uses Jimp to strictly composite the transparent product over a generated background
     if (mode === 'add_background') {
-      console.log('Step 3: Adding background ONLY to transparent areas of:', image_url);
+      console.log('Step 3: Generating isolated background scene...');
 
-      const addBackgroundPrompt = `Composite this specific ${product_description} onto a new background.
-      
-      Input Image: Contains the ${product_description} on a transparent background.
-      
-      Instructions:
-      1. PRESERVE THE ${product_description} PIXEL-PERFECTLY. Do not regenerate, hallucinate, or alter the product itself.
-      2. Place it on a warm brown wooden table surface.
-      3. Background: Blurred green foliage/trees, soft natural lighting.
-      4. Add realistic shadows cast by the ${product_description} onto the table.
-      
-      CRITICAL: The ${product_description} MUST remain exactly identical to the input image.`;
+      // 1. Generate BACKGROUND ONLY (no product in prompt)
+      const bgPrompt = `Professional product photography background. 
+      Scene: A rich, warm wooden table surface in the foreground. 
+      Background: Softly blurred natural greenery/foliage (bokeh). 
+      Lighting: Soft, natural daylight. 
+      Content: EMPTY SURFACE. No objects, no watches, no people. Just the background scene.`;
 
-      const finalResult = await base44.asServiceRole.integrations.Core.GenerateImage({
-        prompt: addBackgroundPrompt,
-        existing_image_urls: [image_url]
+      const bgResult = await base44.asServiceRole.integrations.Core.GenerateImage({
+        prompt: bgPrompt
       });
+      console.log('Generated background URL:', bgResult.url);
 
-      console.log('Step 4: Background added, uploading final image from:', finalResult.url);
+      // 2. Composite using Jimp to LOCK product pixels
+      console.log('Step 4: Compositing original product onto background...');
+      
+      const [background, product] = await Promise.all([
+        Jimp.read(bgResult.url),
+        Jimp.read(image_url)
+      ]);
 
-      const finalBlob = await fetch(finalResult.url).then(r => r.blob());
-      const finalFile = new File([finalBlob], 'final.png', { type: 'image/png' });
+      // Resize background to standard size if needed (usually 1024x1024 from AI)
+      // Resize product to fit nicely (e.g. 70% of background width)
+      const margin = 0.75;
+      const targetWidth = background.bitmap.width * margin;
+      const scaleFactor = targetWidth / product.bitmap.width;
+      
+      // Don't upscale if product is small, but do downscale if it's huge
+      if (scaleFactor < 1) {
+        product.scale(scaleFactor);
+      } else if (product.bitmap.width < background.bitmap.width * 0.3) {
+        // If product is tiny, scale it up a bit but not too much
+        product.scaleToFit(background.bitmap.width * 0.5, background.bitmap.height * 0.5);
+      }
+
+      // Center the product
+      const x = (background.bitmap.width - product.bitmap.width) / 2;
+      const y = (background.bitmap.height - product.bitmap.height) / 2;
+
+      background.composite(product, x, y);
+
+      // Get buffer
+      const buffer = await background.getBufferAsync(Jimp.MIME_PNG);
+      
+      // Upload composite
+      console.log('Uploading composite image...');
+      const finalFile = new File([buffer], 'final.png', { type: 'image/png' });
       const finalUpload = await base44.asServiceRole.integrations.Core.UploadFile({ file: finalFile });
 
       console.log('Step 5: Optimizing final image...');
-      
       const optimizeResult = await base44.functions.invoke('optimizeImage', { 
         file_url: finalUpload.file_url 
       });
       
-      console.log('Step 6: Complete! Final optimized image:', optimizeResult.data);
+      console.log('Step 6: Complete!');
       
       return Response.json({
         success: true,
