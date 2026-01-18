@@ -440,27 +440,26 @@ export default function ProductDetail() {
           }).join('\n')}` : "";
 
       // Generate title
-      const titlePrompt = `Create an eBay SEO-optimized product title (MAX 80 characters) for this ${productTypeName}:
+      const titlePrompt = `Generate a high-converting, eBay SEO-optimized title (MAX 80 characters) for this ${productTypeName}.
+      
+      CRITICAL: This is a ${productTypeName.toUpperCase()}.
+      
+      Product Details:
+      Brand: ${editedData.brand || "N/A"}
+      Model: ${editedData.model || "N/A"}
+      Reference: ${editedData.reference_number || ""}
+      Year: ${editedData.year || ""}
+      Condition: ${editedData.condition || ""}
+      Gender: ${editedData.gender || ""}${attributesText}
 
-CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
+      eBay SEO Rules:
+      1. Start with Brand, Model, Reference (if applicable).
+      2. Include key attributes users search for (e.g., "Automatic", "Gold", "Chronograph").
+      3. NO filler words ("L@@K", "Wow", "Rare" unless actually rare).
+      4. MAX 80 CHARACTERS.
+      5. Do not use punctuation like !, *, or quotes.
 
-Brand: ${editedData.brand}
-Model: ${editedData.model || ""}
-Reference: ${editedData.reference_number || ""}
-Year: ${editedData.year || ""}
-Condition: ${editedData.condition || ""}
-Gender: ${editedData.gender || ""}${attributesText}
-
-eBay SEO Title Requirements:
-- Include brand, model, and key features buyers search for
-- Use specific details (materials, colors, sizes) NOT generic words
-- NO filler words like "unknown", "blank", "N/A", "undefined"
-- If a field is empty, skip it entirely - don't mention it
-- Front-load most important keywords (brand, model)
-- Stay under 80 characters
-- Make it searchable and descriptive
-
-Return ONLY the title, nothing else.`;
+      Return ONLY the title string.`;
 
       // Generate description
       const isPartsRepair = editedData.condition && 
@@ -475,58 +474,65 @@ Return ONLY the title, nothing else.`;
          - Returns are NOT accepted
          - Buyers should be experienced with ${productTypeName.toLowerCase()} repair` : '';
 
-      const descriptionPrompt = `Create an eBay SEO-optimized HTML product description for this ${productTypeName}:
+      const descriptionPrompt = `Write a professional, eBay SEO-optimized HTML description for this ${productTypeName}.
 
-      CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
+      Product Details:
+      Brand: ${editedData.brand || "N/A"}
+      Model: ${editedData.model || "N/A"}
+      Reference: ${editedData.reference_number || "N/A"}
+      Year: ${editedData.year || "N/A"}
+      Condition: ${editedData.condition || "N/A"}
+      Gender: ${editedData.gender || "N/A"}
+      ${attributesText}
+      ${conditionContext}
+      ${partsRepairWarning}
 
-      Brand: ${editedData.brand}
-      Model: ${editedData.model || ""}
-      Reference: ${editedData.reference_number || ""}
-      Year: ${editedData.year || ""}
-      Condition: ${editedData.condition || ""}
-      Gender: ${editedData.gender || ""}${attributesText}${conditionContext}${partsRepairWarning}
+      Context: ${aiResearchPrompt}
 
-      Product Type Context: ${aiResearchPrompt}
+      SEO & Formatting Requirements:
+      1. Use clean, semantic HTML (h2, p, ul, li, strong). NO inline CSS or complex styling.
+      2. **Structure**:
+         - **Headline**: Engaging product summary with main keywords.
+         - **Key Features**: Bulleted list of specs (Case, Movement, Dial, etc.).
+         - **Condition Report**: Detailed, honest assessment of wear/flaws.
+         - **Why Buy**: Brief persuasive text on value/uniqueness.
+      3. **Keywords**: Naturally integrate terms buyers search for (e.g., "${editedData.brand} ${editedData.model}", "Swiss Made", "Vintage", etc.).
+      4. **Mobile-Friendly**: Short paragraphs, easy to scan.
+      5. **Tone**: Professional, authoritative, trustworthy (like a high-end dealer).
+      6. IF "For Parts/Repair": clearly bold this warning at the top.
 
-      eBay SEO Description Requirements:
-      - Format in clean, simple HTML (use <h3>, <ul>, <li>, <p>, <strong>, <br>)
-      - Include relevant keywords naturally throughout
-      - Highlight key features and selling points
-      - Be specific about materials, condition, measurements
-      - NO generic filler words like "unknown", "blank", "N/A", "undefined"
-      - If information is missing, don't mention that field at all
-      - Use bullet points for features and specifications
-      - Be honest about condition - state any flaws clearly
-      - Keep it scannable and easy to read
-      - Focus on what buyers search for
-      ${isPartsRepair ? `- CRITICAL: Start with a prominent "FOR PARTS OR REPAIR" section warning\n      - Make it absolutely clear this item does NOT work and requires professional repair` : ''}
-
-      Structure:
-      1. ${isPartsRepair ? 'Prominent warning that this is FOR PARTS OR REPAIR (use <strong> tags)' : 'Opening paragraph with key features'}
-      2. ${isPartsRepair ? 'Key details about what can be salvaged/repaired' : 'Detailed specifications in bullet points'}
-      3. Condition details (be honest about wear/damage)
-      4. Any additional relevant information
-
-      Return ONLY the HTML description, no wrapper text.`;
+      Return ONLY the HTML content (inside <div> or typical body tags), no markdown formatting or \`\`\` blocks.`;
 
       // Generate both
+      console.log("Generating title/desc with prompts...");
       const [title, description] = await Promise.all([
         base44.integrations.Core.InvokeLLM({ prompt: titlePrompt }),
         base44.integrations.Core.InvokeLLM({ prompt: descriptionPrompt })
       ]);
 
+      console.log("Generated Title:", title);
+      console.log("Generated Desc (raw):", description?.substring(0, 100) + "...");
+
       // Strip markdown code blocks if present
-      const cleanDescription = description.trim()
+      let cleanDescription = description || "";
+      cleanDescription = cleanDescription.trim()
         .replace(/^```html\n?/i, '')
         .replace(/^```\n?/i, '')
         .replace(/\n?```$/i, '');
 
-      setEditedData({
-        ...editedData,
-        listing_title: title.trim(),
-        description: cleanDescription
-      });
-      toast.success("Title and description generated!");
+      if (!cleanDescription) {
+        console.warn("Description generation returned empty string");
+        toast.warning("Description generated was empty, please try again");
+      } else {
+        toast.success("Title and description generated!");
+      }
+
+      setEditedData(prev => ({
+        ...prev,
+        listing_title: title ? title.trim() : prev.listing_title,
+        description: cleanDescription || prev.description
+      }));
+      setHasUnsavedChanges(true);
     } catch (error) {
       console.error("Error generating description:", error);
       toast.error("Failed to generate title and description");
