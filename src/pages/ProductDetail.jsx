@@ -631,9 +631,12 @@ export default function ProductDetail() {
       if (toastId) toast.loading("Step 1/3: AI removing hands...", { id: toastId });
       console.log("Starting Step 1: Remove Hands");
       
+      const productDesc = `${editedData.brand || ''} ${editedData.model || ''} ${editedData.reference_number || ''}`.trim() || 'luxury watch';
+
       const handsResult = await base44.functions.invoke('replaceBackground', { 
         image_url: imageUrl,
-        mode: 'remove_hands'
+        mode: 'remove_hands',
+        product_description: productDesc
       });
       
       if (!handsResult.data.success) throw new Error(handsResult.data.error || 'Failed to remove hands');
@@ -657,7 +660,8 @@ export default function ProductDetail() {
       
       const finalResult = await base44.functions.invoke('replaceBackground', { 
         image_url: transparentUrl,
-        mode: 'add_background'
+        mode: 'add_background',
+        product_description: productDesc
       });
       
       if (!finalResult.data.success) throw new Error(finalResult.data.error || 'Failed to add background');

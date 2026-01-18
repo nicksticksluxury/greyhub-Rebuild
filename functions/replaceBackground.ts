@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { image_url, mode = 'remove_hands' } = await req.json();
+    const { image_url, mode = 'remove_hands', product_description = 'product' } = await req.json();
     
     if (!image_url) {
       return Response.json({ error: 'image_url is required' }, { status: 400 });
@@ -18,7 +18,10 @@ Deno.serve(async (req) => {
     // MODE 1: Remove Hands (Pre-processing)
     if (mode === 'remove_hands') {
       console.log('Step 1: Remove hands/fingers with AI');
-      const removeHandsPrompt = `Remove any visible hands, fingers, arms, or body parts from this image. Keep the product exactly as it is - do not modify, clean, or enhance the product in any way. Only remove human body parts.`;
+      const removeHandsPrompt = `Remove any visible hands, fingers, arms, or body parts from this image. 
+      The image contains a ${product_description}.
+      Keep the ${product_description} EXACTLY as it is - do NOT modify, clean, or enhance the ${product_description} in any way. 
+      Only remove human body parts holding it.`;
       
       const handFreeResult = await base44.asServiceRole.integrations.Core.GenerateImage({
         prompt: removeHandsPrompt,
@@ -39,12 +42,17 @@ Deno.serve(async (req) => {
     if (mode === 'add_background') {
       console.log('Step 3: Adding background ONLY to transparent areas of:', image_url);
 
-      const addBackgroundPrompt = `Fill ONLY the transparent/black background areas with this scene:
-- Warm brown wooden table surface
-- Blurred green foliage/trees in background
-- Soft natural lighting
-
-CRITICAL RULE: You can ONLY modify the transparent/black areas. The watch object itself is COMPLETELY OFF-LIMITS - do not touch, adjust, clean, enhance, or modify the watch in ANY way. Only fill in the background around it.`;
+      const addBackgroundPrompt = `Composite this specific ${product_description} onto a new background.
+      
+      Input Image: Contains the ${product_description} on a transparent background.
+      
+      Instructions:
+      1. PRESERVE THE ${product_description} PIXEL-PERFECTLY. Do not regenerate, hallucinate, or alter the product itself.
+      2. Place it on a warm brown wooden table surface.
+      3. Background: Blurred green foliage/trees, soft natural lighting.
+      4. Add realistic shadows cast by the ${product_description} onto the table.
+      
+      CRITICAL: The ${product_description} MUST remain exactly identical to the input image.`;
 
       const finalResult = await base44.asServiceRole.integrations.Core.GenerateImage({
         prompt: addBackgroundPrompt,
