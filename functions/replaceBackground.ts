@@ -22,9 +22,10 @@ Deno.serve(async (req) => {
       // More explicit prompt to STRICTLY preserve the object
       const removeHandsPrompt = `Edit this image to remove any visible human hands or fingers. 
       CRITICAL: The main object (the ${product_description}) MUST BE PRESERVED PIXEL-PERFECT. 
+      If the object is a watch band, strap, or link, do NOT add a watch face or any other parts.
       Do NOT regenerate, clean, or enhance the ${product_description}. 
       Do NOT change the dial, bezel, or strap. 
-      ONLY mask out the hands/fingers and fill that area with neutral background.`;
+      ONLY mask out the hands/fingers and fill that area with matching background.`;
       
       const handFreeResult = await base44.asServiceRole.integrations.Core.GenerateImage({
         prompt: removeHandsPrompt,
