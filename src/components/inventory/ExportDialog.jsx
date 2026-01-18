@@ -30,6 +30,7 @@ export default function ExportDialog({ watches, allWatches, onClose }) {
     
     const exportDate = new Date().toISOString();
     for (const w of watchList) {
+      // Use Product entity
       await base44.entities.Product.update(w.id, {
         exported_to: {
           ...w.exported_to,
@@ -126,7 +127,7 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
           
           description = result;
           
-          // Save the generated description to the watch
+          // Save the generated description to the product
           await base44.entities.Product.update(w.id, { description });
         }
         
