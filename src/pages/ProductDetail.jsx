@@ -513,6 +513,15 @@ export default function ProductDetail() {
       console.log("Generated Title:", title);
       console.log("Generated Desc (raw):", description?.substring(0, 100) + "...");
 
+      // Clean title
+      let cleanTitle = title ? title.trim() : "";
+      // Remove surrounding quotes if present
+      if ((cleanTitle.startsWith('"') && cleanTitle.endsWith('"')) || (cleanTitle.startsWith("'") && cleanTitle.endsWith("'"))) {
+        cleanTitle = cleanTitle.slice(1, -1);
+      }
+      // Remove common prefixes
+      cleanTitle = cleanTitle.replace(/^Title:\s*/i, "").trim();
+
       // Strip markdown code blocks if present
       let cleanDescription = description || "";
       cleanDescription = cleanDescription.trim()
@@ -520,18 +529,21 @@ export default function ProductDetail() {
         .replace(/^```\n?/i, '')
         .replace(/\n?```$/i, '');
 
-      if (!cleanDescription) {
-        console.warn("Description generation returned empty string");
-        toast.warning("Description generated was empty, please try again");
+      if (!cleanDescription && !cleanTitle) {
+        console.warn("Generation returned empty strings");
+        toast.warning("Generation returned empty results, please try again");
       } else {
         toast.success("Title and description generated!");
       }
 
-      setEditedData(prev => ({
-        ...prev,
-        listing_title: title ? title.trim() : prev.listing_title,
-        description: cleanDescription || prev.description
-      }));
+      setEditedData(prev => {
+        const newData = {
+          ...prev,
+          listing_title: cleanTitle || prev.listing_title,
+          description: cleanDescription || prev.description
+        };
+        return newData;
+      });
       setHasUnsavedChanges(true);
     } catch (error) {
       console.error("Error generating description:", error);
