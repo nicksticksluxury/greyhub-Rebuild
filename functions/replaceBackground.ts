@@ -20,12 +20,13 @@ Deno.serve(async (req) => {
     if (mode === 'remove_hands') {
       console.log('Step 1: Remove hands/fingers with AI');
       // More explicit prompt to STRICTLY preserve the object
-      const removeHandsPrompt = `Edit this image to remove any visible human hands or fingers. 
-      CRITICAL: The main object (the ${product_description}) MUST BE PRESERVED PIXEL-PERFECT. 
-      If the object is a watch band, strap, or link, do NOT add a watch face or any other parts.
-      Do NOT regenerate, clean, or enhance the ${product_description}. 
-      Do NOT change the dial, bezel, or strap. 
-      ONLY mask out the hands/fingers and fill that area with matching background.`;
+      const removeHandsPrompt = `You are an expert watch builder and product photographer. You know every part of a watch perfectly.
+      Task: Edit this photo to remove any human hands, fingers, or skin holding the object.
+      CRITICAL INSTRUCTION: The object in the photo (${product_description}) must be preserved PIXEL-PERFECT.
+      If the image shows a band, strap, clasp, or side profile, KEEP IT EXACTLY AS IS.
+      NEVER add a watch face, dial, or case if it is not clearly visible in the original.
+      No matter the angle, even if the dial is not visible, do NOT add one.
+      Do not "complete" the watch. Only remove the hands/fingers and replace them with the background color.`;
       
       const handFreeResult = await base44.asServiceRole.integrations.Core.GenerateImage({
         prompt: removeHandsPrompt,
