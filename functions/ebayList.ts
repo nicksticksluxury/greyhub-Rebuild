@@ -285,8 +285,12 @@ Deno.serve(async (req) => {
                                 aspectName = 'Band Material';
                             } else if (field.field_name === 'water_resistance' || aspectName === 'Water Resistance') {
                                 aspectName = 'Water Resistance';
-                            } else if (field.field_name === 'crystal_type' || aspectName === 'Crystal Type') {
+                            } else if (field.field_name === 'watch_shape' || aspectName === 'Watch Shape') {
+                                aspectName = 'Watch Shape';
+                            } else if (field.field_name === 'display' || aspectName === 'Display') {
                                 aspectName = 'Display';
+                            } else if (field.field_name === 'crystal_type' || aspectName === 'Crystal Type') {
+                                aspectName = 'Crystal';
                             } else if (field.field_name === 'bezel_material' || aspectName === 'Bezel Material') {
                                 aspectName = 'Bezel Material';
                             } else if (field.field_name === 'features' || aspectName === 'Features') {
