@@ -297,6 +297,14 @@ Deno.serve(async (req) => {
                                 aspectName = 'Bezel Material';
                             } else if (field.field_name === 'features' || aspectName === 'Features') {
                                 aspectName = 'Features';
+                            } else if (field.field_name === 'indices' || aspectName === 'Indices') {
+                                aspectName = 'Indices';
+                            } else if (field.field_name === 'bezel_type' || aspectName === 'Bezel Type') {
+                                aspectName = 'Bezel Type';
+                            } else if (field.field_name === 'case_finish' || aspectName === 'Case Finish') {
+                                aspectName = 'Case Finish';
+                            } else if (field.field_name === 'closure' || aspectName === 'Closure') {
+                                aspectName = 'Closure';
                             }
                             
                             if (!String(aspectName).toLowerCase().includes('condition')) {
