@@ -287,6 +287,8 @@ Deno.serve(async (req) => {
                                 aspectName = 'Water Resistance';
                             } else if (field.field_name === 'watch_shape' || aspectName === 'Watch Shape') {
                                 aspectName = 'Watch Shape';
+                            } else if (field.field_name === 'watch_style' || aspectName === 'Watch Style') {
+                                aspectName = 'Style';
                             } else if (field.field_name === 'display' || aspectName === 'Display') {
                                 aspectName = 'Display';
                             } else if (field.field_name === 'crystal_type' || aspectName === 'Crystal Type') {
