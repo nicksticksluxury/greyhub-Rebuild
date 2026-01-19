@@ -44,77 +44,78 @@ Deno.serve(async (req) => {
                     const attributesText = product.category_specific_attributes ? 
                         `\n\nCategory Specific Attributes:\n${JSON.stringify(product.category_specific_attributes, null, 2)}` : "";
 
-                    // Title generation prompt
-                    const titlePrompt = `Create an eBay SEO-optimized product title (MAX 80 characters) for this ${productTypeName}:
+                    // Combined generation prompt
+                    const prompt = `You are an eBay SEO expert specializing in luxury and mid-tier watches.
 
-CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
+Generate:
+1) ONE optimized 80-character eBay title
+2) ONE high-conversion eBay description
 
-Brand: ${product.brand}
-Model: ${product.model || ""}
-Reference: ${product.reference_number || ""}
-Year: ${product.year || ""}
-Condition: ${product.condition || ""}
-Gender: ${product.gender || ""}${attributesText}
+Primary goal:
+- Maximize impressions and click-through rate (CTR)
+- Capture ALL relevant buyer search queries
 
-eBay SEO Title Requirements:
-- Include brand, model, and key features buyers search for
-- Use specific details (materials, colors, sizes) NOT generic words
-- NO filler words like "unknown", "blank", "N/A", "undefined"
-- If a field is empty, skip it entirely - don't mention it
-- Front-load most important keywords (brand, model)
-- Stay under 80 characters
-- Make it searchable and descriptive
+STRICT RULES FOR TITLE:
+- EXACTLY 80 characters or fewer
+- Start with Brand + Model (left-loaded)
+- Include watch type, movement, and at least 1 buyer-intent keyword
+- Use only search-relevant words (no hype or emojis)
+- Do NOT repeat unnecessary words
+- Use spaces, not separators like | or •
 
-Return ONLY the title, nothing else.`;
+STRICT RULES FOR DESCRIPTION:
+- Professional, confident, and concise
+- First 2 lines must reinforce top keywords from title
+- Use short bullet points for specs
+- Include trust-building language (authenticity, condition, shipping)
+- Avoid fluff, storytelling, or marketing clichés
 
-                    // Description generation prompt with HTML
-                    const descriptionPrompt = `Create an eBay SEO-optimized HTML product description for this ${productTypeName}:
+IMPORTANT:
+- Do NOT invent specs
+- If a spec is unknown, omit it
+- Assume buyer is comparing multiple listings side-by-side
 
-CRITICAL - This is a ${productTypeName.toUpperCase()}, NOT a watch!
+INPUT DATA:
+Brand: ${product.brand || "Unknown"}
+Model: ${product.model || "Unknown"}
+Reference: ${product.reference_number || "Unknown"}
+Movement: ${product.category_specific_attributes?.movement_type || "Unknown"}
+Gender: ${product.gender || "Unknown"}
+Condition: ${product.condition || "Unknown"}
+Case Size: ${product.category_specific_attributes?.case_size || "Unknown"}
+Water Resistance: ${product.category_specific_attributes?.water_resistance || "Unknown"}
+Includes: ${product.category_specific_attributes?.box_papers || "Unknown"}
+Special Notes: ${product.ai_instructions || ""}
 
-Brand: ${product.brand}
-Model: ${product.model || ""}
-Reference: ${product.reference_number || ""}
-Year: ${product.year || ""}
-Condition: ${product.condition || ""}
-Gender: ${product.gender || ""}${attributesText}${conditionContext}
+OUTPUT FORMAT:
+Title:
+<single line title>
 
-Product Type Context: ${aiResearchPrompt}
+Description:
+<short paragraph>
+<bullet points>
+<closing trust statement>`;
 
-eBay SEO Description Requirements:
-- Format in clean, simple HTML (use <h3>, <ul>, <li>, <p>, <strong>, <br>)
-- Include relevant keywords naturally throughout
-- Highlight key features and selling points
-- Be specific about materials, condition, measurements
-- NO generic filler words like "unknown", "blank", "N/A", "undefined"
-- If information is missing, don't mention that field at all
-- Use bullet points for features and specifications
-- Be honest about condition - state any flaws clearly
-- Keep it scannable and easy to read
-- Focus on what buyers search for
-
-Structure:
-1. Opening paragraph with key features
-2. Detailed specifications in bullet points
-3. Condition details (be honest about wear/damage)
-4. Any additional relevant information
-
-Return ONLY the HTML description, no wrapper text.`;
-
-                    // Generate both title and description
-                    const [title, description] = await Promise.all([
-                        base44.integrations.Core.InvokeLLM({ prompt: titlePrompt }),
-                        base44.integrations.Core.InvokeLLM({ prompt: descriptionPrompt })
-                    ]);
-
-                    // Remove markdown code fences if present
-                    const cleanDescription = description.trim()
-                        .replace(/^```html\n?/i, '')
-                        .replace(/\n?```$/, '');
+                    const result = await base44.integrations.Core.InvokeLLM({ prompt });
+                    
+                    // Parse output
+                    let title = "";
+                    let description = "";
+                    
+                    const titleMatch = result.match(/Title:\s*\n?([^\n]+)/i);
+                    const descMatch = result.match(/Description:\s*\n?([\s\S]+)/i);
+                    
+                    if (titleMatch) title = titleMatch[1].trim();
+                    if (descMatch) description = descMatch[1].trim();
+                    
+                    // Fallback parsing if structure is slightly off
+                    if (!description && result.includes("Description:")) {
+                        description = result.split("Description:")[1].trim();
+                    }
 
                     await base44.entities.Product.update(product.id, { 
                         listing_title: title.trim(),
-                        description: cleanDescription.trim()
+                        description: description.trim()
                     });
                     results.success++;
                 } catch (error) {
