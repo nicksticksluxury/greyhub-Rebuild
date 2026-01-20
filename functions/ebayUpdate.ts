@@ -435,6 +435,33 @@ Deno.serve(async (req) => {
                     }
                 };
 
+                // Add Best Offer settings if enabled
+                if (watch.ebay_allow_offers !== false) {
+                    const bestOfferTerms = {
+                        bestOfferEnabled: true
+                    };
+
+                    if (watch.ai_analysis?.ai_pricing) {
+                        const aiPricing = watch.ai_analysis.ai_pricing;
+                        
+                        if (watch.ebay_auto_accept_offers && aiPricing.bestOffer?.autoAccept) {
+                            bestOfferTerms.autoAcceptPrice = {
+                                currency: "USD",
+                                value: String(aiPricing.bestOffer.autoAccept)
+                            };
+                        }
+                        
+                        if (watch.ebay_auto_decline_offers && aiPricing.bestOffer?.autoDecline) {
+                            bestOfferTerms.autoDeclinePrice = {
+                                currency: "USD",
+                                value: String(aiPricing.bestOffer.autoDecline)
+                            };
+                        }
+                    }
+                    
+                    offer.listingPolicies.bestOfferTerms = bestOfferTerms;
+                }
+
                 console.log(`[${sku}] Offer Payload:`, JSON.stringify(offer, null, 2));
 
                 const updateRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}`, {

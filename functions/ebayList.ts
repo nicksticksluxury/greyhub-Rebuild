@@ -421,30 +421,30 @@ Deno.serve(async (req) => {
                 };
 
                 // Add Best Offer settings if enabled
-                if (product.ebay_allow_offers !== false && product.ai_analysis?.ai_pricing) {
-                    const aiPricing = product.ai_analysis.ai_pricing;
-                    const bestOfferSettings = {};
-                    
-                    if (product.ebay_auto_accept_offers && aiPricing.bestOffer?.autoAccept) {
-                        bestOfferSettings.autoAcceptPrice = {
-                            currency: "USD",
-                            value: aiPricing.bestOffer.autoAccept
-                        };
+                if (product.ebay_allow_offers !== false) {
+                    const bestOfferTerms = {
+                        bestOfferEnabled: true
+                    };
+
+                    if (product.ai_analysis?.ai_pricing) {
+                        const aiPricing = product.ai_analysis.ai_pricing;
+
+                        if (product.ebay_auto_accept_offers && aiPricing.bestOffer?.autoAccept) {
+                            bestOfferTerms.autoAcceptPrice = {
+                                currency: "USD",
+                                value: String(aiPricing.bestOffer.autoAccept)
+                            };
+                        }
+
+                        if (product.ebay_auto_decline_offers && aiPricing.bestOffer?.autoDecline) {
+                            bestOfferTerms.autoDeclinePrice = {
+                                currency: "USD",
+                                value: String(aiPricing.bestOffer.autoDecline)
+                            };
+                        }
                     }
-                    
-                    if (product.ebay_auto_decline_offers && aiPricing.bestOffer?.autoDecline) {
-                        bestOfferSettings.minPrice = {
-                            currency: "USD",
-                            value: aiPricing.bestOffer.autoDecline
-                        };
-                    }
-                    
-                    if (Object.keys(bestOfferSettings).length > 0) {
-                        offer.bestOfferTerms = {
-                            bestOfferEnabled: true,
-                            ...bestOfferSettings
-                        };
-                    }
+
+                    offer.listingPolicies.bestOfferTerms = bestOfferTerms;
                 }
 
                 // Log payloads for debugging
