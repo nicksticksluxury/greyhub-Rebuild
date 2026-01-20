@@ -16,7 +16,8 @@ Deno.serve(async (req) => {
         }
 
         // --- TOKEN RETRIEVAL & REFRESH LOGIC ---
-        const companies = await base44.asServiceRole.entities.Company.filter({ id: user.company_id });
+        const companyId = user.data?.company_id || user.company_id;
+        const companies = await base44.asServiceRole.entities.Company.filter({ id: companyId });
         const company = companies[0];
 
         if (!company) {
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
             accessToken = refreshData.access_token;
             const newExpiry = new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString();
 
-            await base44.asServiceRole.entities.Company.update(user.company_id, {
+            await base44.asServiceRole.entities.Company.update(companyId, {
                 ebay_access_token: accessToken,
                 ebay_refresh_token: refreshData.refresh_token || refreshToken,
                 ebay_token_expiry: newExpiry
@@ -121,7 +122,7 @@ Deno.serve(async (req) => {
         
         // Log update start
         await base44.asServiceRole.entities.Log.create({
-            company_id: user.company_id,
+            company_id: companyId,
             user_id: user.id,
             timestamp: new Date().toISOString(),
             level: "info",
@@ -274,7 +275,7 @@ Deno.serve(async (req) => {
                 );
 
                 // Fetch company settings for eBay footer
-                const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: user.company_id });
+                const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: companyId });
                 const ebayFooter = settings.find(s => s.key === 'ebay_listing_footer')?.value || '';
 
                 // Combine description with footer
@@ -503,7 +504,7 @@ Deno.serve(async (req) => {
                 
                 // Log successful update
                 await base44.asServiceRole.entities.Log.create({
-                    company_id: user.company_id,
+                    company_id: companyId,
                     user_id: user.id,
                     timestamp: new Date().toISOString(),
                     level: "success",
@@ -528,7 +529,7 @@ Deno.serve(async (req) => {
                 
                 // Log update error
                 await base44.asServiceRole.entities.Log.create({
-                    company_id: user.company_id,
+                    company_id: companyId,
                     user_id: user.id,
                     timestamp: new Date().toISOString(),
                     level: "error",
