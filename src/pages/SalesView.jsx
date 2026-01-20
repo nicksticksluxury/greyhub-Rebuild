@@ -12,8 +12,9 @@ export default function SalesView() {
     const fetchData = async () => {
       const params = new URLSearchParams(window.location.search);
       const id = params.get("id");
-      let fetchedData = null;
+      let dbData = null;
 
+      // 1. Fetch from DB if ID exists
       if (id) {
         try {
           const { data: watch } = await base44.functions.invoke("getPublicWatchDetails", { id });
@@ -23,7 +24,23 @@ export default function SalesView() {
           const images = watch.photos?.map(p => p.full || p.medium || p.original || p).filter(Boolean) || [];
           const whatnotPrice = watch.platform_prices?.whatnot || watch.ai_analysis?.pricing_recommendations?.whatnot;
           
-          fetchedData = {
+          // Improved Comp Link Extraction
+          const extractComps = () => {
+            // Try top-level field
+            let links = watch.comparable_listings_links;
+            
+            // Fallback to AI analysis
+            if (!links || links.length === 0) {
+              links = watch.ai_analysis?.comparable_listings;
+            }
+            
+            if (!links) return [];
+            if (Array.isArray(links)) return links;
+            if (typeof links === 'object' && !Array.isArray(links)) return Object.values(links);
+            return [];
+          };
+
+          dbData = {
             brand: watch.brand || "",
             model: watch.model || "",
             ref: watch.reference_number || "",
@@ -35,50 +52,69 @@ export default function SalesView() {
             images: images,
             desc: watch.description || "",
             highlights: watch.ai_analysis?.notable_features || [],
-            comparableListings: (() => {
-              const links = watch.comparable_listings_links;
-              if (!links) return [];
-              if (Array.isArray(links)) return links;
-              if (typeof links === 'object' && !Array.isArray(links)) return Object.values(links);
-              return [];
-            })(),
+            comparableListings: extractComps(),
             marketResearch: watch.market_research || watch.ai_analysis?.market_insights || "",
           };
         } catch (error) {
           console.error("Failed to fetch watch details", error);
-          // Don't set error yet, will try fallback below
         }
       }
 
-      if (fetchedData) {
-        setData(fetchedData);
-      } else {
-        // Fallback to URL params if ID fetch failed or ID missing
-        let images = params.get("images") ? params.get("images").split('|') : [];
-        if (images.length === 0 && params.get("image")) {
-            images = [params.get("image")];
-        }
+      // 2. Extract URL Params
+      let urlImages = params.get("images") ? params.get("images").split('|') : [];
+      if (urlImages.length === 0 && params.get("image")) {
+          urlImages = [params.get("image")];
+      }
 
-        if (images.length > 0 || params.get("brand")) {
-             setData({
-              brand: params.get("brand") || "",
-              model: params.get("model") || "",
-              ref: params.get("ref") || "",
-              year: params.get("year") || "",
-              condition: params.get("condition") || "",
-              msrp: params.get("msrp") || "",
-              price: params.get("price") || "",
-              whatnotPrice: params.get("whatnotPrice") || "N/A",
-              images: images,
-              desc: params.get("desc") || "",
-              highlights: params.get("highlights") ? params.get("highlights").split(",") : [],
-              comparableListings: params.get("comparableListings") ? JSON.parse(decodeURIComponent(params.get("comparableListings"))) : [],
-            });
-        } else if (id) {
-             // Only show error if we had an ID but fetch failed AND no URL params fallback
-             const errorMsg = "Product not found. The link may be invalid or the item was removed.";
-             setData({ error: errorMsg });
+      const urlData = {
+        brand: params.get("brand"),
+        model: params.get("model"),
+        ref: params.get("ref"),
+        year: params.get("year"),
+        condition: params.get("condition"),
+        msrp: params.get("msrp"),
+        price: params.get("price"),
+        whatnotPrice: params.get("whatnotPrice"),
+        images: urlImages.length > 0 ? urlImages : null,
+        desc: params.get("desc"),
+        highlights: params.get("highlights") ? params.get("highlights").split(",") : null,
+        comparableListings: params.get("comparableListings") ? JSON.parse(decodeURIComponent(params.get("comparableListings"))) : null,
+      };
+
+      // 3. Merge: URL params override DB data (allows for previewing changes)
+      // Use DB data as base, then override with any non-null/non-empty URL param
+      const finalData = { ...(dbData || {}) };
+      
+      // Helper to merge fields only if URL param exists
+      const mergeIfPresent = (field) => {
+        if (urlData[field] !== null && urlData[field] !== undefined && urlData[field] !== "") {
+          finalData[field] = urlData[field];
         }
+      };
+
+      mergeIfPresent('brand');
+      mergeIfPresent('model');
+      mergeIfPresent('ref');
+      mergeIfPresent('year');
+      mergeIfPresent('condition');
+      mergeIfPresent('msrp');
+      mergeIfPresent('price');
+      mergeIfPresent('whatnotPrice');
+      mergeIfPresent('desc');
+      
+      // Arrays/Complex types need explicit checks for emptiness if we want to be strict, 
+      // but usually if they are present in URL we want to use them.
+      if (urlData.images && urlData.images.length > 0) finalData.images = urlData.images;
+      if (urlData.highlights && urlData.highlights.length > 0) finalData.highlights = urlData.highlights;
+      if (urlData.comparableListings && urlData.comparableListings.length > 0) finalData.comparableListings = urlData.comparableListings;
+
+      // Check if we have valid data to display
+      if (finalData.brand || (finalData.images && finalData.images.length > 0)) {
+        setData(finalData);
+      } else if (id && !dbData) {
+        // Only show error if we had an ID, DB fetch failed, AND no URL params to fall back on
+        const errorMsg = "Product not found. The link may be invalid or the item was removed.";
+        setData({ error: errorMsg });
       }
       setLoading(false);
     };
