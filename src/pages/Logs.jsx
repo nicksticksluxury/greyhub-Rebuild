@@ -62,7 +62,7 @@ export default function Logs() {
   // Filter logs
   const filteredLogs = logs.filter(log => {
     const matchesCategory = categoryFilter === "all" || log.category === categoryFilter;
-    const matchesLevel = levelFilter === "all" || log.level === levelLevel;
+    const matchesLevel = levelFilter === "all" || log.level === levelFilter;
     const matchesSearch = !searchTerm || 
       log.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.category?.toLowerCase().includes(searchTerm.toLowerCase());
