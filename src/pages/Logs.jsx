@@ -30,17 +30,12 @@ export default function Logs() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['systemLogs'],
     queryFn: async () => {
-      if (user.company_id) {
-        // Tenant admin - show only their company's logs
-        const allLogs = await base44.entities.Log.list("-timestamp", 500);
-        return allLogs;
-      } else {
-        // System admin - show all logs
-        const allLogs = await base44.asServiceRole.entities.Log.list("-timestamp", 500);
-        return allLogs;
-      }
+      // Whether tenant admin or system admin, use standard list()
+      // RLS will handle the filtering based on the user's role and company_id
+      const allLogs = await base44.entities.Log.list("-timestamp", 500);
+      return allLogs;
     },
-    enabled: !!user && user.role === 'admin',
+    enabled: !!user && (user.role === 'admin' || !!(user.data?.company_id || user.company_id)),
   });
 
   if (!user || user.role !== 'admin') {
