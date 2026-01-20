@@ -552,6 +552,47 @@ export default function ProductDetail() {
     setGeneratingDescription(false);
   };
 
+  const handleDelistFromEbay = async () => {
+    if (!confirm("Are you sure you want to end the eBay listing for this product?")) {
+      return;
+    }
+
+    const toastId = toast.loading("Ending eBay listing...");
+    try {
+      const result = await base44.functions.invoke('ebayEndListing', { productId });
+      
+      if (result.data.success) {
+        toast.success("Successfully ended eBay listing", { id: toastId });
+        
+        // Update local state
+        const newExportedTo = { ...(editedData.exported_to || {}) };
+        delete newExportedTo.ebay;
+        
+        const newPlatformIds = { ...(editedData.platform_ids || {}) };
+        delete newPlatformIds.ebay;
+
+        const updatedData = {
+          ...editedData,
+          exported_to: newExportedTo,
+          platform_ids: newPlatformIds
+        };
+
+        setEditedData(updatedData);
+        setOriginalData(updatedData);
+        setNeedsEbayUpdate(false);
+        setHasUnsavedChanges(false);
+        
+        // Refresh data
+        queryClient.invalidateQueries({ queryKey: ['product', productId] });
+      } else {
+        toast.error(result.data.error || "Failed to end listing", { id: toastId });
+      }
+    } catch (error) {
+      console.error('Failed to end eBay listing:', error);
+      toast.error("Failed to connect to eBay: " + error.message, { id: toastId });
+    }
+  };
+
   const handleListOnEbay = async () => {
     if (hasUnsavedChanges) {
       toast.error("Please save changes before listing");
@@ -1084,23 +1125,33 @@ export default function ProductDetail() {
                   )}
                 </Button>
                 {editedData.exported_to?.ebay && (
-                  <Button
-                    onClick={async () => {
-                      try {
-                        const result = await base44.functions.invoke('debugEbayListing', { productId });
-                        console.log('eBay Debug Result:', result.data);
-                        toast.success('Debug info logged to console');
-                      } catch (error) {
-                        console.error('Debug error:', error);
-                        toast.error('Debug failed: ' + error.message);
-                      }
-                    }}
-                    variant="outline"
-                    className="border-slate-300 text-slate-700 hover:bg-slate-50"
-                    title="Debug eBay listing data"
-                  >
-                    Debug eBay
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handleDelistFromEbay}
+                      variant="outline"
+                      className="border-red-300 text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delist
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const result = await base44.functions.invoke('debugEbayListing', { productId });
+                          console.log('eBay Debug Result:', result.data);
+                          toast.success('Debug info logged to console');
+                        } catch (error) {
+                          console.error('Debug error:', error);
+                          toast.error('Debug failed: ' + error.message);
+                        }
+                      }}
+                      variant="outline"
+                      className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                      title="Debug eBay listing data"
+                    >
+                      Debug eBay
+                    </Button>
+                  </>
                 )}
                 <Button
                     variant="outline"
