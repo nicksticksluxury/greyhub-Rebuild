@@ -30,20 +30,26 @@ export default function Logs() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['systemLogs'],
     queryFn: async () => {
-      // Whether tenant admin or system admin, use standard list()
-      // RLS will handle the filtering based on the user's role and company_id
-      const allLogs = await base44.entities.Log.list("-timestamp", 500);
-      return allLogs;
+      const companyId = user.data?.company_id || user.company_id;
+      // If system admin (role admin and no company_id), use backend function to see all logs
+      if (user.role === 'admin' && !companyId) {
+        const result = await base44.functions.invoke('getAllLogs');
+        return result.data.logs || [];
+      }
+      // Otherwise (Tenant Admin), use entity list with RLS
+      return await base44.entities.Log.list("-timestamp", 500);
     },
     enabled: !!user && (user.role === 'admin' || !!(user.data?.company_id || user.company_id)),
   });
 
-  if (!user || user.role !== 'admin') {
+  const companyId = user?.data?.company_id || user?.company_id;
+
+  if (!user || (user.role !== 'admin' && !companyId)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <Card className="p-8 text-center max-w-md">
           <h2 className="text-xl font-bold text-slate-900 mb-2">Access Denied</h2>
-          <p className="text-slate-600">Only system administrators can access this page.</p>
+          <p className="text-slate-600">You do not have permission to view logs.</p>
         </Card>
       </div>
     );
