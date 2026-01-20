@@ -324,7 +324,7 @@ Deno.serve(async (req) => {
                 );
 
                 // Fetch company settings for eBay footer
-                const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: user.company_id });
+                const settings = await base44.asServiceRole.entities.Setting.filter({ company_id: companyId });
                 const ebayFooter = settings.find(s => s.key === 'ebay_listing_footer')?.value || '';
                 
                 // Combine description with footer
@@ -530,7 +530,7 @@ Deno.serve(async (req) => {
                 
                 // Log successful listing
                 await base44.asServiceRole.entities.Log.create({
-                    company_id: user.company_id,
+                    company_id: companyId,
                     user_id: user.id,
                     timestamp: new Date().toISOString(),
                     level: "success",
@@ -569,7 +569,7 @@ Deno.serve(async (req) => {
 
                 // Log listing error with full details
                 await base44.asServiceRole.entities.Log.create({
-                    company_id: user.company_id,
+                    company_id: companyId,
                     user_id: user.id,
                     timestamp: new Date().toISOString(),
                     level: "error",
