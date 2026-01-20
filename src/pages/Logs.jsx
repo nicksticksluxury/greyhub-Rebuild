@@ -65,7 +65,7 @@ export default function Logs() {
   const levels = [...new Set(logs.map(log => log.level).filter(Boolean))];
 
   // Filter logs
-  const filteredLogs = logs.filter(log => {
+  const filteredLogs = logs.filter((log, idx) => {
     const matchesCategory = categoryFilter === "all" || log.category === categoryFilter;
     const matchesLevel = levelFilter === "all" || log.level === levelFilter;
     if (idx === 0) console.log('Log sample:', log); // Debug first log item
