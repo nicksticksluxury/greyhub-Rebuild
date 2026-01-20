@@ -30,14 +30,19 @@ export default function Logs() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['systemLogs'],
     queryFn: async () => {
+      console.log('Fetching logs. User:', user);
       const companyId = user.data?.company_id || user.company_id;
       // If system admin (role admin and no company_id), use backend function to see all logs
       if (user.role === 'admin' && !companyId) {
+        console.log('Fetching all logs as system admin');
         const result = await base44.functions.invoke('getAllLogs');
         return result.data.logs || [];
       }
       // Otherwise (Tenant Admin), use entity list with RLS
-      return await base44.entities.Log.list("-timestamp", 500);
+      console.log('Fetching logs for company:', companyId);
+      const result = await base44.entities.Log.list("-timestamp", 500);
+      console.log('Logs result:', result);
+      return result;
     },
     enabled: !!user && (user.role === 'admin' || !!(user.data?.company_id || user.company_id)),
   });
@@ -63,6 +68,7 @@ export default function Logs() {
   const filteredLogs = logs.filter(log => {
     const matchesCategory = categoryFilter === "all" || log.category === categoryFilter;
     const matchesLevel = levelFilter === "all" || log.level === levelFilter;
+    if (idx === 0) console.log('Log sample:', log); // Debug first log item
     const matchesSearch = !searchTerm || 
       log.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.category?.toLowerCase().includes(searchTerm.toLowerCase());
