@@ -22,16 +22,8 @@ Deno.serve(async (req) => {
     }
 
     const product = products[0];
-
-    // Check if product has an eBay listing
-    if (!product.platform_ids?.ebay) {
-      return Response.json({ 
-        success: true, 
-        message: 'No active eBay listing to end' 
-      });
-    }
-
-    const ebayItemId = product.platform_ids.ebay;
+    // SKU is the product ID
+    const sku = product.id;
 
     // Get company settings for eBay credentials
     const companies = await base44.asServiceRole.entities.Company.filter({ 
@@ -50,9 +42,11 @@ Deno.serve(async (req) => {
 
     // Check if token needs refresh
     let accessToken = company.ebay_access_token;
-    const tokenExpiry = new Date(company.ebay_token_expiry);
+    const refreshToken = company.ebay_refresh_token;
+    const tokenExpiry = company.ebay_token_expiry ? new Date(company.ebay_token_expiry) : null;
     
-    if (tokenExpiry <= new Date()) {
+    if (!tokenExpiry || tokenExpiry <= new Date(Date.now() + 5 * 60 * 1000)) {
+      console.log("Token expired or expiring soon, refreshing...");
       // Token expired, refresh it
       const refreshResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
         method: 'POST',
@@ -62,12 +56,14 @@ Deno.serve(async (req) => {
         },
         body: new URLSearchParams({
           grant_type: 'refresh_token',
-          refresh_token: company.ebay_refresh_token,
+          refresh_token: refreshToken,
           scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory'
         })
       });
 
       if (!refreshResponse.ok) {
+        const errText = await refreshResponse.text();
+        console.error("Token refresh failed:", errText);
         return Response.json({ error: 'Failed to refresh eBay token' }, { status: 500 });
       }
 
@@ -77,51 +73,55 @@ Deno.serve(async (req) => {
       // Update company with new token
       await base44.asServiceRole.entities.Company.update(company.id, {
         ebay_access_token: tokenData.access_token,
-        ebay_refresh_token: tokenData.refresh_token,
+        ebay_refresh_token: tokenData.refresh_token || refreshToken,
         ebay_token_expiry: new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
       });
     }
 
-    // End the listing on eBay using Trading API
-    const endItemXml = `<?xml version="1.0" encoding="utf-8"?>
-<EndItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-  <ItemID>${ebayItemId}</ItemID>
-  <EndingReason>NotAvailable</EndingReason>
-</EndItemRequest>`;
+    const apiHeaders = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Content-Language': 'en-US',
+        'Accept-Language': 'en-US'
+    };
 
-    const endResponse = await fetch('https://api.ebay.com/ws/api.dll', {
-      method: 'POST',
-      headers: {
-        'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
-        'X-EBAY-API-CALL-NAME': 'EndItem',
-        'X-EBAY-API-SITEID': '0',
-        'X-EBAY-API-IAF-TOKEN': accessToken,
-        'Content-Type': 'text/xml'
-      },
-      body: endItemXml
-    });
-
-    if (!endResponse.ok) {
-      const error = await endResponse.text();
-      console.error('eBay end listing error:', error);
-      return Response.json({ 
-        error: 'Failed to end eBay listing', 
-        details: error 
-      }, { status: 500 });
-    }
-
-    const responseText = await endResponse.text();
+    // 1. Find the Offer ID for this SKU
+    console.log(`Fetching offer for SKU ${sku}...`);
+    const getOffersRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer?sku=${sku}`, { headers: apiHeaders });
     
-    // Check for eBay API errors in XML response
-    if (responseText.includes('<Ack>Failure</Ack>') || responseText.includes('<Ack>Error</Ack>')) {
-      console.error('eBay API error:', responseText);
-      return Response.json({ 
-        error: 'Failed to end eBay listing', 
-        details: responseText 
-      }, { status: 500 });
+    if (!getOffersRes.ok) {
+        const err = await getOffersRes.text();
+        console.error("Get offer failed:", err);
+        return Response.json({ error: 'Failed to fetch eBay offer', details: err }, { status: 500 });
     }
 
-    // Update product to remove eBay export data
+    const getOffersData = await getOffersRes.json();
+    const offerId = getOffersData.offers?.[0]?.offerId;
+
+    if (!offerId) {
+        console.warn(`No offer found for SKU ${sku}. It might already be ended or deleted.`);
+        // Even if not found on eBay, we should clean up our local DB record if we think it's listed
+        // But maybe return a warning? Or just proceed to clean up DB.
+    } else {
+        // 2. Withdraw the Offer
+        console.log(`Withdrawing offer ${offerId}...`);
+        const withdrawRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}/withdraw`, {
+            method: 'POST',
+            headers: apiHeaders
+        });
+
+        if (!withdrawRes.ok) {
+            const err = await withdrawRes.text();
+            console.error("Withdraw offer failed:", err);
+            return Response.json({ error: 'Failed to end eBay listing (Withdraw Offer)', details: err }, { status: 500 });
+        }
+        
+        const withdrawData = await withdrawRes.json();
+        console.log("Withdraw success:", withdrawData);
+        // Note: withdrawRes.json() usually returns { listingId: "..." }
+    }
+
+    // 3. Update product to remove eBay export data
     const newExportedTo = { ...(product.exported_to || {}) };
     const newPlatformIds = { ...(product.platform_ids || {}) };
     delete newExportedTo.ebay;
@@ -132,14 +132,14 @@ Deno.serve(async (req) => {
       platform_ids: newPlatformIds
     });
 
-    // Log success
+    // 4. Log success
     await base44.asServiceRole.entities.Log.create({
       company_id: user.data?.company_id || user.company_id,
       timestamp: new Date().toISOString(),
       level: 'success',
       category: 'ebay',
       message: `Ended eBay listing for product: ${product.brand} ${product.model}`,
-      details: { product_id: productId, ebay_item_id: ebayItemId },
+      details: { product_id: productId, offer_id: offerId, sku: sku },
       user_id: user.id
     });
 
