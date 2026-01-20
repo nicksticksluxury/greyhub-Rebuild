@@ -15,7 +15,7 @@ export default function Logs() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [hideAccountDeletion, setHideAccountDeletion] = useState(false);
+  const [hideAccountDeletion, setHideAccountDeletion] = useState(true);
   const [fetchingEbayConditions, setFetchingEbayConditions] = useState(false);
   const [ebayConditionsResult, setEbayConditionsResult] = useState(null);
 
