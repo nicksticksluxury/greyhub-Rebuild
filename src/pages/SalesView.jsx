@@ -12,6 +12,7 @@ export default function SalesView() {
     const fetchData = async () => {
       const params = new URLSearchParams(window.location.search);
       const id = params.get("id");
+      let fetchedData = null;
 
       if (id) {
         try {
@@ -22,7 +23,7 @@ export default function SalesView() {
           const images = watch.photos?.map(p => p.full || p.medium || p.original || p).filter(Boolean) || [];
           const whatnotPrice = watch.platform_prices?.whatnot || watch.ai_analysis?.pricing_recommendations?.whatnot;
           
-          setData({
+          fetchedData = {
             brand: watch.brand || "",
             model: watch.model || "",
             ref: watch.reference_number || "",
@@ -42,34 +43,42 @@ export default function SalesView() {
               return [];
             })(),
             marketResearch: watch.market_research || watch.ai_analysis?.market_insights || "",
-          });
+          };
         } catch (error) {
           console.error("Failed to fetch watch details", error);
-          // Try to extract error message from response if available
-          const errorMsg = error.response?.data?.error || error.message || "Unknown error";
-          setData({ error: errorMsg });
+          // Don't set error yet, will try fallback below
         }
+      }
+
+      if (fetchedData) {
+        setData(fetchedData);
       } else {
-        // Legacy URL param support
+        // Fallback to URL params if ID fetch failed or ID missing
         let images = params.get("images") ? params.get("images").split('|') : [];
         if (images.length === 0 && params.get("image")) {
             images = [params.get("image")];
         }
 
-        setData({
-          brand: params.get("brand") || "",
-          model: params.get("model") || "",
-          ref: params.get("ref") || "",
-          year: params.get("year") || "",
-          condition: params.get("condition") || "",
-          msrp: params.get("msrp") || "",
-          price: params.get("price") || "",
-          whatnotPrice: params.get("whatnotPrice") || "N/A",
-          images: images,
-          desc: params.get("desc") || "",
-          highlights: params.get("highlights") ? params.get("highlights").split(",") : [],
-          comparableListings: params.get("comparableListings") ? JSON.parse(decodeURIComponent(params.get("comparableListings"))) : [],
-        });
+        if (images.length > 0 || params.get("brand")) {
+             setData({
+              brand: params.get("brand") || "",
+              model: params.get("model") || "",
+              ref: params.get("ref") || "",
+              year: params.get("year") || "",
+              condition: params.get("condition") || "",
+              msrp: params.get("msrp") || "",
+              price: params.get("price") || "",
+              whatnotPrice: params.get("whatnotPrice") || "N/A",
+              images: images,
+              desc: params.get("desc") || "",
+              highlights: params.get("highlights") ? params.get("highlights").split(",") : [],
+              comparableListings: params.get("comparableListings") ? JSON.parse(decodeURIComponent(params.get("comparableListings"))) : [],
+            });
+        } else if (id) {
+             // Only show error if we had an ID but fetch failed AND no URL params fallback
+             const errorMsg = "Product not found. The link may be invalid or the item was removed.";
+             setData({ error: errorMsg });
+        }
       }
       setLoading(false);
     };
