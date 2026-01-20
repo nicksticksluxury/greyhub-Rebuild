@@ -5,18 +5,22 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         // No auth check required for public share view
         
-        const { id } = await req.json();
+        const body = await req.json().catch(() => ({}));
+        const { id } = body;
 
         if (!id) {
-             return Response.json({ error: "ID required" }, { status: 400 });
+             return Response.json({ error: "Product ID is missing from request" }, { status: 400 });
         }
 
         // Try Product first (new system)
         let item = null;
+        let productError = null;
+        let watchError = null;
+
         try {
             item = await base44.asServiceRole.entities.Product.get(id);
         } catch (e) {
-            // Ignore error, try Watch
+            productError = e.message;
         }
         
         // Fallback to Watch (old system)
@@ -24,12 +28,19 @@ Deno.serve(async (req) => {
             try {
                 item = await base44.asServiceRole.entities.Watch.get(id);
             } catch (e) {
-                // Ignore
+                watchError = e.message;
             }
         }
 
         if (!item) {
-            return Response.json({ error: "Product not found" }, { status: 404 });
+            // Detailed error for debugging
+            const debugInfo = `Product fetch failed: ${productError}. Watch fetch failed: ${watchError}`;
+            console.error(debugInfo);
+            
+            return Response.json({ 
+                error: "Product not found. The link may be invalid or the item was removed.",
+                debug: debugInfo
+            }, { status: 404 });
         }
 
         // Sanitize - remove sensitive cost/source info
@@ -57,6 +68,6 @@ Deno.serve(async (req) => {
 
         return Response.json(safeItem);
     } catch (error) {
-        return Response.json({ error: error.message }, { status: 500 });
+        return Response.json({ error: `System Error: ${error.message}` }, { status: 500 });
     }
 });

@@ -45,6 +45,9 @@ export default function SalesView() {
           });
         } catch (error) {
           console.error("Failed to fetch watch details", error);
+          // Try to extract error message from response if available
+          const errorMsg = error.response?.data?.error || error.message || "Unknown error";
+          setData({ error: errorMsg });
         }
       } else {
         // Legacy URL param support
@@ -81,6 +84,16 @@ export default function SalesView() {
   }, [data]);
 
   if (loading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>;
+
+  if (data?.error) return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-4 text-center">
+      <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-6 max-w-md">
+        <h3 className="text-xl font-bold text-red-400 mb-2">Unable to Load Product</h3>
+        <p className="text-slate-300 mb-4">{data.error}</p>
+        <p className="text-sm text-slate-500">ID: {new URLSearchParams(window.location.search).get("id") || "None"}</p>
+      </div>
+    </div>
+  );
 
   if (!data) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Product not found. Please check the link.</div>;
 
