@@ -377,6 +377,16 @@ export default function ProductTable({ products, isLoading, onQuickView, sources
                             params.set("desc", product.description.substring(0, 200));
                           }
 
+                          // Comparable Listings
+                          if (product.comparable_listings_links) {
+                            let comps = product.comparable_listings_links;
+                            if (!Array.isArray(comps)) comps = Object.values(comps);
+                            const cleanComps = comps.map(c => typeof c === 'string' ? c : c.url).filter(Boolean);
+                            if (cleanComps.length > 0) {
+                              params.set("comparableListings", encodeURIComponent(JSON.stringify(cleanComps)));
+                            }
+                          }
+
                           // Use ID for cleaner URLs and reliable data fetching
                           params.set("id", product.id);
                           window.open(createPageUrl(`SalesView?${params.toString()}`), 'ObsWindow', 'width=450,height=850,menubar=no,toolbar=no,location=no,status=no');
