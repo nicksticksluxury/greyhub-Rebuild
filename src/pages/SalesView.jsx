@@ -15,7 +15,7 @@ export default function SalesView() {
 
       if (id) {
         try {
-          const { data: watch } = await base44.functions.invoke("getWatchDetails", { id });
+          const { data: watch } = await base44.functions.invoke("getPublicWatchDetails", { id });
           
           const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
           
@@ -82,7 +82,7 @@ export default function SalesView() {
 
   if (loading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>;
 
-  if (!data) return null;
+  if (!data) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Product not found. Please check the link.</div>;
 
   const isRolex = data.brand?.toLowerCase() === 'rolex';
   const bgClass = isRolex ? 'bg-emerald-950' : 'bg-slate-950';
