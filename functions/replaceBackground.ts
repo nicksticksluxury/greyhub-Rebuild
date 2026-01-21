@@ -18,27 +18,43 @@ Deno.serve(async (req) => {
 
     // MODE 1: Remove Hands (Pre-processing)
     if (mode === 'remove_hands') {
-      console.log('Step 1: Remove hands/fingers with AI');
-      // More explicit prompt to STRICTLY preserve the object
-      const removeHandsPrompt = `You are an expert watch builder and product photographer. You know every part of a watch perfectly.
-      Task: Edit this photo to remove any human hands, fingers, or skin holding the object.
-      CRITICAL INSTRUCTION: The object in the photo (${product_description}) must be preserved PIXEL-PERFECT.
-      If the image shows a band, strap, clasp, or side profile, KEEP IT EXACTLY AS IS.
-      NEVER add a watch face, dial, or case if it is not clearly visible in the original.
-      No matter the angle, even if the dial is not visible, do NOT add one.
-      Do not "complete" the watch. Only remove the hands/fingers and replace them with the background color.`;
+      console.log('Step 1: Remove background/hands using remove.bg');
       
-      const handFreeResult = await base44.asServiceRole.integrations.Core.GenerateImage({
-        prompt: removeHandsPrompt,
-        existing_image_urls: [image_url]
+      const apiKey = Deno.env.get('REMOVEBG_API_KEY');
+      if (!apiKey) {
+        throw new Error('REMOVEBG_API_KEY is not set in secrets');
+      }
+
+      // Use remove.bg API to preserve original pixels and just remove background/hands
+      const formData = new FormData();
+      formData.append('image_url', image_url);
+      formData.append('size', 'auto');
+      
+      const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': apiKey
+        },
+        body: formData
       });
 
-      console.log('Step 1 Complete: Hands removed. URL:', handFreeResult.url);
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`remove.bg API failed: ${response.status} - ${errText}`);
+      }
+
+      const imageBuffer = await response.arrayBuffer();
+      
+      // Upload the transparent PNG result
+      const file = new File([imageBuffer], 'removed_bg.png', { type: 'image/png' });
+      const uploadResult = await base44.integrations.Core.UploadFile({ file });
+
+      console.log('Step 1 Complete: Background removed. URL:', uploadResult.file_url);
       
       return Response.json({
         success: true,
         step: 'hands_removed',
-        url: handFreeResult.url
+        url: uploadResult.file_url
       });
     }
 
