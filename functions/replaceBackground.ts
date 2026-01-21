@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import Jimp from 'npm:jimp';
+import { removeBackground } from 'npm:@imgly/background-removal-node@1.4.5';
 
 Deno.serve(async (req) => {
   try {
@@ -18,35 +19,17 @@ Deno.serve(async (req) => {
 
     // MODE 1: Remove Hands (Pre-processing)
     if (mode === 'remove_hands') {
-      console.log('Step 1: Remove background/hands using remove.bg');
+      console.log('Step 1: Removing background using local @imgly library');
       
-      const apiKey = Deno.env.get('REMOVEBG_API_KEY');
-      if (!apiKey) {
-        throw new Error('REMOVEBG_API_KEY is not set in secrets');
-      }
-
-      // Use remove.bg API to preserve original pixels and just remove background/hands
-      const formData = new FormData();
-      formData.append('image_url', image_url);
-      formData.append('size', 'auto');
+      // Fetch the image
+      const response = await fetch(image_url);
+      if (!response.ok) throw new Error('Failed to fetch source image');
+      const inputBlob = await response.blob();
       
-      const response = await fetch('https://api.remove.bg/v1.0/removebg', {
-        method: 'POST',
-        headers: {
-          'X-Api-Key': apiKey
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`remove.bg API failed: ${response.status} - ${errText}`);
-      }
-
-      const imageBuffer = await response.arrayBuffer();
+      // Process locally - free and preserves pixels
+      const transparentBlob = await removeBackground(inputBlob);
       
-      // Upload the transparent PNG result
-      const file = new File([imageBuffer], 'removed_bg.png', { type: 'image/png' });
+      const file = new File([transparentBlob], 'transparent.png', { type: 'image/png' });
       const uploadResult = await base44.integrations.Core.UploadFile({ file });
 
       console.log('Step 1 Complete: Background removed. URL:', uploadResult.file_url);
