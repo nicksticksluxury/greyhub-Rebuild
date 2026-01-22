@@ -43,8 +43,8 @@ Deno.serve(async (req) => {
             for (const id of idsToDelete) {
                 if (Date.now() - startTime > MAX_DURATION) break;
                 await base44.asServiceRole.entities.Log.delete(id);
-                // Tiny delay to be nice
-                await new Promise(resolve => setTimeout(resolve, 50));
+                // Gentler delay
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
             
             totalDeleted += idsToDelete.length;
