@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { LayoutDashboard, TrendingUp, DollarSign, Package, Bell, ShoppingBag, AlertCircle, Check, RefreshCw, Plus } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "../components/utils/toast";
+import DashboardNotifications from "../components/dashboard/DashboardNotifications";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -434,29 +435,10 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Other Alerts */}
-        {alerts.filter(a => !a.title?.includes("Best Offer") && !a.title?.includes("Sold on eBay")).length > 0 && (
-          <Card className="p-6 mt-6">
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className="w-5 h-5 text-slate-600" />
-              <h2 className="text-lg font-bold text-slate-900">Other Notifications</h2>
-            </div>
-            <div className="space-y-2">
-              {alerts.filter(a => !a.title?.includes("Best Offer") && !a.title?.includes("Sold on eBay")).map(alert => (
-                <div key={alert.id} className="flex items-start justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-900">{typeof alert.title === 'object' ? JSON.stringify(alert.title) : alert.title}</p>
-                    <p className="text-sm text-slate-600">{typeof alert.message === 'object' ? JSON.stringify(alert.message) : alert.message}</p>
-                    <p className="text-xs text-slate-500 mt-1">{new Date(alert.created_date).toLocaleDateString()}</p>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={() => handleDismissAlert(alert.id)}>
-                    <Check className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
+        {/* Other Notifications */}
+        <div className="mt-6">
+          <DashboardNotifications />
+        </div>
       </div>
     </div>
   );
