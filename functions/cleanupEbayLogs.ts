@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
                     } catch (e) {
                         // Ignore
                     }
-                    // Tiny delay
-                    await new Promise(resolve => setTimeout(resolve, 20));
+                    // Gentler delay
+                    await new Promise(resolve => setTimeout(resolve, 150));
                 }
                 totalDeleted += idsToDelete.length;
                 
