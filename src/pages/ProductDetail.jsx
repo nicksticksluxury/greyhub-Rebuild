@@ -471,7 +471,7 @@ export default function ProductDetail() {
       - Professional, confident, and concise
       - First 2 lines must reinforce top keywords from title
       - Use short bullet points for specs
-      - Include trust-building language (authenticity, condition, shipping)
+      - Include trust-building language (authenticity, condition). DO NOT mention Free Shipping unless explicitly stated in input.
       - Avoid fluff, storytelling, or marketing clichés
       - Use clean, semantic HTML (h2, p, ul, li, strong). NO inline CSS or complex styling.
 
@@ -492,6 +492,7 @@ export default function ProductDetail() {
       Water Resistance: ${editedData.category_specific_attributes?.water_resistance || "Unknown"}
       Includes: ${editedData.category_specific_attributes?.box_papers || "Unknown"}
       Special Notes (SI Instructions): ${editedData.ai_instructions || ""}
+      Shipping Policy: ${editedData.ebay_free_shipping ? "Free Shipping" : "Calculated Shipping (Buyer pays)"}
       ${attributesText}
       ${conditionContext}
 
