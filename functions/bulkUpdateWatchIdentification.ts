@@ -111,6 +111,21 @@ Deno.serve(async (req) => {
             }));
         }
 
+        // Log the bulk operation result
+        try {
+            await base44.asServiceRole.entities.Log.create({
+                company_id: user.company_id,
+                user_id: user.id,
+                timestamp: new Date().toISOString(),
+                level: results.failed === 0 ? "success" : "warning",
+                category: "bulk_operation",
+                message: `Bulk Identification: ${results.success} success, ${results.failed} failed`,
+                details: results
+            });
+        } catch (logErr) {
+            console.error("Failed to log bulk operation:", logErr);
+        }
+
         return Response.json(results);
 
     } catch (error) {
