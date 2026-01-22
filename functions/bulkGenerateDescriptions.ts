@@ -57,13 +57,13 @@ Primary goal:
 
 STRICT RULES FOR TITLE:
 - EXACTLY 80 characters or fewer
-- FORMAT: Brand + Model + Reference + Key Specs + [Trigger Words]
-- TRIGGER WORDS (Include ONLY if true/applicable): New, Unworn, NOS (New Old Stock), Full Set, Swiss Made, Automatic, Quartz, Limited Edition, Vintage (only if pre-2000)
-- AVOID: "Luxury", "Rare", "Hot", "🔥", "WOW"
-- Watch buyers are cynical. Respect that.
-- Start with Brand + Model (left-loaded)
-- Do NOT repeat unnecessary words
-- Use spaces, not separators like | or •
+- FORMULA: {Sales Trigger} {Brand} {Model Line} {Key Spec} {Condition} {Model Number}
+- Sales Trigger: Prepend exactly ONE if applicable from ["New", "Unworn", "NOS", "Vintage" (pre-2000), "Full Set", "Limited Edition"]. If none apply, start with Brand.
+- Model Number: NEVER remove, ALWAYS include at the very end.
+- AVOID: "Luxury", "Rare", "Hot", "🔥", "WOW". Watch buyers are cynical.
+- Optimize for mobile truncation: strongest words first.
+- Do NOT repeat unnecessary words.
+- Use spaces, not separators like | or •.
 
 STRICT RULES FOR DESCRIPTION:
 - Professional, confident, and concise
