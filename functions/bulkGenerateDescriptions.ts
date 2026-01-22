@@ -128,6 +128,17 @@ Deno.serve(async (req) => {
                         description = result.split("Description:")[1].trim();
                     }
 
+                    // STRICT 80 CHARACTER LIMIT ENFORCEMENT
+                    if (title.length > 80) {
+                        const truncated = title.substring(0, 80);
+                        const lastSpace = truncated.lastIndexOf(' ');
+                        if (lastSpace > 60) {
+                            title = truncated.substring(0, lastSpace);
+                        } else {
+                            title = truncated;
+                        }
+                    }
+
                     // Strip markdown code blocks if present
                     let cleanDescription = description || "";
                     cleanDescription = cleanDescription.trim()

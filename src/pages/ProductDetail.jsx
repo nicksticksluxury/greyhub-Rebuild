@@ -535,6 +535,19 @@ export default function ProductDetail() {
       // Remove common prefixes
       cleanTitle = cleanTitle.replace(/^Title:\s*/i, "").trim();
 
+      // STRICT 80 CHARACTER LIMIT ENFORCEMENT
+      if (cleanTitle.length > 80) {
+        // Try to cut at the last space before 80 to avoid chopping words
+        const truncated = cleanTitle.substring(0, 80);
+        const lastSpace = truncated.lastIndexOf(' ');
+        if (lastSpace > 60) { // Only cut at space if it doesn't lose too much (keep at least 60 chars)
+           cleanTitle = truncated.substring(0, lastSpace);
+        } else {
+           // Fallback to hard truncation if no suitable space found
+           cleanTitle = truncated;
+        }
+      }
+
       // Strip markdown code blocks if present
       let cleanDescription = description || "";
       cleanDescription = cleanDescription.trim()
