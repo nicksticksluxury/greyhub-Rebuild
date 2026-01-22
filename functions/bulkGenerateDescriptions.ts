@@ -68,6 +68,7 @@ Papers: ${hasPapers}
 WaterResistance: ${product.category_specific_attributes?.water_resistance || "Unknown"}
 Material: ${product.category_specific_attributes?.case_material || "Unknown"}
 ContextNotes: ${contextNotes || "None"}
+Shipping: ${product.ebay_free_shipping ? "Free Shipping" : "Calculated Shipping (Buyer pays)"}
 
 ====================
 GLOBAL RULES (CRITICAL)
@@ -113,6 +114,7 @@ DESCRIPTION REQUIREMENTS
 - Mention box/papers ONLY if present.
 - Do NOT make warranty claims unless explicitly provided in ContextNotes.
 - Avoid sales language; rely on clarity and completeness.
+- ONLY mention "Free Shipping" if Shipping variable explicitly says "Free Shipping".
 
 ====================
 OUTPUT FORMAT
