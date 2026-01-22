@@ -439,76 +439,88 @@ export default function ProductDetail() {
             return `- ${k}: ${val}`;
           }).join('\n')}` : "";
 
-      // Generate title
-      const titlePrompt = `Generate a high-converting, eBay SEO-optimized title (MAX 80 characters) for this ${productTypeName}.
-      
-      CRITICAL: This is a ${productTypeName.toUpperCase()}.
-      
-      Product Details:
-      Brand: ${editedData.brand || "N/A"}
-      Model: ${editedData.model || "N/A"}
-      Reference: ${editedData.reference_number || ""}
-      Year: ${editedData.year || ""}
-      Condition: ${editedData.condition || ""}
-      Gender: ${editedData.gender || ""}${attributesText}
+      // Combined prompt for consistency
+      const prompt = `You are an eBay SEO expert specializing in luxury and mid-tier watches.
 
-      eBay SEO Rules:
-      1. Start with Brand, Model, Reference (if applicable).
-      2. Include key attributes users search for (e.g., "Automatic", "Gold", "Chronograph").
-      3. NO filler words ("L@@K", "Wow", "Rare" unless actually rare).
-      4. MAX 80 CHARACTERS.
-      5. Do not use punctuation like !, *, or quotes.
+      Generate:
+      1) ONE optimized 80-character eBay title
+      2) ONE high-conversion eBay description
 
-      Return ONLY the title string.`;
+      Primary goal:
+      - Maximize impressions and click-through rate (CTR)
+      - Capture ALL relevant buyer search queries
 
-      // Generate description
-      const isPartsRepair = editedData.condition && 
-        (editedData.condition.toLowerCase().includes('parts') || 
-         editedData.condition.toLowerCase().includes('repair'));
+      STRICT RULES FOR TITLE:
+      - EXACTLY 80 characters or fewer
+      - FORMULA: {Sales Trigger} {Brand} {Model Line} {Key Spec} {Condition} {Model Number}
+      - Sales Trigger: Prepend exactly ONE if applicable from ["New", "Unworn", "NOS", "Vintage", "Full Set", "Limited Edition"]. If none apply, start with Brand.
+      - TRIGGER LOGIC (Apply strictly):
+        * "New": If Condition contains "New"
+        * "Unworn": If Condition contains "Unworn"
+        * "NOS": If Condition contains "New Old Stock"
+        * "Full Set": If Includes contains "Box" AND "Papers"
+        * "Vintage": If Year is before 2000
+        * "Limited Edition": If notes/model mention "Limited"
+      - Model Number: NEVER remove, ALWAYS include at the very end.
+      - AVOID: "Luxury", "Rare", "Hot", "🔥", "WOW". Watch buyers are cynical.
+      - Optimize for mobile truncation: strongest words first.
+      - Do NOT repeat unnecessary words.
+      - Use spaces, not separators like | or •.
 
-      const partsRepairWarning = isPartsRepair ? 
-        `\n\nIMPORTANT: This ${productTypeName.toLowerCase()} is being sold FOR PARTS OR REPAIR. Please emphasize at the top that:
-         - This item is NOT functional and sold as-is
-         - It requires professional repair/restoration
-         - It is NOT guaranteed to work
-         - Returns are NOT accepted
-         - Buyers should be experienced with ${productTypeName.toLowerCase()} repair` : '';
+      STRICT RULES FOR DESCRIPTION:
+      - Professional, confident, and concise
+      - First 2 lines must reinforce top keywords from title
+      - Use short bullet points for specs
+      - Include trust-building language (authenticity, condition, shipping)
+      - Avoid fluff, storytelling, or marketing clichés
+      - Use clean, semantic HTML (h2, p, ul, li, strong). NO inline CSS or complex styling.
 
-      const descriptionPrompt = `Write a professional, eBay SEO-optimized HTML description for this ${productTypeName}.
+      IMPORTANT:
+      - Do NOT invent specs
+      - If a spec is unknown, omit it
+      - Assume buyer is comparing multiple listings side-by-side
 
-      Product Details:
-      Brand: ${editedData.brand || "N/A"}
-      Model: ${editedData.model || "N/A"}
-      Reference: ${editedData.reference_number || "N/A"}
-      Year: ${editedData.year || "N/A"}
-      Condition: ${editedData.condition || "N/A"}
-      Gender: ${editedData.gender || "N/A"}
+      INPUT DATA:
+      Brand: ${editedData.brand || "Unknown"}
+      Model: ${editedData.model || "Unknown"}
+      Year: ${editedData.year || "Unknown"}
+      Reference: ${editedData.reference_number || "Unknown"}
+      Movement: ${editedData.category_specific_attributes?.movement_type || "Unknown"}
+      Gender: ${editedData.gender || "Unknown"}
+      Condition: ${editedData.condition || "Unknown"}
+      Case Size: ${editedData.category_specific_attributes?.case_size || "Unknown"}
+      Water Resistance: ${editedData.category_specific_attributes?.water_resistance || "Unknown"}
+      Includes: ${editedData.category_specific_attributes?.box_papers || "Unknown"}
+      Special Notes (SI Instructions): ${editedData.ai_instructions || ""}
       ${attributesText}
       ${conditionContext}
-      ${partsRepairWarning}
 
-      Context: ${aiResearchPrompt}
+      OUTPUT FORMAT:
+      Title:
+      <single line title>
 
-      SEO & Formatting Requirements:
-      1. Use clean, semantic HTML (h2, p, ul, li, strong). NO inline CSS or complex styling.
-      2. **Structure**:
-         - **Headline**: Engaging product summary with main keywords.
-         - **Key Features**: Bulleted list of specs (Case, Movement, Dial, etc.).
-         - **Condition Report**: Detailed, honest assessment of wear/flaws.
-         - **Why Buy**: Brief persuasive text on value/uniqueness.
-      3. **Keywords**: Naturally integrate terms buyers search for (e.g., "${editedData.brand} ${editedData.model}", "Swiss Made", "Vintage", etc.).
-      4. **Mobile-Friendly**: Short paragraphs, easy to scan.
-      5. **Tone**: Professional, authoritative, trustworthy (like a high-end dealer).
-      6. IF "For Parts/Repair": clearly bold this warning at the top.
-
-      Return ONLY the HTML content (inside <div> or typical body tags), no markdown formatting or \`\`\` blocks.`;
+      Description:
+      <HTML content>
+      `;
 
       // Generate both
-      console.log("Generating title/desc with prompts...");
-      const [title, description] = await Promise.all([
-        base44.integrations.Core.InvokeLLM({ prompt: titlePrompt }),
-        base44.integrations.Core.InvokeLLM({ prompt: descriptionPrompt })
-      ]);
+      console.log("Generating title/desc with combined prompt...");
+      const result = await base44.integrations.Core.InvokeLLM({ prompt });
+      
+      // Parse output
+      let title = "";
+      let description = "";
+      
+      const titleMatch = result.match(/Title:\s*\n?([^\n]+)/i);
+      const descMatch = result.match(/Description:\s*\n?([\s\S]+)/i);
+      
+      if (titleMatch) title = titleMatch[1].trim();
+      if (descMatch) description = descMatch[1].trim();
+      
+      // Fallback parsing if structure is slightly off
+      if (!description && result.includes("Description:")) {
+          description = result.split("Description:")[1].trim();
+      }
 
       console.log("Generated Title:", title);
       console.log("Generated Desc (raw):", description?.substring(0, 100) + "...");
