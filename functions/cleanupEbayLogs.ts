@@ -29,6 +29,7 @@ Deno.serve(async (req) => {
         return Response.json({
             processed: logs.length,
             deleted: idsToDelete.length,
+            firstDeletedLogTimestamp: idsToDelete.length > 0 ? logs.find(l => l.id === idsToDelete[0])?.timestamp : null,
             deletedIds: idsToDelete
         });
 
