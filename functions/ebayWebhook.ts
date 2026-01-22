@@ -72,13 +72,14 @@ Deno.serve(async (req) => {
 
         const bodyText = await req.text();
         
-        await base44.asServiceRole.entities.Log.create({
-            timestamp: new Date().toISOString(),
-            level: 'info',
-            category: 'ebay_webhook',
-            message: `[${requestId}] Received POST notification`,
-            details: { bodyPreview: bodyText.substring(0, 500) }
-        });
+        // Logging of POST notification disabled
+        // await base44.asServiceRole.entities.Log.create({
+        //     timestamp: new Date().toISOString(),
+        //     level: 'info',
+        //     category: 'ebay_webhook',
+        //     message: `[${requestId}] Received POST notification`,
+        //     details: { bodyPreview: bodyText.substring(0, 500) }
+        // });
         
         // Parse XML Payload
         const parser = new XMLParser({
@@ -93,13 +94,14 @@ Deno.serve(async (req) => {
              try {
                  const jsonBody = JSON.parse(bodyText);
                  if (jsonBody.metadata && jsonBody.notification) {
-                     await base44.asServiceRole.entities.Log.create({
-                         timestamp: new Date().toISOString(),
-                         level: 'info',
-                         category: 'ebay_webhook',
-                         message: `[${requestId}] Account deletion notification`,
-                         details: { notification: jsonBody }
-                     });
+                     // Logging of Account deletion notification disabled
+                     // await base44.asServiceRole.entities.Log.create({
+                     //     timestamp: new Date().toISOString(),
+                     //     level: 'info',
+                     //     category: 'ebay_webhook',
+                     //     message: `[${requestId}] Account deletion notification`,
+                     //     details: { notification: jsonBody }
+                     // });
                      return Response.json({ status: "ok" });
                  }
              } catch (e) {
