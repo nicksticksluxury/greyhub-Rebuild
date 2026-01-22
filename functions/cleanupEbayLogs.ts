@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         
         // Fetch recent ebay_webhook logs (reduced limit)
-        const logs = await base44.asServiceRole.entities.Log.filter({category: 'ebay_webhook'}, '-timestamp', 500);
+        const logs = await base44.asServiceRole.entities.Log.filter({category: 'ebay_webhook'}, '-timestamp', 200);
         
         const idsToDelete = [];
         
@@ -19,11 +19,11 @@ Deno.serve(async (req) => {
             }
         }
         
-        // Delete sequentially to avoid rate limits
+        // Delete sequentially with more delay
         for (const id of idsToDelete) {
             await base44.asServiceRole.entities.Log.delete(id);
-            // Delay between deletes
-            await new Promise(resolve => setTimeout(resolve, 50));
+            // Longer delay between deletes
+            await new Promise(resolve => setTimeout(resolve, 200));
         }
         
         return Response.json({
