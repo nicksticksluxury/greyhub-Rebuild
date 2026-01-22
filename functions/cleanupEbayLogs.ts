@@ -7,11 +7,12 @@ Deno.serve(async (req) => {
         const startTime = Date.now();
         const MAX_DURATION = 50000; // 50 seconds
         let totalDeleted = 0;
-        let lastTimestamp = null;
+        let skip = 0;
+        const limit = 100;
         
         while (Date.now() - startTime < MAX_DURATION) {
-            // Fetch batch of ebay_webhook logs
-            const logs = await base44.asServiceRole.entities.Log.filter({category: 'ebay_webhook'}, '-timestamp', 100);
+            // Fetch batch
+            const logs = await base44.asServiceRole.entities.Log.filter({category: 'ebay_webhook'}, '-timestamp', limit, skip);
             
             if (logs.length === 0) break;
             
@@ -26,35 +27,41 @@ Deno.serve(async (req) => {
                 }
             }
             
-            // If we didn't find any in the top 100, we might be done with the recent ones
-            if (idsToDelete.length === 0) {
-                // To be safe, let's just break for now. 
-                // In a perfect world we'd paginate, but we are targeting "new ones" which should be at the top.
-                break;
-            }
-            
-            if (!lastTimestamp && idsToDelete.length > 0) {
-                lastTimestamp = logs.find(l => l.id === idsToDelete[0])?.timestamp;
-            }
-
-            // Delete batch
-            for (const id of idsToDelete) {
-                if (Date.now() - startTime > MAX_DURATION) break;
-                try {
-                    await base44.asServiceRole.entities.Log.delete(id);
-                } catch (e) {
-                    // Ignore if already deleted
+            if (idsToDelete.length > 0) {
+                // Delete found items
+                for (const id of idsToDelete) {
+                    if (Date.now() - startTime > MAX_DURATION) break;
+                    try {
+                        await base44.asServiceRole.entities.Log.delete(id);
+                    } catch (e) {
+                        // Ignore
+                    }
+                    // Tiny delay
+                    await new Promise(resolve => setTimeout(resolve, 20));
                 }
-                // Gentler delay
-                await new Promise(resolve => setTimeout(resolve, 100));
+                totalDeleted += idsToDelete.length;
+                
+                // Since we deleted items, the next items shift up. 
+                // We should check the SAME page (skip) again, unless we deleted EVERYTHING in the page.
+                // But simplified: if we deleted something, let's keep skip same (or reset to 0 if we want to be thorough but that might loop).
+                // Actually, if we filter by '-timestamp', and delete, the list changes.
+                // If we found items in the current page (skip=N), and deleted them, the items from N+1 shift to N.
+                // So we should NOT increment skip if we deleted something.
+                // However, to avoid infinite loops if delete fails or something, we should be careful.
+                // But here we rely on success.
+                // Let's NOT increment skip if we deleted items.
+            } else {
+                // Nothing found in this page, move to next
+                skip += limit;
             }
             
-            totalDeleted += idsToDelete.length;
+            // Safety break
+            if (skip > 5000) break;
         }
         
         return Response.json({
             totalDeleted,
-            firstDeletedLogTimestamp: lastTimestamp
+            scannedUntilSkip: skip
         });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
