@@ -40,7 +40,11 @@ Deno.serve(async (req) => {
             // Delete batch
             for (const id of idsToDelete) {
                 if (Date.now() - startTime > MAX_DURATION) break;
-                await base44.asServiceRole.entities.Log.delete(id);
+                try {
+                    await base44.asServiceRole.entities.Log.delete(id);
+                } catch (e) {
+                    // Ignore if already deleted
+                }
                 // Gentler delay
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
