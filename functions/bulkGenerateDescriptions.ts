@@ -57,9 +57,11 @@ Primary goal:
 
 STRICT RULES FOR TITLE:
 - EXACTLY 80 characters or fewer
+- FORMAT: Brand + Model + Reference + Key Specs + [Trigger Words]
+- TRIGGER WORDS (Include ONLY if true/applicable): New, Unworn, NOS (New Old Stock), Full Set, Swiss Made, Automatic, Quartz, Limited Edition, Vintage (only if pre-2000)
+- AVOID: "Luxury", "Rare", "Hot", "🔥", "WOW"
+- Watch buyers are cynical. Respect that.
 - Start with Brand + Model (left-loaded)
-- Include watch type, movement, and at least 1 buyer-intent keyword
-- Use only search-relevant words (no hype or emojis)
 - Do NOT repeat unnecessary words
 - Use spaces, not separators like | or •
 
