@@ -38,73 +38,90 @@ Deno.serve(async (req) => {
                     const productTypeName = productType?.name || 'product';
                     const aiResearchPrompt = productType?.ai_research_prompt || "Research this product thoroughly.";
 
-                    const aiCondition = product.ai_analysis?.condition_assessment || "";
-                    const conditionContext = aiCondition ? `\n\nAI Analysis of Condition:\n${aiCondition}` : "";
+                    const boxPapers = (product.category_specific_attributes?.box_papers || "").toLowerCase();
+                    const hasBox = boxPapers.includes("box") ? "true" : "false";
+                    const hasPapers = boxPapers.includes("papers") || boxPapers.includes("card") || boxPapers.includes("warranty") ? "true" : "false";
 
-                    const attributesText = product.category_specific_attributes ? 
-                        `\n\nCategory Specific Attributes:\n${JSON.stringify(product.category_specific_attributes, null, 2)}` : "";
+                    const contextNotes = [
+                        product.ai_instructions,
+                        product.ai_analysis?.condition_assessment ? `AI Condition Assessment: ${product.ai_analysis.condition_assessment}` : ""
+                    ].filter(Boolean).join("\n");
 
                     // Combined generation prompt
-                    const prompt = `You are an eBay SEO expert specializing in luxury and mid-tier watches.
+                    const prompt = `You are an expert e-commerce SEO specialist focused exclusively on luxury and mid-market watches.
+Your goal is to maximize search impressions, click-through rate, and buyer trust while maintaining strict factual accuracy.
 
-Generate:
-1) ONE optimized 80-character eBay title
-2) ONE high-conversion eBay description
-
-Primary goal:
-- Maximize impressions and click-through rate (CTR)
-- Capture ALL relevant buyer search queries
-
-STRICT RULES FOR TITLE:
-- EXACTLY 80 characters or fewer
-- FORMULA: {Sales Trigger} {Brand} {Model Line} {Key Spec} {Condition} {Model Number}
-- Sales Trigger: Prepend exactly ONE if applicable from ["New", "Unworn", "NOS", "Vintage", "Full Set", "Limited Edition"]. If none apply, start with Brand.
-- TRIGGER LOGIC (Apply strictly):
-  * "New": If Condition contains "New"
-  * "Unworn": If Condition contains "Unworn"
-  * "NOS": If Condition contains "New Old Stock"
-  * "Full Set": If Includes contains "Box" AND "Papers"
-  * "Vintage": If Year is before 2000
-  * "Limited Edition": If notes/model mention "Limited"
-- Model Number: NEVER remove, ALWAYS include at the very end.
-- AVOID: "Luxury", "Rare", "Hot", "🔥", "WOW". Watch buyers are cynical.
-- Optimize for mobile truncation: strongest words first.
-- Do NOT repeat unnecessary words.
-- Use spaces, not separators like | or •.
-
-STRICT RULES FOR DESCRIPTION:
-- Professional, confident, and concise
-- First 2 lines must reinforce top keywords from title
-- Use short bullet points for specs
-- Include trust-building language (authenticity, condition, shipping)
-- Avoid fluff, storytelling, or marketing clichés
-
-IMPORTANT:
-- Do NOT invent specs
-- If a spec is unknown, omit it
-- Assume buyer is comparing multiple listings side-by-side
-
-INPUT DATA:
+====================
+INPUT VARIABLES
+====================
 Brand: ${product.brand || "Unknown"}
-Model: ${product.model || "Unknown"}
-Year: ${product.year || "Unknown"}
-Reference: ${product.reference_number || "Unknown"}
+ModelLine: ${product.model || "Unknown"}
+ModelNumber: ${product.reference_number || "Unknown"}
 Movement: ${product.category_specific_attributes?.movement_type || "Unknown"}
-Gender: ${product.gender || "Unknown"}
+CaseSizeMM: ${product.category_specific_attributes?.case_size || "Unknown"}
+DialColor: ${product.category_specific_attributes?.dial_color || "Unknown"}
+Bezel: ${product.category_specific_attributes?.bezel_type || "Unknown"}
 Condition: ${product.condition || "Unknown"}
-Case Size: ${product.category_specific_attributes?.case_size || "Unknown"}
-Water Resistance: ${product.category_specific_attributes?.water_resistance || "Unknown"}
-Includes: ${product.category_specific_attributes?.box_papers || "Unknown"}
-Special Notes: ${product.ai_instructions || ""}
+Year: ${product.year || "Unknown"}
+Box: ${hasBox}
+Papers: ${hasPapers}
+WaterResistance: ${product.category_specific_attributes?.water_resistance || "Unknown"}
+Material: ${product.category_specific_attributes?.case_material || "Unknown"}
+ContextNotes: ${contextNotes || "None"}
 
-OUTPUT FORMAT:
+====================
+GLOBAL RULES (CRITICAL)
+====================
+- NEVER remove, alter, or replace the manufacturer model number.
+- ALWAYS include the model number at the END of the title.
+- DO NOT use hype, fluff, emojis, or subjective adjectives.
+- Forbidden words include:
+  ["Amazing","Stunning","Head Turner","WOW","🔥","Eye Catching","Gorgeous","Luxury","Hot"]
+- Use ONLY verifiable, objective descriptors.
+- Optimize for mobile truncation: strongest keywords first.
+- Titles must be <= 80 characters.
+- Descriptions must be buyer-focused, factual, and SEO-rich.
+
+====================
+SALES TRIGGER LOGIC
+====================
+Select AT MOST ONE sales trigger based on condition:
+- If Condition ∈ ["new","new in box","unworn"] → use "New"
+- If Year < 2000 → use "Vintage"
+- If Box = true AND Papers = true → use "Full Set"
+- Otherwise → use NO trigger
+
+If no trigger applies, start title with Brand name.
+
+====================
+TITLE FORMAT (MANDATORY)
+====================
+{SalesTrigger} {Brand} {ModelLine} {KeySpec1} {KeySpec2} {ConditionOrMovement} {ModelNumber}
+
+- KeySpec examples: "Automatic", "Swiss Quartz", "Diver 300m", "Chronograph", "GMT"
+- Include Case Size ONLY if it is a buyer-relevant size (e.g. 36mm, 40mm, 41mm)
+- Do NOT repeat information redundantly
+
+====================
+DESCRIPTION REQUIREMENTS
+====================
+- First 2 lines must summarize the watch in plain English for skimmers.
+- Use short paragraphs and bullet points.
+- Repeat core SEO terms naturally (Brand, ModelLine, ModelNumber, Movement).
+- Include a concise Specifications section.
+- Clearly state condition in neutral language.
+- Mention box/papers ONLY if present.
+- Do NOT make warranty claims unless explicitly provided in ContextNotes.
+- Avoid sales language; rely on clarity and completeness.
+
+====================
+OUTPUT FORMAT
+====================
 Title:
-<single line title>
+<generated title>
 
 Description:
-<short paragraph>
-<bullet points>
-<closing trust statement>`;
+<generated description>`;
 
                     const result = await base44.integrations.Core.InvokeLLM({ prompt });
                     
