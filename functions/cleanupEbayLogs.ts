@@ -18,8 +18,14 @@ Deno.serve(async (req) => {
             }
         }
         
-        // Delete in parallel
-        await Promise.all(idsToDelete.map(id => base44.asServiceRole.entities.Log.delete(id)));
+        // Delete in batches to avoid rate limits
+        const batchSize = 5;
+        for (let i = 0; i < idsToDelete.length; i += batchSize) {
+            const batch = idsToDelete.slice(i, i + batchSize);
+            await Promise.all(batch.map(id => base44.asServiceRole.entities.Log.delete(id)));
+            // Small delay between batches
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
         
         return Response.json({
             processed: logs.length,
