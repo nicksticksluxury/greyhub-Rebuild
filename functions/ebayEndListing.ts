@@ -98,12 +98,13 @@ Deno.serve(async (req) => {
 
     // 1. Find the Offer ID for this SKU
     console.log(`Fetching offer for SKU ${sku}...`);
-    const getOffersRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer?sku=${sku}`, { headers: apiHeaders });
+    const getOffersRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer?sku=${encodeURIComponent(sku)}`, { headers: apiHeaders });
     
     if (!getOffersRes.ok) {
         const err = await getOffersRes.text();
         console.error("Get offer failed:", err);
-        return Response.json({ error: 'Failed to fetch eBay offer', details: err }, { status: 500 });
+        // Pass through the status code from eBay if possible, or 502 Bad Gateway
+        return Response.json({ error: 'Failed to fetch eBay offer', details: err }, { status: getOffersRes.status || 502 });
     }
 
     const getOffersData = await getOffersRes.json();
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
         if (!withdrawRes.ok) {
             const err = await withdrawRes.text();
             console.error("Withdraw offer failed:", err);
-            return Response.json({ error: 'Failed to end eBay listing (Withdraw Offer)', details: err }, { status: 500 });
+            return Response.json({ error: 'Failed to end eBay listing (Withdraw Offer)', details: err }, { status: withdrawRes.status || 500 });
         }
         
         let withdrawData = {};
@@ -168,7 +169,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error ending eBay listing:', error);
     return Response.json({ 
-      error: error.message || 'Failed to end eBay listing' 
+      error: error.message || 'Failed to end eBay listing',
+      stack: error.stack
     }, { status: 500 });
   }
 });

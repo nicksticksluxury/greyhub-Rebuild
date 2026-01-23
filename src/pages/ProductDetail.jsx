@@ -615,7 +615,8 @@ export default function ProductDetail() {
       }
     } catch (error) {
       console.error('Failed to end eBay listing:', error);
-      toast.error("Failed to connect to eBay: " + error.message, { id: toastId });
+      const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message;
+      toast.error("Failed to end eBay listing: " + errorMessage, { id: toastId });
     }
   };
 
