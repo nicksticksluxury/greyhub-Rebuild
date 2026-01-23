@@ -45,14 +45,24 @@ Deno.serve(async (req) => {
     const refreshToken = company.ebay_refresh_token;
     const tokenExpiry = company.ebay_token_expiry ? new Date(company.ebay_token_expiry) : null;
     
-    if (!tokenExpiry || tokenExpiry <= new Date(Date.now() + 5 * 60 * 1000)) {
-      console.log("Token expired or expiring soon, refreshing...");
-      // Token expired, refresh it
+    // Check if token is expired or about to expire (within 5 mins)
+    const isExpired = !tokenExpiry || new Date(tokenExpiry) <= new Date(Date.now() + 5 * 60 * 1000);
+
+    if (isExpired && refreshToken) {
+      console.log("eBay token expired, refreshing...");
+      const clientId = Deno.env.get("EBAY_APP_ID");
+      const clientSecret = Deno.env.get("EBAY_CERT_ID");
+
+      if (!clientId || !clientSecret) {
+         return Response.json({ error: 'eBay configuration missing (App ID or Cert ID)' }, { status: 500 });
+      }
+
+      const credentials = btoa(`${clientId}:${clientSecret}`);
       const refreshResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': 'Basic ' + btoa(`${Deno.env.get('EBAY_APP_ID')}:${Deno.env.get('EBAY_CERT_ID')}`)
+          'Authorization': `Basic ${credentials}`
         },
         body: new URLSearchParams({
           grant_type: 'refresh_token',
@@ -64,7 +74,8 @@ Deno.serve(async (req) => {
       if (!refreshResponse.ok) {
         const errText = await refreshResponse.text();
         console.error("Token refresh failed:", errText);
-        return Response.json({ error: 'Failed to refresh eBay token' }, { status: 500 });
+        // If refresh fails (e.g. revoked), we might want to alert the user but for now just fail
+        return Response.json({ error: 'Failed to refresh eBay token. Please reconnect in Settings.' }, { status: 401 });
       }
 
       const tokenData = await refreshResponse.json();
@@ -116,9 +127,15 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Failed to end eBay listing (Withdraw Offer)', details: err }, { status: 500 });
         }
         
-        const withdrawData = await withdrawRes.json();
+        let withdrawData = {};
+        if (withdrawRes.status !== 204) {
+           try {
+             withdrawData = await withdrawRes.json();
+           } catch (e) {
+             console.warn("Could not parse withdraw response JSON:", e);
+           }
+        }
         console.log("Withdraw success:", withdrawData);
-        // Note: withdrawRes.json() usually returns { listingId: "..." }
     }
 
     // 3. Update product to remove eBay export data
