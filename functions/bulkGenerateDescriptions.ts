@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
       - Professional, confident, and concise
       - First 2 lines must reinforce top keywords from title
       - Use short bullet points for specs
+      - Include 2-3 specific "watch guy" sales-driving facts relevant to the brand or model (e.g., "Pulsar is a Seiko sub-brand known for value," "This movement is a workhorse ETA 2824," etc.)
       - Include trust-building language (authenticity, condition). DO NOT mention Free Shipping unless explicitly stated in input.
       - Avoid fluff, storytelling, or marketing clichés
       - Use clean, semantic HTML (h2, p, ul, li, strong). NO inline CSS or complex styling.
