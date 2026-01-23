@@ -4,7 +4,7 @@ import { removeBackground } from "@imgly/background-removal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle, FileText, ShoppingBag, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, Trash2, Loader2, AlertCircle, FileText, ShoppingBag, ExternalLink, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageGallery from "../components/productdetail/ImageGallery";
 import ProductForm from "../components/productdetail/ProductForm";
 import AIPanel from "../components/productdetail/AIPanel";
@@ -48,6 +49,9 @@ export default function ProductDetail() {
   const [selectedImages, setSelectedImages] = useState([]);
   const [beautifyingSelected, setBeautifyingSelected] = useState(false);
   const [beautifySelectedProgress, setBeautifySelectedProgress] = useState({ current: 0, total: 0 });
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [downloadSize, setDownloadSize] = useState('original');
+  const [downloading, setDownloading] = useState(false);
 
   const { data: product, isLoading, error: productError } = useQuery({
     queryKey: ['product', productId],
@@ -865,6 +869,64 @@ export default function ProductDetail() {
     }
   };
 
+  const handleDownloadConfirm = async () => {
+    if (selectedImages.length === 0) return;
+    
+    setDownloading(true);
+    const toastId = toast.loading("Preparing download...");
+    
+    try {
+      // Prepare images based on selected size
+      const imagesToZip = selectedImages.map(index => {
+        const photo = editedData.photos[index];
+        // Handle string photos (legacy) or object photos
+        const isObj = typeof photo === 'object' && photo !== null;
+        
+        let url;
+        if (!isObj) {
+          url = photo; // It's a string url
+        } else {
+          // Map size to key, fallback sequence: selected -> full -> original -> medium -> thumbnail
+          // "thumb", "small", "med", "large" mapping
+          if (downloadSize === 'thumbnail') url = photo.thumbnail || photo.medium || photo.original || photo.full;
+          else if (downloadSize === 'medium') url = photo.medium || photo.full || photo.original || photo.thumbnail;
+          else if (downloadSize === 'full') url = photo.full || photo.original || photo.medium || photo.thumbnail;
+          else url = photo.original || photo.full || photo.medium || photo.thumbnail; // original
+        }
+        
+        // Construct a filename
+        const brand = editedData.brand || 'watch';
+        const model = editedData.model || 'model';
+        const filename = `${brand}_${model}_${index + 1}_${downloadSize}`;
+        
+        return { url, filename };
+      }).filter(img => !!img.url);
+
+      const result = await base44.functions.invoke('createImageZip', { images: imagesToZip });
+      
+      if (result.data.success) {
+        // Trigger download
+        const link = document.createElement('a');
+        link.href = `data:application/zip;base64,${result.data.zipBase64}`;
+        link.download = `${editedData.brand || 'Product'}_Images_${downloadSize}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success(`Downloaded ${result.data.count} images`, { id: toastId });
+        setShowDownloadDialog(false);
+        setSelectedImages([]); // Optional: clear selection after download
+      } else {
+        throw new Error(result.data.error || "Failed to zip images");
+      }
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Download failed: " + error.message, { id: toastId });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const importAIData = (field, value) => {
     if (field === "batch_update") {
       const updates = { ...value };
@@ -1093,6 +1155,15 @@ export default function ProductDetail() {
                       Generate Title & Description
                     </>
                   )}
+                </Button>
+                <Button
+                  onClick={() => setShowDownloadDialog(true)}
+                  disabled={selectedImages.length === 0}
+                  variant="outline"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download ({selectedImages.length})
                 </Button>
                 <Button
                   onClick={beautifySelectedImages}
@@ -1339,6 +1410,54 @@ export default function ProductDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Download Dialog */}
+      <Dialog open={showDownloadDialog} onOpenChange={setShowDownloadDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Download Images</DialogTitle>
+            <DialogDescription>
+              Select the size for the {selectedImages.length} selected images.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Image Version</Label>
+              <Select value={downloadSize} onValueChange={setDownloadSize}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="thumbnail">Thumbnail (Small)</SelectItem>
+                  <SelectItem value="medium">Medium (Standard)</SelectItem>
+                  <SelectItem value="full">Large (Full Res)</SelectItem>
+                  <SelectItem value="original">Original (Raw)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDownloadDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={handleDownloadConfirm} 
+              disabled={downloading}
+              className="bg-slate-800 hover:bg-slate-900 text-white"
+            >
+              {downloading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Zipping...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Zip
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Sold Quantity Dialog */}
       <Dialog open={showSoldQuantityDialog} onOpenChange={setShowSoldQuantityDialog}>
