@@ -716,8 +716,8 @@ Deno.serve(async (req) => {
                 }
             }
 
-            // Get active listings count (eligible to send offers)
-            const inventoryUrl = `https://api.ebay.com/sell/inventory/v1/inventory_item?limit=1`;
+            // Get active listings count (Published Offers)
+            const inventoryUrl = `https://api.ebay.com/sell/inventory/v1/offer?status=PUBLISHED&limit=1`;
 
             await base44.asServiceRole.entities.Log.create({
                 company_id: user.company_id,
