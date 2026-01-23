@@ -1029,36 +1029,196 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                   )}
 
                   {platform === 'ebay' && (
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <Label>Free Shipping</Label>
-                        <div className="flex items-center space-x-2 mt-2">
-                          <input
-                            type="checkbox"
-                            id="ebay_free_shipping"
-                            checked={data.ebay_free_shipping || false}
-                            onChange={(e) => updateField("ebay_free_shipping", e.target.checked)}
-                            className="w-4 h-4 rounded border-slate-300"
+                    <div className="space-y-4 mb-4">
+                      {/* Listing Type Selection */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Listing Type</Label>
+                          <Select
+                            value={data.ebay_listing_details?.listing_type || "FixedPriceItem"}
+                            onValueChange={(value) => {
+                              onChange({
+                                ...data,
+                                ebay_listing_details: {
+                                  ...(data.ebay_listing_details || {}),
+                                  listing_type: value
+                                }
+                              });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="FixedPriceItem">Buy It Now</SelectItem>
+                              <SelectItem value="Auction">Auction</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {data.ebay_listing_details?.listing_type === 'Auction' && (
+                          <div>
+                            <Label>Auction Duration</Label>
+                            <Select
+                              value={data.ebay_listing_details?.auction_duration || "Days_7"}
+                              onValueChange={(value) => {
+                                onChange({
+                                  ...data,
+                                  ebay_listing_details: {
+                                    ...(data.ebay_listing_details || {}),
+                                    auction_duration: value
+                                  }
+                                });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select duration" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Days_1">1 Day</SelectItem>
+                                <SelectItem value="Days_3">3 Days</SelectItem>
+                                <SelectItem value="Days_5">5 Days</SelectItem>
+                                <SelectItem value="Days_7">7 Days</SelectItem>
+                                <SelectItem value="Days_10">10 Days</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Auction Specific Fields */}
+                      {data.ebay_listing_details?.listing_type === 'Auction' && (
+                        <div className="grid grid-cols-3 gap-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div>
+                            <Label>Starting Bid</Label>
+                            <Input
+                              type="number"
+                              value={data.ebay_listing_details?.starting_bid || ""}
+                              onChange={(e) => {
+                                onChange({
+                                  ...data,
+                                  ebay_listing_details: {
+                                    ...(data.ebay_listing_details || {}),
+                                    starting_bid: parseFloat(e.target.value)
+                                  }
+                                });
+                              }}
+                              placeholder="0.00"
+                              className="bg-white"
+                            />
+                          </div>
+                          <div>
+                            <Label>Reserve Price (Optional)</Label>
+                            <Input
+                              type="number"
+                              value={data.ebay_listing_details?.reserve_price || ""}
+                              onChange={(e) => {
+                                onChange({
+                                  ...data,
+                                  ebay_listing_details: {
+                                    ...(data.ebay_listing_details || {}),
+                                    reserve_price: parseFloat(e.target.value)
+                                  }
+                                });
+                              }}
+                              placeholder="0.00"
+                              className="bg-white"
+                            />
+                          </div>
+                          <div>
+                            <Label>Buy It Now Price (Optional)</Label>
+                            <Input
+                              type="number"
+                              value={data.ebay_listing_details?.buy_it_now_price || ""}
+                              onChange={(e) => {
+                                onChange({
+                                  ...data,
+                                  ebay_listing_details: {
+                                    ...(data.ebay_listing_details || {}),
+                                    buy_it_now_price: parseFloat(e.target.value)
+                                  }
+                                });
+                              }}
+                              placeholder="0.00"
+                              className="bg-white"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Common Settings */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Scheduled Start Time (Optional)</Label>
+                          <Input
+                            type="datetime-local"
+                            value={data.ebay_listing_details?.scheduled_start_time || ""}
+                            onChange={(e) => {
+                              onChange({
+                                ...data,
+                                ebay_listing_details: {
+                                  ...(data.ebay_listing_details || {}),
+                                  scheduled_start_time: e.target.value
+                                }
+                              });
+                            }}
                           />
-                          <label htmlFor="ebay_free_shipping" className="text-sm text-slate-600 cursor-pointer">
-                            Offer free shipping
-                          </label>
+                        </div>
+                        <div>
+                          <Label>Charity Donation % (Optional)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={data.ebay_listing_details?.charity_percentage || ""}
+                            onChange={(e) => {
+                              onChange({
+                                ...data,
+                                ebay_listing_details: {
+                                  ...(data.ebay_listing_details || {}),
+                                  charity_percentage: parseFloat(e.target.value)
+                                }
+                              });
+                            }}
+                            placeholder="e.g. 10"
+                          />
                         </div>
                       </div>
-                      <div>
-                        <Label>Allow Best Offers</Label>
-                        <div className="flex items-center space-x-2 mt-2">
-                          <input
-                            type="checkbox"
-                            id="ebay_allow_offers"
-                            checked={data.ebay_allow_offers !== undefined ? data.ebay_allow_offers : true}
-                            onChange={(e) => updateField("ebay_allow_offers", e.target.checked)}
-                            className="w-4 h-4 rounded border-slate-300"
-                          />
-                          <label htmlFor="ebay_allow_offers" className="text-sm text-slate-600 cursor-pointer">
-                            Enable best offers
-                          </label>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Free Shipping</Label>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <input
+                              type="checkbox"
+                              id="ebay_free_shipping"
+                              checked={data.ebay_free_shipping || false}
+                              onChange={(e) => updateField("ebay_free_shipping", e.target.checked)}
+                              className="w-4 h-4 rounded border-slate-300"
+                            />
+                            <label htmlFor="ebay_free_shipping" className="text-sm text-slate-600 cursor-pointer">
+                              Offer free shipping
+                            </label>
+                          </div>
                         </div>
+                        
+                        {data.ebay_listing_details?.listing_type !== 'Auction' && (
+                          <div>
+                            <Label>Allow Best Offers</Label>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <input
+                                type="checkbox"
+                                id="ebay_allow_offers"
+                                checked={data.ebay_allow_offers !== undefined ? data.ebay_allow_offers : true}
+                                onChange={(e) => updateField("ebay_allow_offers", e.target.checked)}
+                                className="w-4 h-4 rounded border-slate-300"
+                              />
+                              <label htmlFor="ebay_allow_offers" className="text-sm text-slate-600 cursor-pointer">
+                                Enable best offers
+                              </label>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {aiPricing && (data.ebay_allow_offers !== false) && (
                         <>
