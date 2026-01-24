@@ -94,14 +94,18 @@ Deno.serve(async (req) => {
         const paymentData = await paymentRes.json();
         const returnData = await returnRes.json();
 
-        const fulfillmentPolicyId = fulfillmentData.fulfillmentPolicies?.[0]?.fulfillmentPolicyId;
-        const paymentPolicyId = paymentData.paymentPolicies?.[0]?.paymentPolicyId;
-        const returnPolicyId = returnData.returnPolicies?.[0]?.returnPolicyId;
+        const fulfillmentPolicies = fulfillmentData.fulfillmentPolicies || [];
+        const paymentPolicies = paymentData.paymentPolicies || [];
+        const returnPolicies = returnData.returnPolicies || [];
 
-        if (!fulfillmentPolicyId || !paymentPolicyId || !returnPolicyId) {
+        const defaultFulfillmentPolicyId = fulfillmentPolicies[0]?.fulfillmentPolicyId;
+        const defaultPaymentPolicyId = paymentPolicies[0]?.paymentPolicyId;
+        const defaultReturnPolicyId = returnPolicies[0]?.returnPolicyId;
+
+        if (!defaultFulfillmentPolicyId || !defaultPaymentPolicyId || !defaultReturnPolicyId) {
             return Response.json({ 
                 error: 'Missing eBay Business Policies. Please set up default Fulfillment, Payment, and Return policies in your eBay account settings.',
-                details: { fulfillment: !!fulfillmentPolicyId, payment: !!paymentPolicyId, return: !!returnPolicyId }
+                details: { fulfillment: !!defaultFulfillmentPolicyId, payment: !!defaultPaymentPolicyId, return: !!defaultReturnPolicyId }
             }, { status: 400 });
         }
 
@@ -406,11 +410,11 @@ Deno.serve(async (req) => {
                 let offerId = existingOffer?.offerId;
 
                 // Determine fulfillment policy based on free shipping flag
-                let fulfillmentPolicy = fulfillmentPolicyId;
+                let fulfillmentPolicy = defaultFulfillmentPolicyId;
 
                 // If product has free shipping flag, try to find a free shipping policy
                 if (watch.ebay_free_shipping) {
-                    const freeShippingPolicy = fulfillmentData.fulfillmentPolicies?.find(p => 
+                    const freeShippingPolicy = fulfillmentPolicies.find(p => 
                         p.shippingOptions?.some(opt => opt.costType === 'FREE')
                     );
                     if (freeShippingPolicy) {
@@ -457,6 +461,21 @@ Deno.serve(async (req) => {
                     };
                 }
 
+                // Determine payment policy
+                // For Auctions WITHOUT Buy It Now, immediatePay must be false.
+                let paymentPolicy = defaultPaymentPolicyId;
+                const requiresNonImmediatePay = isAuction && !pricingSummary.price; // price is BIN price in auction format
+
+                if (requiresNonImmediatePay) {
+                    const nonImmediatePolicy = paymentPolicies.find(p => !p.immediatePay);
+                    if (nonImmediatePolicy) {
+                        paymentPolicy = nonImmediatePolicy.paymentPolicyId;
+                        console.log(`[${sku}] Selected non-immediate payment policy: ${nonImmediatePolicy.name} (${paymentPolicy})`);
+                    } else {
+                        console.warn(`[${sku}] WARNING: Auction without BIN requires non-immediate payment policy, but none found. Using default.`);
+                    }
+                }
+
                 const offer = {
                     sku: sku,
                     marketplaceId: "EBAY_US",
@@ -466,8 +485,8 @@ Deno.serve(async (req) => {
                     listingDescription: fullDescription,
                     listingPolicies: {
                         fulfillmentPolicyId: fulfillmentPolicy,
-                        paymentPolicyId: paymentPolicyId,
-                        returnPolicyId: returnPolicyId
+                        paymentPolicyId: paymentPolicy,
+                        returnPolicyId: defaultReturnPolicyId
                     },
                     merchantLocationKey: merchantLocationKey,
                     pricingSummary: pricingSummary
