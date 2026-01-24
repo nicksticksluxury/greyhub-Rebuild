@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
 
     if (hasZeroCost) {
       // Return all zeros with note for all platforms
-      const platforms = ['ebay', 'etsy', 'poshmark', 'mercari', 'whatnot', 'shopify'];
+      const platforms = ['ebay', 'etsy', 'poshmark', 'whatnot', 'shopify'];
       platforms.forEach(platform => {
         platformPrices[`${platform}_bin`] = 0;
         platformPrices[`${platform}_accept`] = 0;
@@ -364,7 +364,6 @@ Deno.serve(async (req) => {
         ebay: { feeRate: 0.18 },
         etsy: { feeRate: 0.065 },
         poshmark: { feeRate: 0.20 },
-        mercari: { feeRate: 0.10 },
         whatnot: { feeRate: 0.12 },
         shopify: { feeRate: 0.029 }
       };
@@ -395,7 +394,6 @@ Deno.serve(async (req) => {
         ebay: { feeRate: 0.18, binMultiplier: 0.95 },
         etsy: { feeRate: 0.065, binMultiplier: 0.95 },
         poshmark: { feeRate: 0.20, binMultiplier: 0.95 },
-        mercari: { feeRate: 0.10, binMultiplier: 0.95 },
         whatnot: { feeRate: 0.12, binMultiplier: 1.00 },
         shopify: { feeRate: 0.029, binMultiplier: 0.95 }
       };
