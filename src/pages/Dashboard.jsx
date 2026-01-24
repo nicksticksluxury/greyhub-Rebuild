@@ -267,10 +267,10 @@ export default function Dashboard() {
             <div className="bg-white rounded-lg p-4 border border-blue-200">
               <div className="flex items-center justify-between mb-2">
                 <DollarSign className="w-5 h-5 text-green-600" />
-                <Badge className="bg-green-600 text-white">{products.filter(p => p.exported_to?.ebay && !p.sold).length}</Badge>
+                <Badge className="bg-green-600 text-white">{company?.ebay_active_listings_count || products.filter(p => p.exported_to?.ebay && !p.sold).length}</Badge>
               </div>
               <p className="text-sm text-slate-600 font-semibold">Active Listings</p>
-              <p className="text-xs text-slate-500 mt-1">Currently on eBay</p>
+              <p className="text-xs text-slate-500 mt-1">Confirmed on eBay</p>
             </div>
           </div>
           

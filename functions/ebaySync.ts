@@ -716,8 +716,11 @@ Deno.serve(async (req) => {
                 }
             }
 
-            // Get active listings count (Published Offers)
-            const inventoryUrl = `https://api.ebay.com/sell/inventory/v1/offer?status=PUBLISHED&limit=1`;
+            // Get active listings for count and reconciliation
+            // Fetch up to 100 active offers (likely covers all for now)
+            const offersUrl = `https://api.ebay.com/sell/inventory/v1/offer?status=PUBLISHED&limit=100`;
+            const activeEbaySkus = new Set();
+            let activeListingsCount = 0;
 
             await base44.asServiceRole.entities.Log.create({
                 company_id: user.company_id,
@@ -725,24 +728,32 @@ Deno.serve(async (req) => {
                 timestamp: new Date().toISOString(),
                 level: "debug",
                 category: "ebay",
-                message: `Fetching inventory count`,
+                message: `Fetching active offers for reconciliation`,
                 details: { 
-                    url: inventoryUrl,
+                    url: offersUrl,
                     method: "GET",
                     tokenLength: ebayToken?.length
                 }
             });
 
-            const inventoryResponse = await fetch(inventoryUrl, {
+            const offersResponse = await fetch(offersUrl, {
                 headers: {
                     'Authorization': `Bearer ${ebayToken}`,
                     'Content-Type': 'application/json'
                 }
             });
 
-            if (inventoryResponse.ok) {
-                const inventoryData = await inventoryResponse.json();
-                eligibleOffers = inventoryData.total || 0;
+            if (offersResponse.ok) {
+                const offersData = await offersResponse.json();
+                activeListingsCount = offersData.total || 0;
+                
+                // Collect active SKUs
+                const offers = offersData.offers || [];
+                for (const offer of offers) {
+                    if (offer.sku) {
+                        activeEbaySkus.add(offer.sku);
+                    }
+                }
             }
 
             // Get unread member messages count
@@ -853,6 +864,7 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.Company.update(user.company_id, {
                 ebay_orders_to_ship: ordersToShip,
                 ebay_eligible_offers: eligibleOffers,
+                ebay_active_listings_count: activeListingsCount,
                 ebay_unread_messages: unreadMemberMessages
             });
 
@@ -862,8 +874,8 @@ Deno.serve(async (req) => {
                 timestamp: new Date().toISOString(),
                 level: "info",
                 category: "ebay",
-                message: `eBay Stats: ${ordersToShip} orders to ship, ${eligibleOffers} eligible offers, ${unreadMemberMessages} unread messages`,
-                details: { ordersToShip, eligibleOffers, unreadMemberMessages }
+                message: `eBay Stats: ${activeListingsCount} active listings, ${ordersToShip} to ship, ${unreadMemberMessages} msgs`,
+                details: { ordersToShip, activeListingsCount, unreadMemberMessages }
             });
         } catch (statsErr) {
             console.error("Failed to fetch eBay stats:", statsErr);
@@ -876,10 +888,42 @@ Deno.serve(async (req) => {
         const updatedItems = [];
         
         try {
-            // Get all watches with eBay listings (to sync quantity or end listing)
+            // Get all watches
             const allWatches = await base44.entities.Product.list();
             
             for (const watch of allWatches) {
+                // RECONCILIATION: Check if local product thinks it's listed but eBay says otherwise
+                const isLocallyListed = !!watch.exported_to?.ebay;
+                
+                // Only perform reconciliation if we successfully fetched active SKUs
+                if (activeEbaySkus.size > 0 && isLocallyListed) {
+                    // Using SKU (which is watch.id) to check presence
+                    if (!activeEbaySkus.has(watch.id)) {
+                        // Product is marked listed locally, but not found in active offers on eBay
+                        // Action: Delist locally to match eBay
+                        await base44.entities.Product.update(watch.id, {
+                            exported_to: { ...(watch.exported_to || {}), ebay: null },
+                            platform_ids: { ...(watch.platform_ids || {}), ebay: null },
+                            listing_urls: { ...(watch.listing_urls || {}), ebay: null }
+                        });
+                        
+                        updatedCount++;
+                        updatedItems.push(`${watch.brand} ${watch.model} (Reconciled: Not on eBay)`);
+                        
+                        await base44.asServiceRole.entities.EbayLog.create({
+                            company_id: user.company_id,
+                            timestamp: new Date().toISOString(),
+                            level: "warning",
+                            operation: "reconcile",
+                            message: `Reconciled: Removed listing status for ${watch.brand} ${watch.model} (not found active on eBay)`,
+                            details: { watch_id: watch.id, sku: watch.id }
+                        });
+                        
+                        // Skip further processing for this watch since we just delisted it
+                        continue; 
+                    }
+                }
+
                 const ebayItemId = watch.platform_ids?.ebay;
                 if (!ebayItemId) continue;
                 
