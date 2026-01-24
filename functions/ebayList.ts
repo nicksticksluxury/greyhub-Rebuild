@@ -443,7 +443,7 @@ Deno.serve(async (req) => {
                     sku: sku,
                     marketplaceId: "EBAY_US",
                     format: format,
-                    availableQuantity: isAuction ? 1 : (product.quantity || 1), // Auctions must have qty 1
+                    availableQuantity: isAuction ? undefined : (product.quantity || 1),
                     categoryId: categoryId,
                     listingDescription: fullDescription,
                     listingPolicies: {
