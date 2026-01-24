@@ -200,7 +200,7 @@ export default function ProductDetail() {
       ebay: { rate: 0.15 },
       poshmark: { rate: 0.20 },
       etsy: { rate: 0.065, payment: 0.03, fixed: 0.25 },
-      mercari: { rate: 0.129 },
+
       whatnot: { rate: 0.10, payment: 0.029, fixed: 0.30 },
       shopify: { rate: 0.029, fixed: 0.30 }
     };
@@ -1278,8 +1278,8 @@ export default function ProductDetail() {
                       params.set("price", format(editedData.retail_price || editedData.ai_analysis?.average_market_value));
                       
                       // Prioritize set platform price, fallback to AI recommendation
-                      const whatnotPrice = editedData.platform_prices?.whatnot || editedData.ai_analysis?.pricing_recommendations?.whatnot;
-                      params.set("whatnotPrice", format(whatnotPrice));
+                      const salesPrice = editedData.platform_prices?.ebay || editedData.platform_prices?.whatnot || editedData.ai_analysis?.pricing_recommendations?.ebay;
+                      params.set("salesPrice", format(salesPrice));
 
                       // Highlights
                       if (editedData.ai_analysis?.notable_features?.length) {
