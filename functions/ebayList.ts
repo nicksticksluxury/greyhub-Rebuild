@@ -429,10 +429,12 @@ Deno.serve(async (req) => {
                         };
                     }
                     
-                    if (listingDetails.buy_it_now_price > 0) {
+                    // Ensure we ONLY send price if it is a positive number
+                    const binPrice = parseFloat(listingDetails.buy_it_now_price);
+                    if (!isNaN(binPrice) && binPrice > 0) {
                         pricingSummary.price = {
                             currency: "USD",
-                            value: String(listingDetails.buy_it_now_price)
+                            value: String(binPrice)
                         };
                     }
                 } else {
