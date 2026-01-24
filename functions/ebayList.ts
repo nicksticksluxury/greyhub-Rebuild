@@ -502,13 +502,21 @@ Deno.serve(async (req) => {
                     'Accept-Language': 'en-US'
                 };
 
-                // Check for existing offer
+                // Check for existing offer with matching format
                 const getOffersRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer?sku=${sku}`, { headers: apiHeaders });
                 const getOffersData = await getOffersRes.json();
-                let offerId = getOffersData.offers?.[0]?.offerId;
+                
+                // Find an offer that matches the desired format (AUCTION vs FIXED_PRICE)
+                // eBay does not allow changing the format of an existing offer.
+                let existingOffer = null;
+                if (getOffersData.offers && getOffersData.offers.length > 0) {
+                    existingOffer = getOffersData.offers.find(o => o.format === format);
+                }
+                
+                let offerId = existingOffer?.offerId;
 
                 if (offerId) {
-                    console.log(`Found existing offer ${offerId} for SKU ${sku}, updating...`);
+                    console.log(`Found existing ${format} offer ${offerId} for SKU ${sku}, updating...`);
                     const updateRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}`, {
                         method: 'PUT',
                         headers: apiHeaders,
@@ -519,7 +527,7 @@ Deno.serve(async (req) => {
                         throw new Error(`Failed to update existing offer ${offerId}: ${err}`);
                     }
                 } else {
-                    console.log(`Creating new offer for SKU ${sku}...`);
+                    console.log(`Creating new ${format} offer for SKU ${sku}...`);
                     const createRes = await fetch("https://api.ebay.com/sell/inventory/v1/offer", {
                         method: 'POST',
                         headers: apiHeaders,

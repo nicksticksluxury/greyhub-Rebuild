@@ -386,7 +386,7 @@ Deno.serve(async (req) => {
                      throw new Error(JSON.stringify({ message: `Inventory Item Update Error: ${inventoryResponse.status}`, details: errorDetails }));
                  }
 
-                // 2. Get and Update Offer
+                // 2. Get and Update (or Create) Offer
                 const apiHeaders = {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
@@ -396,11 +396,14 @@ Deno.serve(async (req) => {
 
                 const getOffersRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer?sku=${sku}`, { headers: apiHeaders });
                 const getOffersData = await getOffersRes.json();
-                const offerId = getOffersData.offers?.[0]?.offerId;
-
-                if (!offerId) {
-                    throw new Error(`No offer found for SKU ${sku}`);
+                
+                // Find an offer that matches the desired format (AUCTION vs FIXED_PRICE)
+                let existingOffer = null;
+                if (getOffersData.offers && getOffersData.offers.length > 0) {
+                    existingOffer = getOffersData.offers.find(o => o.format === format);
                 }
+                
+                let offerId = existingOffer?.offerId;
 
                 // Determine fulfillment policy based on free shipping flag
                 let fulfillmentPolicy = fulfillmentPolicyId;
@@ -504,21 +507,38 @@ Deno.serve(async (req) => {
 
                 console.log(`[${sku}] Offer Payload:`, JSON.stringify(offer, null, 2));
 
-                const updateRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}`, {
-                    method: 'PUT',
-                    headers: apiHeaders,
-                    body: JSON.stringify(offer)
-                });
+                if (offerId) {
+                    console.log(`Updating existing ${format} offer ${offerId}...`);
+                    const updateRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}`, {
+                        method: 'PUT',
+                        headers: apiHeaders,
+                        body: JSON.stringify(offer)
+                    });
 
-                if (!updateRes.ok) {
-                     const err = await updateRes.text();
-                     console.error(`[${sku}] Offer Update Error Response:`, err);
-                     let errorDetails = { raw: err };
-                     try {
-                         errorDetails = JSON.parse(err);
-                     } catch (e) {}
-                     throw new Error(JSON.stringify({ message: `Failed to update offer ${offerId}`, details: errorDetails }));
-                 }
+                    if (!updateRes.ok) {
+                         const err = await updateRes.text();
+                         console.error(`[${sku}] Offer Update Error Response:`, err);
+                         let errorDetails = { raw: err };
+                         try {
+                             errorDetails = JSON.parse(err);
+                         } catch (e) {}
+                         throw new Error(JSON.stringify({ message: `Failed to update offer ${offerId}`, details: errorDetails }));
+                     }
+                } else {
+                    console.log(`Creating new ${format} offer for SKU ${sku} (Format switch or new)...`);
+                    const createRes = await fetch("https://api.ebay.com/sell/inventory/v1/offer", {
+                        method: 'POST',
+                        headers: apiHeaders,
+                        body: JSON.stringify(offer)
+                    });
+                    const createData = await createRes.json();
+                    if (!createRes.ok) {
+                        const err = JSON.stringify(createData);
+                        console.error(`[${sku}] Offer Creation Error:`, err);
+                        throw new Error(`Offer Creation Error: ${err}`);
+                    }
+                    offerId = createData.offerId;
+                }
 
                 // 3. Re-publish to apply changes
                 const publishResponse = await fetch(`https://api.ebay.com/sell/inventory/v1/offer/${offerId}/publish`, {
