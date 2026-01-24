@@ -33,11 +33,12 @@ export default function AuctionSummaryTab({ product }) {
 
   const totalCost = (product.cost || 0) + (product.repair_costs?.reduce((sum, r) => sum + (r.cost || 0), 0) || 0);
   
-  // Calculate 30% ROI price (using Whatnot fees as example: 10% + 2.9% + $0.30)
+  // Calculate 30% ROI price (using eBay fees: 15% under $5K)
   const calculate30ROIPrice = () => {
     if (totalCost <= 0) return 0;
     const targetNet = totalCost * 1.30; // Total cost + 30% ROI
-    const price = (targetNet + 0.30) / (1 - 0.10 - 0.029);
+    // Basic eBay fee estimation (15%)
+    const price = targetNet / (1 - 0.15);
     return Math.ceil(price);
   };
   
@@ -268,25 +269,25 @@ export default function AuctionSummaryTab({ product }) {
           </CardContent>
         </Card>
 
-        {/* Whatnot Pricing & Profit */}
+        {/* eBay Pricing & Profit */}
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              Whatnot Pricing & Profit
+              eBay Pricing & Profit
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {product.platform_prices?.whatnot && (() => {
-                const price = product.platform_prices.whatnot;
+              {product.platform_prices?.ebay && (() => {
+                const price = product.platform_prices.ebay;
                 const { profit, margin, roi } = calculateProfit(price);
                 const isAboveMin = price >= (product.minimum_price || 0);
                 
                 return (
                   <div className={`rounded-lg p-4 ${isAboveMin ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-white">Whatnot</span>
+                      <span className="font-semibold text-white">eBay</span>
                       <span className={`text-xl font-bold ${isAboveMin ? 'text-green-400' : 'text-red-400'}`}>
                         ${price.toFixed(2)}
                       </span>

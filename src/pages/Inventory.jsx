@@ -31,7 +31,7 @@ export default function Inventory() {
   const [showFilters, setShowFilters] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedPlatform, setSelectedPlatform] = useState("whatnot");
+  const [selectedPlatform, setSelectedPlatform] = useState("ebay");
   const [syncing, setSyncing] = useState(false);
   const [listing, setListing] = useState(false);
   const location = useLocation();
@@ -819,10 +819,9 @@ export default function Inventory() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ebay">eBay Pricing</SelectItem>
+                    <SelectItem value="whatnot">Whatnot Pricing</SelectItem>
                     <SelectItem value="poshmark">Poshmark Pricing</SelectItem>
                     <SelectItem value="etsy">Etsy Pricing</SelectItem>
-                    <SelectItem value="mercari">Mercari Pricing</SelectItem>
-                    <SelectItem value="whatnot">Whatnot Pricing</SelectItem>
                     <SelectItem value="square">Square / Store Pricing</SelectItem>
                   </SelectContent>
                 </Select>
