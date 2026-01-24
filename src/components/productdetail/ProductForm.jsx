@@ -19,7 +19,7 @@ const PLATFORM_FEES = {
   ebay: { description: "15% under $5K, 9% over $5K" },
   poshmark: { rate: 0.20, flat: 2.95, threshold: 15, description: "20% on sales over $15, $2.95 under" },
   etsy: { rate: 0.065, payment: 0.03, fixed: 0.25, description: "6.5% transaction + 3% + $0.25 payment" },
-  mercari: { rate: 0.129, description: "12.9% selling + payment fee" },
+
   whatnot: { rate: 0.10, payment: 0.029, fixed: 0.30, description: "10% + 2.9% + $0.30 payment" },
   shopify: { rate: 0.029, fixed: 0.30, description: "2.9% + $0.30 payment processing" }
 };
