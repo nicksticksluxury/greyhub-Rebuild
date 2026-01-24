@@ -400,11 +400,50 @@ Deno.serve(async (req) => {
                     }
                 }
 
+                // Determine listing format and details
+                const listingDetails = product.ebay_listing_details || {};
+                const isAuction = listingDetails.listing_type === 'Auction';
+                const format = isAuction ? "AUCTION" : "FIXED_PRICE";
+
+                // Build Pricing Summary based on format
+                const pricingSummary = {};
+                
+                if (isAuction) {
+                    // AUCTION PRICING
+                    if (!listingDetails.starting_bid) {
+                        throw new Error(`Missing starting bid for auction item ${sku}`);
+                    }
+                    pricingSummary.auctionStartPrice = {
+                        currency: "USD",
+                        value: String(listingDetails.starting_bid)
+                    };
+                    
+                    if (listingDetails.reserve_price > 0) {
+                        pricingSummary.auctionReservePrice = {
+                            currency: "USD",
+                            value: String(listingDetails.reserve_price)
+                        };
+                    }
+                    
+                    if (listingDetails.buy_it_now_price > 0) {
+                        pricingSummary.price = {
+                            currency: "USD",
+                            value: String(listingDetails.buy_it_now_price)
+                        };
+                    }
+                } else {
+                    // FIXED PRICE PRICING
+                    pricingSummary.price = {
+                        currency: "USD",
+                        value: price.toString()
+                    };
+                }
+
                 const offer = {
                     sku: sku,
                     marketplaceId: "EBAY_US",
-                    format: "FIXED_PRICE",
-                    availableQuantity: product.quantity || 1,
+                    format: format,
+                    availableQuantity: isAuction ? 1 : (product.quantity || 1), // Auctions must have qty 1
                     categoryId: categoryId,
                     listingDescription: fullDescription,
                     listingPolicies: {
@@ -413,16 +452,16 @@ Deno.serve(async (req) => {
                         returnPolicyId: returnPolicyId
                     },
                     merchantLocationKey: merchantLocationKey,
-                    pricingSummary: {
-                        price: {
-                            currency: "USD",
-                            value: price.toString()
-                        }
-                    }
+                    pricingSummary: pricingSummary
                 };
 
-                // Add Best Offer settings if enabled
-                if (product.ebay_allow_offers !== false) {
+                // Add auction specific fields
+                if (isAuction) {
+                    offer.listingDuration = (listingDetails.auction_duration || "DAYS_7").toUpperCase();
+                }
+
+                // Add Best Offer settings (Only for Fixed Price)
+                if (!isAuction && product.ebay_allow_offers !== false) {
                     const bestOfferTerms = {
                         bestOfferEnabled: true
                     };
