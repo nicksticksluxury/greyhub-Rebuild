@@ -22,7 +22,10 @@ export default function SalesView() {
           const format = (val) => (val || val === 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val) : "N/A";
           
           const images = watch.photos?.map(p => p.full || p.medium || p.original || p).filter(Boolean) || [];
+          // Prioritize eBay price, fallback to Whatnot
+          const ebayPrice = watch.platform_prices?.ebay || watch.ai_analysis?.pricing_recommendations?.ebay;
           const whatnotPrice = watch.platform_prices?.whatnot || watch.ai_analysis?.pricing_recommendations?.whatnot;
+          const primaryPrice = ebayPrice || whatnotPrice;
           
           // Improved Comp Link Extraction
           const extractComps = () => {
@@ -48,7 +51,7 @@ export default function SalesView() {
             condition: watch.condition || "",
             msrp: format(watch.msrp || watch.ai_analysis?.original_msrp),
             price: format(watch.retail_price || watch.ai_analysis?.average_market_value),
-            whatnotPrice: format(whatnotPrice),
+            salesPrice: format(primaryPrice),
             images: images,
             desc: watch.description || "",
             highlights: watch.ai_analysis?.notable_features || [],
@@ -74,7 +77,7 @@ export default function SalesView() {
         condition: params.get("condition"),
         msrp: params.get("msrp"),
         price: params.get("price"),
-        whatnotPrice: params.get("whatnotPrice"),
+        salesPrice: params.get("ebayPrice") || params.get("salesPrice") || params.get("whatnotPrice"),
         images: urlImages.length > 0 ? urlImages : null,
         desc: params.get("desc"),
         highlights: params.get("highlights") ? params.get("highlights").split(",") : null,
@@ -99,7 +102,7 @@ export default function SalesView() {
       mergeIfPresent('condition');
       mergeIfPresent('msrp');
       mergeIfPresent('price');
-      mergeIfPresent('whatnotPrice');
+      mergeIfPresent('salesPrice');
       mergeIfPresent('desc');
       
       // Arrays/Complex types need explicit checks for emptiness if we want to be strict, 
@@ -124,7 +127,7 @@ export default function SalesView() {
 
   useEffect(() => {
     if (data) {
-      document.title = "OBS WHATNOT SHARE";
+      document.title = "OBS SALES SHARE";
     }
   }, [data]);
 
@@ -220,9 +223,9 @@ export default function SalesView() {
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-xl p-3 border border-green-800 bg-gradient-to-b from-white/10 to-white/5 text-center relative overflow-hidden shadow-lg">
               <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
-              <p className="text-xs text-green-400 uppercase font-bold tracking-wider mb-1">Whatnot Ask</p>
+              <p className="text-xs text-green-400 uppercase font-bold tracking-wider mb-1">Sale Price</p>
               <p className="text-2xl font-black text-white">
-                 {data.whatnotPrice}
+                 {data.salesPrice}
               </p>
             </div>
             <div className="bg-white/5 rounded-xl p-3 border border-white/10 text-center relative overflow-hidden">
