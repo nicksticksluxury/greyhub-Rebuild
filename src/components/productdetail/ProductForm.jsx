@@ -591,7 +591,7 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                       ebay: { feeRate: 0.18, binMultiplier: 0.95 },
                       etsy: { feeRate: 0.065, binMultiplier: 0.95 },
                       poshmark: { feeRate: 0.20, binMultiplier: 0.95 },
-                      mercari: { feeRate: 0.10, binMultiplier: 0.95 },
+
                       whatnot: { feeRate: 0.12, binMultiplier: 1.00 },
                       shopify: { feeRate: 0.029, binMultiplier: 0.95 }
                     };
@@ -837,16 +837,15 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
 
         <div className="pt-4 border-t">
           <h3 className="font-semibold text-slate-900 mb-4">Platform Pricing</h3>
-          <Tabs defaultValue="whatnot" className="w-full">
+          <Tabs defaultValue="ebay" className="w-full">
             <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="whatnot">Whatnot</TabsTrigger>
               <TabsTrigger value="ebay">eBay</TabsTrigger>
+              <TabsTrigger value="whatnot">Whatnot</TabsTrigger>
               <TabsTrigger value="shopify">Shopify</TabsTrigger>
               <TabsTrigger value="etsy">Etsy</TabsTrigger>
               <TabsTrigger value="poshmark">Poshmark</TabsTrigger>
-              <TabsTrigger value="mercari">Mercari</TabsTrigger>
-            </TabsList>
-            {['whatnot', 'ebay', 'shopify', 'etsy', 'poshmark', 'mercari'].map(platform => {
+              </TabsList>
+              {['ebay', 'whatnot', 'shopify', 'etsy', 'poshmark'].map(platform => {
               const price = data.platform_prices?.[platform] || 0;
               const totalCost = getTotalCost();
               const minPrice = calculateMinimumPrice(totalCost, platform);
@@ -1478,7 +1477,6 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                     <SelectItem value="ebay">eBay</SelectItem>
                     <SelectItem value="poshmark">Poshmark</SelectItem>
                     <SelectItem value="etsy">Etsy</SelectItem>
-                    <SelectItem value="mercari">Mercari</SelectItem>
                     <SelectItem value="whatnot">Whatnot</SelectItem>
                     <SelectItem value="shopify">Shopify</SelectItem>
                   </SelectContent>
