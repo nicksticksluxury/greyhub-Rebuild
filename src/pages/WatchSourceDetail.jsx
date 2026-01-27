@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import SourceForm from "../components/sources/SourceForm";
 
 export default function WatchSourceDetail() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -23,6 +24,17 @@ export default function WatchSourceDetail() {
 
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null); // null for create (if we add it), object for edit
+  const [isEditSourceDialogOpen, setIsEditSourceDialogOpen] = useState(false);
+
+  const updateSourceMutation = useMutation({
+    mutationFn: (data) => base44.entities.WatchSource.update(sourceId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchSource', sourceId] });
+      setIsEditSourceDialogOpen(false);
+      toast.success("Source updated");
+    },
+    onError: (err) => toast.error("Failed to update: " + err.message)
+  });
 
   const deleteOrderMutation = useMutation({
     mutationFn: (id) => base44.entities.SourceOrder.delete(id),
@@ -142,15 +154,7 @@ export default function WatchSourceDetail() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => {
-                  // Open edit dialog with source data
-                  const sourceData = {
-                    id: source.id,
-                    ...source
-                  };
-                  // For now, navigate to sources page - we can improve this later
-                  navigate(createPageUrl("WatchSources"));
-                }}
+                onClick={() => setIsEditSourceDialogOpen(true)}
                 className="shrink-0"
               >
                 <Pencil className="w-4 h-4" />
@@ -348,6 +352,16 @@ export default function WatchSourceDetail() {
                         <Button type="submit" disabled={saveOrderMutation.isPending} className="bg-slate-800 hover:bg-slate-900 text-white">Save Order</Button>
                     </DialogFooter>
                 </form>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={isEditSourceDialogOpen} onOpenChange={setIsEditSourceDialogOpen}>
+            <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
+                <SourceForm 
+                    source={source} 
+                    onSubmit={(data) => updateSourceMutation.mutate(data)} 
+                    onCancel={() => setIsEditSourceDialogOpen(false)} 
+                />
             </DialogContent>
         </Dialog>
       </div>
