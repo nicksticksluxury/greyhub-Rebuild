@@ -325,11 +325,20 @@ export default function ProductTable({ products, isLoading, onQuickView, sources
                           );
                           
                           return activePlatforms.length > 0 ? (
-                            activePlatforms.map(platform => (
-                              <Badge key={platform} variant="secondary" className="text-[10px] px-1.5 h-5 capitalize">
-                                {platform}
-                              </Badge>
-                            ))
+                            activePlatforms.map(platform => {
+                              let label = platform;
+                              if (platform === 'ebay') {
+                                const listingType = product.ebay_listing_details?.listing_type;
+                                if (listingType === 'FixedPriceItem') label = "eBay - BIN";
+                                else if (listingType === 'Auction') label = "eBay - Auc";
+                                else label = "eBay";
+                              }
+                              return (
+                                <Badge key={platform} variant="secondary" className="text-[10px] px-1.5 h-5 capitalize">
+                                  {label}
+                                </Badge>
+                              );
+                            })
                           ) : (
                             <span className="text-xs text-slate-400">-</span>
                           );
