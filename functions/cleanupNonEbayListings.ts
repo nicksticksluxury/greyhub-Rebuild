@@ -9,9 +9,12 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const products = await base44.entities.Product.list();
+        // Fetch more products to ensure we cover the inventory
+        const products = await base44.entities.Product.list("-created_date", 1000);
         let updatedCount = 0;
         const platformsToRemove = ['poshmark', 'etsy', 'mercari', 'whatnot', 'shopify'];
+
+        const updatesToProcess = [];
 
         for (const product of products) {
             let needsUpdate = false;
@@ -64,18 +67,18 @@ Deno.serve(async (req) => {
                     needsUpdate = true;
                 }
             }
-            
-            // Also clean platform_prices for non-eBay platforms if desired, 
-            // but user specifically said "show as listed", which usually refers to status/IDs.
-            // I'll leave pricing alone as it might be useful reference data, 
-            // unless strictly interpreted as "remove records". 
-            // The prompt says "update all the records that show as listed somewhere else".
-            // So removing the "listed" indicators (exported_to, platform_ids, listing_urls) is the core task.
 
             if (needsUpdate) {
-                await base44.entities.Product.update(product.id, updates);
-                updatedCount++;
+                updatesToProcess.push({ id: product.id, data: updates });
             }
+        }
+
+        // Process updates with delay to avoid rate limits
+        for (const update of updatesToProcess) {
+            await base44.entities.Product.update(update.id, update.data);
+            updatedCount++;
+            // Sleep for 100ms
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         return Response.json({ 
