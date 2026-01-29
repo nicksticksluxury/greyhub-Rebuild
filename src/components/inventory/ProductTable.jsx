@@ -135,6 +135,26 @@ export default function ProductTable({ products, isLoading, onQuickView, sources
           aValue = a.platform_prices?.[selectedPlatform] || 0;
           bValue = b.platform_prices?.[selectedPlatform] || 0;
           break;
+        case "listed_on":
+          const getLabels = (p) => {
+            const platforms = ['ebay', 'poshmark', 'etsy', 'mercari', 'whatnot', 'shopify'];
+            return platforms.filter(platform => 
+              (p.listing_urls && p.listing_urls[platform]) || 
+              (p.platform_ids && p.platform_ids[platform]) ||
+              (p.exported_to && p.exported_to[platform])
+            ).map(platform => {
+              if (platform === 'ebay') {
+                const listingType = p.ebay_listing_details?.listing_type;
+                if (listingType === 'FixedPriceItem') return "eBay - BIN";
+                else if (listingType === 'Auction') return "eBay - Auc";
+                else return "eBay";
+              }
+              return platform;
+            }).sort().join(", ");
+          };
+          aValue = getLabels(a);
+          bValue = getLabels(b);
+          break;
         default:
           return 0;
       }
@@ -223,7 +243,15 @@ export default function ProductTable({ products, isLoading, onQuickView, sources
                   </Button>
                 </TableHead>
 
-                <TableHead>Listed On</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort("listed_on")}
+                    className="h-auto p-0 hover:bg-transparent font-semibold"
+                  >
+                    Listed On {getSortIcon("listed_on")}
+                  </Button>
+                </TableHead>
                 <TableHead>Source</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
