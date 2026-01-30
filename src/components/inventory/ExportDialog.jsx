@@ -74,6 +74,84 @@ export default function ExportDialog({ watches, allWatches, onClose }) {
     onClose();
   };
 
+  const exportForFacebook = async () => {
+    const headers = [
+      "id", "title", "description", "availability", "condition", "price", "link", "image_link", "brand", "google_product_category"
+    ];
+
+    const facebookConditionMap = {
+      'new': 'new',
+      'new_with_box': 'new',
+      'new_no_box': 'new',
+      'mint': 'used',
+      'excellent': 'used',
+      'very_good': 'used',
+      'good': 'used',
+      'fair': 'used',
+      'poor': 'used',
+      'parts_repair': 'used'
+    };
+
+    const rows = watchesToExport.map(w => {
+      // Title
+      let title = w.listing_title;
+      if (!title) {
+        if (w.reference_number && w.reference_number.trim() !== "" && w.reference_number.toLowerCase() !== "unknown") {
+          title = `${w.brand || ""} ${w.reference_number}`.trim();
+        } else {
+          title = `${w.brand || ""} ${w.model || ""}`.trim();
+        }
+      }
+
+      // Price (ensure USD)
+      let price = w.platform_prices?.facebook || w.retail_price || w.price || 0;
+      price = `${Number(price).toFixed(2)} USD`;
+
+      // Image
+      let imageLink = "";
+      if (w.photos && w.photos.length > 0) {
+        imageLink = w.photos[0].full || w.photos[0].medium || "";
+      }
+
+      // Link
+      const link = `${window.location.origin}/SalesView?id=${w.id}`;
+
+      return [
+        w.id,
+        title,
+        (w.description || "").replace(/"/g, '""'),
+        (w.quantity && w.quantity > 0) ? "in stock" : "out of stock",
+        facebookConditionMap[w.condition] || "used",
+        price,
+        link,
+        imageLink,
+        w.brand || "Unknown",
+        "201" // Apparel & Accessories > Jewelry > Watches
+      ];
+    });
+
+    const csv = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `facebook_export_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    // Mark as exported
+    await markAsExported(watchesToExport, "facebook");
+    
+    toast.success(`Exported ${watchesToExport.length} watches for Facebook!`);
+    onClose();
+  };
+
   const exportForWhatnot = async () => {
     setIsGenerating(true);
     
@@ -222,6 +300,11 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
       return;
     }
 
+    if (selectedPlatform === "facebook") {
+      await exportForFacebook();
+      return;
+    }
+
     const platformData = watchesToExport.map(w => ({
       title: `${w.brand} ${w.model}${w.year ? ` ${w.year}` : ""}`,
       description: w.platform_descriptions?.[selectedPlatform] || w.description || "",
@@ -329,6 +412,7 @@ Write a 3-4 sentence description that highlights key features and appeals to wat
               <SelectItem value="mercari">Mercari Format</SelectItem>
               <SelectItem value="whatnot">Whatnot Format</SelectItem>
               <SelectItem value="shopify">Shopify Format</SelectItem>
+              <SelectItem value="facebook">Facebook Store Format</SelectItem>
             </SelectContent>
           </Select>
         </div>
