@@ -398,6 +398,11 @@ Deno.serve(async (req) => {
                     'Accept-Language': 'en-US'
                 };
 
+                // Determine listing format and details FIRST
+                const listingDetails = watch.ebay_listing_details || {};
+                const isAuction = listingDetails.listing_type === 'Auction';
+                const format = isAuction ? "AUCTION" : "FIXED_PRICE";
+
                 const getOffersRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer?sku=${sku}`, { headers: apiHeaders });
                 const getOffersData = await getOffersRes.json();
                 
@@ -421,11 +426,6 @@ Deno.serve(async (req) => {
                         fulfillmentPolicy = freeShippingPolicy.fulfillmentPolicyId;
                     }
                 }
-
-                // Determine listing format and details
-                const listingDetails = watch.ebay_listing_details || {};
-                const isAuction = listingDetails.listing_type === 'Auction';
-                const format = isAuction ? "AUCTION" : "FIXED_PRICE";
 
                 // Build Pricing Summary based on format
                 const pricingSummary = {};
