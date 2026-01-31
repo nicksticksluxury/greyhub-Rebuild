@@ -284,15 +284,8 @@ Deno.serve(async (req) => {
 
                 // Combine description with footer
                 let fullDescription = watch.platform_descriptions?.ebay || watch.description || "No description provided.";
-                
-                // Prevent duplicate footer: check if description already contains the footer
-                // Normalize strings (trim whitespace) for comparison to be safe
                 if (ebayFooter) {
-                    const normDesc = fullDescription.trim();
-                    const normFooter = ebayFooter.trim();
-                    if (!normDesc.endsWith(normFooter)) {
-                        fullDescription = `${fullDescription}\n\n${ebayFooter}`;
-                    }
+                    fullDescription = `${fullDescription}\n\n${ebayFooter}`;
                 }
 
                 // 1. Update Inventory Item - Map to eBay's ConditionEnum values
@@ -497,13 +490,6 @@ Deno.serve(async (req) => {
 
                 // Determine payment policy
                 // For Auctions WITHOUT Buy It Now, immediatePay must be false.
-                
-                // Ensure price update: If the user provided a specific eBay price, it overrides retail_price
-                if (watch.platform_prices?.ebay) {
-                    console.log(`[${sku}] Using explicit eBay price: ${watch.platform_prices.ebay}`);
-                } else {
-                    console.log(`[${sku}] Using retail_price for eBay: ${watch.retail_price}`);
-                }
                 let paymentPolicy = defaultPaymentPolicyId;
                 const requiresNonImmediatePay = isAuction && !pricingSummary.price; // price is BIN price in auction format
 
@@ -523,7 +509,7 @@ Deno.serve(async (req) => {
                     format: format,
                     availableQuantity: isAuction ? undefined : (watch.quantity || 1),
                     categoryId: categoryId,
-                    // listingDescription: fullDescription, // Omit to inherit from Inventory Item and prevent potential duplication issues
+                    listingDescription: fullDescription,
                     listingPolicies: {
                         fulfillmentPolicyId: fulfillmentPolicy,
                         paymentPolicyId: paymentPolicy,
