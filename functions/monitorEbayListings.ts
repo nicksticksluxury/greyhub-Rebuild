@@ -14,17 +14,15 @@ export default async function handler(req) {
             return Response.json({ error: "eBay not connected" }, { status: 400 });
         }
 
-        // 2. Fetch Products listed on eBay
-        // optimization: filtering by exported_to.ebay exists (not null)
-        // Note: SDK filter might vary, for now we list all and filter in memory or use proper filter if known
-        // Assuming we iterate recently updated or all active products. 
-        // For a robust system, we'd paginate. Here we'll take top 50 active eBay products for the demo run.
+        // 2. Fetch Active Products
+        // For performance, we'll limit to 50 recently updated products that are likely on eBay
+        // In a production app, you might iterate all or use a specific "monitored" flag
         const products = await base44.entities.Product.list({
             limit: 50,
-            sort: { updated_date: -1 } // check recently active first
+            sort: { updated_date: -1 }
         });
 
-        // Filter for ones that have an eBay ID or link
+        // Filter for products that have been exported to eBay (have an ID or link)
         const ebayProducts = products.data.filter(p => p.platform_ids?.ebay || p.listing_urls?.ebay);
 
         const results = {
@@ -45,113 +43,114 @@ export default async function handler(req) {
             const sku = product.id;
 
             try {
-                // A. Check Offers (Selling Status)
-                // The Inventory API 'getOffers' endpoint returns the status and any errors/warnings
+                // A. Check Offers (Status & Errors)
                 const offersRes = await fetch(`https://api.ebay.com/sell/inventory/v1/offer?sku=${sku}`, { headers });
                 const offersData = await offersRes.json();
-
+                
                 let issues = [];
-
-                if (offersData.offers && offersData.offers.length > 0) {
-                    const offer = offersData.offers[0];
-                    // Check logic: listing status not 'PUBLISHED' or has explicit errors/warnings
-                    if (offer.status !== 'PUBLISHED') {
-                         issues.push(`Listing status is ${offer.status}`);
-                    }
-                    
-                    // Often errors are not in the offer object but returned when trying to publish.
-                    // However, we can also check 'getInventoryItem' for validation issues if eBay supports it, 
-                    // but usually eBay validates on 'put'.
-                    // Let's assume we are looking for "warnings" if they exist in the offer response (rare)
-                    // OR we interpret "unpublished" as an issue.
-                } else if (offersData.errors) {
+                
+                // Collect API-level errors
+                if (offersData.errors) {
                     issues.push(...offersData.errors.map(e => `${e.message} (${e.domain})`));
                 }
 
-                // If no issues found via Inventory API, we might want to check Trading API 'GetItem' for 'GetMyeBaySelling' 
-                // but that requires XML. Let's stick to Inventory API errors/status for now.
-                // If the product is marked as "exported_to.ebay" but offer is missing or unpublished, that's an issue.
+                // Check offer status
+                if (offersData.offers && offersData.offers.length > 0) {
+                    const offer = offersData.offers[0];
+                    if (offer.status === 'UNPUBLISHED') {
+                        // If it's unpublished but supposed to be listed, that's an issue
+                        issues.push("Listing is currently UNPUBLISHED on eBay");
+                    }
+                    // Add more checks if needed (e.g. validUntil, etc.)
+                } else if (!offersData.errors) {
+                    // No offers found and no errors?
+                    issues.push("No eBay offer found for this product.");
+                }
 
                 if (issues.length === 0) continue;
 
-                // B. AI Analysis & Fix
+                // B. AI Analysis
                 const prompt = `
-                    You are an eBay Listing Expert AI.
-                    I have a product that is failing to list or has warnings on eBay.
+                    You are an expert eBay Listing Troubleshooter.
                     
-                    Product Data: ${JSON.stringify(product, null, 2)}
+                    Product Data: ${JSON.stringify({
+                        title: product.listing_title,
+                        brand: product.brand,
+                        model: product.model,
+                        description: product.description,
+                        price: product.platform_prices?.ebay || product.retail_price,
+                        condition: product.condition,
+                        id: product.id
+                    }, null, 2)}
                     
-                    eBay Issues/Errors: ${JSON.stringify(issues)}
+                    Detected eBay Issues: ${JSON.stringify(issues)}
                     
-                    Determine if this is a fixable data issue (e.g. missing brand, wrong category, invalid chars).
-                    If yes, provide a JSON object of fields to update in the 'Product' entity.
-                    If no, provide a manual explanation.
+                    Task: Analyze the issues.
+                    1. Can this be auto-fixed by updating the product data? (e.g. fix title length, add missing brand, fix price format)
+                    2. If YES, provide a JSON object of the fields to update in the Product entity.
+                    3. If NO, explain why and what the user must do manually.
                 `;
 
-                const aiRes = await base44.integrations.Core.InvokeLLM({
+                const aiAnalysis = await base44.integrations.Core.InvokeLLM({
                     prompt: prompt,
                     response_json_schema: {
                         type: "object",
                         properties: {
                             can_auto_fix: { type: "boolean" },
-                            update_fields: { type: "object", description: "Key-value pairs to update in Product entity" },
-                            explanation: { type: "string" }
+                            update_fields: { 
+                                type: "object", 
+                                description: "Key-value pairs to update in Product entity (e.g. { listing_title: 'New Title' })" 
+                            },
+                            explanation: { type: "string", description: "Clear explanation of the issue and fix/action required" }
                         },
                         required: ["can_auto_fix", "explanation"]
                     }
                 });
 
-                const analysis = aiRes; // InvokeLLM returns the object directly if schema provided
-
-                if (analysis.can_auto_fix && analysis.update_fields) {
-                    // C. Apply Fix
-                    console.log(`Auto-fixing Product ${sku}:`, analysis.update_fields);
+                if (aiAnalysis.can_auto_fix && aiAnalysis.update_fields) {
+                    // C. Auto-Fix
+                    console.log(`Auto-fixing product ${sku}:`, aiAnalysis.update_fields);
                     
                     // 1. Update Product
-                    await base44.entities.Product.update(product.id, analysis.update_fields);
+                    await base44.entities.Product.update(product.id, aiAnalysis.update_fields);
                     
-                    // 2. Trigger eBay Update (Sync)
-                    // We call the existing ebayUpdate function logic (or invoke it)
-                    // For simplicity/reliability, we'll assume a separate scheduled sync will pick it up, 
-                    // OR we can invoke 'ebayUpdate' directly.
+                    // 2. Trigger eBay Update
                     await base44.functions.invoke('ebayUpdate', { productId: product.id });
-
-                    // 3. Log success
+                    
+                    // 3. Log Success Alert
                     await base44.entities.Alert.create({
                         company_id: user.company_id,
                         user_id: user.id,
                         type: "success",
                         title: "Auto-Fixed eBay Listing",
-                        message: `Fixed issue: ${issues[0]}. ${analysis.explanation}`,
-                        read: false,
-                        metadata: { productId: product.id, fix: analysis.update_fields }
+                        message: `Fixed issues for "${product.listing_title}": ${aiAnalysis.explanation}`,
+                        link: `/ProductDetail?id=${product.id}`,
+                        read: false
                     });
-
+                    
                     results.fixed++;
-
                 } else {
                     // D. Flag for Manual Review
-                    console.log(`Flagging Product ${sku}:`, analysis.explanation);
+                    console.log(`Flagging product ${sku} for review`);
                     
-                    // Check if alert already exists to avoid spam
-                    // (Skipped for brevity/performance in this iteration, but recommended)
-                    
+                    // Check for existing alerts to avoid spam (optional optimization)
+                    // For now, create alert
                     await base44.entities.Alert.create({
                         company_id: user.company_id,
                         user_id: user.id,
-                        type: "warning", // 'error' might be too aggressive if it's just suppressed
-                        title: "eBay Listing Attention Needed",
-                        message: `Issues: ${issues.join(', ')}. AI Analysis: ${analysis.explanation}`,
+                        type: "warning",
+                        title: "eBay Listing Needs Review",
+                        message: `Issues detected for "${product.listing_title}": ${aiAnalysis.explanation}`,
                         link: `/ProductDetail?id=${product.id}`,
                         read: false,
-                        metadata: { productId: product.id, issues }
+                        metadata: { issues, explanation: aiAnalysis.explanation }
                     });
-
+                    
                     results.flagged++;
                 }
 
             } catch (err) {
-                console.error(`Error processing ${sku}:`, err);
+                console.error(`Error monitoring product ${sku}:`, err);
                 results.errors.push({ sku, error: err.message });
             }
         }
@@ -159,6 +158,7 @@ export default async function handler(req) {
         return Response.json(results);
 
     } catch (error) {
+        console.error("Monitor function error:", error);
         return Response.json({ error: error.message }, { status: 500 });
     }
 }
