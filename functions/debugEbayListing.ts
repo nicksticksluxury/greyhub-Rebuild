@@ -33,6 +33,14 @@ Deno.serve(async (req) => {
             'Accept-Language': 'en-US'
         };
 
+        // 1. Verify product exists in DB first
+        let product;
+        try {
+            product = await base44.entities.Product.get(sku);
+        } catch (e) {
+            console.warn("Product not found in DB:", e.message);
+        }
+
         // Get inventory item
         console.log(`Fetching inventory item for SKU: ${sku}`);
         const inventoryRes = await fetch(`https://api.ebay.com/sell/inventory/v1/inventory_item/${sku}`, { headers });
@@ -50,6 +58,12 @@ Deno.serve(async (req) => {
 
         return Response.json({
             success: true,
+            databaseRecord: product ? {
+                id: product.id,
+                msrp: product.msrp,
+                price: product.platform_prices?.ebay || product.retail_price,
+                listing_title: product.listing_title
+            } : "Not found in local DB",
             inventory: inventoryData,
             offers: offersData
         });
