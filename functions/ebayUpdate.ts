@@ -430,22 +430,29 @@ Deno.serve(async (req) => {
                 // Build Pricing Summary based on format
                 const pricingSummary = {};
 
-                // Calculate current selling price for comparison
+                // Calculate current selling price for comparison (robust parsing)
+                const parseVal = (v) => parseFloat(String(v || 0).replace(/[^0-9.-]+/g,"")) || 0;
+                
                 let currentSellingPrice = 0;
                 if (isAuction) {
-                    const startBid = parseFloat(listingDetails.starting_bid) || 0;
-                    const binPrice = parseFloat(listingDetails.buy_it_now_price) || 0;
+                    const startBid = parseVal(listingDetails.starting_bid);
+                    const binPrice = parseVal(listingDetails.buy_it_now_price);
                     currentSellingPrice = binPrice > 0 ? binPrice : startBid;
                 } else {
-                    currentSellingPrice = parseFloat(price) || 0;
+                    currentSellingPrice = parseVal(price);
                 }
 
+                const msrpVal = parseVal(watch.msrp);
+                
                 // Add MSRP if available and greater than selling price for comparative pricing
-                if (watch.msrp && parseFloat(watch.msrp) > currentSellingPrice) {
+                if (msrpVal > currentSellingPrice) {
                     pricingSummary.originalRetailPrice = {
                         currency: "USD",
-                        value: String(watch.msrp)
+                        value: String(msrpVal)
                     };
+                    console.log(`[${sku}] Including MSRP: ${msrpVal} (Selling Price: ${currentSellingPrice})`);
+                } else if (msrpVal > 0) {
+                    console.log(`[${sku}] Skipping MSRP: ${msrpVal} not greater than Selling Price ${currentSellingPrice}`);
                 }
                 
                 if (isAuction) {
@@ -607,7 +614,7 @@ Deno.serve(async (req) => {
                     timestamp: new Date().toISOString(),
                     level: "success",
                     category: "ebay",
-                    message: `eBay Updated: ${watch.brand} ${watch.model} - Price: $${price}`,
+                    message: `eBay Updated: ${watch.brand} ${watch.model} - Price: $${price}` + (pricingSummary.originalRetailPrice ? ` (MSRP: $${pricingSummary.originalRetailPrice.value})` : ""),
                     details: { watch_id: watch.id, price, sku }
                 });
 
