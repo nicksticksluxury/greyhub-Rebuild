@@ -333,7 +333,7 @@ Deno.serve(async (req) => {
                 
                 // Combine description with footer
                 let fullDescription = product.platform_descriptions?.ebay || product.description || "No description provided.";
-                if (ebayFooter) {
+                if (ebayFooter && !fullDescription.includes(ebayFooter)) {
                     fullDescription = `${fullDescription}\n\n${ebayFooter}`;
                 }
 
