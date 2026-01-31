@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, CheckCircle2, Bell, Server, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Bell, Server, RefreshCw, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function EbayManagement() {
   const [user, setUser] = useState(null);
@@ -134,6 +135,41 @@ export default function EbayManagement() {
         ) : (
           <p className="text-sm text-slate-600">No destination found yet. Click "Ensure Destination" to create it.</p>
         )}
+      </Card>
+
+      <Card className="p-6 bg-blue-50 border-blue-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-medium text-blue-900">AI Listing Health Monitor</h3>
+              <p className="text-sm text-blue-700">Automatically detect and fix listing errors using AI.</p>
+            </div>
+          </div>
+          <Button 
+            onClick={async () => {
+              const toastId = toast.loading("Running AI Health Check...");
+              try {
+                const { data } = await base44.functions.invoke('monitorEbayListings');
+                toast.dismiss(toastId);
+                if (data.error) {
+                  toast.error("Health check failed: " + data.error);
+                } else {
+                  toast.success(`Check Complete: ${data.fixed} fixed, ${data.flagged} flagged, ${data.checked} checked.`);
+                }
+              } catch (e) {
+                toast.dismiss(toastId);
+                toast.error("Health check failed: " + e.message);
+              }
+            }} 
+            variant="outline"
+            className="bg-white hover:bg-blue-100 text-blue-700 border-blue-300"
+          >
+            Run Health Check
+          </Button>
+        </div>
       </Card>
 
       <Card className="p-6">
