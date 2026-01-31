@@ -429,6 +429,24 @@ Deno.serve(async (req) => {
 
                 // Build Pricing Summary based on format
                 const pricingSummary = {};
+
+                // Calculate current selling price for comparison
+                let currentSellingPrice = 0;
+                if (isAuction) {
+                    const startBid = parseFloat(listingDetails.starting_bid) || 0;
+                    const binPrice = parseFloat(listingDetails.buy_it_now_price) || 0;
+                    currentSellingPrice = binPrice > 0 ? binPrice : startBid;
+                } else {
+                    currentSellingPrice = parseFloat(price) || 0;
+                }
+
+                // Add MSRP if available and greater than selling price for comparative pricing
+                if (watch.msrp && parseFloat(watch.msrp) > currentSellingPrice) {
+                    pricingSummary.originalRetailPrice = {
+                        currency: "USD",
+                        value: String(watch.msrp)
+                    };
+                }
                 
                 if (isAuction) {
                     // AUCTION PRICING
