@@ -122,6 +122,24 @@ export default function EbayManagement() {
             <h2 className="font-semibold text-slate-900">Webhook Destination</h2>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              className="gap-2 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100"
+              onClick={async () => {
+                const toastId = toast.loading("Running AI Health Check...");
+                try {
+                  const { data } = await base44.functions.invoke('monitorEbayListings');
+                  toast.dismiss(toastId);
+                  toast.success(`Check Complete: ${data.fixed} fixed, ${data.flagged} flagged`, { description: "See eBay Logs for details" });
+                  if (data.errors?.length > 0) toast.error(`${data.errors.length} errors occurred`);
+                } catch (e) {
+                  toast.dismiss(toastId);
+                  toast.error("Health check failed: " + e.message);
+                }
+              }}
+            >
+              <Shield className="w-4 h-4" /> Run AI Health Check
+            </Button>
             <Button variant="outline" onClick={reauthorizeEbay} disabled={loading}>Re-authorize eBay</Button>
             <Button onClick={ensureDestination} disabled={loading}>Ensure Destination</Button>
           </div>
@@ -135,41 +153,6 @@ export default function EbayManagement() {
         ) : (
           <p className="text-sm text-slate-600">No destination found yet. Click "Ensure Destination" to create it.</p>
         )}
-      </Card>
-
-      <Card className="p-6 bg-blue-50 border-blue-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-medium text-blue-900">AI Listing Health Monitor</h3>
-              <p className="text-sm text-blue-700">Automatically detect and fix listing errors using AI.</p>
-            </div>
-          </div>
-          <Button 
-            onClick={async () => {
-              const toastId = toast.loading("Running AI Health Check...");
-              try {
-                const { data } = await base44.functions.invoke('monitorEbayListings');
-                toast.dismiss(toastId);
-                if (data.error) {
-                  toast.error("Health check failed: " + data.error);
-                } else {
-                  toast.success(`Check Complete: ${data.fixed} fixed, ${data.flagged} flagged, ${data.checked} checked.`);
-                }
-              } catch (e) {
-                toast.dismiss(toastId);
-                toast.error("Health check failed: " + e.message);
-              }
-            }} 
-            variant="outline"
-            className="bg-white hover:bg-blue-100 text-blue-700 border-blue-300"
-          >
-            Run Health Check
-          </Button>
-        </div>
       </Card>
 
       <Card className="p-6">
