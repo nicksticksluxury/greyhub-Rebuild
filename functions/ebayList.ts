@@ -430,9 +430,15 @@ Deno.serve(async (req) => {
                 if (msrpVal > currentSellingPrice) {
                     pricingSummary.originalRetailPrice = {
                         currency: "USD",
-                        value: String(msrpVal)
+                        value: msrpVal.toFixed(2)
                     };
-                    console.log(`[${sku}] Including MSRP: ${msrpVal} (Selling Price: ${currentSellingPrice})`);
+                    console.log(`[${sku}] Including MSRP: ${msrpVal.toFixed(2)} (Selling Price: ${currentSellingPrice})`);
+                    
+                    // Warn if trying to use STP on Used items
+                    const ebayCond = getEbayCondition(product.condition);
+                    if (ebayCond.startsWith('USED') || ebayCond === 'FOR_PARTS_OR_NOT_WORKING') {
+                         console.warn(`[${sku}] WARNING: MSRP Strike-Through Pricing typically requires Condition to be NEW or NEW_OTHER. Current: ${ebayCond}`);
+                    }
                 } else if (msrpVal > 0) {
                     console.log(`[${sku}] Skipping MSRP: ${msrpVal} not greater than Selling Price ${currentSellingPrice}`);
                 }
@@ -444,13 +450,13 @@ Deno.serve(async (req) => {
                     }
                     pricingSummary.auctionStartPrice = {
                         currency: "USD",
-                        value: String(listingDetails.starting_bid)
+                        value: parseVal(listingDetails.starting_bid).toFixed(2)
                     };
                     
                     if (listingDetails.reserve_price > 0) {
                         pricingSummary.auctionReservePrice = {
                             currency: "USD",
-                            value: String(listingDetails.reserve_price)
+                            value: parseVal(listingDetails.reserve_price).toFixed(2)
                         };
                     }
                     
@@ -459,14 +465,14 @@ Deno.serve(async (req) => {
                     if (!isNaN(binPrice) && binPrice > 0) {
                         pricingSummary.price = {
                             currency: "USD",
-                            value: String(binPrice)
+                            value: binPrice.toFixed(2)
                         };
                     }
                 } else {
                     // FIXED PRICE PRICING
                     pricingSummary.price = {
                         currency: "USD",
-                        value: price.toString()
+                        value: parseFloat(price).toFixed(2)
                     };
                 }
 
