@@ -491,7 +491,8 @@ Deno.serve(async (req) => {
                     format: format,
                     availableQuantity: isAuction ? undefined : (product.quantity || 1),
                     categoryId: categoryId,
-                    listingDescription: fullDescription,
+                    // listingDescription: fullDescription, // Omitted to use Inventory Item description and avoid potential duplication
+                    includeCatalogProductDetails: false, // Ensure we don't double-display catalog data
                     listingPolicies: {
                         fulfillmentPolicyId: fulfillmentPolicy,
                         paymentPolicyId: paymentPolicy,
