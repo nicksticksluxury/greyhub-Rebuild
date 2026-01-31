@@ -27,12 +27,12 @@ export default function EbayDebug() {
       
       setSearchingProducts(true);
       try {
-        const { data: products } = await base44.entities.Product.list({
-          sort: { created_date: -1 },
-          limit: 100
-        });
+        // Fetch products (increased limit and fixed response handling)
+        const products = await base44.entities.Product.list('-created_date', 500);
         
-        const filtered = products.filter(p => {
+        const productList = Array.isArray(products) ? products : (products?.data || []);
+        
+        const filtered = productList.filter(p => {
           const searchLower = productSearch.toLowerCase();
           const brand = (p.brand || '').toLowerCase();
           const model = (p.model || '').toLowerCase();
@@ -43,6 +43,7 @@ export default function EbayDebug() {
         setSearchResults(filtered.slice(0, 10));
       } catch (error) {
         console.error("Search failed", error);
+        toast.error("Search failed to load products");
       } finally {
         setSearchingProducts(false);
       }
@@ -142,18 +143,24 @@ export default function EbayDebug() {
                   className="w-full px-3 py-2 border rounded-md"
                   placeholder="Type to search (e.g. 'Hudson')..."
                 />
-                {searchResults.length > 0 && (
-                  <div className="absolute z-10 w-full bg-white mt-1 border rounded-md shadow-lg max-h-60 overflow-auto">
-                    {searchResults.map(p => (
-                      <div 
-                        key={p.id}
-                        className="px-4 py-2 hover:bg-slate-100 cursor-pointer border-b last:border-0"
-                        onClick={() => selectProduct(p)}
-                      >
-                        <div className="font-medium text-sm">{p.brand} {p.model}</div>
-                        <div className="text-xs text-slate-500">ID: {p.id}</div>
-                      </div>
-                    ))}
+                {productSearch.length >= 2 && (
+                  <div className="absolute z-20 w-full bg-white mt-1 border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {searchingProducts ? (
+                      <div className="px-4 py-3 text-sm text-slate-500 text-center">Loading products...</div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-slate-500 text-center">No products found matching "{productSearch}"</div>
+                    ) : (
+                      searchResults.map(p => (
+                        <div 
+                          key={p.id}
+                          className="px-4 py-2 hover:bg-slate-100 cursor-pointer border-b last:border-0"
+                          onClick={() => selectProduct(p)}
+                        >
+                          <div className="font-medium text-sm">{p.brand} {p.model}</div>
+                          <div className="text-xs text-slate-500">ID: {p.id}</div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
