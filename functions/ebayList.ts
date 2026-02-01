@@ -84,10 +84,12 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json'
         };
 
-        const [fulfillmentRes, paymentRes, returnRes] = await Promise.all([
+        // Fetch All Policies (We might need them for free shipping lookup or fallbacks)
+        const [fulfillmentRes, paymentRes, returnRes, settingsRes] = await Promise.all([
             fetch("https://api.ebay.com/sell/account/v1/fulfillment_policy?marketplace_id=EBAY_US", { headers }),
             fetch("https://api.ebay.com/sell/account/v1/payment_policy?marketplace_id=EBAY_US", { headers }),
-            fetch("https://api.ebay.com/sell/account/v1/return_policy?marketplace_id=EBAY_US", { headers })
+            fetch("https://api.ebay.com/sell/account/v1/return_policy?marketplace_id=EBAY_US", { headers }),
+            base44.asServiceRole.entities.Setting.filter({ company_id: companyId })
         ]);
 
         const fulfillmentData = await fulfillmentRes.json();
@@ -98,14 +100,20 @@ Deno.serve(async (req) => {
         const paymentPolicies = paymentData.paymentPolicies || [];
         const returnPolicies = returnData.returnPolicies || [];
 
-        const defaultFulfillmentPolicyId = fulfillmentPolicies[0]?.fulfillmentPolicyId;
-        const defaultPaymentPolicyId = paymentPolicies[0]?.paymentPolicyId;
-        const defaultReturnPolicyId = returnPolicies[0]?.returnPolicyId;
+        // Build Settings Map
+        const settingsMap = {};
+        settingsRes.forEach(s => settingsMap[s.key] = s.value);
 
-        if (!defaultFulfillmentPolicyId || !defaultPaymentPolicyId || !defaultReturnPolicyId) {
-            return Response.json({ 
+        // Fallbacks if nothing configured
+        const fallbackFulfillment = fulfillmentPolicies[0]?.fulfillmentPolicyId;
+        const fallbackPayment = paymentPolicies[0]?.paymentPolicyId;
+        const fallbackReturn = returnPolicies[0]?.returnPolicyId;
+
+        if (!fallbackFulfillment || !fallbackPayment || !fallbackReturn) {
+             // If we literally have NO policies on eBay, we can't list.
+             return Response.json({ 
                 error: 'Missing eBay Business Policies. Please set up default Fulfillment, Payment, and Return policies in your eBay account settings.',
-                details: { fulfillment: !!defaultFulfillmentPolicyId, payment: !!defaultPaymentPolicyId, return: !!defaultReturnPolicyId }
+                details: { fulfillment: !!fallbackFulfillment, payment: !!fallbackPayment, return: !!fallbackReturn }
             }, { status: 400 });
         }
 
@@ -390,24 +398,36 @@ Deno.serve(async (req) => {
                 // 2. Handle Offer (Create or Update)
                 // Use product type's eBay category ID if available, otherwise use fallback
                 const categoryId = productType?.ebay_category_id || getEbayCategoryId(product.product_type_code, productTypeName);
-                
-                // Determine fulfillment policy based on free shipping flag
-                let fulfillmentPolicy = defaultFulfillmentPolicyId;
-                
-                // If product has free shipping flag, try to find a free shipping policy
+
+                // Determine listing format
+                const listingDetails = product.ebay_listing_details || {};
+                const isAuction = listingDetails.listing_type === 'Auction';
+                const format = isAuction ? "AUCTION" : "FIXED_PRICE";
+
+                // --- RESOLVE POLICIES BASED ON CONFIGURATION ---
+                let fulfillmentPolicyId, paymentPolicyId, returnPolicyId;
+
+                if (isAuction) {
+                    fulfillmentPolicyId = settingsMap['ebay_policy_fulfillment_auction'] || fallbackFulfillment;
+                    paymentPolicyId = settingsMap['ebay_policy_payment_auction'] || fallbackPayment;
+                    returnPolicyId = settingsMap['ebay_policy_return_auction'] || fallbackReturn;
+                } else {
+                    fulfillmentPolicyId = settingsMap['ebay_policy_fulfillment_bin'] || fallbackFulfillment;
+                    paymentPolicyId = settingsMap['ebay_policy_payment_bin'] || fallbackPayment;
+                    returnPolicyId = settingsMap['ebay_policy_return_bin'] || fallbackReturn;
+                }
+
+                // Special Case: Free Shipping Override
+                // If product has free shipping flag, try to find a free shipping policy regardless of default/configured
                 if (product.ebay_free_shipping) {
                     const freeShippingPolicy = fulfillmentPolicies.find(p => 
                         p.shippingOptions?.some(opt => opt.costType === 'FREE')
                     );
                     if (freeShippingPolicy) {
-                        fulfillmentPolicy = freeShippingPolicy.fulfillmentPolicyId;
+                        console.log(`[${sku}] Overriding fulfillment policy for Free Shipping`);
+                        fulfillmentPolicyId = freeShippingPolicy.fulfillmentPolicyId;
                     }
                 }
-
-                // Determine listing format and details
-                const listingDetails = product.ebay_listing_details || {};
-                const isAuction = listingDetails.listing_type === 'Auction';
-                const format = isAuction ? "AUCTION" : "FIXED_PRICE";
 
                 // Build Pricing Summary based on format
                 const pricingSummary = {};
@@ -476,18 +496,19 @@ Deno.serve(async (req) => {
                     };
                 }
 
-                // Determine payment policy
+                // Special Case: Auction Payment Policy Check
                 // For Auctions WITHOUT Buy It Now, immediatePay must be false.
-                let paymentPolicy = defaultPaymentPolicyId;
-                const requiresNonImmediatePay = isAuction && !pricingSummary.price; // price is BIN price in auction format
-
+                const requiresNonImmediatePay = isAuction && !pricingSummary.price; 
                 if (requiresNonImmediatePay) {
-                    const nonImmediatePolicy = paymentPolicies.find(p => !p.immediatePay);
-                    if (nonImmediatePolicy) {
-                        paymentPolicy = nonImmediatePolicy.paymentPolicyId;
-                        console.log(`[${sku}] Selected non-immediate payment policy: ${nonImmediatePolicy.name} (${paymentPolicy})`);
-                    } else {
-                        console.warn(`[${sku}] WARNING: Auction without BIN requires non-immediate payment policy, but none found. Using default.`);
+                    // Check if selected policy is immediate pay
+                    const selectedPolicy = paymentPolicies.find(p => p.paymentPolicyId === paymentPolicyId);
+                    if (selectedPolicy && selectedPolicy.immediatePay) {
+                        console.warn(`[${sku}] Configured Auction policy requires Immediate Pay but this is an auction without BIN. Trying to find alternative.`);
+                        const nonImmediatePolicy = paymentPolicies.find(p => !p.immediatePay);
+                        if (nonImmediatePolicy) {
+                            paymentPolicyId = nonImmediatePolicy.paymentPolicyId;
+                            console.log(`[${sku}] Switched to non-immediate payment policy: ${nonImmediatePolicy.name}`);
+                        }
                     }
                 }
 
@@ -500,9 +521,9 @@ Deno.serve(async (req) => {
                     // listingDescription: fullDescription, // Omitted to use Inventory Item description and avoid potential duplication
                     includeCatalogProductDetails: false, // Ensure we don't double-display catalog data
                     listingPolicies: {
-                        fulfillmentPolicyId: fulfillmentPolicy,
-                        paymentPolicyId: paymentPolicy,
-                        returnPolicyId: defaultReturnPolicyId
+                        fulfillmentPolicyId: fulfillmentPolicyId,
+                        paymentPolicyId: paymentPolicyId,
+                        returnPolicyId: returnPolicyId
                     },
                     merchantLocationKey: merchantLocationKey,
                     pricingSummary: pricingSummary

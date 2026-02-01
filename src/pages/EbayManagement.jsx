@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, CheckCircle2, Bell, Server, RefreshCw, Shield } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertCircle, CheckCircle2, Bell, Server, RefreshCw, Shield, List, Gavel } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function EbayManagement() {
@@ -14,8 +15,56 @@ export default function EbayManagement() {
   const [loading, setLoading] = useState(false);
   const [initData, setInitData] = useState({ topics: [], subscriptions: [], destination: null });
   const [initError, setInitError] = useState(null);
+  const [policies, setPolicies] = useState({ fulfillment: [], payment: [], return: [] });
+  const [policySettings, setPolicySettings] = useState({});
 
   useEffect(() => { (async () => { setUser(await base44.auth.me()); })(); }, []);
+
+  const loadPolicies = async () => {
+    try {
+        const [res, settingsRes] = await Promise.all([
+            base44.functions.invoke('getEbayPolicies'),
+            base44.entities.Setting.list()
+        ]);
+        if (res.data && !res.data.error) {
+            setPolicies(res.data);
+        }
+        
+        const settingsMap = {};
+        settingsRes.forEach(s => settingsMap[s.key] = s.value);
+        setPolicySettings(settingsMap);
+    } catch (e) {
+        console.error('Failed to load policies:', e);
+        toast.error("Failed to load eBay policies");
+    }
+  };
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+        loadPolicies();
+    }
+  }, [user]);
+
+  const savePolicySetting = async (key, value) => {
+    try {
+        const existing = await base44.entities.Setting.filter({ key });
+        if (existing.length > 0) {
+            await base44.entities.Setting.update(existing[0].id, { value });
+        } else {
+            await base44.entities.Setting.create({ 
+                key, 
+                value, 
+                company_id: user.data?.company_id || user.company_id,
+                description: `eBay Policy Mapping for ${key}`
+            });
+        }
+        setPolicySettings(prev => ({ ...prev, [key]: value }));
+        toast.success("Policy setting saved");
+    } catch (e) {
+        console.error("Failed to save setting:", e);
+        toast.error("Failed to save setting");
+    }
+  };
 
   const { data: ebayLogs = [] } = useQuery({
     queryKey: ['ebay-logs'],
@@ -114,6 +163,142 @@ export default function EbayManagement() {
          {initError}
        </Card>
       )}
+
+      {/* Policy Mapping Section */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <List className="w-5 h-5" /> Policy Mapping
+            </h2>
+            <Button variant="outline" size="sm" onClick={loadPolicies} className="gap-2">
+                <RefreshCw className="w-3 h-3" /> Refresh Policies
+            </Button>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+            {/* BIN Mappings */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700">Fixed Price (BIN)</Badge>
+                    <span className="text-xs text-slate-500">Default policies for fixed price listings</span>
+                </div>
+                
+                <div className="space-y-3">
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-slate-700">Payment Policy</label>
+                        <Select 
+                            value={policySettings['ebay_policy_payment_bin'] || ''} 
+                            onValueChange={(v) => savePolicySetting('ebay_policy_payment_bin', v)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Payment Policy" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {policies.payment.map(p => (
+                                    <SelectItem key={p.paymentPolicyId} value={p.paymentPolicyId}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-slate-700">Return Policy</label>
+                        <Select 
+                            value={policySettings['ebay_policy_return_bin'] || ''} 
+                            onValueChange={(v) => savePolicySetting('ebay_policy_return_bin', v)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Return Policy" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {policies.return.map(p => (
+                                    <SelectItem key={p.returnPolicyId} value={p.returnPolicyId}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-slate-700">Fulfillment Policy</label>
+                        <Select 
+                            value={policySettings['ebay_policy_fulfillment_bin'] || ''} 
+                            onValueChange={(v) => savePolicySetting('ebay_policy_fulfillment_bin', v)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Fulfillment Policy" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {policies.fulfillment.map(p => (
+                                    <SelectItem key={p.fulfillmentPolicyId} value={p.fulfillmentPolicyId}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Auction Mappings */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-700">Auction</Badge>
+                    <span className="text-xs text-slate-500">Default policies for auction listings</span>
+                </div>
+                
+                <div className="space-y-3">
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-slate-700">Payment Policy</label>
+                        <Select 
+                            value={policySettings['ebay_policy_payment_auction'] || ''} 
+                            onValueChange={(v) => savePolicySetting('ebay_policy_payment_auction', v)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Payment Policy" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {policies.payment.map(p => (
+                                    <SelectItem key={p.paymentPolicyId} value={p.paymentPolicyId}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-slate-700">Return Policy</label>
+                        <Select 
+                            value={policySettings['ebay_policy_return_auction'] || ''} 
+                            onValueChange={(v) => savePolicySetting('ebay_policy_return_auction', v)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Return Policy" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {policies.return.map(p => (
+                                    <SelectItem key={p.returnPolicyId} value={p.returnPolicyId}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-slate-700">Fulfillment Policy</label>
+                        <Select 
+                            value={policySettings['ebay_policy_fulfillment_auction'] || ''} 
+                            onValueChange={(v) => savePolicySetting('ebay_policy_fulfillment_auction', v)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Fulfillment Policy" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {policies.fulfillment.map(p => (
+                                    <SelectItem key={p.fulfillmentPolicyId} value={p.fulfillmentPolicyId}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </Card>
 
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
