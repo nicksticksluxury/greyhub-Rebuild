@@ -76,9 +76,14 @@ Deno.serve(async (req) => {
     const ensureDestination = async () => {
       const appId = Deno.env.get('BASE44_APP_ID');
       
-      // Use dynamic host from request if available, otherwise fallback
+      // Use dynamic host from request to ensure we match the domain being used
       const protocol = req.headers.get('x-forwarded-proto') || 'https';
-      const host = req.headers.get('host') || 'app.nicksluxury.com';
+      const host = req.headers.get('host');
+      
+      if (!host) {
+          return { error: 'Host header missing - cannot determine webhook endpoint' };
+      }
+      
       const endpoint = `${protocol}://${host}/functions/ebayWebhook`;
 
       // Try to find an existing destination first

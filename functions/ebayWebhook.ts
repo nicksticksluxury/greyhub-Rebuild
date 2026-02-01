@@ -41,8 +41,10 @@ Deno.serve(async (req) => {
                 const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(raw));
                 const verificationToken = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-                const appId = Deno.env.get("BASE44_APP_ID");
-                const endpoint = `https://base44.app/api/apps/${appId}/functions/ebayWebhook`;
+                // Use dynamic host to match the registered endpoint exactly
+                const protocol = req.headers.get('x-forwarded-proto') || 'https';
+                const host = req.headers.get('host');
+                const endpoint = `${protocol}://${host}/functions/ebayWebhook`;
                 
                 const textToHash = challengeCode + verificationToken + endpoint;
                 const encoder = new TextEncoder();
