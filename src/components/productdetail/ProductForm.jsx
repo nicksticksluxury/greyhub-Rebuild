@@ -846,7 +846,14 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
               <TabsTrigger value="poshmark">Poshmark</TabsTrigger>
               </TabsList>
               {['ebay', 'whatnot', 'shopify', 'etsy', 'poshmark'].map(platform => {
-              const price = data.platform_prices?.[platform] || 0;
+              // Determine effective price for calculation based on listing type
+              let price = data.platform_prices?.[platform] || 0;
+              
+              if (platform === 'ebay' && data.ebay_listing_details?.listing_type === 'Auction') {
+                  // For eBay Auctions, calculate based on Starting Bid
+                  price = data.ebay_listing_details?.starting_bid || 0;
+              }
+
               const totalCost = getTotalCost();
               const minPrice = calculateMinimumPrice(totalCost, platform);
               const { fees, net } = calculateFees(price, platform);
@@ -1256,13 +1263,16 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
                     </div>
                   )}
                   
-                  <Input
-                    type="number"
-                    value={price || ""}
-                    onChange={(e) => updatePlatformPrice(platform, e.target.value)}
-                    placeholder={`${platform} price`}
-                    className="mb-2"
-                  />
+                  {/* Only show standard price input if NOT eBay Auction (since Auction has specific fields above) */}
+                  {!(platform === 'ebay' && data.ebay_listing_details?.listing_type === 'Auction') && (
+                    <Input
+                      type="number"
+                      value={data.platform_prices?.[platform] || ""}
+                      onChange={(e) => updatePlatformPrice(platform, e.target.value)}
+                      placeholder={`${platform} price`}
+                      className="mb-2"
+                    />
+                  )}
 
                   <div className="mb-2">
                     <Label className="text-xs text-slate-500 mb-1 block">Listing Link</Label>
