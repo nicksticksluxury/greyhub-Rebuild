@@ -91,6 +91,7 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
   const [showZeroReasonDialog, setShowZeroReasonDialog] = useState(false);
   const [tempReason, setTempReason] = useState("");
   const [sourceOpen, setSourceOpen] = useState(false);
+  const [activePricingTab, setActivePricingTab] = useState("ebay");
 
   const { data: productTypes = [] } = useQuery({
     queryKey: ['productTypes'],
@@ -837,7 +838,7 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
 
         <div className="pt-4 border-t">
           <h3 className="font-semibold text-slate-900 mb-4">Platform Pricing</h3>
-          <Tabs defaultValue="ebay" className="w-full">
+          <Tabs value={activePricingTab} onValueChange={setActivePricingTab} className="w-full">
             <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="ebay">eBay</TabsTrigger>
               <TabsTrigger value="whatnot">Whatnot</TabsTrigger>
@@ -1340,21 +1341,39 @@ export default function ProductForm({ data, onChange, sources, orders, auctions,
           </Tabs>
         </div>
 
-        {getTotalCost() > 0 && data.retail_price && (
+        {getTotalCost() > 0 && (
           <div className="p-4 bg-slate-800 text-white rounded-lg mt-6">
-            <h3 className="font-semibold mb-2">Overall Profit Analysis</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-slate-300">Profit:</span>
-                <p className="text-xl font-bold">${(data.retail_price - getTotalCost()).toLocaleString()}</p>
-              </div>
-              <div>
-                <span className="text-slate-300">Margin:</span>
-                <p className="text-xl font-bold">
-                  {((data.retail_price - getTotalCost()) / getTotalCost() * 100).toFixed(1)}%
-                </p>
-              </div>
-            </div>
+            <h3 className="font-semibold mb-2">Overall Profit Analysis ({activePricingTab.charAt(0).toUpperCase() + activePricingTab.slice(1)})</h3>
+            {(() => {
+              const platform = activePricingTab;
+              let price = data.platform_prices?.[platform] || 0;
+              
+              if (platform === 'ebay' && data.ebay_listing_details?.listing_type === 'Auction') {
+                  price = data.ebay_listing_details?.starting_bid || 0;
+              }
+
+              const totalCost = getTotalCost();
+              const { net } = calculateFees(price, platform);
+              const profit = net - totalCost;
+              const margin = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+
+              return (
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-300">Profit:</span>
+                    <p className={`text-xl font-bold ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      ${profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-300">Margin:</span>
+                    <p className={`text-xl font-bold ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {margin.toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </TabsContent>
