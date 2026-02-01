@@ -446,8 +446,8 @@ Deno.serve(async (req) => {
 
                 const msrpVal = parseVal(product.msrp);
 
-                // Add MSRP if available and greater than selling price for comparative pricing
-                if (msrpVal > currentSellingPrice) {
+                // Add MSRP if available and greater than selling price for comparative pricing (Fixed Price Only)
+                if (!isAuction && msrpVal > currentSellingPrice) {
                     pricingSummary.originalRetailPrice = {
                         currency: "USD",
                         value: msrpVal.toFixed(2)
