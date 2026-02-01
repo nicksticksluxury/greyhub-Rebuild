@@ -527,6 +527,12 @@ Deno.serve(async (req) => {
                     }
                 }
 
+                // Double-check: Force removal of originalRetailPrice for Auctions to prevent eBay errors
+                if (isAuction && pricingSummary.originalRetailPrice) {
+                    console.warn(`[${sku}] Safety check: Removing originalRetailPrice from Auction offer payload`);
+                    delete pricingSummary.originalRetailPrice;
+                }
+
                 const offer = {
                     sku: sku,
                     marketplaceId: "EBAY_US",
