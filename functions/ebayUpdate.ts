@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
                 // Get product type fields for this product
                 const productType = allProductTypes.find(t => t.code === watch.product_type_code);
                 const productTypeFields = allProductTypeFields.filter(f => f.product_type_code === watch.product_type_code);
-                const categoryId = productType?.ebay_category_id || "31387";
+                const categoryId = productType?.ebay_category_id || getEbayCategoryId(watch.product_type_code, productType?.name || 'Product');
 
                 // Build aspects dynamically from product type fields
                 const aspects = {
@@ -679,3 +679,67 @@ Deno.serve(async (req) => {
         return Response.json({ error: error.message }, { status: 500 });
     }
 });
+
+function getEbayCondition(condition) {
+    // Category 31387 mapping per your list; send Inventory ConditionEnum strings
+    if (!condition) return 'USED_EXCELLENT';
+    const s = String(condition).toLowerCase().trim();
+
+    // Direct numeric ID mapping
+    if (s === '1000') return 'NEW';
+    if (s === '1500') return 'NEW_OTHER';
+    if (s === '1750') return 'NEW_WITH_DEFECTS';
+    if (s === '2990') return 'USED_EXCELLENT';
+    if (s === '3000') return 'USED_EXCELLENT';
+    if (s === '5000') return 'USED_GOOD';
+    if (s === '3010') return 'USED_ACCEPTABLE';
+    if (s === '7000') return 'FOR_PARTS_OR_NOT_WORKING';
+
+    // Text mappings
+    if ((s.includes('new with box') && s.includes('papers')) || s === 'new' || s === 'new_full_set' || s === 'new_with_box') return 'NEW';
+
+    if (s.includes('new - no box/papers') || (s.includes('no box') && s.includes('papers'))) return 'NEW_OTHER';
+
+    if (s.includes('new - box only') || (s.includes('no box') && !s.includes('papers')) || s.includes('new with imperfections')) return 'NEW_WITH_DEFECTS';
+
+    if (s === 'mint' || s === 'excellent' || s.includes('very good') || s.includes('very_good')) return 'USED_EXCELLENT';
+
+    if (s === 'good') return 'USED_GOOD';
+
+    if (s === 'fair') return 'USED_ACCEPTABLE';
+
+    if (s.includes('parts') || s.includes('repair') || s.includes('not working')) return 'FOR_PARTS_OR_NOT_WORKING';
+
+    return 'USED_EXCELLENT';
+}
+
+
+function getEbayCategoryId(productTypeCode, productTypeName) {
+    // Map product types to eBay category IDs
+    const categoryMap = {
+        'watch': '31387',        // Wristwatches
+        'handbag': '169291',     // Women's Bags & Handbags
+        'purse': '169291',       // Women's Bags & Handbags
+        'jewelry': '281',        // Jewelry & Watches
+        'sunglasses': '179247',  // Sunglasses
+        'wallet': '169291',      // Women's Bags & Handbags
+        'shoes': '62107',        // Women's Shoes
+        'clothing': '15724'      // Women's Clothing
+    };
+    
+    // Try exact match first
+    if (categoryMap[productTypeCode]) {
+        return categoryMap[productTypeCode];
+    }
+    
+    // Try case-insensitive name match
+    const lowerName = productTypeName.toLowerCase();
+    for (const [key, categoryId] of Object.entries(categoryMap)) {
+        if (lowerName.includes(key)) {
+            return categoryId;
+        }
+    }
+    
+    // Default to general Women's Bags & Handbags for fashion items
+    return '169291';
+}
