@@ -218,6 +218,7 @@ export default function SystemAdmin() {
                     onCheckedChange={handleToggleAll}
                   />
                 </th>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-slate-900">ID</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-slate-900">Company</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-slate-900">Status</th>
                 <th className="text-left px-6 py-3 text-sm font-semibold text-slate-900">Plan</th>
@@ -230,7 +231,7 @@ export default function SystemAdmin() {
             <tbody className="divide-y divide-slate-200">
               {filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan="9" className="px-6 py-12 text-center text-slate-500">
                     No tenants found
                   </td>
                 </tr>
@@ -244,10 +245,12 @@ export default function SystemAdmin() {
                       />
                     </td>
                     <td className="px-6 py-4">
+                      <p className="text-xs text-slate-500 font-mono select-all">{company.id}</p>
+                    </td>
+                    <td className="px-6 py-4">
                       <div>
                         <p className="font-semibold text-slate-900">{company.name}</p>
                         <p className="text-sm text-slate-500">{company.email}</p>
-                        <p className="text-xs text-slate-400 font-mono">{company.id}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
