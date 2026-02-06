@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Shield, Users, Database, Search, UserCog, Package, Trash2 } from "lucide-react";
+import { Shield, Users, Database, Search, UserCog, Package, Trash2, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -37,6 +37,24 @@ export default function SystemAdmin() {
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to impersonate tenant');
+    }
+  });
+
+  const joinCompanyMutation = useMutation({
+    mutationFn: async (companyId) => {
+      const result = await base44.functions.invoke('adminJoinCompany', { company_id: companyId });
+      if (!result.data.success) {
+        throw new Error(result.data.error || result.data.message || 'Failed to join company');
+      }
+      return result.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      // Reload the page to reflect the change
+      window.location.reload();
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to join company');
     }
   });
 
@@ -278,16 +296,29 @@ export default function SystemAdmin() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => impersonateMutation.mutate(company.id)}
-                        disabled={!company.allow_support_access || impersonateMutation.isPending}
-                        className="gap-2"
-                      >
-                        <UserCog className="w-4 h-4" />
-                        Impersonate
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => joinCompanyMutation.mutate(company.id)}
+                          disabled={joinCompanyMutation.isPending}
+                          className="gap-2"
+                          title="Permanently join this company (sets your company_id)"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          Join
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => impersonateMutation.mutate(company.id)}
+                          disabled={!company.allow_support_access || impersonateMutation.isPending}
+                          className="gap-2"
+                        >
+                          <UserCog className="w-4 h-4" />
+                          Impersonate
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
