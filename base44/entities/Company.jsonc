@@ -1,0 +1,158 @@
+{
+  "name": "Company",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Company name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Company contact email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Company phone number"
+    },
+    "address": {
+      "type": "string",
+      "description": "Company physical address"
+    },
+    "website": {
+      "type": "string",
+      "description": "Company website URL"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "trial",
+        "cancelled"
+      ],
+      "default": "trial",
+      "description": "Subscription status"
+    },
+    "subscription_plan": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "custom"
+      ],
+      "default": "standard",
+      "description": "Subscription plan type"
+    },
+    "subscription_price": {
+      "type": "number",
+      "default": 50,
+      "description": "Monthly subscription price"
+    },
+    "square_customer_id": {
+      "type": "string",
+      "description": "Square customer ID"
+    },
+    "square_subscription_id": {
+      "type": "string",
+      "description": "Square subscription ID"
+    },
+    "trial_ends_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When trial period ends"
+    },
+    "next_billing_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Next billing date"
+    },
+    "allow_support_access": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow system administrators to impersonate this tenant for troubleshooting"
+    },
+    "ebay_access_token": {
+      "type": "string",
+      "description": "eBay OAuth user access token for this tenant"
+    },
+    "ebay_refresh_token": {
+      "type": "string",
+      "description": "eBay OAuth refresh token for this tenant"
+    },
+    "ebay_token_expiry": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the eBay access token expires"
+    },
+    "ebay_refresh_token_expiry": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the eBay refresh token expires"
+    },
+    "ebay_orders_to_ship": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of eBay orders awaiting shipment"
+    },
+    "ebay_eligible_offers": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of eBay listings eligible to send offers"
+    },
+    "ebay_active_listings_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of active published listings on eBay"
+    },
+    "ebay_unread_messages": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of unread member messages from buyers"
+    },
+    "etsy_access_token": {
+      "type": "string",
+      "description": "Etsy OAuth access token"
+    },
+    "etsy_access_token_secret": {
+      "type": "string",
+      "description": "Etsy OAuth access token secret"
+    },
+    "etsy_shop_id": {
+      "type": "string",
+      "description": "Connected Etsy shop ID"
+    },
+    "branding": {
+      "type": "object",
+      "description": "Company branding settings",
+      "properties": {
+        "primary_color": {
+          "type": "string",
+          "default": "#1e293b"
+        },
+        "secondary_color": {
+          "type": "string",
+          "default": "#d4af37"
+        },
+        "logo_url": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": true,
+    "update": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

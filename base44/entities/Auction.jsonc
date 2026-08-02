@@ -1,0 +1,67 @@
+{
+  "name": "Auction",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this auction"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the auction/live sale"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the auction"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "whatnot",
+        "ebay_live",
+        "instagram_live",
+        "facebook_live",
+        "other"
+      ],
+      "description": "Platform where the auction will be held"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "in_progress",
+        "completed"
+      ],
+      "default": "planned",
+      "description": "Current status of the auction"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notes about this auction"
+    },
+    "total_watches": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of watches in this auction"
+    }
+  },
+  "required": [
+    "name",
+    "company_id"
+  ],
+  "rls": {
+    "create": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "read": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "update": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "delete": {
+      "data.company_id": "{{user.data.company_id}}"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "ProductType",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the product type (e.g., Watch, Handbag)"
+    },
+    "code": {
+      "type": "string",
+      "description": "Unique code for the product type (e.g., watch, handbag)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of this product type"
+    },
+    "ebay_category_id": {
+      "type": "string",
+      "description": "eBay category ID for listings (e.g., 31387 for Wristwatches, 169291 for Handbags)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this product type is active"
+    },
+    "ai_research_prompt": {
+      "type": "string",
+      "description": "Custom AI prompt template for researching this product type"
+    }
+  },
+  "required": [
+    "name",
+    "code"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

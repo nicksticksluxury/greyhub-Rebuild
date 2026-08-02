@@ -1,0 +1,101 @@
+{
+  "name": "Invitation",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company inviting the user"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address of the invited user"
+    },
+    "token": {
+      "type": "string",
+      "description": "Unique invitation token"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "expired"
+      ],
+      "default": "pending",
+      "description": "Status of the invitation"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "admin"
+      ],
+      "default": "user",
+      "description": "Role the user will have when they accept"
+    },
+    "invited_by": {
+      "type": "string",
+      "description": "Email of the user who sent the invitation"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the invitation expires"
+    }
+  },
+  "required": [
+    "company_id",
+    "email",
+    "token"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        }
+      ]
+    }
+  }
+}

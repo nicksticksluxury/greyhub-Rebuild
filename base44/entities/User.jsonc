@@ -1,0 +1,13 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company this user belongs to"
+    }
+  },
+  "required": [
+    "company_id"
+  ]
+}

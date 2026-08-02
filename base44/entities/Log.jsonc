@@ -1,0 +1,81 @@
+{
+  "name": "Log",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this log (optional for system-wide logs)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the log entry was created"
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "debug",
+        "info",
+        "warning",
+        "error",
+        "success"
+      ],
+      "description": "Log level"
+    },
+    "category": {
+      "type": "string",
+      "description": "Category of the log (e.g., 'export', 'sync', 'system', 'user_action', 'ebay')"
+    },
+    "message": {
+      "type": "string",
+      "description": "Log message"
+    },
+    "details": {
+      "type": "object",
+      "description": "Additional details or metadata"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID of the user who triggered this log"
+    }
+  },
+  "required": [
+    "timestamp",
+    "level",
+    "category",
+    "message"
+  ],
+  "rls": {
+    "create": true,
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.company_id": "{{user.company_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.company_id": "{{user.company_id}}"
+        }
+      ]
+    }
+  }
+}

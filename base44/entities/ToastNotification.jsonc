@@ -1,0 +1,88 @@
+{
+  "name": "ToastNotification",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID of the user who saw this toast"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the toast was shown"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "success",
+        "error",
+        "info",
+        "warning",
+        "loading"
+      ],
+      "description": "Type of toast notification"
+    },
+    "message": {
+      "type": "string",
+      "description": "Toast message content"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has viewed this in history"
+    }
+  },
+  "required": [
+    "timestamp",
+    "type",
+    "message",
+    "company_id",
+    "user_id"
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "read": {
+      "$and": [
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}

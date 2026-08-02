@@ -1,0 +1,95 @@
+{
+  "name": "WatchSource",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this source"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the supplier/source"
+    },
+    "website": {
+      "type": "string",
+      "description": "Website URL"
+    },
+    "website_handle": {
+      "type": "string",
+      "description": "Username or handle on the website/platform"
+    },
+    "primary_contact": {
+      "type": "string",
+      "description": "Name of primary contact person"
+    },
+    "email": {
+      "type": "string",
+      "description": "Contact email address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "address": {
+      "type": "string",
+      "description": "Physical address"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about this source"
+    },
+    "total_orders": {
+      "type": "number",
+      "default": 0,
+      "description": "Total number of orders from this source"
+    },
+    "total_watches_sourced": {
+      "type": "number",
+      "default": 0,
+      "description": "Total number of watches purchased from this source (Initial Qty)"
+    },
+    "active_watches_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of active (unsold) watches"
+    },
+    "sold_watches_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of sold watches"
+    },
+    "total_cost_sourced": {
+      "type": "number",
+      "default": 0,
+      "description": "Total amount spent at this source"
+    },
+    "total_revenue_sourced": {
+      "type": "number",
+      "default": 0,
+      "description": "Total gross revenue from sold watches"
+    },
+    "total_net_revenue": {
+      "type": "number",
+      "default": 0,
+      "description": "Total net revenue (after est. fees) from sold watches"
+    }
+  },
+  "required": [
+    "name",
+    "company_id"
+  ],
+  "rls": {
+    "create": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "read": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "update": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "delete": {
+      "data.company_id": "{{user.data.company_id}}"
+    }
+  }
+}

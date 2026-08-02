@@ -1,0 +1,86 @@
+{
+  "name": "Coupon",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "The coupon code (e.g., SAVE10)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "percentage",
+        "fixed_amount",
+        "duration_discount"
+      ],
+      "description": "Type of discount"
+    },
+    "value": {
+      "type": "number",
+      "description": "Discount value (percentage or dollar amount)"
+    },
+    "duration_in_months": {
+      "type": "number",
+      "description": "Number of months the discount applies (for duration_discount type)"
+    },
+    "usage_limit": {
+      "type": "number",
+      "description": "Maximum number of times coupon can be used (null for unlimited)"
+    },
+    "times_used": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times coupon has been used"
+    },
+    "expiration_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the coupon expires (null for no expiration)"
+    },
+    "applicable_invite_id": {
+      "type": "string",
+      "description": "Optional: coupon only valid for specific invitation"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "archived"
+      ],
+      "default": "active",
+      "description": "Current status of the coupon"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short explanation of the coupon"
+    }
+  },
+  "required": [
+    "code",
+    "type",
+    "value"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

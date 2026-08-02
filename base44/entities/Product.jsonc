@@ -1,0 +1,292 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this product"
+    },
+    "product_type_code": {
+      "type": "string",
+      "description": "Code of the product type"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "original": {
+            "type": "string"
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "medium": {
+            "type": "string"
+          },
+          "full": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "listing_title": {
+      "type": "string"
+    },
+    "brand": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "reference_number": {
+      "type": "string"
+    },
+    "serial_number": {
+      "type": "string"
+    },
+    "year": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string"
+    },
+    "tested": {
+      "type": "string",
+      "enum": [
+        "no",
+        "yes_working",
+        "yes_not_working"
+      ],
+      "default": "no",
+      "description": "Whether the product has been tested and its working status"
+    },
+    "repair_status": {
+      "type": "string",
+      "enum": [
+        "in_inventory",
+        "out_for_repair"
+      ],
+      "default": "in_inventory"
+    },
+    "description": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "cost": {
+      "type": "number"
+    },
+    "repair_costs": {
+      "type": "array"
+    },
+    "msrp": {
+      "type": "number"
+    },
+    "msrp_link": {
+      "type": "string"
+    },
+    "identical_listing_link": {
+      "type": "string"
+    },
+    "identical_listing_links": {
+      "type": "array"
+    },
+    "ai_instructions": {
+      "type": "string"
+    },
+    "ai_platform_recommendation": {
+      "type": "string",
+      "description": "AI-recommended platform for listing this product"
+    },
+    "bmv": {
+      "type": "number",
+      "description": "Best Market Value - manually entered or AI-calculated"
+    },
+    "retail_price": {
+      "type": "number"
+    },
+    "minimum_price": {
+      "type": "number"
+    },
+    "platform_prices": {
+      "type": "object"
+    },
+    "platform_ids": {
+      "type": "object"
+    },
+    "listing_urls": {
+      "type": "object"
+    },
+    "exported_to": {
+      "type": "object"
+    },
+    "ebay_free_shipping": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to offer free shipping for this product on eBay"
+    },
+    "ebay_allow_offers": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to allow best offers for this product on eBay"
+    },
+    "ebay_auto_accept_offers": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to auto-accept best offers at the calculated threshold"
+    },
+    "ebay_auto_decline_offers": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to auto-decline best offers below the calculated threshold"
+    },
+    "ebay_listing_details": {
+      "type": "object",
+      "properties": {
+        "listing_type": {
+          "type": "string",
+          "enum": [
+            "FixedPriceItem",
+            "Auction"
+          ],
+          "default": "FixedPriceItem",
+          "description": "Type of eBay listing"
+        },
+        "starting_bid": {
+          "type": "number",
+          "description": "Starting bid for auction"
+        },
+        "reserve_price": {
+          "type": "number",
+          "description": "Reserve price for auction"
+        },
+        "buy_it_now_price": {
+          "type": "number",
+          "description": "Buy It Now price for auction"
+        },
+        "auction_duration": {
+          "type": "string",
+          "enum": [
+            "Days_1",
+            "Days_3",
+            "Days_5",
+            "Days_7",
+            "Days_10"
+          ],
+          "description": "Duration of the auction"
+        },
+        "scheduled_start_time": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Scheduled start time for the listing"
+        },
+        "charity_percentage": {
+          "type": "number",
+          "description": "Percentage of sale to donate to charity"
+        }
+      }
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "source_order_id": {
+      "type": "string"
+    },
+    "auction_id": {
+      "type": "string"
+    },
+    "market_research": {
+      "type": "string"
+    },
+    "market_research_condition": {
+      "type": "string",
+      "description": "AI-analyzed condition from market research"
+    },
+    "ai_confidence_level": {
+      "type": "string"
+    },
+    "comparable_listings_links": {
+      "type": "array"
+    },
+    "ai_analysis": {
+      "type": "object"
+    },
+    "platform_descriptions": {
+      "type": "object"
+    },
+    "images_optimized": {
+      "type": "boolean",
+      "default": false
+    },
+    "optimization_status": {
+      "type": "object"
+    },
+    "sold": {
+      "type": "boolean",
+      "default": false
+    },
+    "sold_price": {
+      "type": "number"
+    },
+    "sold_net_proceeds": {
+      "type": "number"
+    },
+    "sold_date": {
+      "type": "string"
+    },
+    "sold_platform": {
+      "type": "string"
+    },
+    "zero_price_reason": {
+      "type": "string"
+    },
+    "category_specific_attributes": {
+      "type": "object",
+      "description": "Dynamic fields based on product type"
+    },
+    "original_watch_id": {
+      "type": "string"
+    },
+    "is_orphaned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indicates if this Product has no matching Watch record"
+    },
+    "ebay_order_id": {
+      "type": "string",
+      "description": "eBay Order ID for this sale transaction"
+    },
+    "ebay_line_item_id": {
+      "type": "string",
+      "description": "eBay Line Item ID for this sale transaction"
+    }
+  },
+  "required": [
+    "brand",
+    "company_id",
+    "product_type_code"
+  ],
+  "rls": {
+    "create": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "read": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "update": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "delete": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "write": {
+      "data.company_id": "{{user.data.company_id}}"
+    }
+  }
+}

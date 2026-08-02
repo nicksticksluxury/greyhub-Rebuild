@@ -1,0 +1,88 @@
+{
+  "name": "AiPrompt",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this AI prompt configuration"
+    },
+    "key": {
+      "type": "string",
+      "description": "Unique identifier for the prompt (e.g., ai_image_evaluation_pass1)"
+    },
+    "name": {
+      "type": "string",
+      "description": "User-friendly display name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed explanation of what this prompt does"
+    },
+    "prompt_content": {
+      "type": "string",
+      "description": "The actual AI prompt text or configuration (may be JSON for complex configs)"
+    },
+    "variables_documentation": {
+      "type": "string",
+      "description": "Documentation of available variables for this prompt"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "text_prompt",
+        "formula",
+        "json_config"
+      ],
+      "default": "text_prompt",
+      "description": "Type of prompt for rendering the correct editor"
+    },
+    "category": {
+      "type": "string",
+      "description": "Category for grouping (e.g., Image Analysis, Pricing, Channel Decision)"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Display order within category"
+    },
+    "target_profit_margin": {
+      "type": "number",
+      "default": 0.25,
+      "description": "Target profit margin as a decimal (e.g., 0.25 for 25%)"
+    }
+  },
+  "required": [
+    "key",
+    "name",
+    "company_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

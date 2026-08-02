@@ -1,0 +1,52 @@
+{
+  "name": "EbayLog",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this log"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the log entry was created"
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "info",
+        "error",
+        "success"
+      ],
+      "description": "Log level"
+    },
+    "operation": {
+      "type": "string",
+      "description": "What operation was being performed (sync, list, update, end)"
+    },
+    "message": {
+      "type": "string",
+      "description": "Log message"
+    },
+    "details": {
+      "type": "object",
+      "description": "Additional details like watch_id, status code, error text"
+    }
+  },
+  "required": [
+    "timestamp",
+    "level",
+    "operation",
+    "message",
+    "company_id"
+  ],
+  "rls": {
+    "read": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "create": true,
+    "delete": {
+      "data.company_id": "{{user.data.company_id}}"
+    }
+  }
+}

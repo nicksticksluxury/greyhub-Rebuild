@@ -1,0 +1,44 @@
+{
+  "name": "SubscriptionPlan",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the subscription plan"
+    },
+    "monthly_price": {
+      "type": "number",
+      "description": "Monthly price in dollars"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of what the plan includes"
+    }
+  },
+  "required": [
+    "name",
+    "monthly_price"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

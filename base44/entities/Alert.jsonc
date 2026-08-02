@@ -1,0 +1,94 @@
+{
+  "name": "Alert",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this alert"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID of the user this alert is for"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "error",
+        "success"
+      ],
+      "description": "Type of the alert"
+    },
+    "title": {
+      "type": "string",
+      "description": "Short title of the alert"
+    },
+    "message": {
+      "type": "string",
+      "description": "Detailed message"
+    },
+    "link": {
+      "type": "string",
+      "description": "Optional link to navigate to when clicked"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has read the alert"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional data (e.g. watch_id, order_id)"
+    }
+  },
+  "required": [
+    "title",
+    "message",
+    "type",
+    "company_id",
+    "user_id"
+  ],
+  "rls": {
+    "read": {
+      "$and": [
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "create": {
+      "$and": [
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "data.company_id": "{{user.data.company_id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}

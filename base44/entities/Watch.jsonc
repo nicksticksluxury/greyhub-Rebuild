@@ -1,0 +1,311 @@
+{
+  "name": "Watch",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this watch"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "original": {
+            "type": "string"
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "medium": {
+            "type": "string"
+          },
+          "full": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "listing_title": {
+      "type": "string"
+    },
+    "brand": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "serial_number": {
+      "type": "string"
+    },
+    "reference_number": {
+      "type": "string"
+    },
+    "year": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string"
+    },
+    "movement_type": {
+      "type": "string"
+    },
+    "case_material": {
+      "type": "string"
+    },
+    "case_size": {
+      "type": "string"
+    },
+    "dial_color": {
+      "type": "string"
+    },
+    "bracelet_material": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string"
+    },
+    "tested": {
+      "type": "string"
+    },
+    "repair_status": {
+      "type": "string",
+      "enum": [
+        "in_inventory",
+        "out_for_repair"
+      ],
+      "default": "in_inventory"
+    },
+    "description": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1
+    },
+    "cost": {
+      "type": "number"
+    },
+    "repair_costs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "msrp": {
+      "type": "number"
+    },
+    "msrp_link": {
+      "type": "string"
+    },
+    "identical_listing_link": {
+      "type": "string"
+    },
+    "identical_listing_links": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ai_instructions": {
+      "type": "string"
+    },
+    "retail_price": {
+      "type": "number"
+    },
+    "minimum_price": {
+      "type": "number"
+    },
+    "platform_prices": {
+      "type": "object",
+      "properties": {
+        "ebay": {
+          "type": "number"
+        },
+        "poshmark": {
+          "type": "number"
+        },
+        "etsy": {
+          "type": "number"
+        },
+        "mercari": {
+          "type": "number"
+        },
+        "whatnot": {
+          "type": "number"
+        },
+        "square": {
+          "type": "number"
+        }
+      }
+    },
+    "platform_ids": {
+      "type": "object",
+      "properties": {
+        "ebay": {
+          "type": "string"
+        },
+        "whatnot": {
+          "type": "string"
+        },
+        "square_catalog_object_id": {
+          "type": "string"
+        },
+        "square_item_variation_id": {
+          "type": "string"
+        }
+      }
+    },
+    "listing_urls": {
+      "type": "object",
+      "properties": {
+        "ebay": {
+          "type": "string"
+        },
+        "poshmark": {
+          "type": "string"
+        },
+        "etsy": {
+          "type": "string"
+        },
+        "mercari": {
+          "type": "string"
+        },
+        "whatnot": {
+          "type": "string"
+        },
+        "square": {
+          "type": "string"
+        }
+      }
+    },
+    "exported_to": {
+      "type": "object",
+      "properties": {
+        "ebay": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "poshmark": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "etsy": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mercari": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "whatnot": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "square": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "source_order_id": {
+      "type": "string"
+    },
+    "auction_id": {
+      "type": "string"
+    },
+    "market_research": {
+      "type": "string"
+    },
+    "ai_confidence_level": {
+      "type": "string"
+    },
+    "comparable_listings_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ai_analysis": {
+      "type": "object"
+    },
+    "platform_descriptions": {
+      "type": "object",
+      "properties": {
+        "ebay": {
+          "type": "string"
+        },
+        "poshmark": {
+          "type": "string"
+        },
+        "etsy": {
+          "type": "string"
+        },
+        "mercari": {
+          "type": "string"
+        },
+        "whatnot": {
+          "type": "string"
+        },
+        "square": {
+          "type": "string"
+        }
+      }
+    },
+    "images_optimized": {
+      "type": "boolean",
+      "default": false
+    },
+    "optimization_status": {
+      "type": "object"
+    },
+    "sold": {
+      "type": "boolean",
+      "default": false
+    },
+    "sold_price": {
+      "type": "number"
+    },
+    "sold_net_proceeds": {
+      "type": "number"
+    },
+    "sold_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "sold_platform": {
+      "type": "string"
+    },
+    "zero_price_reason": {
+      "type": "string"
+    },
+    "migrated_to_product": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indicates if this watch has been migrated to the Product entity"
+    }
+  },
+  "required": [
+    "brand",
+    "company_id"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "name": "Setting",
+  "type": "object",
+  "properties": {
+    "company_id": {
+      "type": "string",
+      "description": "ID of the company that owns this setting"
+    },
+    "key": {
+      "type": "string",
+      "description": "Unique key for the setting"
+    },
+    "value": {
+      "type": "string",
+      "description": "Value of the setting"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of what this setting controls"
+    }
+  },
+  "required": [
+    "key",
+    "value",
+    "company_id"
+  ],
+  "rls": {
+    "read": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "create": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "update": {
+      "data.company_id": "{{user.data.company_id}}"
+    },
+    "delete": {
+      "data.company_id": "{{user.data.company_id}}"
+    }
+  }
+}
