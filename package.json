@@ -12,10 +12,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@base44/sdk": "^0.8.3",
-    "@base44/vite-plugin": "^0.2.5",
+    "@base44/sdk": "^0.8.49",
+    "@base44/vite-plugin": "^1.0.42",
     "@hello-pangea/dnd": "^17.0.0",
     "@hookform/resolvers": "^4.1.2",
+    "@imgly/background-removal": "^1.5.5",
+    "@imgly/background-removal-node": "^1.4.5",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-aspect-ratio": "^1.1.2",
@@ -70,14 +72,12 @@
     "react-router-dom": "^6.26.0",
     "recharts": "^2.15.4",
     "sonner": "^2.0.1",
+    "square": "^37.0.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.171.0",
     "vaul": "^1.1.2",
-    "zod": "^3.24.2",
-    "square": "^37.0.0",
-    "@imgly/background-removal-node": "^1.4.5",
-    "@imgly/background-removal": "^1.5.5"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
